@@ -1,0 +1,37 @@
+<snippet>
+	<content><![CDATA[
+// Reorder N 3D points with max_x - min_x <= X, max_y - min_y <= Y, max_z - min_z <= Z
+// so that sum(abs(xi - x(i+1)) + abs(yi - y(i+1)) + abs(zi - z(i+1)))) is small
+// and process queries on the new order.
+// N * BX inc_x and dec_x calls, N * BY + X * Y / BX inc_y and dec_y calls, and N * X * Y / BX / BY inc_z and dec_z calls
+// set BX = cbrt(X Y) to achieve N cbrt(X Y) calls
+template<int BX, int BY>
+struct mo_3d{
+	vector<array<int, 4>> points; // x, y, z, ind
+	void insert(int x, int y, int z, int id){
+		points.push_back({x, y, z, id});
+	}
+	// starting from (0, 0, 0), access each points and execute queries
+	void solve(auto inc_x, auto dec_x, auto inc_y, auto dec_y, auto inc_z, auto dec_z, auto process){
+		auto cmp = [&](const auto &p, const auto &q)->bool{
+			return p[0] / BX != q[0] / BX ? p[0] < q[0] : p[1] / BY != q[1] / BY ? p[0] / BX & 1 ^ p[1] < q[1] : p[1] < q[1] : (p[0] / BX ^ p[1] / BX) & 1 ^ p[2] < q[2];
+		};
+		sort(points.begin(), points.end(), cmp);
+		int x = 0, y = 0, z = 0;
+		for(auto &[qx, qy, qz, id]: points){
+			while(qx < x) dec_x(), -- x;
+			while(y < qy) inc_y(), ++ y;
+			while(x < qx) inc_x(), ++ x;
+			while(qy < y) dec_y(), -- y;
+			while(qz < z) dec_z(), -- z;
+			while(z < qz) inc_z(), ++ z;
+			process(id);
+		}
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>mo_3d</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

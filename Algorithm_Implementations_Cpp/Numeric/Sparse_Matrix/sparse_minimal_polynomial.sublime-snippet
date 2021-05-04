@@ -1,0 +1,30 @@
+<snippet>
+	<content><![CDATA[
+// Calculate the minimal polynomial of the sparse matrix
+// Reads dimension n and its elements in form tuple{row, column, value}
+// O(n * (n + |a|) + |a| log mod)
+// T must be of modular type
+// Requires modular, random and linear_recurrence
+template<class T>
+vector<T> sparse_minimal_polynomial(int n, const vector<tuple<int, int, T>> &a){
+	vector<T> v(n), p(n), s;
+	generate(v.begin(), v.end(), rng), generate(p.begin(), p.end(), rng);
+	for(auto rep = 0; rep < n << 1; ++ rep){
+		T x  = 0;
+		for(auto i = 0; i < n; ++ i) x += v[i] * p[i];
+		s.push_back(x);
+		vector<T> p_next(n);
+		for(auto [i, j, val]: a) p_next[i] += val * p[j];
+		swap(p, p_next);
+	}
+	auto poly = linear_recurrence(s).coef;
+	for(auto &x: poly) x = -x;
+	poly.push_back(1);
+	return poly;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>sparse_minimal_polynomial</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

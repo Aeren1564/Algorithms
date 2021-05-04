@@ -1,0 +1,35 @@
+<snippet>
+	<content><![CDATA[
+// Type 0: lower case, 1: upper case, 2: lower and upper case
+template<int Type> int character_converter(int c){
+	if(Type == 0) return c - 'a';
+	else if(Type == 1) return c - 'A';
+	else return islower(c) ? c - 'a' : c - 'A' + 26;
+}
+template<int Type> int inverse_character_converter(int x){
+	if(Type == 0) return x + 'a';
+	else if(Type == 1) return x + 'A';
+	else return x < 26 ? x + 'a' : x - 26 + 'A';
+}
+template<int Type> istream &read_string(istream &in){ return in; }
+template<int Type, class Head, class... Tail>
+istream &read_string(istream &in, Head &H, Tail &...T){
+	string temp;
+	in >> temp;
+	H.resize((int)temp.size());
+	for(auto i = 0; i < (int)temp.size(); ++ i) H[i] = character_converter<Type>(temp[i]);
+	return read_string<Type>(in, T...);
+}
+template<int Type> ostream &print_string(ostream &out){ return out; }
+template<int Type, class Head, class... Tail>
+ostream &print_string(ostream &out, const Head &H, const Tail &...T){
+	string temp((int)H.size(), '?');
+	for(auto i = 0; i < (int)H.size(); ++ i) temp[i] = inverse_character_converter<Type>(H[i]);
+	return print_string<Type>(out << temp << " ", T...);
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>string_io</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

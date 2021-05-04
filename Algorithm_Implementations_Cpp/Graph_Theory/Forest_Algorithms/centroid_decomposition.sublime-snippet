@@ -1,0 +1,82 @@
+<snippet>
+	<content><![CDATA[
+// Requires graph
+// O(V log V)
+template<class T>
+struct centroid_decomposition: graph<int>{ // stores the arborescence
+	int n, root; // the root of the arborescence
+	vector<int> pe, sz;
+	vector<vector<T>> dist; // dist[u][i]: sum of weights from u to its i-th centroid parent
+	T T_id;
+	using graph<int>::orient;
+	template<class U>
+	centroid_decomposition(const graph<U> &g, T T_id, function<T(U, T)> UT): n(g.n), T_id(T_id), graph<int>(g.n), pe(g.n), dist(g.n){
+		vector<int> dead(n), sz(n);
+		auto centroid = [&](int s){
+			int u = s, pe = -1;
+			while(true){
+				for(auto id: g.adj[u]){
+					if(id == pe || g.ignore && g.ignore(id)) continue;
+					auto &e = g.edges[id];
+					int v = u ^ e.from ^ e.to;
+					if(dead[v]) continue;
+					if(sz[v] > sz[s] >> 1){
+						u = v, pe = id;
+						goto NEXT;
+					}
+				}
+				break;
+				NEXT:;
+			}
+			return u;
+		};
+		function<void(int, int)> dfs_sz = [&](int u, int p){
+			sz[u] = 1;
+			for(auto id: g.adj[u]){
+				if(g.ignore && g.ignore(id)) continue;
+				auto &e = g.edges[id];
+				int v = u ^ e.from ^ e.to;
+				if(p == v || dead[v]) continue;
+				dfs_sz(v, u);
+				sz[u] += sz[v];
+			}
+		};
+		function<void(int, int)> set_distance = [&](int u, int pe){
+			int p = u ^ g.edges[pe].from ^ g.edges[pe].to;
+			dist[u].push_back(UT(g.edges[pe].cost, dist[p].back()));
+			for(auto id: g.adj[u]){
+				if(id == pe || g.ignore && g.ignore(id)) continue;
+				auto &e = g.edges[id];
+				int v = u ^ e.from ^ e.to;
+				if(dead[v]) continue;
+				set_distance(v, id);
+			}
+		};
+		function<void(int, int)> construct = [&](int u, int p){
+			dfs_sz(u, p);
+			dead[u = centroid(u)] = true;
+			this->sz[u] = sz[u];
+			if(~p) pe[u] = orient(p, u);
+			else root = u;
+			dist[u].push_back(T_id);
+			for(auto id: g.adj[u]){
+				auto &e = g.edges[id];
+				int v = u ^ e.from ^ e.to;
+				if(!dead[v]) set_distance(v, id);
+			}
+			for(auto id: g.adj[u]){
+				auto &e = g.edges[id];
+				int v = u ^ e.from ^ e.to;
+				if(!dead[v]) construct(v, u);
+			}
+		};
+		construct(0, -1);
+		for(auto u = 0; u < n; ++ u) reverse(dist[u].begin(), dist[u].end());
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>centroid_decomposition</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

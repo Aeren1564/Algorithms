@@ -1,0 +1,26 @@
+<snippet>
+	<content><![CDATA[
+// Requires matrix
+template<class T, T (*zero)(), T (*one)()>
+T real_determinant(matrix_base<T, zero, one> M){ // For reals, O(n^3)
+	assert(M.n == M.m);
+	int n = M.n;
+	T res = 1;
+	for(auto i = 0; i < n; ++ i){
+		int b = i;
+		for(auto j = i + 1; j < n; ++ j) if(abs(M[j][i]) > abs(M[b][i])) b = j;
+		if(i != b) swap(M[i], M[b]), res *= -1;
+		if(res == 0) return 0;
+		for(auto j = i + 1; j < n; ++ j){
+			T v = M[j][i] / M[i][i];
+			if(v) for(auto k = i + 1; k < n; ++ k) M[j][k] -= v * M[i][k];
+		}
+	}
+	return res;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>real_determinant</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

@@ -1,0 +1,45 @@
+<snippet>
+	<content><![CDATA[
+template<class NT, class T>
+struct meissel_lehmer{ // NT is the number_theory class
+	const int maxx = 1e2 + 5, maxy = 1e5 + 5, maxn = 1e7 + 5;
+	vector<int> cn;
+	vector<T> sum;
+	vector<vector<T>> f;
+	NT &nt;
+	T F(long long x){ // A multiplicative function
+		return 1;
+	}
+	T sum_F(long long x){ // Prefix sum of F up to x
+		return x;
+	}
+	meissel_lehmer(NT &nt): nt(nt), sum(maxn), f(maxx, vector<T>(maxy)), cn(maxn){
+		for(int i = 2, cnt = 0; i < maxn; ++ i){
+			sum[i] = sum[i - 1];
+			if(nt.lpf[i] == i) sum[i] += F(i), ++ cnt;
+			cn[i] = cnt;
+		}
+		for(int i = 0; i < maxx; ++ i) for(int j = 0; j < maxy; ++ j){
+			f[i][j] = i ? f[i - 1][j] - f[i - 1][j / nt.prime[i - 1]] * F(nt.prime[i - 1]) : sum_F(j);
+		}
+	} // O(n^(2/3 + eps)) time and O(n^(1/3 + eps)) space for all eps>0
+	T legendre_sum(long long m, int n){
+		if(!n) return sum_F(m);
+		if(m <= nt.prime[n - 1]) return F(1);
+		if(m < maxy && n < maxx) return f[n][m];
+		return legendre_sum(m, n - 1) - legendre_sum(m / nt.prime[n - 1], n - 1) * F(nt.prime[n - 1]);
+	}
+	T pi(long long m){ // Calculate sum of F(p) for primes up to m
+		if(m <= maxn) return sum[m];
+		int x = sqrt(m + 0.9), y = cbrt(m + 0.9), a = cn[y];
+		T res = legendre_sum(m, a) - F(1) + sum[y];
+		for(int i = a; nt.prime[i] <= x; ++ i) res -= (pi(m / nt.prime[i]) - pi(nt.prime[i] - 1)) * F(nt.prime[i]);
+		return res;
+	} // O(n^(2/3 + eps)) time and O(n^(1/3 + eps)) space for all eps>0
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>meissel_lehmer</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

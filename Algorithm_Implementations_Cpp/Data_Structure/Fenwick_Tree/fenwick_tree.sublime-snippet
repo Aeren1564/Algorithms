@@ -1,0 +1,41 @@
+<snippet>
+	<content><![CDATA[
+template<class T>
+struct fenwick_tree{
+	int n;
+	vector<T> data;
+	fenwick_tree(){ }
+	fenwick_tree(int n): n(n), data(n){ }
+	fenwick_tree(int n, T init): fenwick_tree(vector<T>(n, init)){ }
+	fenwick_tree(const vector<T> &v): n((int)v.size()), data(v){
+		for(auto i = 1; i <= n; ++ i) if(i + (i & -i) <= n) data[i + (i & -i) - 1] += data[i - 1];
+	}
+	void update(int p, T x){
+		assert(0 <= p && p < n);
+		for(++ p; p <= n; p += p & -p) data[p - 1] += x;
+	}
+	T query(int r) const{
+		T s{};
+		for(; r > 0; r -= r & -r) s += data[r - 1];
+		return s;
+	}
+	T query(int l, int r) const{
+		assert(0 <= l && l <= r && r <= n);
+		return query(r) - query(l);
+	}
+	template<class F> int max_pref(F f) const{
+		int p = 0;
+		T pref{};
+		for(auto i = __lg(n + 1); i >= 0; -- i) if(p + (1 << i) <= n && f(pref + data[p + (1 << i) - 1])){
+			pref += data[p + (1 << i) - 1];
+			p += 1 << i;
+		}
+		return p;
+	} // f(sum[0, r)) is T, T, ..., T, F, F, ..., F, returns max r with T
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>fenwick_tree</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

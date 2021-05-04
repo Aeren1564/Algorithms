@@ -1,0 +1,48 @@
+<snippet>
+	<content><![CDATA[
+struct line_type{
+	long long d, k;
+	line_type(long long d = 0, long long k = numeric_limits<long long>::min() / 2): d(d), k(k){ }
+	long long eval(long long x){ return d * x + k; }
+	bool majorize(line_type X, long long L, long long R){ return eval(L) >= X.eval(L) && eval(R) >= X.eval(R); }
+};
+template<bool GET_MAX = true>
+struct lichao{
+	lichao *l = 0, *r = 0;
+	line_type S;
+	lichao(): S(line_type()){ }
+	~lichao(){
+		delete l;
+		delete r;
+	}
+	void mc(int i){
+		if(i){ if(!r) r = new lichao(); }
+		else{ if(!l) l = new lichao(); }
+	}
+	long long pq(long long X, long long L, long long R){
+		long long ans = S.eval(X), M = L + R >> 1;
+		if(X < M) return max(ans, l ? l->pq(X, L, M) : -(long long)9e18);
+		else return max(ans, r ? r->pq(X, M, R) : -(long long)9e18);
+	}
+	long long query(long long X, long long L, long long R){
+		return pq(X, L, R) * (GET_MAX ? 1 : -1);
+	}
+	void pp(line_type X, long long L, long long R){
+		if(X.majorize(S, L, R)) swap(X, S);
+		if(S.majorize(X, L, R)) return;
+		if(S.eval(L) < X.eval(L)) swap(X, S);
+		long long M = L + R >> 1;
+		if(X.eval(M) > S.eval(M)) swap(X, S), mc(0), l->pp(X, L, M);
+		else mc(1), r->pp(X, M, R);
+	}
+	void push(line_type X, long long L, long long R){
+		if(!GET_MAX) X.d = -X.d, X.k = -X.k;
+		pp(X, L, R);
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>li_chao_tree</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

@@ -1,0 +1,32 @@
+<snippet>
+	<content><![CDATA[
+template<class T>
+struct fenwick_tree_2d{
+	int n, m;
+	vector<vector<T>> data;
+	fenwick_tree_2d(const vector<vector<T>> &a): n((int)a.size()), m((int)a[0].size()), data(a){
+		for(auto i = 1; i <= n; ++ i) if(i + (i & -i) <= n) for(auto j = 1; j <= m; ++ j) data[i + (i & -i) - 1][j - 1] += data[i - 1][j - 1];
+		for(auto i = 1; i <= n; ++ i) for(auto j = 1; j <= m; ++ j) if(j + (j & -j) <= n) data[i - 1][j + (j & -j) - 1] += data[i - 1][j - 1];
+	} // O(nm)
+	void update(int p, int q, T x){ // a[p][q] += x, O(log n log m)
+		++ p, ++ q;
+		for(auto i = p; i <= n; i += i & -i) for(auto j = q; j <= m; j += j & -j) data[i - 1][j - 1] += x;
+	}
+	T query(int xr, int yr){ // sum of a[i][j] on [0, xr) X [0, yr), O(log n log m)
+		T res{};
+		++ xr, ++ yr;
+		for(auto i = xr; i > 0; i -= i & -i) for(auto j = yr; j > 0; j -= j & -j) res += data[i - 1][j - 1];
+		return res;
+	}
+	T query(int xl, int xr, int yl, int yr){ // sum of a[i][j] on [xl, xr) X [yl, yr), O(log n log m)
+		assert(xl <= xr && yl <= yr);
+		-- xl, -- xr, -- yl, -- yr;
+		return query(xr, yr) - query(xr, yl) - query(xl, yr) + query(xl, yl);
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>fenwick_tree_2d</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

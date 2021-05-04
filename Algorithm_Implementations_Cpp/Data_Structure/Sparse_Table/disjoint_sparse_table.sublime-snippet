@@ -1,0 +1,32 @@
+<snippet>
+	<content><![CDATA[
+template<class T, class F>
+struct disjoint_sparse_table{
+	int n, size, log;
+	vector<vector<T>> data;
+	F TT;
+	T T_id;
+	disjoint_sparse_table(const vector<T> &a, F TT, T T_id): n((int)a.size()), TT(TT), T_id(T_id){
+		log = __lg(max(n - 1, 1)) + 1, size = 1 << log;
+		data.assign(log + 1, vector<T>(size, T_id));
+		copy(a.begin(), a.end(), data[0].begin());
+		for(auto h = 1, len = 2, half = 1; len <= size; ++ h, len <<= 1, half <<= 1) for(auto m = half; m < size; m += len){
+			data[h][m - 1] = data[0][m - 1], data[h][m] = data[0][m];
+			for(auto i = m - 2; i >= m - half; -- i) data[h][i] = TT(data[0][i], data[h][i + 1]);
+			for(auto i = m + 1; i < m + half; ++ i) data[h][i] = TT(data[h][i - 1], data[0][i]);
+		}
+	}
+	// O(1), returns sum{i in [ql,qr)}( a[i] )
+	T query(int ql, int qr) const{
+		if(ql >= qr) return T_id;
+		if(qr - ql == 1) return data[0][ql];
+		int h = __lg(ql ^ qr - 1) + 1;
+		return TT(data[h][ql], data[h][qr - 1]);
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>disjoint_sparse_table</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

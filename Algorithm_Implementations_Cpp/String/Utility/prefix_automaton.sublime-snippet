@@ -1,0 +1,23 @@
+<snippet>
+	<content><![CDATA[
+// state u represents length of prefix matching.
+// aut[u][c]: next state when c is added at the end
+// O(Lim * n)
+// Requires prefix_function
+template<class Char_Type, int Lim>
+pair<vector<int>, vector<array<int, Lim>>> prefix_automaton(const vector<Char_Type> &s){
+	int n = (int)s.size() + 1;
+	auto p = prefix_function<false, Char_Type>(s);
+	vector<array<int, Lim>> aut(n);
+	for(auto i = 0; i < n; ++ i) for(auto c = 0; c < Lim; ++ c){
+		if(i > 0 && (i == n - 1 || c != s[i])) aut[i][c] = aut[p[i - 1]][c];
+		else aut[i][c] = i + (i < n - 1 && c == s[i]);
+	}
+	return {p, aut};
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>prefix_automaton</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

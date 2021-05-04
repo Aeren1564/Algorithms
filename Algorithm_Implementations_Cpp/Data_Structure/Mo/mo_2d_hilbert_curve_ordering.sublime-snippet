@@ -1,0 +1,34 @@
+<snippet>
+	<content><![CDATA[
+// WARNING: Outperformed by the regular Mo
+// Reorder N 2D points with max_x - min_x <= X, max_y - min_y <= Y
+// so that sum(abs(xi - x(i+1)) + abs(yi - y(i+1)) is small
+// and process queries on the new order.
+// O(2^level * sqrt(N)) inc_x, dec_x calls, inc_y, and dec_y calls
+// Requires hilbert_curve_2d
+struct mo_2d_hilbert_curve_ordering{
+	hilbert_curve_2d<int, long long> curve;
+	vector<tuple<long long, int, int, int>> points; // order, x, y, ind
+	mo_2d_hilbert_curve_ordering(int level): curve(level){ }
+	void insert(int x, int y, int id){
+		points.push_back({curve.order(x, y), x, y, id});
+	}
+	// starting from (0, 0), access each points and execute queries
+	void solve(auto inc_x, auto dec_x, auto inc_y, auto dec_y, auto process){
+		sort(points.begin(), points.end());
+		int x = 0, y = 0;
+		for(auto &[ignore, qx, qy, id]: points){
+			while(qx < x) dec_x(), -- x;
+			while(y < qy) inc_y(), ++ y;
+			while(x < qx) inc_x(), ++ x;
+			while(qy < y) dec_y(), -- y;
+			process(id);
+		}
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>mo_2d_hilbert_curve_ordering</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

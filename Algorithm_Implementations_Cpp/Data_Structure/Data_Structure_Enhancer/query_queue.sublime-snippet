@@ -1,0 +1,32 @@
+<snippet>
+	<content><![CDATA[
+template<class E> // Noam's queue trick
+struct query_queue{ // for a commutative data structure supporting true O(T(n)) insertion, support front-deletion in O(T(n) log n) online.
+	function<void(E)> insert;
+	function<int()> time;
+	function<void(int)> reverse_to;
+	int zero_cnt = 0;
+	vector<int> log;
+	vector<pair<bool, E>> s, tmp[2]; // 0: delete state, 1: insert state
+	query_queue(function<void(E)> insert, function<int()> time, function<void(int)> reverse_to): insert(insert), time(time), reverse_to(reverse_to), log({time()}){ }
+	void pop(){
+		if(!zero_cnt){
+			zero_cnt = (int)s.size(), reverse(s.begin(), s.end()), reverse_to(log[0]), log.resize(1);
+			for(auto &p: s) p.first = false, insert(p.second), log.push_back(time());
+		}
+		while(s.back().first) tmp[1].push_back(s.back()), s.pop_back();
+		for(auto sz = zero_cnt & -zero_cnt, i = 0; i < sz; ++ i) assert(!s.back().first), tmp[0].push_back(s.back()), s.pop_back();
+		reverse_to(log[s.size()]), log.resize(s.size() + 1);
+		for(auto z: {1, 0}) for(; !tmp[z].empty(); tmp[z].pop_back()) insert(tmp[z].back().second), log.push_back(time()), s.push_back(tmp[z].back());
+		assert(!s.back().first), s.pop_back(), reverse_to(log[s.size()]), log.resize(s.size() + 1), -- zero_cnt;
+	}
+	void push(const E &e){
+		s.push_back({true, e}), insert(e);
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>query_queue</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

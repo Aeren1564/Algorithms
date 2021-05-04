@@ -1,0 +1,3 @@
+[
+	{ "keys": ["ctrl+alt+n"], "command": "new_snippet"}
+]

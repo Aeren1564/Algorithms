@@ -1,0 +1,38 @@
+<snippet>
+	<content><![CDATA[
+template<class B, class C> // coordinate type, color type
+struct color_processor{
+	map<array<B, 2>, C> intervals;
+	color_processor(C init = {}): intervals({{{numeric_limits<B>::min(), numeric_limits<B>::max()}, init}}){ }
+	auto belongs(B p){
+		return prev(intervals.upper_bound({p, numeric_limits<B>::max()}));
+	}
+	void paint(B l, B r, C c, auto process){ // paint the range [l, r) with the color c, amortized O(1) process calls
+		array<B, 2> I{l, l};
+		auto it = intervals.lower_bound(I);
+		if(it != intervals.begin() && l < prev(it)->first[1]){
+			-- it;
+			auto x = *it; intervals.erase(it);
+			intervals.insert({{x.first[0], l}, x.second});
+			it = intervals.insert({{l, x.first[1]}, x.second}).first;
+		}
+		while(it != intervals.end() && it->first[0] < r){
+			if(r < it->first[1]){
+				auto x = *it; intervals.erase(it);
+				it = intervals.insert({{x.first[0], r}, x.second}).first;
+				intervals.insert({{r, x.first[1]}, x.second});
+			}
+			process(max(l, it->first[0]), min(r, it->first[1]), it->second, c);
+			// process(l, r, pc, c): color of range [l, r) is changed from pc to c
+			I = {min(I[0], it->first[0]), max(I[1], it->first[1])};
+			it = intervals.erase(it);
+		}
+		intervals.insert({I, c});
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>color_processor</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

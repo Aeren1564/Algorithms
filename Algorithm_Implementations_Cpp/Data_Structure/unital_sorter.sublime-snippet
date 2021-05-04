@@ -1,0 +1,45 @@
+<snippet>
+	<content><![CDATA[
+struct unital_sorter{
+	int n, m; // # of items, maximum possible freq
+	vector<int> order, pos, freq; // items sorted by freq, position of items in the order
+	vector<array<int, 2>> bound; // bound[x] represents the range in the order for freq x
+	unital_sorter(int n, int m): n(n), m(m), order(n), pos(n), freq(n), bound(m + 1, {n, n}){
+		bound[0] = {0, n};
+		iota(order.begin(), order.end(), 0);
+		iota(pos.begin(), pos.end(), 0);
+	}
+	unital_sorter(int n, int m, const vector<int> &freq): n(n), m(m), pos(n), freq(freq), bound(m + 1){
+		iota(order.begin(), order.end(), 0);
+		vector<vector<int>> occur(m + 1);
+		for(auto i = 0; i < n; ++ i) occur[freq[i]].push_back(i);
+		for(auto f = 0; f <= m; ++ f){
+			bound[f][0] = (int)order.size();
+			order.insert(order.end(), occur[f].begin(), occur[f].end());
+			bound[f][1] = (int)order.size();
+			for(auto t = bound[f][0]; t < bound[f][1]; ++ t) pos[order[t]] = t;
+		}
+	}
+	void insert(int x){ // O(1)
+		assert(freq[x] + 1 <= m);
+		-- bound[freq[x]][1];
+		-- bound[freq[x] + 1][0];
+		int y = order[bound[freq[x] ++][1]];
+		swap(pos[x], pos[y]);
+		swap(order[pos[x]], order[pos[y]]);
+	}
+	void erase(int x){ // O(1)
+		assert(freq[x]);
+		int y = order[bound[freq[x] - 1][1]];
+		swap(pos[x], pos[y]);
+		swap(order[pos[x]], order[pos[y]]);
+		++ bound[freq[x]][0];
+		++ bound[-- freq[x]][1];
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>unital_sorter</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

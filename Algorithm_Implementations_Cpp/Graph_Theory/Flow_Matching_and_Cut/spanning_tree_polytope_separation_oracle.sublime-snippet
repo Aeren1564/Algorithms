@@ -1,0 +1,46 @@
+<snippet>
+	<content><![CDATA[
+// given an undirected graph G=(V,E), a weight function w: E -> R, and a constant c,
+// determine whether the weight function satisfies the following constraints (LP-span)
+// 1. w(e) >= 0 for all edges e in E
+// 2. w(E) = c(|V|-1)
+// 3. w(E(S)) <= c(|S|-1) for all non-empty subset S of V
+// calculates min cut at most 2|V|-2 times
+// Source: https://webdocs.cs.ualberta.ca/~zacharyf/courses/approx_2014/notes/nov17-675.pdf
+// Requires graph and dinic_maxflow
+template<class T>
+bool spanning_tree_polytope_separation_oracle(const graph<T> &g, T c = 1){
+	int n = g.n;
+	T tot = 0;
+	flow_network<T> F(n);
+	vector<T> delta(n);
+	for(auto id = 0; id < (int)g.edges.size(); ++ id){
+		if(g.ignore && g.ignore(id)) continue;
+		auto &e = g.edges[id];
+		if(e.cost < 0) return false;
+		F.insert(e.from, e.to, e.cost, e.cost);
+		delta[e.from] += e.cost, delta[e.to] += e.cost, tot += e.cost;
+	}
+	if(c * (n - 1) != tot) return false;
+	int m = (int)F.edges.size();
+	vector<int> sz(n);
+	for(auto u = 0; u < n; ++ u) sz[u] = (int)F.adj[u].size();
+	for(auto t = 1; t < n; ++ t){
+		int s = 0;
+		for(auto rep = 0; rep < 2; ++ rep){
+			F.edges.resize(m);
+			for(auto u = 0; u < n; ++ u) F.adj[u].resize(sz[u]);
+			F.clear_flow();
+			for(auto u = 0; u < n; ++ u) F.insert(s, u, delta[u], 0), F.insert(u, t, 2 * c, 0);
+			if(dinic<T>(F).max_flow(s, t) < 2 * n * c) return false;
+			swap(s, t);
+		}
+	}
+	return true;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>spanning_tree_polytope_separation_oracle</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

@@ -1,0 +1,56 @@
+<snippet>
+	<content><![CDATA[
+template<class T>
+struct kdarray{
+	int K;
+	vector<int> n, p;
+	vector<T> val;
+	T &operator[](const vector<int> &x){
+		int pos = 0;
+		for(int i = 0; i < int(x.size()); ++ i) pos += p[i] * x[i];
+		return val[pos];
+	}
+	kdarray(){}
+	kdarray(const vector<int> &n, T id = T()): K(int(n.size())), n(n), val(accumulate(n.begin(), n.end(), 1, multiplies<>()), id), p(K + 1, 1){
+		partial_sum(n.begin(), n.end(), p.begin() + 1, multiplies<>());
+	}
+	template<class U>
+	kdarray(const kdarray<U> &arr): K(arr.K), n(arr.n), p(arr.p), val(arr.val.begin(), arr.val.end()){ }
+};
+template<class T>
+istream &operator>>(istream &in, kdarray<T> &arr){
+	for(vector<int> i(arr.K); in >> arr[i]; ){
+		for(int d = arr.K - 1; d >= 0; -- d){
+			if(++ i[d] < arr.n[d]) break;
+			if(!d) goto ESCAPE;
+			i[d] = 0;
+		}
+	}
+	ESCAPE:;
+	return in;
+}
+template<class T>
+ostream &operator<<(ostream &out, kdarray<T> &arr){
+	for(vector<int> i(arr.K); true; ){
+		out << "\n[{";
+		for(int d = 0; d < arr.K; ++ d){
+			out << i[d] << ", ";
+		}
+		if(arr.K) out << "\b\b";
+		out << "}] -> ";
+		// out << arr[i]; // format this part
+		for(int d = arr.K - 1; d >= 0; -- d){
+			if(++ i[d] < arr.n[d]) break;
+			if(!d) goto ESCAPE;
+			i[d] = 0;
+		}
+	}
+	ESCAPE:;
+	return out;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>kdarray</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

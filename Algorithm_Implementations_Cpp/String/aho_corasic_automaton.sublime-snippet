@@ -1,0 +1,59 @@
+<snippet>
+	<content><![CDATA[
+// Note: construction of an AC-automaton is offline.
+// Adjacency_Type: array<int, X> or map<Char_Type, int> where X is the size of the alphabet
+template<class Char_Type, class Adjacency_Type>
+struct aho_corasic_automaton{
+	// Begin States
+	vector<int> len{0}, link{-1}, exit_link{-1};
+	vector<bool> is_terminal{false};
+	vector<Adjacency_Type> next{{}};
+	// End States
+	int new_state(){
+		len.push_back(0);
+		link.push_back(-1);
+		exit_link.push_back(-1);
+		is_terminal.push_back(false);
+		next.push_back({});
+		return (int)len.size() - 1;
+	}
+	aho_corasic_automaton(){ }
+	aho_corasic_automaton(const vector<vector<Char_Type>> &patterns){
+		for(auto s: patterns){
+			int u = 0;
+			for(auto c: s){
+				if(!next[u][c]) next[u][c] = new_state(), len[next[u][c]] = len[u] + 1;
+				u = next[u][c];
+			}
+			is_terminal[u] = true;
+		}
+		deque<int> dq{0};
+		while(!dq.empty()){
+			int u = dq.front(); dq.pop_front();
+			if constexpr(is_same<Adjacency_Type, map<Char_Type, int>>::value){
+				for(auto [c, v]: next[u]){
+					link[v] = !~link[u] ? 0 : next[link[u]][c];
+					exit_link[v] = is_terminal[link[v]] ? link[v] : exit_link[link[v]];
+					dq.push_back(v); 
+				}
+			}
+			else{
+				for(auto c = 0; c < (int)next[u].size(); ++ c) if(next[u][c]){
+					int v = next[u][c];
+					link[v] = !~link[u] ? 0 : next[link[u]][c];
+					exit_link[v] = is_terminal[link[v]] ? link[v] : exit_link[link[v]];
+					dq.push_back(v); 
+				}
+			}
+		}
+	}
+	int size() const{ // # of states
+		return (int)len.size();
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>aho_corasic_automaton</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

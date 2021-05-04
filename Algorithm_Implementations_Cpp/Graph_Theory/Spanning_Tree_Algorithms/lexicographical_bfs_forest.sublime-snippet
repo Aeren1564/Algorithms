@@ -1,0 +1,91 @@
+<snippet>
+	<content><![CDATA[
+// Requires graph
+struct lexicographical_bfs_forest{
+	int n;
+	vector<int> pos, order, was, latest, slice_size;
+	vector<vector<int>> cell_sizes;
+	lexicographical_bfs_forest(int n){
+		init(n);
+	}
+	void init(int n){
+		this->n = n;
+		order.clear();
+		pos.assign(n, -1);
+		was.assign(n, -1);
+		latest.assign(n, -1); // latest neighbour preceeding current node in ordering
+		slice_size.assign(n, -1);
+		cell_sizes.assign(n, vector<int>{});
+		attempt = 0;
+	}
+	int attempt;
+	template<class T> // O(V+E), perform lexicographical bfs with tie broken by the initial order
+	void bfs(const graph<T> &g, const vector<int> &initial_order, bool complement = false){
+		++ attempt;
+		order.clear();
+		for(auto &v: cell_sizes) v.clear();
+		vector<vector<int>> adj(n); // adj list sorted by the initial ordering
+		for(auto u: initial_order) for(auto id: g.adj[u]){
+			if(g.ignore && g.ignore(id)) continue;
+			auto &e = g.edges[id];
+			int v = u ^ e.from ^ e.to;
+			adj[v].push_back(u);
+		}
+		int n = g.n;
+		using set_type = pair<list<int>, int>;
+		list<set_type> sets({{list<int>(initial_order.begin(), initial_order.end()), 0}});
+		vector<list<set_type>::iterator> belongs(n, sets.begin());
+		vector<list<int>::iterator> pos_in_set(n, sets.front().first.begin());
+		for(auto i = 1; i < n; ++ i) pos_in_set[initial_order[i]] = next(pos_in_set[initial_order[i - 1]]);
+		vector<vector<array<int, 2>>> query_cell_sizes(n + 1);
+		for(auto it = 1; !sets.empty(); ++ it){
+			int u = sets.front().first.front(), cnt = count_if(adj[u].begin(), adj[u].end(), [&](int v){ return was[v] != attempt && belongs[u] == belongs[v]; });
+			slice_size[u] = (int)sets.front().first.size();
+			if(complement) cnt = slice_size[u] - 1 - cnt;
+			assert((int)order.size() + 1 + cnt <= n);
+			if(slice_size[u] != cnt + 1) query_cell_sizes[(int)order.size() + 1 + cnt].push_back({u, slice_size[u] - 1 - cnt});
+			for(auto [u, sz]: query_cell_sizes[(int)order.size()]){
+				int sum = 0;
+				for(auto it = sets.begin(); it != sets.end(); ++ it){
+					sum += (int)it->first.size();
+					cell_sizes[u].push_back((int)it->first.size());
+					if(sum >= sz) break;
+				}
+				assert(sum == sz);
+			}
+			sets.front().first.pop_front();
+			if(sets.front().first.empty()) sets.pop_front();
+			was[u] = attempt;
+			pos[u] = (int)order.size();
+			order.push_back(u);
+			for(auto v: adj[u]){
+				if(was[v] == attempt){
+					if(!~latest[u] || pos[latest[u]] < pos[v]) latest[u] = v;
+					continue;
+				}
+				list<set_type>::iterator move_from = belongs[v], move_to;
+				if(move_from->second != it){
+					move_from->second = it;
+					move_to = complement ? sets.insert(next(move_from), set_type{}) : sets.insert(move_from, set_type{});
+				}
+				else move_to = complement ? next(move_from) : prev(move_from);
+				move_from->first.erase(pos_in_set[v]);
+				belongs[v] = move_to;
+				pos_in_set[v] = move_to->first.insert(move_to->first.end(), v);
+				if(move_from->first.empty()) sets.erase(move_from);
+			}
+		}
+	}
+	template<class T>
+	void bfs(const graph<T> &g, bool complement = false){
+		vector<int> initial_order(n);
+		iota(initial_order.begin(), initial_order.end(), 0);
+		bfs(g, initial_order, complement);
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>lexicographical_bfs_forest</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

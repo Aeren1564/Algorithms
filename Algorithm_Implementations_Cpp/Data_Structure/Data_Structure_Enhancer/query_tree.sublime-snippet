@@ -1,0 +1,38 @@
+<snippet>
+	<content><![CDATA[
+template<class E>
+struct query_tree{ // for a commutative data structure supporting true O(T(n)) insertion, support deletion in O(T(n) log n) offline.
+	int n; // max query range
+	vector<vector<E>> queues;
+	query_tree(int n): n(n), queues(n << 1){ }
+	void insert(E e, int ql, int qr){
+		function<void(int, int, int)> recurse = [&](int u, int l, int r){
+			if(qr <= l || r <= ql) return;
+			if(ql <= l && r <= qr) queues[u].push_back(e);
+			else{
+				int m = l + (r - l >> 1), v = u + 1, w = u + (m - l << 1);
+				recurse(v, l, m), recurse(w, m, r);
+			}
+		};
+		recurse(0, 0, n);
+	}
+	void solve(function<void(E)> insert, function<int()> time, function<void(int)> reverse_to, function<void(int)> answer){
+		function<void(int, int, int)> dfs = [&](int u, int l, int r){
+			int timer = time();
+			for(auto e: queues[u]) insert(e);
+			if(r - l == 1) answer(l);
+			else{
+				int m = l + (r - l >> 1);
+				dfs(u + 1, l, m), dfs(u + (m - l << 1), m, r);
+			}
+			reverse_to(timer);
+		};
+		dfs(0, 0, n);
+	} // O(q log n) insert calls and O(n) answer calls
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>query_tree</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

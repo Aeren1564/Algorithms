@@ -1,0 +1,54 @@
+<snippet>
+	<content><![CDATA[
+// for each weakly connected components, find colorings such that (color[u] + 1) % C == color[v] for all edges u->v
+// undirected graphs are regarded as its canonical directed representation
+// C=1 : returns weakly connected components
+// C=2 : returns bipartite colorings
+// Requires graph
+template<class T, int C = 2>
+void directed_coloring(const graph<T> &g, auto act){
+	int n = g.n;
+	vector<int> was(n, -1);
+	auto rg = g.transposed();
+	for(auto u = 0; u < n; ++ u){
+		if(!~was[u]){
+			bool perfect = true;
+			array<vector<int>, C> split;
+			function<void(int)> dfs = [&](int u){
+				for(auto id: g.adj[u]){
+					if(g.ignore && g.ignore(id)) continue;
+					auto &e = g.edges[id];
+					int v = u ^ e.from ^ e.to;
+					if(!~was[v]){
+						split[was[v] = (was[u] + 1) % C].push_back(v);
+						dfs(v);
+					}
+					else if(was[v] != (was[u] + 1) % C){
+						perfect = false;
+					}
+				}
+				for(auto id: rg.adj[u]){
+					if(rg.ignore && rg.ignore(id)) continue;
+					auto &e = rg.edges[id];
+					int v = u ^ e.from ^ e.to;
+					if(!~was[v]){
+						split[was[v] = (was[u] + C - 1) % C].push_back(v);
+						dfs(v);
+					}
+					else if(was[v] != (was[u] + C - 1) % C){
+						perfect = false;
+					}
+				}
+			};
+			split[was[u] = 0].push_back(u);
+			dfs(u);
+			act(perfect, split);
+		}
+	}
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>directed_coloring</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

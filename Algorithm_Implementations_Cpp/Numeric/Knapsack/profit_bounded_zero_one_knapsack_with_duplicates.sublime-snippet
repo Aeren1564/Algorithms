@@ -1,0 +1,28 @@
+<snippet>
+	<content><![CDATA[
+// given threshold and items with profit, profit >= 0,
+// find the maximum profit obtainable equal or less than the threshold
+// O(distinct_value_cnt * th) time
+// O(distinct_value_cnt * th) memory if recover_choices, otherwise O(th)
+// Requires profit_bound_knapsack
+pair<int, vector<bool>>
+profit_bounded_zero_one_knapsack_with_duplicates(int th, const vector<int> &items, bool recover_choices = false){
+	int n = (int)items.size();
+	vector<array<int, 2>> items2(th + 1);
+	for(auto x = 0; x <= th; ++ x) items2[x][0] = x;
+	for(auto x: items) if(x <= th) ++ items2[x][1];
+	items2.erase(remove_if(items2.begin(), items2.end(), [&](const auto &v){ return !v[1]; }), items2.end());
+	auto [mxprofit, counts2] = profit_bounded_knapsack(th, items2, recover_choices);
+	if(!recover_choices) return {mxprofit, {}};
+	vector<int> counts(th + 1);
+	for(auto i = 0; i < (int)items2.size(); ++ i) counts[items2[i][0]] = counts2[i];
+	vector<bool> picked(n);
+	for(auto i = 0; i < n; ++ i) if(items[i] <= th && counts[items[i]]) -- counts[items[i]], picked[i] = true;
+	return {mxprofit, picked};
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>profit_bounded_zero_one_knapsack_with_duplicates</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

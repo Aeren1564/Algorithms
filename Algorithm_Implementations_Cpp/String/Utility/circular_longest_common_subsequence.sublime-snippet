@@ -1,0 +1,51 @@
+<snippet>
+	<content><![CDATA[
+// O(n * m)
+template<class Char_Type>
+vector<Char_Type> circular_longest_common_subsequence(vector<Char_Type> s, const vector<Char_Type> &t){
+	int n = (int)s.size(), m = (int)t.size();
+	s.insert(s.end(), s.begin(), s.end());
+	vector dp(2 * n + 1, vector<int>(m + 1, -1));
+	dp[0][0] = 0;
+	vector prev(2 * n + 1, vector<int>(m + 1, -1));
+	static const vector<array<int, 3>> dr{{0, 1, 0}, {1, 1, 1}, {1, 0, 0}};
+	for(auto i = 0; i <= 2 * n; ++ i) for(auto j = 0; j <= m; ++ j) if(i || j){
+		for(auto d = 0; d < 3; ++ d){
+			auto [di, dj, w] = dr[d];
+			int pi = i - di, pj = j - dj;
+			if(0 <= pi && 0 <= pj && (d != 1 || s[pi] == t[pj]) && dp[i][j] < dp[pi][pj] + w){
+				dp[i][j] = dp[pi][pj] + w;
+				prev[i][j] = d;
+			}
+		}
+	}
+	vector<Char_Type> res;
+	for(auto r = 0; r < n; ++ r){
+		vector<Char_Type> cur_res;
+		for(auto i = r + n, j = m; i && j; ){
+			auto [di, dj, w] = dr[prev[i][j]];
+			int pi = i - di, pj = j - dj;
+			if(w) cur_res.push_back(s[pi]);
+			i = pi, j = pj;
+		}
+		if((int)res.size() < (int)cur_res.size()) swap(res, cur_res);
+		for(auto c = 1; c <= m; ++ c) if(prev[r + 1][c] == 1){
+			prev[r + 1][c] = 0;
+			for(auto i = r + 2, j = c; i <= 2 * n && j <= m; ++ i){
+				if(prev[i][j] == 2) prev[i][j] = 0;
+				else{
+					++ j;
+					while(j <= m && !prev[i][j]) ++ j;
+					if(j <= m) prev[i][j] = 0;
+				}
+			}
+		}
+	}
+	return res;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>circular_longest_common_subsequence</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

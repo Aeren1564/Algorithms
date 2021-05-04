@@ -1,0 +1,31 @@
+<snippet>
+	<content><![CDATA[
+// Recurrence relation of form dp[i] = min/max{j in [0, i)} (dp[j] + cost(j, i))
+// dp[j][i] must be a Monge array ( if one interval contains the other, it's better to resolve them )
+// O(n log n)
+template<bool GET_MAX = true>
+vector<long long> monotone_queue_dp(int n, long long init, auto cost){
+	vector<long long> dp(n, init);
+	auto cross = [&](int i, int j){
+		int l = j, r = n;
+		while(r - l > 1){
+			int mid = l + r >> 1;
+			(GET_MAX ? dp[i] + cost(i, mid) >= dp[j] + cost(j, mid) : dp[i] + cost(i, mid) <= dp[j] + cost(j, mid)) ? l = mid : r = mid;
+		}
+		return l;
+	};
+	deque<int> q{0};
+	for(auto i = 1; i < n; ++ i){
+		while(int(q.size()) > 1 && cross(*q.begin(), *next(q.begin())) < i) q.pop_front();
+		dp[i] = dp[q.front()] + cost(q.front(), i);
+		while(int(q.size()) > 1 && cross(*next(q.rbegin()), *q.rbegin()) >= cross(*q.rbegin(), i)) q.pop_back();
+		q.push_back(i);
+	}
+	return dp;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>monotone_queue_dp</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

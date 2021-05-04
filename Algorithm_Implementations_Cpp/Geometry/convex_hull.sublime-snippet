@@ -1,0 +1,88 @@
+<snippet>
+	<content><![CDATA[
+template<class T, int type = 0>
+struct convex_hull: pair<vector<point<T>>, vector<point<T>>>{ // (Lower, Upper) type {0: both, 1: lower, 2: upper}
+	using pair<vector<point<T>>, vector<point<T>>>::first;
+	using pair<vector<point<T>>, vector<point<T>>>::second;
+	convex_hull(vector<point<T>> arr = {}, bool is_sorted = false){
+		if(!is_sorted) sort(arr.begin(), arr.end()), arr.erase(unique(arr.begin(), arr.end()), arr.end());;
+#define ADDP(C, cmp) while((int)C.size() > 1 && ori(C[(int)C.size() - 2], p, C.back()) cmp 0) C.pop_back(); C.push_back(p);
+		for(auto &p: arr){
+			if(type < 2){ ADDP(first, >=) }
+			if(!(type & 1)){ ADDP(second, <=) }
+		}
+		reverse(second.begin(), second.end());
+	}
+	vector<point<T>> get_hull() const{
+		if(type) return type == 1 ? first : second;
+		if((int)first.size() <= 1) return first;
+		vector<point<T>> res(first);
+		res.insert(res.end(), ++ second.begin(), -- second.end());
+		return res;
+	}
+	int min_element(const point<T> &p) const{
+		assert(p.y >= 0 && !first.empty());
+		int low = 0, high = (int)first.size();
+		while(high - low >= 3){
+			int mid = low + (high - low >> 1);
+			p * first[mid - 1] >= p * first[mid] ? low = mid - 1 : high = mid;
+		}
+		int res = low;
+		for(auto i = low + 1; i < high; i ++) if(p * first[res] > p * first[i]) res = i;
+		return res;
+	}
+	int max_element(const point<T> &p) const{
+		assert(p.y >= 0 && !second.empty());
+		int low = 0, high = (int)second.size();
+		while(high - low >= 3){
+			int mid = low + (high - low >> 1);
+			p * second[mid - 1] <= p * second[mid] ? low = mid - 1 : high = mid;
+		}
+		int res = low;
+		for(auto i = low + 1; i < high; ++ i) if(p * second[res] < p * second[i]) res = i;
+		return res;
+	}
+	vector<point<T>> linearize() const{
+		if(type == 1) return first;
+		if(type == 2){ vector<point<T>> res(second); reverse(res.begin(), res.end()); return res; }
+		if((int)first.size() <= 1) return first;
+		vector<point<T>> res;
+		res.reserve((int)first.size() + (int)second.size());
+		merge(first.begin(), first.end(), ++ second.rbegin(), -- second.rend(), back_inserter(res));
+		return res;
+	}
+	convex_hull operator^(const convex_hull &otr) const{ // Convex Hull Merge
+		vector<point<T>> temp, A = linearize(), B = otr.linearize();
+		temp.reserve((int)A.size() + (int)B.size());
+		merge(A.begin(), A.end(), B.begin(), B.end(), back_inserter(temp));
+		return {temp, true};
+	}
+	pair<vector<point<T>>, vector<point<T>>> get_boundary() const{
+		vector<point<T>> L(first), R(second);
+		for(auto i = 1; i < (int)first.size(); ++ i) L[i] -= L[0];
+		for(auto i = 1; i < (int)second.size(); ++ i) R[i] -= R[0];
+		return {L, R};
+	}
+	convex_hull operator+(const convex_hull &otr) const{ // Minkowski Sum
+		assert(type == otr.type);
+		compare_by_angle<point<T>> cmp;
+		convex_hull res;
+		pair<vector<point<T>>, vector<point<T>>> A(this->get_boudnary()), B(otr.get_boudnary());
+#define PROCESS(COND, X) \
+if(COND && !A.X.empty() && !B.X.empty()){ \
+	res.X.reserve((int)A.X.size() + (int)B.X.size()); \
+	res.X.push_back(A.X.front() + B.X.front()); \
+	merge(A.X.begin() + 1, A.X.end(), B.X.begin() + 1, B.X.end(), back_inserter(res.X)); \
+	for(auto i = 1; i < (int)res.X.size(); ++ i) res.X[i] += res.X[i - 1]; \
+}
+		PROCESS(type < 2, first)
+		PROCESS(!(type & 1), second)
+		return res;
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>convex_hull</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

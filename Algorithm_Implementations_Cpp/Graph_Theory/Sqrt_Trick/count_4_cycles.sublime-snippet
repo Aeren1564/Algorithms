@@ -1,0 +1,28 @@
+<snippet>
+	<content><![CDATA[
+// O(V + E sqrt(E) + th) for graphs without loops or multiedges
+long long count_4_cycles(int n, const vector<array<int, 2>> &edges){
+	vector<int> deg(n), order(n), pos(n);
+	for(auto [u, v]: edges) ++ deg[u], ++ deg[v];
+	iota(order.begin(), order.end(), 0);
+	sort(order.begin(), order.end(), [&](int u, int v){ return deg[u] > deg[v]; });
+	for(auto i = 0; i < n; ++ i) pos[order[i]] = i;
+	vector<vector<int>> adj(n);
+	for(auto i = 0; i < (int)edges.size(); ++ i){
+		int u = pos[edges[i][0]], v = pos[edges[i][1]];
+		adj[u].push_back(v), adj[v].push_back(u);
+	}
+	long long res = 0;
+	vector<int> cnt(n);
+	for(auto u = 0; u < n; ++ u){
+		for(auto v: adj[u]) if(u < v) for(auto w: adj[v]) if(u < w) cnt[w] = 0;
+		for(auto v: adj[u]) if(u < v) for(auto w: adj[v]) if(u < w) res += cnt[w] ++;
+	}
+	return res;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>count_4_cycles</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

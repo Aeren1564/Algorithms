@@ -1,0 +1,30 @@
+<snippet>
+	<content><![CDATA[
+// O(|V| + |E| log |V|)
+template<class T>
+vector<array<int, 2>> complement_spanning_forest(const graph<T> &g){
+	int n = g.n;
+	auto adj = g.get_adjacency_list();
+	for(auto &a: adj) sort(a.begin(), a.end());
+	set<int> alive;
+	for(auto u = 0; u < n; ++ u) alive.insert(u);
+	vector<array<int, 2>> res;
+	while(!alive.empty()){
+		int u = *alive.begin(); alive.erase(alive.begin());
+		deque<int> dq{u};
+		while(!dq.empty()){
+			int v = dq.front(); dq.pop_front();
+			for(auto it = alive.begin(); it != alive.end(); ){
+				if(auto it2 = lower_bound(adj[v].begin(), adj[v].end(), *it); it2 != adj[u].end() && *it2 == *it) ++ it;
+				else dq.push_back(*it), res.push_back({u, *it}), it = alive.erase(it);
+			}
+		}
+	}
+	return res;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>complement_spanning_forest</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

@@ -1,0 +1,101 @@
+<snippet>
+	<content><![CDATA[
+template<class T>
+struct flow_network{
+	int n;
+	vector<vector<int>> adj;
+	struct edge{
+		int from, to;
+		T capacity, flow;
+	};
+	vector<edge> edges;
+	T flow = 0;
+	flow_network(int n): n(n), adj(n){ }
+	void clear_flow(){
+		for(auto &e: edges) e.flow = 0;
+		flow = 0;
+	}
+	int insert(int from, int to, T forward_cap, T backward_cap){
+		int ind = (int)edges.size();
+		adj[from].push_back(ind);
+		edges.push_back({from, to, forward_cap, 0});
+		adj[to].push_back(ind + 1);
+		edges.push_back({to, from, backward_cap, 0});
+		return ind;
+	}
+	void add_flow(int i, T f){
+		edges[i].flow += f;
+		edges[i ^ 1].flow -= f;
+	}
+};
+template<class T>
+struct dinic{
+	static constexpr T eps = (T)1e-9, inf = numeric_limits<T>::max();
+	flow_network<T> &F;
+	dinic(flow_network<T> &F): F(F), ptr(F.n), level(F.n), q(F.n){ }
+	vector<int> ptr, level, q;
+	int s = -1, t = -1;
+	bool bfs(){
+		fill(level.begin(), level.end(), -1);
+		q[0] = t;
+		level[t] = 0;
+		int beg = 0, end = 1;
+		while(beg < end){
+			int i = q[beg ++];
+			for(auto ind: F.adj[i]){
+				auto &e = F.edges[ind];
+				auto &re = F.edges[ind ^ 1];
+				if(re.capacity - re.flow > eps && level[e.to] == -1){
+					level[e.to] = level[i] + 1;
+					if(e.to == s) return true;
+					q[end ++] = e.to;
+				}
+			}
+		}
+		return false;
+	}
+	T dfs(int u, T w){
+		if(u == t) return w;
+		int &j = ptr[u];
+		while(j >= 0){
+			int ind = F.adj[u][j];
+			auto &e = F.edges[ind];
+			if(e.capacity - e.flow > eps && level[e.to] == level[u] - 1){
+				T flow = dfs(e.to, min(e.capacity - e.flow, w));
+				if(flow > eps){
+					F.add_flow(ind, flow);
+					return flow;
+				}
+			}
+			-- j;
+		}
+		return 0;
+	}
+	T max_flow(int s, int t){ // find a maximum s-t flow, O(V^2 E) ( O(E min(V^2/3, E^1/2)) for unit network )
+		this->s = s, this->t = t;
+		while(bfs()){
+			for(auto i = 0; i < F.n; ++ i) ptr[i] = (int)F.adj[i].size() - 1;
+			T sum = 0;
+			while(true){
+				T add = dfs(s, inf);
+				if(add <= eps) break;
+				sum += add;
+			}
+			if(sum <= eps) break;
+			F.flow += sum;
+		}
+		return F.flow;
+	}
+	pair<T, vector<bool>> min_cut(int s, int t){ // find a minimum s-t cut
+		T cut = max_flow(s, t);
+		vector<bool> res(F.n);
+		for(auto i = 0; i < F.n; ++ i) res[i] = level[i] != -1;
+		return {cut, res};
+	} // res: booliean value of whether it belongs to S
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>dinic_maxflow</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

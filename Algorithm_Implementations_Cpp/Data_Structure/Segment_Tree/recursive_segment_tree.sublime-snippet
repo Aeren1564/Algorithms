@@ -1,0 +1,82 @@
+<snippet>
+	<content><![CDATA[
+template<class T, class U, class F1, class F2, class F3, class F4>
+struct recursive_segment_tree{
+	int n;
+	vector<T> data;
+	vector<U> updates;
+	F1 TT; // monoid operation (always adjacent)
+	T T_id; // monoid identity
+	F2 UU; // semigroup operation (superset, subset)
+	F3 U_init; // semigroup default element for the interval [l, r)
+	F4 UT; // action of U on T (superset, subset)
+	recursive_segment_tree(int n, F1 TT, T T_id, F2 UU, F3 U_init, F4 UT): recursive_segment_tree(vector<T>(n, T_id), TT, T_id, UU, U_init, UT){ }
+	recursive_segment_tree(int n, T init, F1 TT, T T_id, F2 UU, F3 U_init, F4 UT): recursive_segment_tree(vector<T>(n, init), TT, T_id, UU, U_init, UT){ }
+	recursive_segment_tree(const vector<T> &a, F1 TT, T T_id, F2 UU, F3 U_init, F4 UT): n((int)a.size()), data(n << 1, T_id), updates(n << 1), TT(TT), T_id(T_id), UU(UU), U_init(U_init), UT(UT){
+		build(a, 0, 0, n);
+	}
+	void build(const vector<T> &a, int u, int l, int r){
+		if(l + 1 == r) data[u] = a[l], updates[u] = U_init(l, r);
+		else{
+			int m = l + (r - l >> 1), v = u + 1, w = u + (m - l << 1);
+			build(a, v, l, m), build(a, w, m, r);
+			data[u] = TT(data[v], data[w]), updates[u] = U_init(l, r);
+		}
+	}
+	void push(int u, int l, int r){ // push the internal node u
+		int m = l + (r - l >> 1), v = u + 1, w = u + (m - l << 1);
+		data[v] = UT(updates[u], data[v]);
+		updates[v] = UU(updates[u], updates[v]);
+		data[w] = UT(updates[u], data[w]);
+		updates[w] = UU(updates[u], updates[w]);
+		updates[u] = U_init(l, r);
+	}
+	void refresh(int u, int l, int r){
+		data[u] = UT(updates[u], TT(data[u + 1], data[u + (r - l >> 1 << 1)]));
+	}
+	void update(int ql, int qr, U x){ // Apply x to values at [ql, qr)
+		auto recurse = [&](auto recurse, int u, int l, int r)->void{
+			if(qr <= l || r <= ql) return;
+			if(ql <= l && r <= qr){
+				data[u] = UT(x, data[u]), updates[u] = UU(x, updates[u]);
+				return;
+			}
+			push(u, l, r);
+			int m = l + (r - l >> 1);
+			recurse(recurse, u + 1, l, m), recurse(recurse, u + (m - l << 1), m, r);
+			refresh(u, l, r);
+		};
+		recurse(recurse, 0, 0, n);
+	}
+	T query(int ql, int qr){ // Get the query result for [ql, qr)
+		auto recurse = [&](auto recurse, int u, int l, int r)->T{
+			if(qr <= l || r <= ql) return T_id;
+			if(ql <= l && r <= qr) return data[u];
+			push(u, l, r);
+			int m = l + (r - l >> 1);
+			return TT(recurse(recurse, u + 1, l, m), recurse(recurse, u + (m - l << 1), m, r));
+		};
+		return recurse(recurse, 0, 0, n);
+	}
+	int max_pref(int ql, auto f){
+		T pref = T_id;
+		auto recurse = [&](auto recurse, int u, int l, int r)->int{
+			if(r <= ql) return -1;
+			if(ql <= l && f(TT(pref, data[u]))){
+				pref = TT(pref, data[u]);
+				return -1;
+			}
+			if(r - l == 1) return r;
+			push(u, l, r);
+			int m = l + (r - l >> 1), p = recurse(u + 1, l, m);
+			return ~p ? p : recurse(u + (m - l << 1), m, r);
+		};
+		return recurse(recurse, 0, 0, n);
+	} // f(sum[l, r)) is T, T, ..., T, F, F, ..., F, returns max r with T
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>recursive_segment_tree</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

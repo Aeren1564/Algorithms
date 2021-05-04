@@ -1,0 +1,34 @@
+<snippet>
+	<content><![CDATA[
+// from https://old.yosupo.jp/submission/38019
+// Requires persistent_array
+struct persistent_disjoint_set{
+	explicit persistent_disjoint_set(persistent_array<int> par): p{move(par)}{ }
+	persistent_disjoint_set(): p{}{ }
+	persistent_disjoint_set(const persistent_disjoint_set &) = default;
+	persistent_disjoint_set(persistent_disjoint_set &&) = default;
+	persistent_disjoint_set &operator=(const persistent_disjoint_set &) = default;
+	persistent_disjoint_set &operator=(persistent_disjoint_set &&) = default;
+	persistent_disjoint_set merge(int x, int y) const{
+		x = root(x), y = root(y);
+		if(x == y) return *this;
+		// Ensure x is bigger than y.
+		int x_size = -p[x].value_or(-1), y_size = -p[y].value_or(-1);
+		if(x_size < y_size) swap(x, y), swap(x_size, y_size);
+		return persistent_disjoint_set(p.set(x, -(x_size + y_size)).set(y, x));
+	}
+	int root(int x) const{
+		const optional<int> &par = p[x];
+		return !par || *par < 0 ? x : root(*par);
+	}
+	bool share(int x, int y) const { return root(x) == root(y); }
+	int size(int x) const{ return -(p[root(x)].value_or(-1)); }
+private:
+	persistent_array<int> p;
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>persistent_disjoint_set</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

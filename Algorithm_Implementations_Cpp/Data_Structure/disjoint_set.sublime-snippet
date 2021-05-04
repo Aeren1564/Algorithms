@@ -1,0 +1,28 @@
+<snippet>
+	<content><![CDATA[
+struct disjoint_set{
+	vector<int> p;
+	disjoint_set(int n): p(n, -1){ }
+	bool share(int a, int b){ return root(a) == root(b); }
+	int size(int u){ return -p[root(u)]; }
+	int root(int u){ return p[u] < 0 ? u : p[u] = root(p[u]); } // O(alpha(n))
+	bool merge(int u, int v){
+		u = root(u), v = root(v);
+		if(u == v) return false;
+		if(p[u] > p[v]) swap(u, v);
+		p[u] += p[v], p[v] = u;
+		return true;
+	}
+	vector<vector<int>> group_up(){
+		vector<vector<int>> g((int)p.size());
+		for(auto i = 0; i < (int)p.size(); ++ i) g[root(i)].push_back(i);
+		g.erase(remove_if(g.begin(), g.end(), [&](auto &s){ return s.empty(); }), g.end());
+		return g;
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>disjoint_set</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

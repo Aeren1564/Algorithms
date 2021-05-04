@@ -1,0 +1,66 @@
+<snippet>
+	<content><![CDATA[
+template<class V> // V must be an integral type where its bitmask represents a vector
+struct Z2_basis_small{ // Keep track of a set of basis of the subspace spanned by the inserted vectors
+	int count = 0;
+	vector<V> elements;
+	vector<int> trail; // trailing coordinates of each elements
+	struct modifier_type{
+		int type; // 0: row[to] ^= row[from], 2: insert row[from] into row[to]
+		int from, to;
+	};
+	vector<modifier_type> log;
+	int rank(){
+		return (int)elements.size();
+	}
+	// O(dim / w)
+	V reduce(V v){
+		for(auto i = 0; i < rank(); ++ i) if((v ^ elements[i]) < v){
+			v ^= elements[i];
+			log.push_back({0, i, count});
+		}
+		return v;
+	}
+	// insert a vector while maintaining the lower triangular form
+	// O(rank * dim / w)
+	bool insert(V v){
+		v = reduce(v);
+		if(!v) return ++ count, false;
+		int p = __lg(v);
+		for(auto i = 0; i < rank(); ++ i) if(elements[i] & (V)1 << p){
+			elements[i] ^= v;
+			log.push_back({0, count, i});
+		}
+		int t = lower_bound(trail.begin(), trail.end(), p) - trail.begin();
+		trail.insert(trail.begin() + t, p);
+		elements.insert(elements.begin() + t, v);
+		log.push_back({2, count, t});
+		return ++ count, true;
+	}
+	// returns {lexicographically_smallest_sol, sol_basis_vector_1, ..., sol_basis_vector_k}
+	// O(rank * dim / w)
+	template<bool find_solutions = true>
+	optional<vector<V>> solve(vector<bool> b){
+		assert(count == (int)b.size());
+		for(auto &m: log){
+			if(m.type == 0) b[m.to] ^= b[m.from];
+			else rotate(b.begin() + m.to, b.begin() + m.from, b.begin() + m.from + 1);
+		}
+		for(auto i = rank(); i < count; ++ i) if(b[i]) return {};
+		vector<V> res({0});
+		V is_free = -1;
+		for(auto i = 0; i < rank(); ++ i) res[0] |= (V)b[i] << trail[i], is_free ^= (V)1 << trail[i];
+		if(find_solutions) for(auto j = 0; j <= __lg(numeric_limits<V>::max()); ++ j) if(is_free & (V)1 << j){
+			V v = (V)1 << j;
+			for(auto i = rank() - 1; i >= 0 && trail[i] > j; -- i) v |= elements[i] & (V)1 << trail[i];
+			res.push_back(v);
+		}
+		return res;
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>Z2_basis_small</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

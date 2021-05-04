@@ -1,0 +1,55 @@
+<snippet>
+	<content><![CDATA[
+template<class T>
+struct graph{
+	struct edge{
+		int from, to;
+		T cost;
+	};
+	int n;
+	vector<edge> edges;
+	vector<vector<int>> adj;
+	function<bool(int)> ignore;
+	graph(int n): n(n), adj(n){ }
+	int link(int u, int v, T w = {}){ // insert an undirected edge
+		int id = (int)edges.size();
+		adj[u].push_back(id), adj[v].push_back(id), edges.push_back({u, v, w});
+		return id;
+	}
+	int orient(int u, int v, T w = {}){ // insert a directed edge
+		int id = (int)edges.size();
+		adj[u].push_back(id), edges.push_back({u, v, w});
+		return id;
+	}
+	graph transposed() const{ // the transpose of the directed graph
+		graph res(n);
+		for(auto &e: edges) res.orient(e.to, e.from, e.cost);
+		res.ignore = ignore;
+		return res;
+	}
+	int degree(int u) const{ // the degree (outdegree if directed) of u (without the ignoration rule)
+		return (int)adj[u].size();
+	}
+	vector<vector<int>> get_adjacency_list() const{
+		vector<vector<int>> res(n);
+		for(auto u = 0; u < n; ++ u) for(auto id: adj[u]){
+			if(ignore && ignore(id)) continue;
+			auto &e = edges[id];
+			int v = u ^ e.from ^ e.to;
+			res[u].push_back(v);
+		}
+		return res;
+	}
+	void set_ignoration_rule(const function<bool(int)> &f){
+		ignore = f;
+	}
+	void reset_ignoration_rule(){
+		ignore = nullptr;
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>graph</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

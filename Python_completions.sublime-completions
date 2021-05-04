@@ -1,0 +1,7 @@
+{
+    "scope":"source.python",
+    "completions":
+    [
+        { "trigger": "io", "contents": "import sys\n\ninp = [int(x) for x in sys.stdin.read().split()]; ii = 0\n" },
+    ]
+}

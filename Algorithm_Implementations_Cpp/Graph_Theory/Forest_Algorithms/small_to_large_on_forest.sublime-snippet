@@ -1,0 +1,73 @@
+<snippet>
+	<content><![CDATA[
+// O(log n) applications of insert() and erase(), O(n) applications of answer()
+// Requires graph
+template<class T>
+struct small_to_large_on_forest{
+	int n;
+	graph<T> g;
+	vector<int> roots, sz, order, pos, end;
+	small_to_large_on_forest(const graph<T> &g, vector<int> roots = {}): n(g.n), g(g), sz(n, 1), pos(n, -1), end(n, -1){
+		function<void(int, int)> dfs = [&](int u, int pe){
+			pos[u] = (int)order.size();
+			order.push_back(u);
+			for(auto id: g.adj[u]){
+				if(id == pe || g.ignore && g.ignore(id)) continue;
+				auto &e = g.edges[id];
+				int v = u ^ e.from ^ e.to;
+				dfs(v, id);
+				sz[u] += sz[v];
+			}
+			end[u] = (int)order.size();
+		};
+		if(roots.empty()){
+			for(auto u = 0; u < n; ++ u) if(!~pos[u]){
+				roots.push_back(u);
+				dfs(u, -1);
+			}
+		}
+		else{
+			this->roots = roots;
+			for(auto u: roots) assert(!~pos[u]), dfs(u, -1);
+		}
+	}
+	void solve(int root, function<void(int)> insert, function<void(int)> erase, function<void(int)> answer){
+		function<void(int, int, bool)> dfs = [&](int u, int pe, bool keep){
+			int hv = -1, hid = -1;
+			for(auto id: g.adj[u]){
+				if(id == pe || g.ignore && g.ignore(id)) continue;
+				auto &e = g.edges[id];
+				int v = u ^ e.from ^ e.to;
+				if(!~hv || sz[hv] < sz[v]) hv = v, hid = id;
+			}
+			for(auto id: g.adj[u]){
+				if(id == pe || id == hid || g.ignore && g.ignore(id)) continue;
+				auto &e = g.edges[id];
+				int v = u ^ e.from ^ e.to;
+				dfs(v, id, false);
+			}
+			if(~hid) dfs(hv, hid, true);
+			for(auto id: g.adj[u]){
+				if(id == pe || id == hid || g.ignore && g.ignore(id)) continue;
+				auto &e = g.edges[id];
+				int v = u ^ e.from ^ e.to;
+				for(auto i = pos[v]; i < end[v]; ++ i) insert(order[i]);
+			}
+			insert(u);
+			answer(u);
+			if(!keep){
+				for(auto i = pos[u]; i < end[u]; ++ i) erase(order[i]);
+			}
+		};
+		dfs(root, -1, false);
+	}
+	void solve_all(function<void(int)> insert, function<void(int)> erase, function<void(int)> answer){
+		for(auto r: roots) solve(r, insert, erase, answer);
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>small_to_large_on_forest</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

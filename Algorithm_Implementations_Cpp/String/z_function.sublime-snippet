@@ -1,0 +1,24 @@
+<snippet>
+	<content><![CDATA[
+// z[i]: largest prefix(suffix if rev) starting(ending if rev) at i
+// that is also a proper prefix(suffix if rev)
+// O(n)
+template<class Char_Type>
+vector<int> z_function(vector<Char_Type> s, bool rev = false){
+	if(rev) reverse(s.begin(), s.end());
+	int n = (int)s.size();
+	vector<int> z(n);
+	for(auto i = 1, j = 0; i < n; ++ i){
+		if(i < j + z[j]) z[i] = min(j + z[j] - i, z[i - j]);
+		while(i + z[i] < n && s[z[i]] == s[i + z[i]]) ++ z[i];
+		if(i + z[i] > j + z[j]) j = i;
+	}
+	if(rev) reverse(z.begin(), z.end());
+	return z;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>z_function</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

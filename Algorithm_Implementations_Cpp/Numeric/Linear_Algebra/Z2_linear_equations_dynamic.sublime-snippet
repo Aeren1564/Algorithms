@@ -1,0 +1,43 @@
+<snippet>
+	<content><![CDATA[
+int solve_linear_equations(vector<vector<int>> A, vector<int> &x, vector<int> b){
+	int n = (int)A.size(), m = (int)A[0].size(), rank = 0, br;
+	vector<int> col(m);
+	iota(col.begin(), col.end(), 0);
+	for(auto i = 0; i < n; ++ i){
+		for(br = i; br < n; ++ br) if(any_of(A[br].begin(), A[br].end(), [&](int x){ return x; })) break;
+		if(br == n){
+			for(auto j = i; j < n; ++ j) if(b[j]) return -1;
+			break;
+		}
+		int bc = i;
+		for(; !A[br][bc]; ++ bc);
+		swap(A[i], A[br]);
+		swap(b[i], b[br]);
+		swap(col[i], col[bc]);
+		for(auto j = 0; j < n; ++ j) if(A[j][i] != A[j][bc]){
+			A[j][i] = !A[j][i];
+			A[j][bc] = !A[j][bc];
+		}
+		for(auto j = i + 1; j < n; ++ j) if(A[j][i]){
+			b[j] ^= b[i];
+			for(auto k = 0; k < m; ++ k){
+				A[j][k] ^= A[i][k];
+			}
+		}
+		++ rank;
+	}
+	x = vector<int>(m);
+	for(auto i = rank; i --; ){
+		if (!b[i]) continue;
+		x[col[i]] = 1;
+		for(auto j = 0; j < i; ++ j) b[j] ^= A[j][i];
+	}
+	return rank;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>Z2_linear_equations_dynamic</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

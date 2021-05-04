@@ -1,0 +1,26 @@
+<snippet>
+	<content><![CDATA[
+// Requires matrix
+template<class T, T (*zero)(), T (*one)()>
+T integral_determinant(matrix_base<T, zero, one> M){ // For integers or Zp, O(n^3)
+	assert(M.n == M.m);
+	int n = M.n;
+	T res = 1;
+	for(auto i = 0; i < n; ++ i){
+		for(auto j = i + 1; j < n; ++ j) while(M[j][i]){ // GCD step
+			int t = (int)M[i][i] / (int)M[j][i];
+			if(t) for(auto k = i; k < n; ++ k) M[i][k] -= M[j][k] * t;
+			swap(M[i], M[j]);
+			res *= -1;
+		}
+		res *= M[i][i];
+		if(!res) return 0;
+	}
+	return res;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>integral_determinant</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

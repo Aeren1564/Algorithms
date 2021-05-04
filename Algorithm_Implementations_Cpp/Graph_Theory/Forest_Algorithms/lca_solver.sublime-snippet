@@ -1,0 +1,42 @@
+<snippet>
+	<content><![CDATA[
+// Requires graph and range_minmax_query_solver
+struct lca_solver{
+	int n;
+	vector<int> pos, depth, order, pos_order;
+	range_minmax_query_solver<int> rmq;
+	template<class T>
+	lca_solver(const graph<T> &g, const vector<int> &roots): n(g.n), depth(n), pos(n, -1){
+		int it = 0;
+		auto dfs = [&](auto dfs, int u, int pe)->void{
+			pos[u] = (int)order.size();
+			order.push_back(u), pos_order.push_back(pos[u]);
+			for(auto id: g.adj[u]) if(id != pe){
+				if(g.ignore && g.ignore(id)) continue;
+				auto &e = g.edges[id];
+				int v = u ^ e.from ^ e.to;
+				depth[v] = depth[u] + 1;
+				dfs(dfs, v, id);
+				order.push_back(u), pos_order.push_back(pos[u]);
+			}
+		};
+		for(auto root: roots) if(!~pos[root]) dfs(dfs, root, -1);
+		rmq = {pos_order};
+	}
+	// assumes u and v are on the same component
+	int lca(int u, int v) const{
+		if(u == v) return u;
+		tie(u, v) = minmax(pos[u], pos[v]);
+		return order[rmq.query(u, v)];
+	}
+	// assumes u and v are on the same component
+	int steps(int u, int v, int w = -1) const{
+		return depth[u] + depth[v] - 2 * depth[~w ? w : lca(u, v)];
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>lca_solver</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

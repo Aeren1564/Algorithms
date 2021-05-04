@@ -1,0 +1,25 @@
+<snippet>
+	<content><![CDATA[
+// Requires graph and dinic
+template<class T>
+graph<T> gomory_hu(const graph<T> &g){ // calls max_flow V-1 times
+	int n = g.n;
+	flow_network<T> F(n, 0, 1);
+	for(auto &e: g.edges) F.insert(e.from, e.to, e.cost, e.cost);
+	graph<T> res(n);
+	vector<int> pr(n);
+	for(int i = 1; i < n; ++ i){
+		F.clear_flow(), F.source = i, F.sink = pr[i];
+		dinic<T> D(F);
+		auto [flow, cut] = D.min_cut();
+		for(int j = i + 1; j < n; ++ j) if(cut[j] == cut[i] && pr[j] == pr[i]) pr[j] = i;
+		res.link(i, pr[i], flow);
+	} // can be optimized by compressing components
+	return res; // returns a tree T where for all s!=t, min s-t cut of g equals 
+} // min_{e is in s-t path in T}( (capacity of S_e-T_e cut in G) = (capacity of s-t edge in T) )
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>gomory_hu</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

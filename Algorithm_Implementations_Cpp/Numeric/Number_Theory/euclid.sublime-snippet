@@ -1,0 +1,17 @@
+<snippet>
+	<content><![CDATA[
+// Returns g=gcd(a,b), and x and y store values with ax+by=g
+typedef long long ll;
+ll euclid(ll a, ll b, ll &x, ll &y){
+	if(b){
+		ll d = euclid(b, a % b, y, x);
+		return y -= a / b * x, d;
+	}
+	return x = 1, y = 0, a;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>euclid</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

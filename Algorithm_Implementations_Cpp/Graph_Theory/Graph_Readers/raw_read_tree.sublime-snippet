@@ -1,0 +1,16 @@
+<snippet>
+	<content><![CDATA[
+int n;
+cin >> n;
+vector<vector<int>> adj(n);
+for(auto i = 0; i < n - 1; ++ i){
+	int u, v;
+	cin >> u >> v, -- u, -- v;
+	adj[u].push_back(v), adj[v].push_back(u);
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>raw_read_tree</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

@@ -1,0 +1,36 @@
+<snippet>
+	<content><![CDATA[
+// Requires fenwick_tree and relative_query_solver_offline
+template<class T>
+struct static_sparse_rectangle_counter_offline{
+	int n;
+	vector<T> cmpr;
+	relative_query_solver_offline<1, T> ltk;
+	static_sparse_rectangle_counter_offline(vector<array<T, 2>> points): n((int)points.size()), cmpr(n){
+		sort(points.begin(), points.end());
+		vector<T> Y(n);
+		for(auto i = 0; i < n; ++ i) cmpr[i] = points[i][0], Y[i] = points[i][1];
+		sort(cmpr.begin(), cmpr.end()), cmpr.erase(unique(cmpr.begin(), cmpr.end()), cmpr.end());
+		ltk = {Y};
+	}
+	void count(int i, T xlow, T xhigh, T ylow, T yhigh){ // Count # of points in [xl, xh) X [yl, yh), O(log(n))
+		xlow = lower_bound(cmpr.begin(), cmpr.end(), xlow) - cmpr.begin();
+		xhigh = lower_bound(cmpr.begin(), cmpr.end(), xhigh) - cmpr.begin();
+		ltk.count_less(i << 1, xlow, xhigh, yhigh);
+		ltk.count_less(i << 1 | 1, xlow, xhigh, ylow);
+	}
+	void solve(function<void(int, T)> f){ // f(index, answer)
+		vector<pair<int, T>> temp;
+		ltk.solve([&](int i, T x){ temp.push_back({i, x}); });
+		sort(temp.begin(), temp.end());
+		for(auto t = 0; t < (int)temp.size(); t += 2){
+			f(temp[t].first >> 1, temp[t].second - temp[t + 1].second);
+		}
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>static_sparse_rectangle_counter_offline</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

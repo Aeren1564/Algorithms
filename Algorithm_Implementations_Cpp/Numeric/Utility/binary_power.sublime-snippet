@@ -1,0 +1,16 @@
+<snippet>
+	<content><![CDATA[
+// binary exponentiation
+// O(log e)
+template<class T, class U>
+T binary_power(T b, U e){
+	T res = 1;
+	for(; e; e >>= 1, b *= b) if(e & 1) res *= b;
+	return res;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>binary_power</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

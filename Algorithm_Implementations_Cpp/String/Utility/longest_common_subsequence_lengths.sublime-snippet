@@ -1,0 +1,49 @@
+<snippet>
+	<content><![CDATA[
+// source: http://www.secmem.org/blog/2019/09/12/lcs-with-bitset/
+// bitset optimization of LCS dp
+// res[i]: length of the LCS of s[0:i) and t
+// O(n m / w) time
+// O(n + m * Lim / w) space
+template<class Char_Type, int Lim>
+vector<int> longest_common_subsequence_lengths(const vector<Char_Type> &s, const vector<Char_Type> &t){
+	if(s.empty()) return {0};
+	int n = (int)s.size(), m = (int)t.size(), sz = (m >> 6) + 1;
+	using mask_type = unsigned long long;
+	array<vector<mask_type>, Lim> masks;
+	masks.fill(vector<mask_type>(sz));
+	for(auto j = 0; j < m; ++ j) masks[t[j]][j >> 6] |= 1ull << (j & 63);
+	vector<mask_type> dp(sz);
+	vector<int> res(n + 1);
+	for(auto j = 0; j < m; ++ j) if(s[0] == t[j]){
+		dp[j >> 6] |= 1ull << (j & 63);
+		res[1] = 1;
+		break;
+	}
+	for(auto i = 1; i < n; ++ i){
+		auto &mask = masks[s[i]];
+		mask_type shl_carry = 1, minus_carry = 0;
+		for(auto k = 0; k < sz; k++){
+			mask_type x_k = mask[k] | dp[k];
+			mask_type term_1 = dp[k] << 1 | shl_carry;
+			shl_carry = dp[k] >> 63;
+			auto sub_carry = [](mask_type &x, mask_type y){
+				mask_type tmp = x;
+				return (x = tmp - y) > tmp;
+			};
+			mask_type term_2 = x_k;
+			minus_carry = sub_carry(term_2, minus_carry);
+			minus_carry += sub_carry(term_2, term_1);
+			dp[k] = x_k & (x_k ^ term_2);
+		}
+		dp[m >> 6] &= (1llu << (m & 63)) - 1;
+		res[i + 1] = accumulate(dp.begin(), dp.end(), 0, [&](int sum, auto y){ return sum + __builtin_popcountll(y); });
+	}
+	return res;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>longest_common_subsequence_lengths</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

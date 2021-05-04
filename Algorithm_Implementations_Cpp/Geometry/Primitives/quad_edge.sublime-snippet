@@ -1,0 +1,34 @@
+<snippet>
+	<content><![CDATA[
+// http://www.sccg.sk/~samuelcik/dgs/quad_edge.pdf
+struct quad_edge{
+	int o = -1; // origin of the arc
+	quad_edge *onext, *rot;
+	bool mark = false;
+	quad_edge(){ }
+	quad_edge(int o): o(o){ }
+	int d(){ return sym()->o; } // destination of the arc
+	quad_edge *sym(){ return rot->rot; }
+	quad_edge *oprev(){ return rot->onext->rot; }
+	quad_edge *lnext(){ return sym()->oprev(); }
+};
+quad_edge *make_sphere(int a, int b){
+	array<quad_edge *, 4> q{{new quad_edge{a}, new quad_edge{}, new quad_edge{b}, new quad_edge{}}};
+	for(auto i = 0; i < 4; ++ i) q[i]->onext = q[-i & 3], q[i]->rot = q[i + 1 & 3];
+	return q[0];
+}
+void splice(quad_edge *a, quad_edge *b){
+	swap(a->onext->rot->onext, b->onext->rot->onext);
+	swap(a->onext, b->onext);
+}
+quad_edge *connect(quad_edge *a, quad_edge *b){
+	quad_edge *q = make_sphere(a->d(), b->o);
+	splice(q, a->lnext()), splice(q->sym(), b);
+	return q;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>quad_edge</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

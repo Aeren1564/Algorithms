@@ -1,0 +1,32 @@
+<snippet>
+	<content><![CDATA[
+template<class T>
+vector<int> lexicographical_topological_sort(const graph<T> &g){ // O(V log V + E), returns less than n elem if there's a cycle
+	int n = g.n;
+	vector<int> indeg(n), res;
+	for(int u = 0; u < n; ++ u) for(auto id: g.adj[u]){
+		if(g.ignore && g.ignore(id)) continue;
+		auto &e = g.edges[id];
+		int v = u ^ e.from ^ e.to;
+		++ indeg[v];
+	}
+	priority_queue<int, vector<int>, greater<int>> q;
+	for(int u = 0; u < n; ++ u) if (!indeg[u]) q.push(u);
+	while(!q.empty()){
+		int u = q.top(); q.pop();
+		res.push_back(u);
+		for(auto id: g.adj[u]){
+			if(g.ignore && g.ignore(id)) continue;
+			auto &e = g.edges[id];
+			int v = u ^ e.from ^ e.to;
+			if(!-- indeg[v]) q.push(v);
+		}
+	}
+	return res;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>lexicographical_topological_sort</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

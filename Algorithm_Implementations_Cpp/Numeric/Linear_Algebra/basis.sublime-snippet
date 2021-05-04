@@ -1,0 +1,90 @@
+<snippet>
+	<content><![CDATA[
+template<class T, T (*zero)(), T (*one)()> // Field and its identities, T must support -=, *, -
+struct basis_base{ // Keep track of a set of basis of the subspace spanned by the inserted vectors
+	int dim, count = 0;
+	vector<vector<T>> elements;
+	vector<int> trail; // trailing coordinates of each elements
+	struct modifier_type{
+		int type; // 0: row[to] += row[from] * val, 1: row[to] *= val, 2: insert row[from] into row[to]
+		int from, to;
+		T val;
+	};
+	vector<modifier_type> log;
+	basis_base(int dim): dim(dim){ }
+	basis_base(const vector<vector<T>> &s): dim((int)s[0].size()){ for(auto &v: s) insert(v); }
+	int rank(){ return (int)elements.size(); }
+	// O(rank * dim)
+	vector<T> reduce(vector<T> v){
+		assert((int)v.size() == dim);
+		for(auto i = 0; i < rank(); ++ i) if(v[trail[i]] != zero()){
+			T x = v[trail[i]];
+			for(auto j = 0; j <= trail[i]; ++ j) v[j] -= x * elements[i][j];
+			log.push_back({0, i, count, -x});
+		}
+		return v;
+	}
+	// insert a vector while maintaining the lower triangular form
+	// O(rank * dim)
+	bool insert(vector<T> v){
+		v = reduce(v);
+		int p  = -1;
+		for(auto j = dim - 1; j >= 0; -- j) if(v[j] != zero()){
+			p = j;
+			break;
+		}
+		if(!~p) return ++ count, false;
+		if(v[p] != one()){
+			T inv = one() / v[p];
+			for(auto j = 0; j <= p; ++ j) v[j] *= inv;
+			log.push_back({1, -1, count, inv});
+		}
+		for(auto i = 0; i < rank(); ++ i) if(elements[i][p] != zero()){
+			T x = elements[i][p];
+			for(auto j = 0; j <= p; ++ j) elements[i][j] -= x * v[j];
+			log.push_back({0, count, i, -x});
+		}
+		int t = lower_bound(trail.begin(), trail.end(), p) - trail.begin();
+		trail.insert(trail.begin() + t, p);
+		elements.insert(elements.begin() + t, v);
+		log.push_back({2, count, t, zero()});
+		++ count;
+		return true;
+	}
+	// returns {lexicographically_smallest_sol, sol_basis_vector_1, ..., sol_basis_vector_k}
+	// O(rank * dim)
+	template<bool find_solutions = true>
+	optional<vector<vector<T>>> solve(vector<T> b){
+		assert(count == (int)b.size());
+		for(auto &m: log){
+			if(m.type == 0) b[m.to] += b[m.from] * m.val;
+			else if(m.type == 1) b[m.to] *= m.val;
+			else rotate(b.begin() + m.to, b.begin() + m.from, b.begin() + m.from + 1);
+		}
+		for(auto i = rank(); i < count; ++ i) if(b[i] != zero()) return {};
+		if(!find_solutions) return {{}};
+		vector<vector<T>> res({vector<T>(dim, zero())});
+		vector<bool> is_free(dim, true);
+		for(auto i = 0; i < rank(); ++ i) res[0][trail[i]] = b[i], is_free[trail[i]] = false;
+		for(auto j = 0; j < dim; ++ j) if(is_free[j]){
+			vector<T> v(dim, zero());
+			v[j] = one();
+			for(auto i = rank() - 1; i >= 0 && trail[i] > j; -- i) v[trail[i]] = -elements[i][j];
+			res.push_back(v);
+		}
+		return res;
+	}
+};
+template<class T> T ZERO(){
+	return 0;
+}
+template<class T> T ONE(){
+	return 1;
+}
+template<class T> using basis = basis_base<T, ZERO<T>, ONE<T>>;
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>basis</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

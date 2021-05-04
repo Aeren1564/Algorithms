@@ -1,0 +1,15 @@
+<snippet>
+	<content><![CDATA[
+import sys
+
+inp = [int(x) for x in sys.stdin.read().split()]; ii = 0
+
+ttt = inp[ii]; ii += 1
+for _ in range(ttt):
+	$0
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>tc_init</tabTrigger>
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.python</scope>
+</snippet>

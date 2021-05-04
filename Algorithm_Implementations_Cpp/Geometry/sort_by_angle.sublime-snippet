@@ -1,0 +1,24 @@
+<snippet>
+	<content><![CDATA[
+// Requires point
+template<class P>
+struct compare_by_angle{
+	const P origin;
+	compare_by_angle(const P &origin = P()): origin(origin){ }
+	bool operator()(const P &p, const P &q) const{
+		return ori(origin, p, q) > 0;
+	}
+};
+template<class It, class P>
+void sort_by_angle(It begin, It end, const P &origin){
+	begin = partition(begin, end, [&origin](const decltype(*begin) &point){ return point == origin; });
+	auto pivot = partition(begin, end, [&origin](const decltype(*begin) &point) { return point > origin; });
+	compare_by_angle<P> cmp(origin);
+	sort(begin, pivot, cmp), sort(pivot, end, cmp);
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>sort_by_angle</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

@@ -1,0 +1,45 @@
+<snippet>
+	<content><![CDATA[
+// WARNING: VERY VERY SLOW
+// Reorder N 2D points with max_x - min_x <= X, max_y - min_y <= Y
+// so that sum(abs(xi - x(i+1)) + abs(yi - y(i+1)) is small and process queries on the new order.
+// Requires point, disjoint_set, and rectilinear_minimum_spanning_tree
+struct mo_2d_rectilinear_spanning_tree_ordering{
+	vector<point<int>> points{{0, 0}};
+	vector<int> ind{-1};
+	void insert(int x, int y, int id){
+		points.push_back({x, y}), ind.push_back(id);
+	}
+	// Access each points and execute queries.
+	void solve(auto inc_x, auto dec_x, auto inc_y, auto dec_y, auto process){
+		int n = (int)points.size();
+		vector<vector<int>> adj(n);
+		for(auto [ignore, i, j]: rectilinear_minimum_spanning_tree<int>(points)) adj[i].push_back(j), adj[j].push_back(i);
+		int x = 0, y = 0;
+		auto dfs = [&](auto dfs, int u, int p)->void{
+			for(auto v: adj[u]){
+				if(v != p){
+					auto [qx, qy] = points[v];
+					while(qx < x) dec_x(), -- x;
+					while(y < qy) inc_y(), ++ y;
+					while(x < qx) inc_x(), ++ x;
+					while(qy < y) dec_y(), -- y;
+					process(ind[v]);
+					dfs(dfs, v, u);
+					qx = points[u].x, qy = points[u].y;
+					while(qx < x) dec_x(), -- x;
+					while(y < qy) inc_y(), ++ y;
+					while(x < qx) inc_x(), ++ x;
+					while(qy < y) dec_y(), -- y;
+				}
+			}
+		};
+		dfs(dfs, 0, -1);
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>mo_2d_rectilinear_spanning_tree_ordering</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

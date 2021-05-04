@@ -1,0 +1,5 @@
+{
+    "cmd": ["g++-9", "-std=c++17", "-DLOCAL", "-I/home/aeren/Precompiled_Headers", "-Wno-narrowing", "-Winvalid-pch", "-Wno-unused-result", "-fconcepts", "-g", "-fsanitize=address,undefined", "./${file_name}", "-o", "${file_base_name}"],
+    "working_dir":"$file_path",
+    "selector":"source.cpp"
+}

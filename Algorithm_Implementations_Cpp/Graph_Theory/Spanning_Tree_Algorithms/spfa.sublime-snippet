@@ -1,0 +1,68 @@
+<snippet>
+	<content><![CDATA[
+// Requires graph
+template<class T>
+struct spfa{
+	int n;
+	vector<T> dist;
+	vector<int> pv, pe, was, cnt;
+	vector<bool> inq;
+	spfa(int n){ init(n); }
+	void init(int n){
+		this->n = n;
+		dist.assign(n, numeric_limits<T>::max());
+		pv.assign(n, -1);
+		pe.assign(n, -1);
+		was.assign(n, -1);
+		cnt.assign(n, 0);
+		inq.assign(n, false);
+		attempt = 0;
+	}
+	int attempt;
+	// Returns true if there's a negative cycle
+	// O(|E_C| * |V_C|) where
+	// V_C is the set of vertices reachable from src and
+	// E_C is the set of edges reachable from src
+	template<class U>
+	bool run(const graph<U> &g, const vector<int> &src){
+		assert(n == g.n);
+		++ attempt;
+		deque<int> dq;
+		for(auto u: src){
+			was[u] = attempt;
+			dist[u] = {};
+			cnt[u] = 0;
+			pv[u] = pe[u] = true;
+			dq.push_back(u);
+			inq[u] = true;
+		}
+		while(!dq.empty()){
+			int u = dq.front(); dq.pop_front();
+			inq[u] = false;
+			for(auto id: g.adj[u]){
+				if(g.ignore && g.ignore(id)) continue;
+				auto [u, v, w] = g.edges[id];
+				if(was[v] != attempt || dist[u] + w < dist[v]){
+					if(was[v] != attempt){
+						was[v] = attempt;
+						cnt[v] = 0;
+						inq[v] = false;
+					}
+					dist[v] = dist[u] + w;
+					pv[v] = u, pe[v] = id;
+					if(!inq[v]){
+						dq.push_back(v), inq[v] = true, ++ cnt[v];
+						if(cnt[v] > g.n) return true;
+					}
+				}
+			}
+		}
+		return false;
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>spfa</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

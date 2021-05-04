@@ -1,0 +1,40 @@
+<snippet>
+	<content><![CDATA[
+// Requires graph, dsu, and sparse_table
+template<class T, class Compare = less<>>
+struct static_path_minmax_processor{
+	int n, m;
+	T minf;
+	vector<int> pos;
+	sparse_table<int> rmq;
+	static_path_minmax_processor(const graph<T> &g, Compare cmp = less<>(), const T minf = numeric_limits<T>::min() / 2): n(g.n), m((int)g.edges.size()), minf(minf), pos(n){
+		assert(m < n); // graph must be a forest
+		vector<int> order(m);
+		iota(order.begin(), order.end(), 0);
+		sort(order.rbegin(), order.rend(), [&](int i, int j){ return cmp(g.edges[i].cost, g.edges[j].cost); });
+		vector<list<pair<int, T>>> lines(n);
+		for(auto u = 0; u < g.n; ++ u) lines[u].push_back({u, minf});
+		disjoint_set dsu(n);
+		for(auto id: order){
+			auto [u, v, w] = g.edges[id];
+			u = dsu.root(u), v = dsu.root(v), dsu.merge(u, v);
+			if(dsu.root(u) != u) swap(u, v);
+			lines[u].back().second = w, lines[u].splice(lines[u].end(), lines[v]);
+		}
+		for(auto u = 1; u < n; ++ u) lines[0].splice(lines[0].end(), lines[u]);
+		vector<T> line(n);
+		auto it = lines[0].begin();
+		for(auto i = 0; i < n; ++ i, ++ it) pos[it->first] = i, line[i] = it->second;
+		rmq = {line, [&](int x, int y){ return min(x, y); }, numeric_limits<int>::max() / 2};
+	}
+	T query(int u, int v){ // find the minimum weight along the u-v path, O(1)
+		tie(u, v) = minmax(pos[u], pos[v]); 
+		return rmq.query(u, v); // returns numeric_limits<T>::max() / 2 if no such path
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>static_path_minmax_processor</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

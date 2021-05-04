@@ -1,0 +1,84 @@
+<snippet>
+	<content><![CDATA[
+template<class T, int n, int m, T (*zero)(), T (*one)()> // T must support +=, *=, *
+struct matrix_fixed_base: array<array<T, m>, n>{
+	using C = array<array<T, m>, n>; // container type
+	using C::fill;
+	matrix_fixed_base &operator+=(const matrix_fixed_base &M){
+		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) (*this)[i][j] += M[i][j];
+		return *this;
+	}
+	matrix_fixed_base operator+(const matrix_fixed_base &M) const{
+		matrix_fixed_base res(*this); res += M;
+		return res;
+	}
+	template<int nn, int mm>
+	matrix_fixed_base<T, n, mm, zero, one> operator*(const matrix_fixed_base<T, nn, mm, zero, one> &M) const{
+		assert(m == nn);
+		int l = mm;
+		matrix_fixed_base<T, n, mm, zero, one> res;
+		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) for(auto k = 0; k < l; ++ k) res[i][k] += (*this)[i][j] * M[j][k];
+		return res;
+	}
+	template<int nn, int mm>
+	matrix_fixed_base &operator*=(const matrix_fixed_base<T, nn, mm, zero, one> &M){
+		return *this = *this * M;
+	}
+	matrix_fixed_base &operator*=(T c){
+		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) (*this)[i][j] *= c;
+		return *this;
+	}
+	matrix_fixed_base operator*(T c) const{
+		matrix_fixed_base res(*this); res *= c;
+		return res;
+	}
+	matrix_fixed_base &operator^=(long long e){
+		assert(n == m && e >= 0);
+		matrix_fixed_base res(one());
+		for(; e; *this *= *this, e >>= 1) if(e & 1) res *= *this;
+		return *this = res;
+	}
+	matrix_fixed_base operator^(long long e) const{
+		assert(n == m);
+		matrix_fixed_base res(*this); res ^= e;
+		return res;
+	}
+	matrix_fixed_base<T, m, n, zero, one> transposed() const{
+		matrix_fixed_base<T, m, n, zero, one> res;
+		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) res[j][i] = (*this)[i][j];
+		return res;
+	}
+	matrix_fixed_base &transpose(){
+		return *this = transposed();
+	}
+	vector<T> maps_to(const vector<T> &v) const{
+		assert(m == (int)v.size());
+		vector<T> res(n, zero());
+		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) res[i] += (*this)[i][j] * v[j];
+		return res;
+	}
+	matrix_fixed_base(T init_diagonal = zero(), T init_off_diagonal = zero()){
+		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) (*this)[i][j] = i == j ? init_diagonal : init_off_diagonal;
+	}
+	matrix_fixed_base(const C &arr){
+		copy(arr.begin(), arr.end(), this->begin());
+	}
+};
+template<class T, int n, int m, T (*zero)(), T (*one)()>
+matrix_fixed_base<T, n, m, zero, one> operator*(T c, matrix_fixed_base<T, n, m, zero, one> M){
+	for(auto i = 0; i < M.n; ++ i) for(auto j = 0; j < M.m; ++ j) M[i][j] = c * M[i][j];
+	return M;
+}
+template<class T> T ZERO(){
+	return 0;
+}
+template<class T> T ONE(){
+	return 1;
+}
+template<class T, int n, int m> using matrix_fixed = matrix_fixed_base<T, n, m, ZERO<T>, ONE<T>>;
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>matrix_fixed</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

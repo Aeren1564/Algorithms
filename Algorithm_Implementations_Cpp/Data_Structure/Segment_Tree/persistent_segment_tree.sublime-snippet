@@ -1,0 +1,56 @@
+<snippet>
+	<content><![CDATA[
+template<class T, class Monoid_Operation>
+struct persistent_segment_tree{
+	int n;
+	vector<int> left, right;
+	vector<T> data;
+	Monoid_Operation TT; // monoid operation (always adjacent)
+	T T_id; // monoid identity
+	persistent_segment_tree(int n, Monoid_Operation TT, T T_id): persistent_segment_tree(vector<T>(n, T_id), TT, T_id){ }
+	persistent_segment_tree(int n, T init, Monoid_Operation TT, T T_id): persistent_segment_tree(vector<T>(n, init), TT, T_id){ }
+	persistent_segment_tree(const vector<T> &a, Monoid_Operation TT, T T_id): n((int)a.size()), TT(TT), T_id(T_id){
+		build(a);
+	}
+	int last_state(){
+		return (int)data.size() - 1;
+	}
+	int new_state(int l, int r, T x){
+		left.push_back(l), right.push_back(r), data.push_back(x);
+		return last_state();
+	}
+	int build(const vector<T> &a){
+		auto recurse = [&](int l, int r, auto recurse){
+			if(r - l == 1) return new_state(-1, -1, a[l]);
+			int m = l + (r - l >> 1);
+			int v = recurse(l, m, recurse), w = recurse(m, r, recurse);
+			return new_state(v, w, TT(data[v], data[w]));
+		};
+		return recurse(0, (int)a.size(), recurse);
+	}
+	int set(int u, int p, T x){ // set v[p] = x at state u, O(log n)
+		auto recurse = [&](int u, int l, int r, auto recurse){
+			if(r - l == 1) return new_state(-1, -1, x);
+			int m = l + (r - l >> 1), v = left[u], w = right[u];
+			if(p < m) v = recurse(v, l, m, recurse);
+			else w = recurse(w, m, r, recurse);
+			return new_state(v, w, TT(data[v], data[w]));
+		};
+		return recurse(u, 0, n, recurse);
+	}
+	T query(int u, int ql, int qr){ // find sum{ql<=i<qr}(v[i]) at state u, O(log n)
+		auto recurse = [&](int u, int l, int r, auto recurse){
+			if(qr <= l || r <= ql) return T_id;
+			if(ql <= l && r <= qr) return data[u];
+			int m = l + (r - l >> 1);
+			return TT(recurse(left[u], l, m, recurse), recurse(right[u], m, r, recurse));
+		};
+		return recurse(u, 0, n, recurse);
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>persistent_segment_tree</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

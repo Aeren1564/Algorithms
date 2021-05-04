@@ -1,0 +1,74 @@
+<snippet>
+	<content><![CDATA[
+// Returns {min_cost, parent_vertices} or {0, empty_vector}
+// O(E log V)
+// Requires graph and rollback_disjoint_set
+template<class U, class T>
+optional<pair<U, vector<int>>> minimum_spanning_arborescence(const graph<T> &g, int src){
+	using edge = typename graph<T>::edge;
+	struct node{ /// lazy skew heap node
+		edge key;
+		node *l, *r;
+		U delta;
+		void prop(){
+			key.cost += delta;
+			if(l) l->delta += delta;
+			if(r) r->delta += delta;
+			delta = 0;
+		}
+		edge top() { prop(); return key; }
+	};
+	function<node *(node *, node *)> merge = [&](node *a, node *b){
+		if(!a || !b) return a ?: b;
+		a->prop(), b->prop();
+		if(a->key.cost > b->key.cost) swap(a, b);
+		swap(a->l, (a->r = merge(b, a->r)));
+		return a;
+	};
+	auto pop = [&](node *&a){
+		a->prop(), a = merge(a->l, a->r);
+	};
+	int n = g.n;
+	U cost = {};
+	vector<int> pv(n);
+	rollback_disjoint_set dsu(n);
+	vector<node *> heap(n);
+	for(auto e: g.edges) heap[e.to] = merge(heap[e.to], new node{e});
+	vector<int> seen(n, -1), path(n);
+	seen[src] = src;
+	vector<edge> Q(n), in(n, {-1, -1}), comp;
+	deque<tuple<int, int, vector<edge>>> cycs;
+	for(auto s = 0; s < n; ++ s){
+		int u = s, qi = 0, w;
+		while(seen[u] < 0){
+			if(!heap[u]) return {};
+			edge e = heap[u]->top();
+			heap[u]->delta -= e.cost, pop(heap[u]);
+			Q[qi] = e, path[qi ++] = u, seen[u] = s;
+			cost += e.cost, u = dsu.root(e.from);
+			if(seen[u] == s){ // found cycle, contract
+				node *cyc = 0;
+				int end = qi, time = dsu.time();
+				do cyc = merge(cyc, heap[w = path[-- qi]]);
+				while(dsu.merge(u, w));
+				u = dsu.root(u), heap[u] = cyc, seen[u] = -1;
+				cycs.push_front({u, time, {&Q[qi], &Q[end]}});
+			}
+		}
+		for(auto i = 0; i < qi; ++ i) in[dsu.root(Q[i].to)] = Q[i];
+	}
+	for(auto &[u, t, comp]: cycs){ // restore sol (optional)
+		dsu.reverse_to(t);
+		edge ine = in[u];
+		for(auto &e: comp) in[dsu.root(e.to)] = e;
+		in[dsu.root(ine.to)] = ine;
+	}
+	for(auto u = 0; u < n; ++ u) pv[u] = in[u].from;
+	return {{cost, pv}};
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>minimum_spanning_arborescence</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

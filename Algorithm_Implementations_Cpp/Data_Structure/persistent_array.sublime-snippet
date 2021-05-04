@@ -1,0 +1,53 @@
+<snippet>
+	<content><![CDATA[
+// from https://old.yosupo.jp/submission/38019
+template<class T, int K = 20>
+struct persistent_array{
+	struct Node; // No memory release by default.
+	using NodePtr = Node *; // shared_ptr<Node>;
+	struct Node{
+		optional<T> val;
+		unique_ptr<array<NodePtr, K>> children;
+	};
+	explicit persistent_array(NodePtr root): root{move(root)}{ }
+	persistent_array(): root{}{}
+	persistent_array(const persistent_array &) = default;
+	persistent_array(persistent_array &&) = default;
+	persistent_array &operator=(const persistent_array &) = default;
+	persistent_array &operator=(persistent_array &&) = default;
+	optional<T> operator[](int idx) const{ return do_get(idx, root); }
+	persistent_array<T, K> set(int idx, T val) const{ return persistent_array<T, K>(do_set(idx, val, root)); }
+private:
+	static optional<T> do_get(int idx, const NodePtr &node){
+		if(node == nullptr) return nullopt;
+		if(idx == 0) return node->val;
+		if(node->children == nullptr) return nullopt;
+		const NodePtr &child = (*node->children)[idx % K];
+		if(child == nullptr) return nullopt;
+		return do_get(idx / K, child);
+	}
+	static NodePtr do_set(int idx, T val, const NodePtr &node){
+		NodePtr res{new Node()};
+		if(node != nullptr){
+			res->val = node->val;
+			if(node->children != nullptr){
+				res->children.reset(new array<NodePtr, K>());
+				copy(node->children->begin(), node->children->end(),
+				res->children->begin());
+			}
+		}
+		if(idx == 0) res->val = move(val);
+		else{
+			if(res->children == nullptr) res->children.reset(new array<NodePtr, K>());
+			(*res->children)[idx % K] = do_set(idx / K, move(val), (*res->children)[idx % K]);
+		}
+		return res;
+	}
+	NodePtr root;
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>persistent_array</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

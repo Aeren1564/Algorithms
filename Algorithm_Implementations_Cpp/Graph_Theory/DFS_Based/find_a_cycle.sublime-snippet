@@ -1,0 +1,37 @@
+<snippet>
+	<content><![CDATA[
+template<class T>
+optional<vector<int>> find_a_cycle(const graph<T> &g){
+	int n = g.n;
+	bool found = false;
+	vector<int> cycle, was(n, -1), s;
+	function<void(int, int)> dfs = [&](int u, int pe){
+		for(auto id: g.adj[u]){
+			if(id == pe || g.ignore && g.ignore(id)) continue;
+			auto &e = g.edges[id];
+			int v = u ^ e.from ^ e.to;
+			if(!~was[v]){
+				was[v] = was[u] + 1;
+				s.push_back(id);
+				dfs(v, id);
+				s.pop_back();
+				if(found) return;
+			}
+			else if(was[v] >= 0){
+				found = true;
+				cycle = {s.begin() + was[v], s.end()};
+				return;
+			}
+		}
+		was[u] = -2;
+	};
+	for(auto u = 0; u < n; ++ u) if(!~was[u] && !found) was[u] = 0, dfs(u, -1);
+	if(found) return cycle;
+	else return {};
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>find_a_cycle</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

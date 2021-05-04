@@ -1,0 +1,24 @@
+<snippet>
+	<content><![CDATA[
+template<typename Arr, typename Action>
+void for_each_divisor(const Arr &fact, Action f){
+	long long d = 1;
+	function<void(int)> solve = [&](int i){
+		if(i == int(fact.size())){
+			f(d);
+			return;
+		}
+		solve(i + 1);
+		auto [p, t] = fact[i];
+		long long pd = d;
+		for(int e = 1; e <= t; ++ e) d *= p, solve(i + 1);
+		d = pd;
+	};
+	solve(0);
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>divisor</tabTrigger>
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

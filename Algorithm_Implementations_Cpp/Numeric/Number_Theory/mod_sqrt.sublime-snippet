@@ -1,0 +1,31 @@
+<snippet>
+	<content><![CDATA[
+// Returns sol to x^2=a mod p
+// O(log^2 p) worst case, O(log p) for most p
+// Requires modular
+template<class T>
+optional<T> mod_sqrt(T a){
+	int p = T().mod();
+	if(a == 0) return 0;
+	if((a ^ (p - 1) / 2) != 1) return {};
+	if(p % 4 == 3) return a ^ (p + 1) / 4;
+	// a^(n+3)/8 or 2^(n+3)/8 * 2^(n-1)/4 works if p % 8 == 5
+	int s = p - 1, r = 0, m;
+	while(s % 2 == 0) ++ r, s /= 2;
+	T n = 2;
+	while((n ^ (p - 1) / 2) != p - 1) ++ n;
+	T x = a ^ (s + 1) / 2, b = a ^ s, g = n ^ s;
+	for( ; ; r = m){
+		T t = b;
+		for(m = 0; m < r && t != 1; ++ m) t *= t;
+		if(m == 0) return x;
+		T gs = g ^ 1LL << r - m - 1;
+		g = gs * gs, x = x * gs, b = b * g;
+	}
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>mod_sqrt</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

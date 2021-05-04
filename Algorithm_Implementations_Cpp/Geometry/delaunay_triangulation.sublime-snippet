@@ -1,0 +1,90 @@
+<snippet>
+	<content><![CDATA[
+// T_large must be able to hold O(T^4), can be long long if coord <= 2e4
+// Assumes no duplicate points
+// Returns an empty vector if all of them lies in a line
+// O(n log n)
+// Requires point and quad_edge
+template<class T, class F1, class F2, class T_large = __int128_t>
+bool delaunay_triangulation(const vector<point<T>> &a, F1 process_outer_face, F2 process_triangles){
+	int n = (int)a.size();
+	vector<int> ind(n);
+	iota(ind.begin(), ind.end(), 0);
+	sort(ind.begin(), ind.end(), [&](int i, int j){ return a[i] < a[j]; });
+	assert(unique(ind.begin(), ind.end(), [&](int i, int j){ return a[i] == a[j]; }) == ind.end());
+	if(n < 2) return {};
+	auto in_circle = [&](point<T> p, point<T> a, point<T> b, point<T> c){
+		a -= p, b -= p, c -= p;
+		return ((T_large)a.squared_norm() * (b ^ c) + (T_large)b.squared_norm() * (c ^ a) + (T_large)c.squared_norm() * (a ^ b)) * (doubled_signed_area(a, b, c) > 0 ? 1 : -1) > 0;
+	};
+	auto recurse = [&](int l, int r, auto recurse)->pair<quad_edge *, quad_edge *>{
+		if(r - l <= 3){
+			quad_edge *p = make_sphere(ind[l], ind[l + 1]);
+			if(r - l == 2) return {p, p->sym()};
+			quad_edge *q = make_sphere(ind[l + 1], ind[l + 2]);
+			splice(p->sym(), q);
+			auto side = doubled_signed_area(a[ind[l]], a[ind[l + 1]], a[ind[l + 2]]);
+			quad_edge *c = side ? connect(q, p) : NULL;
+			return {side < 0 ? c->sym() : p, side < 0 ? c : q->sym()};
+		}
+		int m = l + (r - l >> 1);
+		auto [ra, A] = recurse(l, m, recurse);
+		auto [B, rb] = recurse(m, r, recurse);
+		while((doubled_signed_area(a[B->o], a[A->d()], a[A->o]) < 0 && (A = A->lnext())) || (doubled_signed_area(a[A->o], a[B->d()], a[B->o]) > 0 && (B = B->sym()->onext)));
+		quad_edge *base = connect(B->sym(), A);
+		if(A->o == ra->o) ra = base->sym();
+		if(B->o == rb->o) rb = base;
+#define valid(e) (doubled_signed_area(a[e->d()], a[base->d()], a[base->o]) > 0)
+#define DEL(e, init, dir) \
+quad_edge *e = init->dir; \
+if(valid(e)) while(in_circle(a[e->dir->d()], a[base->d()], a[base->o], a[e->d()])){ \
+	quad_edge *t = e->dir; \
+	splice(e, e->oprev()); \
+	splice(e->sym(), e->sym()->oprev()); \
+	delete e->rot->rot->rot, delete e->rot->rot, delete e->rot, delete e; \
+	e = t; \
+}
+		while(true){
+			DEL(LC, base->sym(), onext);
+			DEL(RC, base, oprev());
+			if(!valid(LC) && !valid(RC)) break;
+			if(!valid(LC) || (valid(RC) && in_circle(a[RC->d()], a[RC->o], a[LC->d()], a[LC->o]))) base = connect(RC, base->sym());
+			else base = connect(base->sym(), LC->sym());
+		}
+		return {ra, rb};
+	};
+	auto e = recurse(0, n, recurse).first;
+	vector<quad_edge *> q = {e}, rem; q.reserve(3 * n), rem.reserve(3 * n);
+	while(doubled_signed_area(a[e->onext->d()], a[e->d()], a[e->o]) < 0) e = e->onext;
+	vector<int> face; face.reserve(n);
+	bool colinear = false;
+#define ADD \
+{ \
+	quad_edge *c = e; \
+	face.clear(); \
+	do{ \
+		c->mark = true; \
+		face.push_back(c->o); \
+		q.push_back(c->sym()); \
+		rem.push_back(c); \
+		c = c->lnext(); \
+	}while(c != e); \
+}
+	ADD;
+	process_outer_face(face);
+	for(auto qi = 0; qi < (int)q.size(); ++ qi){
+		if(!(e = q[qi])->mark){
+			ADD;
+			colinear = false;
+			process_triangles(face[0], face[1], face[2]);
+		}
+	}
+	for(auto e: rem) delete e->rot, delete e;
+	return !colinear;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>delaunay_triangulation</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

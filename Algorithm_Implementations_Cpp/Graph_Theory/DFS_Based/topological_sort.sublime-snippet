@@ -1,0 +1,32 @@
+<snippet>
+	<content><![CDATA[
+template<class T>
+vector<int> topological_sort(const graph<T> &g){ // O(V + E), returns less than n elem if there's a cycle
+	int n = g.n;
+	vector<int> indeg(n), res;
+	for(int u = 0; u < n; ++ u) for(auto id: g.adj[u]){
+		if(g.ignore && g.ignore(id)) continue;
+		auto &e = g.edges[id];
+		int v = u ^ e.from ^ e.to;
+		++ indeg[v];
+	}
+	deque<int> dq;
+	for(int u = 0; u < n; ++ u) if (!indeg[u]) dq.push_back(u);
+	while(!dq.empty()){
+		int u = dq.front(); dq.pop_front();
+		res.push_back(u);
+		for(auto id: g.adj[u]){
+			if(g.ignore && g.ignore(id)) continue;
+			auto &e = g.edges[id];
+			int v = u ^ e.from ^ e.to;
+			if(!-- indeg[v]) dq.push_back(v);
+		}
+	}
+	return res;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>topological_sort</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

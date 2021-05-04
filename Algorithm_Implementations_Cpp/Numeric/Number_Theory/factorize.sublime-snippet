@@ -1,0 +1,17 @@
+<snippet>
+	<content><![CDATA[
+vector<pair<long long, int>> factorize(long long x){
+	vector<pair<long long, int>> res;
+	for(long long p = 2; p * p <= x; ++ p) if(x % p == 0){
+		res.push_back({p, 0});
+		while(x % p == 0) ++ res.back().second, x /= p;
+	}
+	if(x > 1) res.push_back({x, 1});
+	return res;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>factorize</tabTrigger>
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope>
+</snippet>

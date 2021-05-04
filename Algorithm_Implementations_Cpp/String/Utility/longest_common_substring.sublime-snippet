@@ -1,0 +1,22 @@
+<snippet>
+	<content><![CDATA[
+// O(n + m)
+// Requires suffix_automaton
+template<class Char_Type, class Adjacency_Type>
+vector<Char_Type> longest_common_substring(const vector<Char_Type> &s, const vector<Char_Type> &t){
+	suffix_automaton<Char_Type, Adjacency_Type> aut;
+	aut.extend(s);
+	int u = 0, len = 0, u_res = 0, len_res = 0;
+	for(auto i = 0; i < (int)t.size(); ++ i){
+		while(u && !aut.next[u][t[i]]) u = aut.link[u], len = aut.len[u];
+		if(aut.next[u][t[i]]) u = aut.next[u][t[i]], ++ len;
+		if(len_res < len) u_res = u, len_res = len;
+	}
+	return {t.begin() + (u_res - len_res + 1), t.begin() + u_res};
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>longest_common_substring</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

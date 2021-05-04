@@ -1,0 +1,68 @@
+<snippet>
+	<content><![CDATA[
+template<int Lim = 26>
+struct trie{
+	int n = 1; // # of active nodes(cnt != 0)
+	vector<array<int, Lim>> next;
+	vector<int> cnt{1};
+	trie(){ next.emplace_back(), next.back().fill(-1); }
+	trie(const vector<array<int, Lim>> next, const vector<int> &cnt): n((int)next.size()), next(next), cnt(cnt){ }
+	int extend(){
+		next.emplace_back();
+		next.back().fill(-1);
+		cnt.push_back(0);
+		return (int)next.size() - 1;
+	}
+	void insert(const string &s, char starting_char = 'a', int u = 0){
+		vector<int> v(s.begin(), s.end());
+		for(auto &x: v) x -= starting_char;
+		insert(v, u);
+	}
+	void insert(const vector<int> &v, int u = 0){
+		if(!cnt[u] ++) ++ n;
+		for(auto c: v){
+			if(!~next[u][c]) next[u][c] = extend();
+			u = next[u][c];
+			if(!cnt[u] ++) ++ n;
+		}
+	}
+	void erase(const string &s, char starting_char = 'a', int u = 0){
+		vector<int> v(s.begin(), s.end());
+		for(auto &x: v) x -= starting_char;
+		erase(v, u);
+	}
+	void erase(const vector<int> &v, int u = 0){
+		assert(cnt[u]);
+		if(!-- cnt[u]) -- n;
+		for(auto c: v){
+			u = next[u][c];
+			assert(~u && cnt[u]);
+			if(!-- cnt[u]) -- n;
+		}
+	}
+	void insert(const trie &tr, int v, int u = 0){ // insert into u a trie rooted at v
+		if(!cnt[u] ++) ++ n;
+		for(int c = 0; c < Lim; ++ c){
+			if(~tr.next[v][c] && tr.cnt[tr.next[v][c]]){
+				if(!~next[u][c]) next[u][c] = extend();
+				insert(tr, next[v][c], next[u][c]);
+			}
+		}
+	}
+	void erase(const trie &tr, int v, int u = 0){ // delete from u a trie rooted at v
+		assert(cnt[u]);
+		if(!-- cnt[u]) -- n;
+		for(int c = 0; c < Lim; ++ c){
+			if(~tr.next[v][c] && tr.cnt[tr.next[v][c]]){
+				assert(~next[u][c]);
+				erase(tr, next[v][c], next[u][c]);
+			}
+		}
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>trie</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

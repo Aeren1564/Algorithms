@@ -1,0 +1,57 @@
+<snippet>
+	<content><![CDATA[
+// Requires random
+vector<array<int, 2>> generate_tree(int n){
+	vector<array<int, 2>> res;
+	for(int u = 1; u < n; ++ u) res.push_back({u, rng() % u});
+	return res;
+}
+vector<array<int, 3>> generate_weighted_tree(int n, int wlow = 1, int whigh = 6){
+	vector<array<int, 3>> res;
+	for(int u = 1; u < n; ++ u) res.push_back({u, rng() % u, randint(wlow, whigh)(rng)});
+	return res;
+}
+vector<array<int, 2>> generate_graph(int n, int m){
+	vector<array<int, 2>> res(m);
+	for(auto &[u, v]: res) u = rng() % n, v = rng() % n;
+	return res;
+}
+vector<array<int, 2>> generate_simple_graph(int n, int m){
+	vector<array<int, 2>> res(m);
+	set<array<int, 2>> s;
+	for(auto &[u, v]: res){
+		do{
+			u = rng() % n, v = rng() % n;
+		}while(u == v || s.count({u, v}) || s.count({v, u}));
+		s.insert({u, v}), s.insert({v, u});
+	}
+	return res;
+}
+vector<array<int, 2>> generate_simply_connected_graph(int n, int m){
+	assert(n - 1 <= m && m <= 1LL * n * (n - 1) / 2);
+	auto res = generate_tree(n);
+	set<array<int, 2>> s;
+	for(auto [u, v]: res) s.insert({u, v}), s.insert({v, u});
+	for(int rep = n - 1; rep < m; ++ rep){
+		int u, v;
+		do{
+			u = rng() % n, v = rng() % n;
+		}while(u == v || s.count({u, v}));
+		s.insert({u, v}), s.insert({v, u});
+		res.push_back({u, v});
+	}
+	return res;
+}
+vector<array<int, 3>> generate_weighted_simply_connected_graph(int n, int m, int wlow = 1, int whigh = 6){
+	assert(n - 1 <= m && m <= 1LL * n * (n - 1) / 2);
+	auto edges = generate_simply_connected_graph(n, m);
+	vector<array<int, 3>> res(m);
+	for(int i = 0; i < m; ++ i) res[i] = {{edges[i][0], edges[i][1], randint(wlow, whigh)(rng)}};
+	return res;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>random_graph_generators</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

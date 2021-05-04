@@ -1,0 +1,140 @@
+<snippet>
+	<content><![CDATA[
+// Requires graph
+template<class T, class Monoid_Operation = plus<>>
+struct skew_binary_lifting{
+	int n = 0;
+	vector<int> pv, depth, lift;
+	vector<T> vertex_weight, weight, lift_weight; // weight: sum of vertex weight + weight of the edge above
+	Monoid_Operation TT;
+	T T_id;
+	void add_root(int u, T x){ // O(1)
+		assert(!~depth[u]);
+		depth[u] = 0, pv[u] = u, lift[u] = u, lift_weight[u] = weight[u] = x;
+	}
+	void add_child(int p, int u, T x){ // O(1)
+		assert(~depth[p] && !~depth[u]);
+		depth[u] = depth[p] + 1, pv[u] = p, weight[u] = x;
+		if(depth[lift[p]] - depth[p] == depth[lift[lift[p]]] - depth[lift[p]]){
+			lift[u] = lift[lift[p]];
+			lift_weight[u] = TT(TT(x, lift_weight[p]), lift_weight[lift[p]]);
+		}
+		else{
+			lift[u] = p;
+			lift_weight[u] = x;
+		}
+	}
+	skew_binary_lifting(Monoid_Operation TT = plus<>(), T T_id = {}): TT(TT), T_id(T_id){ }
+	skew_binary_lifting(const graph<T> &g, Monoid_Operation TT = plus<>(), T T_id = {}): skew_binary_lifting(g, vector<T>(g.n, T_id), TT, T_id){ }
+	skew_binary_lifting(const graph<T> &g, vector<T> vertex_weight, Monoid_Operation TT = plus<>(), T T_id = {}): TT(TT), T_id(T_id){
+		n = g.n;
+		pv.assign(n, -1);
+		depth.assign(n, -1);
+		lift.assign(n, -1);
+		weight.assign(n, T_id);
+		lift_weight.assign(n, T_id);
+		auto dfs = [&](auto self, int u, int pe){
+			for(auto id: g.adj[u]){
+				if(id == pe || g.ignore && g.ignore(id)) continue;
+				auto &e = g.edges[id];
+				int v = u ^ e.from ^ e.to;
+				add_child(u, v, TT(vertex_weight[v], e.cost));
+				self(self, v, id);
+			}
+		};
+		for(auto u = 0; u < n; ++ u) if(!~depth[u]) add_root(u, vertex_weight[u]), dfs(dfs, u, -1);
+	}
+	int extend(){
+		int u = n ++;
+		pv.push_back(-1);
+		depth.push_back(-1);
+		lift.push_back(-1);
+		weight.push_back(T_id);
+		lift_weight.push_back(T_id);
+		return u;
+	}
+	int add_root(T x){ // O(1)
+		int u = extend();
+		add_root(u, x);
+		return u;
+	}
+	int add_child(int p, T x){ // O(1)
+		assert(p < (int)depth.size() && ~depth[p]);
+		int u = extend();
+		add_child(p, u, x);
+		return u;
+	}
+	// get k-th parent of u with the exclusive sum on paths, directed upward
+	pair<int, T> trace_up(int u, int k){ // O(log n)
+		assert(depth[u] >= k);
+		k = depth[u] - k;
+		T x = T_id;
+		while(depth[u] > k){
+			if(depth[lift[u]] > k) x = TT(x, lift_weight[u]), u = lift[u];
+			else x = TT(x, weight[u]), u = pv[u];
+		}
+		return {u, x};
+	}
+	// lca, left exclusive sum, right exclusive sum
+	// assumes u and v are in the same component
+	tuple<int, T, T> query(int u, int v){ // O(log n)
+		bool swapped = false;
+		if(depth[u] < depth[v]) swapped = true, swap(u, v);
+		T x = T_id, y = T_id;
+		while(depth[u] > depth[v]){
+			if(depth[lift[u]] >= depth[v]) x = TT(x, lift_weight[u]), u = lift[u];
+			else x = TT(x, weight[u]), u = pv[u];
+		}
+		while(u != v){
+			if(lift[u] != lift[v]) x = TT(x, lift_weight[u]), y = TT(y, lift_weight[v]), u = lift[u], v = lift[v];
+			else x = TT(x, weight[u]), y = TT(y, weight[v]), u = pv[u], v = pv[v];
+		}
+		return swapped ? tuple<int, T, T>{u, y, x} : tuple<int, T, T>{u, x, y};
+	}
+	int parent(int u, int k){ // get k-th parent of u, O(log n)
+		assert(depth[u] >= k);
+		k = depth[u] - k;
+		while(depth[u] > k){
+			if(depth[lift[u]] > k) u = lift[u];
+			else u = pv[u];
+		}
+		return u;
+	}
+	int lca(int u, int v){ // O(log n)
+		while(depth[u] > depth[v]){
+			if(depth[lift[u]] >= depth[v]) u = lift[u];
+			else u = pv[u];
+		}
+		while(u != v){
+			if(lift[u] != lift[v]) u = lift[u], v = lift[v];
+			else u = pv[u], v = pv[v];
+		}
+		return u;
+	}
+	int steps(int u, int v, int w = -1){ // get # of edges between u and v, O(log n)
+		return depth[u] + depth[v] - 2 * depth[~w ? w : lca(u, v)];
+	}
+	// get the sum on u-v path
+	// assumes TT is commutative
+	pair<int, T> lca_and_dist(int u, int v){
+		auto [w, x, y] = query(u, v);
+		return {w, TT(TT(x, vertex_weight[w]), y)};
+	}
+	// O(log n)
+	int find_highest(int u, auto pred){
+		assert(pred(T_id));
+		T pref = T_id;
+		while(pv[u] != u){
+			if(pred(TT(pref, lift_weight[u]))) pref = TT(pref, lift_weight[u]), u = lift[u];
+			else if(pred(TT(pref, weight[u]))) pref = TT(pref, weight[u]), u = pv[u];
+			else return u;
+		}
+		return u;
+	} // for parent p of u, pred([u, p)) is T, ..., T, F, ..., F. returns the highest p with T
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>skew_binary_lifting</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

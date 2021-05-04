@@ -1,0 +1,68 @@
+<snippet>
+	<content><![CDATA[
+// Examples of Matroids
+struct ColorMat{
+	vector<int> cnt, clr;
+	ColorMat(int n, vector<int> clr): cnt(n), clr(clr){ }
+	bool check(int x){ return !cnt[clr[x]]; }
+	void add(int x){ ++ cnt[clr[x]]; }
+	void clear(){ fill(cnt.begin(), cnt.end(), 0); }
+};
+struct GraphMat{
+	disjoint_set dsu;
+	vector<array<int, 2>> e;
+	GraphMat(int n, vector<array<int, 2>> e): dsu(n), e(e){ }
+	bool check(int x){ return !dsu.share(e[x][0], e[x][1]); }
+	void add(int x){ dsu.merge(e[x][0], e[x][1]); }
+	void clear(){ dsu = disjoint_set(int(dsu.p.size())); }
+};
+
+// R^2N(M2.add + M1.check + M2.check) + R^3 M1.add + R^2 M1.clear + RN M2.clear
+template<class M1, class M2>
+struct matroid_intersection{
+	int n;
+	vector<char> iset;
+	M1 m1; M2 m2;
+	matroid_intersection(M1 m1, M2 m2, int n): n(n), iset(n + 1), m1(m1), m2(m2) {}
+	vector<int> solve(){
+		for(int i = 0; i < n; ++ i) if(m1.check(i) && m2.check(i)) iset[i] = true, m1.add(i), m2.add(i);
+		while(augment());
+		vector<int> res;
+		for(int i = 0; i < n; ++ i) if(iset[i]) res.push_back(i);
+		return res;
+	}
+	bool augment(){
+		vector<int> frm(n, -1);
+		queue<int> q({n}); // starts at dummy node
+		auto fwdE = [&](int a){
+			vector<int> res;
+			m1.clear();
+			for(int v = 0; v < n; ++ v) if(iset[v] && v != a) m1.add(v);
+			for(int b = 0; b < n; ++ b) if(!iset[b] && frm[b] == -1 && m1.check(b)) res.push_back(b), frm[b] = a;
+			return res;
+		};
+		auto backE = [&](int b){
+			m2.clear();
+			for(int cas = 0; cas < 2; ++ cas) for(int v = 0; v < n; ++ v)
+				if((v == b || iset[v]) && (frm[v] == -1) == cas){
+					if(!m2.check(v)) return cas ? q.push(v), frm[v] = b, v : -1;
+					m2.add(v);
+				}
+			return n;
+		};
+		while(!q.empty()){
+			int a = q.front(), c; q.pop();
+			for(int b: fwdE(a)) while((c = backE(b)) >= 0) if(c == n){
+				while(b != n) iset[b] ^= 1, b = frm[b];
+				return true;
+			}
+		}
+		return false;
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>matroid_intersection</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

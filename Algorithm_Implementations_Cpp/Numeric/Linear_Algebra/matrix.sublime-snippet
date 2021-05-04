@@ -1,0 +1,86 @@
+<snippet>
+	<content><![CDATA[
+template<class T, T (*zero)(), T (*one)()> // T must support +=, *=, *
+struct matrix_base: vector<vector<T>>{
+	using C = vector<vector<T>>; // container type
+	using C::assign;
+	matrix_base &operator+=(const matrix_base &M){
+		assert(n == M.n && m == M.m);
+		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) (*this)[i][j] += M[i][j];
+		return *this;
+	}
+	matrix_base operator+(const matrix_base &M) const{
+		matrix_base res(*this); res += M;
+		return res;
+	}
+	matrix_base operator*(const matrix_base &M) const{
+		assert(m == M.n);
+		int l = M.m;
+		matrix_base res(n, l);
+		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) for(auto k = 0; k < l; ++ k) res[i][k] += (*this)[i][j] * M[j][k];
+		return res;
+	}
+	matrix_base &operator*=(const matrix_base &M){
+		return *this = *this * M;
+	}
+	matrix_base &operator*=(T c){
+		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) (*this)[i][j] *= c;
+		return *this;
+	}
+	matrix_base operator*(T c) const{
+		matrix_base res(*this); res *= c;
+		return res;
+	}
+	matrix_base &operator^=(long long e){
+		assert(e >= 0);
+		matrix_base res(n, n, one());
+		for(; e; *this *= *this, e >>= 1) if(e & 1) res *= *this;
+		return *this = res;
+	}
+	matrix_base operator^(long long e) const{
+		assert(n == m);
+		matrix_base res(*this); res ^= e;
+		return res;
+	}
+	matrix_base transposed() const{
+		matrix_base res(m, n);
+		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) res[j][i] = (*this)[i][j];
+		return res;
+	}
+	matrix_base &transpose(){
+		return *this = transposed();
+	}
+	vector<T> maps_to(const vector<T> &v) const{
+		assert(m == (int)v.size());
+		vector<T> res(n, zero());
+		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) res[i] += (*this)[i][j] * v[j];
+		return res;
+	}
+	int n, m;
+	matrix_base(int n, int m, T init_diagonal = zero(), T init_off_diagonal = zero()): n(n), m(m){
+		assign(n, vector<T>(m, zero()));
+		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) (*this)[i][j] = i == j ? init_diagonal : init_off_diagonal;
+	}
+	matrix_base(const C &arr): n((int)arr.size()), m((int)arr[0].size()){
+		assign(n, vector<T>(m, zero()));
+		copy(arr.begin(), arr.end(), this->begin());
+	}
+};
+template<class T, T (*zero)(), T (*one)()>
+matrix_base<T, zero, one> operator*(T c, matrix_base<T, zero, one> M){
+	for(auto i = 0; i < M.n; ++ i) for(auto j = 0; j < M.m; ++ j) M[i][j] = c * M[i][j];
+	return M;
+}
+template<class T> T ZERO(){
+	return 0;
+}
+template<class T> T ONE(){
+	return 1;
+}
+template<class T> using matrix = matrix_base<T, ZERO<T>, ONE<T>>;
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>matrix</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

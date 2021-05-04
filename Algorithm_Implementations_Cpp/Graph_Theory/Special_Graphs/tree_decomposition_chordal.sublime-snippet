@@ -1,0 +1,36 @@
+<snippet>
+	<content><![CDATA[
+// Requires graph, lexicographical_bfs_forest, and recognize_chordal_graphs
+template<class T>
+pair<vector<vector<int>>, vector<array<int, 2>>> // bags, edges
+tree_decomposition_chordal(const graph<T> &g){
+	int n = g.n;
+	auto [chordal, order] = recognize_chordal_graphs(g);
+	assert(chordal);
+	vector<int> pos(n);
+	for(auto i = 0; i < n; ++ i) pos[order[i]] = i;
+	vector<vector<int>> bags;
+	vector<array<int, 2>> edges;
+	vector<int> label(n, -1);
+	reverse(order.begin(), order.end());
+	for(auto u: order){
+		int i = (int)bags.size();
+		label[u] = i;
+		vector<int> bag{u};
+		for(auto id: g.adj[u]){
+			if(g.ignore && g.ignore(id)) continue;
+			auto &e = g.edges[id];
+			int v = u ^ e.from ^ e.to;
+			if(pos[u] < pos[v]) bag.push_back(v);
+		}
+		if((int)bag.size() >= 2) edges.push_back({i, label[*min_element(bag.begin() + 1, bag.end(), [&](int u, int v){ return pos[u] < pos[v]; })]});
+		bags.push_back(bag);
+	}
+	return {bags, edges};
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>tree_decomposition_chordal</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

@@ -1,0 +1,50 @@
+<snippet>
+	<content><![CDATA[
+typedef array<long long, 2> frac;
+struct continued_fraction{
+	vector<long long> a;
+	// Fraction must either be of form p/q where p is an integer and q is a positive integer
+	// or p a non-zero integer and q = 0 ( this represents inf / -inf )
+	continued_fraction(frac x){
+		while(x[1]){
+			a.push_back(x[0] / x[1]);
+			x = {x[1], x[0] % x[1]};
+			if(x[1] < 0) x[1] += x[0], -- a.back();
+		}
+		if(a.empty()) a.push_back(x[0] > 0 ? 1e9 : -1e9);
+	}
+	continued_fraction(vector<long long> a): a(move(a)){ }
+	void alter(){ int(a.size()) > 1 && a.back() == 1 ? a.pop_back(), ++ a.back() : (a.push_back(1), -- *(next(a.rbegin()))); }
+	frac convergent(int len){
+		frac res{1, 0};
+		for(int i = min(len, int(a.size())) - 1; i >= 0; -- i) res = {res[1] + res[0] * a[i], res[0]};
+		return res;
+	}
+};
+bool frac_cmp(frac x, frac y){ return x[0] * y[1] < x[1] * y[0]; }
+// assumes 0 <= x < y
+// returns a fraction p/q with minimal p ( or equivalently, q ) within range (x, y)
+frac best_rational_within(frac low, frac high){
+	continued_fraction clow(low), chigh(high);
+	for(int ix = 0; ix < 2; ++ ix, clow.alter()) for(int iy = 0; iy < 2; ++ iy, chigh.alter()){
+		vector<long long> t;
+		clow.a.push_back(numeric_limits<long long>::max()), chigh.a.push_back(numeric_limits<long long>::max());
+		for(int i = 0; ; ++ i){
+			if(clow.a[i] == chigh.a[i]) t.push_back(clow.a[i]);
+			else{
+				t.push_back(min(clow.a[i], chigh.a[i]) + 1);
+				break;
+			}
+		}
+		clow.a.pop_back(), chigh.a.pop_back();
+		continued_fraction frac_t(t);
+		auto c = frac_t.convergent(int(t.size()));
+		if(frac_cmp(low, c) && frac_cmp(c, high)) return c;
+	}
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>continued_fraction</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

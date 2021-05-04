@@ -1,0 +1,26 @@
+<snippet>
+	<content><![CDATA[
+const int DeBruijnPosition[32] = {
+	0,  1, 16,  2, 29, 17,  3, 22, 30, 20, 18, 11, 13,  4,  7, 23,
+	31, 15, 28, 21, 19, 10, 12,  6, 14, 27,  9,  5, 26,  8, 25, 24,
+};
+int _lsp(unsigned int x){ // least significant position
+	return DeBruijnPosition[(x & -x) * 0x077CB531u >> 27];
+} // 0x077CB531U = B(2,5) = 0000 0111 0111 1100 1011 0101 0011 0001;
+uint32_t _fastlg(uint32_t x){
+	x |= x >> 1, x |= x >> 2, x |= x >> 4, x |= x >> 8, x |= x >> 16;
+	return x - (x >> 1);
+}
+uint64_t _fastlgl(uint64_t x){
+	x |= x >> 1, x |= x >> 2, x |= x >> 4, x |= x >> 8, x |= x >> 16, x |= x >> 32;
+	return x - (x >> 1);
+}
+int _msp(unsigned int x){ // most significant position
+	return DeBruijnPosition[_fastlg(x) * 0x077CB531u >> 27];
+} // 0x077CB531U = B(2,5) = 0000 0111 0111 1100 1011 0101 0011 0001;
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>de_bruijn_bit_magic</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

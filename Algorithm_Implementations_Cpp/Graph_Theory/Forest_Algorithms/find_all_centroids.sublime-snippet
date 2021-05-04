@@ -1,0 +1,36 @@
+<snippet>
+	<content><![CDATA[
+// Requires graph
+// find all the centroids in the component of s after cutting edge pe (-1 if not cut)
+// g must be a forest
+// O(V + E)
+template<class T>
+vector<int> find_all_centroids(const graph<T> &g, const vector<int> &subtr_sz, int s = 0, int pe = -1){
+	int u = s;
+	while(1){
+		for(auto id: g.adj[u]){
+			if(id == pe || g.ignore && g.ignore(id)) continue;
+			auto &e = g.edges[id];
+			int v = u ^ e.from ^ e.to;
+			if(subtr_sz[v] > subtr_sz[s] >> 1){
+				u = v, pe = id;
+				goto NEXT;
+			}
+		}
+		break;
+		NEXT:;
+	}
+	for(auto id: g.adj[u]){
+		if(id == pe || g.ignore && g.ignore(id)) continue;
+		auto &e = g.edges[id];
+		int v = u ^ e.from ^ e.to;
+		if(subtr_sz[s] - subtr_sz[v] <= subtr_sz[s] >> 1) return {u, v};
+	}
+	return {u};
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>find_all_centroids</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

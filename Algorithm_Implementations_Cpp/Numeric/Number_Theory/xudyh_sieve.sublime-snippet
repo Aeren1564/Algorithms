@@ -1,0 +1,27 @@
+<snippet>
+	<content><![CDATA[
+template<class F1, class F2, class F3, class T>
+struct xudyh_sieve{
+	long long th; // threshold, ideally about (2(single query) ~ 5(lots of queries)) * MAXN^2/3
+	F1 pf; // prefix sum of f / precalculate it up to th
+	F2 pg; // prefix sum of g / should be easy to calculate
+	F3 pfg; // prefix sum of dirichlet convolution of f and g / should be easy to calculate
+	unordered_map<long long, T> mp;
+	xudyh_sieve(long long th, F1 pf, F2 pg, F3 pfg): th(th), pf(pf), pg(pg), pfg(pfg){ }
+	T query(long long n){ // O(n^2/3); Calculate the preix sum of a multiplicative f up to n
+		if(n <= th) return pf(n);
+		if(mp.count(n)) return mp[n];
+		T res = pfg(n);
+		for(long long low = 2, high = 2; low <= n; low = high + 1){
+			high = n / (n / low);
+			res -= (pg(high) - pg(low - 1)) * query(n / low);
+		}
+		return mp[n] = res / pg(1);
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>xudyh_sieve</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope>
+</snippet>

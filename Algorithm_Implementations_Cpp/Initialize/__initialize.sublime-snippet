@@ -1,0 +1,29 @@
+<snippet>
+	<content><![CDATA[
+#include <bits/stdc++.h>
+using namespace std;
+
+
+
+int main(){
+	cin.tie(0)->sync_with_stdio(0);
+	cin.exceptions(ios::badbit | ios::failbit);
+	$0
+	return 0;
+}
+
+/*
+
+*/
+
+////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                    //
+//                                   Coded by Aeren                                   //
+//                                                                                    //
+////////////////////////////////////////////////////////////////////////////////////////
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>initialize</tabTrigger>
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope>
+</snippet>

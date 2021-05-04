@@ -1,0 +1,36 @@
+<snippet>
+	<content><![CDATA[
+// for each item, return the first state which pred returns false
+// O(log(high - low)) init() calls
+// O((high - low) * log(high - low)) advance() calls
+// O(n * log(high - low)) pred() calls
+vector<int> parallel_binary_search(
+	int n, // number of items
+	int low, int high, // binary search state lies within [low, high)
+	function<void()> init, // initialize the state to 'low'
+	function<void()> advance, // advance the state by a unit
+	function<bool(int)> pred // pred(item_id) is partitioned into T, ..., T, F, ..., F
+){ // binary search n items on [low, high)
+	vector<int> l(n, low), r(n, high);
+	vector<vector<int>> update(high - low);
+	while(true){
+		bool done = true;
+		for(auto i = 0; i < n; ++ i) if(r[i] - l[i] >= 2){
+			done = false;
+			update[l[i] + (r[i] - l[i] >> 1) - low].push_back(i);
+		}
+		if(done) break;
+		init();
+		for(auto s = low; s < high; ++ s, advance()){
+			for(auto i: update[s - low]) (pred(i) ? l : r)[i] = s;
+			update[s - low].clear();
+		}
+	}
+	return r;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>parallel_binary_search</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

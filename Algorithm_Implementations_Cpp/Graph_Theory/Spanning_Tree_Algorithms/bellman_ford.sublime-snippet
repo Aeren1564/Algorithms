@@ -1,0 +1,58 @@
+<snippet>
+	<content><![CDATA[
+// Requires graph
+template<class T>
+struct bellman_ford{
+	int n;
+	vector<T> dist;
+	vector<int> pv, pe, was;
+	bellman_ford(int n){ init(n); }
+	void init(int n){
+		this->n = n;
+		dist.assign(n, numeric_limits<T>::max());
+		pv.assign(n, -1);
+		pe.assign(n, -1);
+		was.assign(n, -1);
+		attempt = 0;
+	}
+	int attempt;
+	// Returns a negative cycle reachable from src if found
+	// O(|E_C| * |V_C|) where
+	// V_C is the set of vertices reachable from src and
+	// E_C is the set of edges reachable from src
+	template<class U>
+	optional<vector<int>> run(const graph<U> &g, const vector<int> &src){
+		assert(n == g.n);
+		++ attempt;
+		for(auto u: src){
+			was[u] = attempt;
+			dist[u] = {};
+			pv[u] = pe[u] = -1;
+		}
+		int x;
+		for(int rep = 0; rep < n; ++ rep){
+			x = -1;
+			for(int id = 0; id < (int)g.edges.size(); ++ id){
+				if(g.ignore && g.ignore(id)) continue;
+				auto [u, v, w] = g.edges[id];
+				if(was[u] == attempt && dist[u] + w < dist[v]){
+					was[v] = attempt;
+					dist[v] = max(dist[u] + w, numeric_limits<T>::min() / 2);
+					pv[v] = u, pe[v] = id;
+					x = v;
+				}
+			}
+		}
+		if(!~x) return {};
+		for(auto i = 0; i < g.n; ++ i) x = pv[x];
+		vector<int> cycle;
+		for(auto u = x; u != x || cycle.empty(); u = g.edges[pe[u]].from) cycle.push_back(pe[u]);
+		return {{cycle.rbegin(), cycle.rend()}};
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>bellman_ford</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

@@ -1,0 +1,119 @@
+<snippet>
+	<content><![CDATA[
+// implementation of https://www.researchgate.net/publication/220753117_A_Simple_Linear_Time_LexBFS_Cograph_Recognition_Algorithm
+// O(V+E)
+// Requires graph and lexicographical_bfs_forest
+template<class T>
+bool recognize_cographs(const graph<T> &g){
+	int n = g.n;
+	lexicographical_bfs_forest lbf(n);
+	lbf.bfs(g);
+	// check NSP
+	vector<list<int>> adj(n); // sorted adj list
+	for(auto u: lbf.order){
+		for(auto id: g.adj[u]){
+			if(g.ignore && g.ignore(id)) continue;
+			auto &e = g.edges[id];
+			int v = u ^ e.from ^ e.to;
+			adj[v].push_back(u);
+		}
+	}
+	for(auto u: lbf.order){
+		// S(u) = order[pos[u], pos[u] + slice_size[u])
+		if(lbf.pos[u] == n - 1) continue;
+		int L = lbf.pos[u];
+		int M = lbf.pos[u] + 1 + lbf.slice_size[lbf.order[lbf.pos[u] + 1]];
+		int R = lbf.pos[u] + lbf.slice_size[u];
+		if(R <= M) continue;
+		while(!adj[u].empty() && lbf.pos[adj[u].front()] < L) adj[u].pop_front();
+		if(adj[u].empty() || R <= lbf.pos[adj[u].front()]) continue;
+		int i = M;
+		vector<int> A;
+		while(!adj[lbf.order[i]].empty() && lbf.pos[adj[lbf.order[i]].front()] < L) adj[lbf.order[i]].pop_front();
+		while(!adj[lbf.order[i]].empty() && lbf.pos[adj[lbf.order[i]].front()] < i){
+			A.push_back(adj[lbf.order[i]].front());
+			assert(L <= lbf.pos[A.back()]);
+			adj[lbf.order[i]].pop_front();
+		}
+		for(auto sz: lbf.cell_sizes[u]){
+			int j = i + sz;
+			if(R <= j) break;
+			vector<int> B;
+			while(!adj[lbf.order[j]].empty() && lbf.pos[adj[lbf.order[j]].front()] < L) adj[lbf.order[j]].pop_front();
+			while(!adj[lbf.order[j]].empty() && lbf.pos[adj[lbf.order[j]].front()] < j){
+				B.push_back(adj[lbf.order[j]].front());
+				assert(L <= lbf.pos[B.back()]);
+				adj[lbf.order[j]].pop_front();
+			}
+			int t = 0;
+			for(auto y: B){
+				while(t < (int)A.size() && A[t] != y){
+					++ t;
+				}
+				if(t == (int)A.size()){
+					return false;
+				}
+			}
+			i = j, A = B;
+		}
+	}
+	lbf.bfs(g, vector<int>(lbf.order), true);
+	// check NSP
+	for(auto &v: adj) v.clear();
+	for(auto u: lbf.order){
+		for(auto id: g.adj[u]){
+			if(g.ignore && g.ignore(id)) continue;
+			auto &e = g.edges[id];
+			int v = u ^ e.from ^ e.to;
+			adj[v].push_back(u);
+		}
+	}
+	for(auto u: lbf.order){
+		// S(u) = order[pos[u], pos[u] + slice_size[u])
+		if(lbf.pos[u] == n - 1) continue;
+		int L = lbf.pos[u];
+		int M = lbf.pos[u] + 1 + lbf.slice_size[lbf.order[lbf.pos[u] + 1]];
+		int R = lbf.pos[u] + lbf.slice_size[u];
+		if(R <= M) continue;
+		while(!adj[u].empty() && lbf.pos[adj[u].front()] < L) adj[u].pop_front();
+		if(adj[u].empty() || R <= lbf.pos[adj[u].front()]) continue;
+		int i = M;
+		vector<int> A;
+		while(!adj[lbf.order[i]].empty() && lbf.pos[adj[lbf.order[i]].front()] < L) adj[lbf.order[i]].pop_front();
+		while(!adj[lbf.order[i]].empty() && lbf.pos[adj[lbf.order[i]].front()] < i){
+			A.push_back(adj[lbf.order[i]].front());
+			assert(L <= lbf.pos[A.back()]);
+			adj[lbf.order[i]].pop_front();
+		}
+		for(auto sz: lbf.cell_sizes[u]){
+			int j = i + sz;
+			if(R <= j) break;
+			vector<int> B;
+			while(!adj[lbf.order[j]].empty() && lbf.pos[adj[lbf.order[j]].front()] < L) adj[lbf.order[j]].pop_front();
+			while(!adj[lbf.order[j]].empty() && lbf.pos[adj[lbf.order[j]].front()] < j){
+				B.push_back(adj[lbf.order[j]].front());
+				assert(L <= lbf.pos[B.back()]);
+				adj[lbf.order[j]].pop_front();
+			}
+			for(auto t = i; t < j; ++ t) A.push_back(lbf.order[t]);
+			int t = 0;
+			for(auto x: A){
+				while(t < (int)B.size() && B[t] != x){
+					++ t;
+				}
+				if(t == (int)B.size()){
+					return false;
+				}
+			}
+			i = j, A = B;
+		}
+	}
+	return true;
+}
+// TODO: construct the cotree if true, find an induced P4 otherwise.
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>recognize_cographs</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

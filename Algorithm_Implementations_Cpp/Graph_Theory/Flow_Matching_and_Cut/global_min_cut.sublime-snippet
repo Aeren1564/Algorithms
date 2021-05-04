@@ -1,0 +1,35 @@
+<snippet>
+	<content><![CDATA[
+template<class T> // O(V^3) / reads adjacency matrix of the graph
+pair<T, vector<int>> global_min_cut(vector<vector<T>> adj){
+	int n = (int)adj.size();
+	vector<bool> used(n);
+	vector<int> cut, best_cut;
+	T best_weight = -1;
+	for(int phase = n - 1; phase >= 0; -- phase){
+		vector<T> w = adj[0];
+		vector<bool> added = used;
+		int prev, k = 0;
+		for(int i = 0; i < phase; ++ i){
+			prev = k, k = -1;
+			for(int j = 1; j < n; ++ j) if(!added[j] && (k == -1 || w[j] > w[k])) k = j;
+			if(i == phase - 1){
+				for(int j = 0; j < n; ++ j) adj[prev][j] += adj[k][j];
+				for(int j = 0; j < n; ++ j) adj[j][prev] = adj[prev][j];
+				used[k] = true, cut.push_back(k);
+				if(best_weight == -1 || w[k] < best_weight) best_cut = cut, best_weight = w[k];
+			}
+			else{
+				for(int j = 0; j < n; ++ j) w[j] += adj[k][j];
+				added[k] = true;
+			}
+		}
+	}
+	return {best_weight, best_cut};
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>global_min_cut</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

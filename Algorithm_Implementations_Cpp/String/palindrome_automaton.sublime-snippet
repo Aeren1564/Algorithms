@@ -1,0 +1,59 @@
+<snippet>
+	<content><![CDATA[
+template<class Str, int lim = 128>
+struct palindrome_automaton{
+	typedef class Str::value_type Char;
+	struct node{
+		int len, link, depth, cnt = 0; // length, suffix link, depth of the node via suffix link
+		vector<int> next;
+		node(int len, int link, int depth): len(len), link(link), depth(depth), next(lim){ };
+	};
+	vector<int> s = vector<int>{-1};
+	vector<node> state = vector<node>{{0, 1, 0}, {-1, 0, 0}};
+	int lps = 1; // Node containing the longest palindromic suffix
+	long long count = 0; // Number of non-empty palindromic substrings
+	palindrome_automaton(){ }
+	palindrome_automaton(const Str &s){
+		for(auto c: s) push_back(c);
+	}
+	int get_link(int u){
+		while(s[int(s.size()) - state[u].len - 2] != s.back()) u = state[u].link;
+		return u;
+	}
+	void push_back(Char c){
+		s.push_back(c), lps = get_link(lps);
+		if(!state[lps].next[c]){
+			state.push_back({state[lps].len + 2, state[get_link(state[lps].link)].next[c], state[state[get_link(state[lps].link)].next[c]].depth + 1});
+			state[lps].next[c] = int(state.size()) - 1;
+		}
+		lps = state[lps].next[c], count += state[lps].depth, ++ state[lps].cnt;
+	}
+	void init_cnt(){
+		function<void(int)> dfs = [&](int u){
+			for(int c = 0; c < lim; ++ c) if(state[u].next[c]){
+				dfs(state[u].next[c]);
+				state[u].cnt += state[state[u].next[c]].cnt;
+			}
+		};
+		dfs(0), dfs(1);
+	}
+	void print(){
+		vector<pair<int, string>> q{{1, ""}, {0, ""}};
+		while(!q.empty()){
+			int u;
+			string s;
+			tie(u, s) = q.back(); q.pop_back();
+			auto m = state[u];
+			cerr << "Node " << u << " \"" << s << "\"\nlen = " << m.len << ", link = " << m.link << ", depth = " << m.depth << "\nnext: ";
+			for(int c = 0; c < lim; ++ c) if(m.next[c]) cerr << "(" << char(c) << " -> " << m.next[c] << ") ";
+			cerr << "\n\n";
+			for(int c = lim - 1; c >= 0; -- c) if(m.next[c]) q.push_back({m.next[c], u == 1 ? string{char(c)} : char(c) + s + char(c)});
+		}
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>palindrome_automaton</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

@@ -1,0 +1,83 @@
+<snippet>
+	<content><![CDATA[
+// Requires point
+template<class T>
+struct kdtree_minmax{
+	struct node{ // represents a box [xlow, xhigh] * [ylow, yhigh]
+		int id = -1; // if this is a leaf, the single point in it
+		T xlow = numeric_limits<T>::max();
+		T xhigh = numeric_limits<T>::min();
+		T ylow = numeric_limits<T>::max();
+		T yhigh = numeric_limits<T>::min();
+		node *left = 0, *right = 0;
+		node(vector<int> ind, const vector<point<T>> &a){
+			for(auto i: ind){
+				const auto &p = a[i];
+				xlow = min(xlow, p.x), xhigh = max(xhigh, p.x);
+				ylow = min(ylow, p.y), yhigh = max(yhigh, p.y);
+			}
+			if((int)ind.size() >= 2){
+				if(xhigh - xlow >= yhigh - ylow) sort(ind.begin(), ind.end(), [&](int i, int j){ return a[i].x < a[j].x; });
+				else sort(ind.begin(), ind.end(), [&](int i, int j){ return a[i].y < a[j].y; });
+				int half = (int)ind.size() >> 1;
+				left = new node({ind.begin(), ind.begin() + half}, a);
+				right = new node({ind.begin() + half, ind.end()}, a);
+			}
+			else id = ind[0];
+		}
+		~node(){
+			delete left, delete right;
+		}
+		T distance(const point<T> &p){ // min squared dist from the box to point p
+			T x = min(max(p.x, xlow), xhigh), y = min(max(p.y, ylow), yhigh); 
+			return (x - p.x) * (x - p.x) + (y - p.y) * (y - p.y);
+		}
+	};
+	node *root = NULL;
+	vector<point<T>> a;
+	kdtree_minmax(){ }
+	kdtree_minmax(const vector<point<T>> &a): a(a){
+		vector<int> ind((int)a.size());
+		iota(ind.begin(), ind.end(), 0);
+		root = new node(ind, a);
+	}
+	~kdtree_minmax(){
+		delete root;
+	}
+	// returns {squared_distance, nearest point}
+	// O(log n) on average for randomly distributed points
+	template<bool IGNORE_ITSELF = false>
+	pair<T, int> nearest(const point<T> &p){
+		auto search = [&](node *u, auto search)->pair<T, int>{
+			if(!u->left){
+				if(IGNORE_ITSELF && p == a[u->id]) return {numeric_limits<T>::max(), -1};
+				else return {squared_distance(p, a[u->id]), u->id};
+			}
+			node *left = u->left, *right = u->right;
+			T bl = left->distance(p), br = right->distance(p);
+			if(bl > br) swap(br, bl), swap(left, right);
+			auto best = search(left, search); // search closest side, other side if needed
+			if(br < best.first) best = min(best, search(right, search));
+			return best;
+		};
+		return search(root, search);
+	}
+	// O(n^(1-1/dim) + m) where m is the number of reported points
+	vector<int> points_within(T xlow, T xhigh, T ylow, T yhigh){
+		auto search = [&](node *u, auto search)->vector<int>{
+			if(!u || xhigh < u->xlow || u->xhigh < xlow || yhigh < u->ylow || u->yhigh < ylow) return {};
+			if(!u->left) return {u->id};
+			auto left = search(u->left, search), right = search(u->right, search);
+			if((int)left.size() < (int)right.size()) swap(left, right);
+			left.insert(left.end(), right.begin(), right.end());
+			return left;
+		};
+		return search(root, search);
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>kdtree_minmax</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

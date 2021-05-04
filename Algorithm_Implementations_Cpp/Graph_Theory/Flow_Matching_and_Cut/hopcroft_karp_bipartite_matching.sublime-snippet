@@ -1,0 +1,63 @@
+<snippet>
+	<content><![CDATA[
+struct hopcroft_karp{
+	int n, m, flow = 0;
+	vector<vector<int>> adj;
+	vector<int> pu, pv; // u is matched with pu[u] and v with pv[v], -1 if no match
+	hopcroft_karp(int n, int m): n(n), m(m), adj(n), pu(n, -1), pv(m, -1), layer(n){ }
+	int insert(int from, int to){
+		adj[from].push_back(to);
+		return (int)adj[from].size() - 1;
+	}
+	vector<int> layer;
+	void bfs(){
+		queue<int> q;
+		for(int u = 0; u < n; ++ u){
+			if(!~pu[u]) q.push(u), layer[u] = 0;
+			else layer[u] = -1;
+		}
+		while(!q.empty()){
+			int u = q.front(); q.pop();
+			for(auto v: adj[u]) if(~pv[v] && !~layer[pv[v]]){
+				layer[pv[v]] = layer[u] + 1;
+				q.push(pv[v]);
+			}
+		}
+	}
+	bool dfs(int u){
+		for(auto v: adj[u]) if(!~pv[v]){
+			pu[u] = v, pv[v] = u;
+			return true;
+		}
+		for(auto v: adj[u]) if(layer[pv[v]] == layer[u] + 1 && dfs(pv[v])){
+			pu[u] = v, pv[v] = u;
+			return true;
+		}
+		return false;
+	}
+	int solve(){ // O( sqrt(V) * E )
+		while(true){
+			bfs();
+			int augment = 0;
+			for(int u = 0; u < n; ++ u) if(!~pu[u]) augment += dfs(u);
+			if(!augment) break;
+			flow += augment;
+		}
+		return flow;
+	}
+	pair<vector<int>, vector<int>> minimum_vertex_cover(){
+		solve();
+		vector<int> L, R;
+		for(int u = 0; u < n; ++ u){
+			if(!~layer[u]) L.push_back(u);
+			else if(~pu[u]) R.push_back(pu[u]);
+		}
+		return {L, R};
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>hopcroft_karp</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

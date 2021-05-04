@@ -1,0 +1,34 @@
+<snippet>
+	<content><![CDATA[
+// reads an undirected graph
+// process_p3(edge1, middle_vertex, edge2)
+// process_edge(edge) : process arbitrary remaining edge in a component with odd number of edges
+// O(|V| + |E|)
+// Requires graph
+template<class T>
+void decompose_into_paths_of_length_2(const graph<T> &g, auto process_p3, auto process_edge){
+	int n = g.n;
+	vector<int> depth(n, -1);
+	auto recurse = [&](auto self, int u, int pe)->bool{
+		int rem = -1;
+		for(auto id: g.adj[u]){
+			if(id == pe || g.ignore && g.ignore(id)) continue;
+			auto &e = g.edges[id];
+			int v = u ^ e.from ^ e.to;
+			if(~depth[v] && depth[u] > depth[v] || !~depth[v] && (depth[v] = depth[u] + 1, self(self, v, id))){
+				if(~rem) process_p3(rem, u, id), rem = -1;
+				else rem = id;
+			}
+		}
+		if(!~rem) return true;
+		~pe ? process_p3(pe, u, rem) : process_edge(rem);
+		return false;
+	};
+	for(auto u = 0; u < n; ++ u) if(!~depth[u]) depth[u] = 0, recurse(recurse, u, -1);
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>decompose_into_paths_of_length_2</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

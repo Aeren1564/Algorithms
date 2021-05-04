@@ -1,0 +1,14 @@
+<snippet>
+	<content><![CDATA[
+template<class T> // O(n)
+auto kadane(const vector<T> &a, T init = 0){
+	T lm = init, gm = init;
+	for(auto x: a) lm = max(x, x + lm), gm = max(gm, lm);
+	return gm;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>kadane</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

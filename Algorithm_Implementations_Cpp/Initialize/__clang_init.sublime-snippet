@@ -1,0 +1,44 @@
+<snippet>
+	<content><![CDATA[
+#include <algorithm>
+#include <array>
+#include <bitset>
+#include <cassert>
+#include <complex>
+#include <cstdio>
+#include <cstring>
+#include <iostream>
+#include <map>
+#include <numeric>
+#include <queue>
+#include <set>
+#include <string>
+#include <unordered_map>
+#include <unordered_set>
+#include <vector>
+using namespace std;
+
+
+
+int main(){
+	cin.tie(0)->sync_with_stdio(0);
+	cin.exceptions(ios::badbit | ios::failbit);
+	
+	return 0;
+}
+
+/*
+
+*/
+
+////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                    //
+//                                   Coded by Aeren                                   //
+//                                                                                    //
+////////////////////////////////////////////////////////////////////////////////////////
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>clang_init</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

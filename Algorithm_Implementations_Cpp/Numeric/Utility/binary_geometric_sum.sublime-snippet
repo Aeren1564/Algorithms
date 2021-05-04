@@ -1,0 +1,22 @@
+<snippet>
+	<content><![CDATA[
+// Find 1 + b + b^2 + ... + b^(e-1) without division
+// O(log e)
+template<class T, class U>
+T binary_geometric_sum(T b, U e){
+	if(e < 2) return e;
+	int lg = 0;
+	while(e >= (U)1 << lg + 1) ++ lg;
+	T res = 1, p = 1;
+	for(auto bit = lg - 1; bit >= 0; -- bit){
+		res *= 1 + p * b, p *= p * b;
+		if(e >> bit & 1) res += p *= b;
+	}
+	return res;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>binary_geometric_sum</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

@@ -1,0 +1,13 @@
+<snippet>
+	<content><![CDATA[
+// Recurrence relation of form dp[i][j] = min/max{k in [i, j)} (dp[i][k] + dp[k][j] + C[i][j])
+// Must satisfy C[a][c] + C[b][d] <= C[a][d] + C[b][d] (C is a monge array) and C[a][d] >= C[b][c] for all a<=b<=c<=d
+// It can be proved that opt[i][j - 1] <= opt[i][j] <= opt[i + 1][j]
+// Fill the dp table in increasing order of j - i.
+// O(N^2)
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>knuth_dp</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

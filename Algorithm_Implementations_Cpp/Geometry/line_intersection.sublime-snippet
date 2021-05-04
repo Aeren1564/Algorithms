@@ -1,0 +1,71 @@
+<snippet>
+	<content><![CDATA[
+// Requires point and line
+template<int TYPE>
+struct EndpointChecker{ };
+// For rays
+template<>
+struct EndpointChecker<0>{
+	template<class T>
+	bool operator()(const T& a, const T& b) const{
+		return true;
+	}
+};
+// For closed end
+template<>
+struct EndpointChecker<1>{
+	template<class T>
+	bool operator()(const T& a, const T& b) const{
+		return a <= b;
+	}
+};
+// For open end
+template<>
+struct EndpointChecker<2>{
+	template<class T>
+	bool operator()(const T& a, const T& b) const{
+		return a < b;
+	}
+};
+// Assumes parallel lines do not intersect
+template<int LA, int LB, int RA, int RB, class T>
+optional<point<double>> intersect_no_parallel_overlap(const line<T> &L, const line<T> &M){
+	auto s = L.d ^ M.d;
+	if(s == 0) return {};
+	auto ls = (M.p - L.p) ^ M.d, rs = (M.p - L.p) ^ L.d;
+	if(s < 0) s = -s, ls = -ls, rs = -rs;
+	if(EndpointChecker<LA>()(decltype(ls)(0), ls) && EndpointChecker<LB>()(ls, s) &&
+	EndpointChecker<RA>()(decltype(rs)(0), rs) && EndpointChecker<RB>()(rs, s)){
+		return static_cast<point<double>>(L.p) + 1.0 * ls / s * static_cast<point<double>>(L.d);
+	}
+	else return {};
+}
+// Assumes parallel lines do not intersect
+template<class T>
+optional<point<double>> intersect_closed_segments_no_parallel_overlap(const line<T> &L, const line<T> &M){
+	return intersect_no_parallel_overlap<1, 1, 1, 1>(L, M);
+}
+// Assumes nothing
+template<class T>
+optional<line<double>> intersect_closed_segments(const line<T> &L, const line<T> &M){
+	auto s = L.d ^ M.d, ls = (M.p - L.p) ^ M.d;
+	if(!s){
+		if(ls) return {};
+		auto Lp = L.p, Lq = L.q(), Mp = M.p, Mq = M.q();
+		if(Lp > Lq) swap(Lp, Lq);
+		if(Mp > Mq) swap(Mp, Mq);
+		line<T> res(max(Lp, Mp), min(Lq, Mq));
+		if(res.d >= point<T>()) return static_cast<line<double>>(res);
+		return {};
+	}
+	auto rs = (M.p - L.p) ^ L.d;
+	if(s < 0) s = -s, ls = -ls, rs = -rs;
+	if(0 <= ls && ls <= s && 0 <= rs && rs <= s) return line<double>(static_cast<point<double>>(L.p) + 1.0 * ls / s * static_cast<point<double>>(L.d), point<double>());
+	else return {};
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>line_intersection</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

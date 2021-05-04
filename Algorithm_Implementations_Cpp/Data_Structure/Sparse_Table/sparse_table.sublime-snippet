@@ -1,0 +1,27 @@
+<snippet>
+	<content><![CDATA[
+template<class T, class Idemoptent_Monoid_Operation>
+struct sparse_table{
+	int n;
+	vector<vector<T>> data;
+	Idemoptent_Monoid_Operation TT;
+	T T_id;
+	sparse_table(){ }
+	sparse_table(const vector<T> &a, Idemoptent_Monoid_Operation TT, T T_id): n((int)a.size()), TT(TT), T_id(T_id), data({a}){ // O(n log n)
+		for(auto p = 1, i = 1; p << 1 <= n; p <<= 1, ++ i){
+			data.emplace_back(n - (p << 1) + 1);
+			for(auto j = 0; j < (int)data[i].size(); ++ j) data[i][j] = TT(data[i - 1][j], data[i - 1][j + p]);
+		}
+	}
+	T query(int l, int r){ // O(1)
+		if(l >= r) return T_id;
+		int d = __lg(r - l);
+		return TT(data[d][l], data[d][r - (1 << d)]);
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>sparse_table</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

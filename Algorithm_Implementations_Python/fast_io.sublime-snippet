@@ -1,0 +1,20 @@
+<snippet>
+	<content><![CDATA[
+import sys, __pypy__, os, atexit
+ 
+_inp = sys.stdin.buffer.read().split(b'\n')[::-1]
+input = lambda : _inp.pop().decode('ascii')
+_out = __pypy__.builders.BytesBuilder()
+class dummy:
+    def flush(self):
+        pass
+    def write(self, s):
+        _out.append(s.encode('ascii'))
+sys.stdout = dummy()
+atexit.register(lambda: os.write(1, _out.build()))
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>fastio</tabTrigger>
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.python</scope>
+</snippet>

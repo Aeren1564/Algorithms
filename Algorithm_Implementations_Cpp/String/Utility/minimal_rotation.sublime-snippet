@@ -1,0 +1,24 @@
+<snippet>
+	<content><![CDATA[
+template<class Char_Type> // O(n), returns the position of the lexicographically minimal rotation
+int minimal_rotation(vector<Char_Type> s){
+	int n = (int)s.size(), minpos = 0;
+	for(auto i = 0; i < n; ++ i) s.push_back(s[i]);
+	for(auto pos = 0; pos < n; ++ pos) for(auto i = 0; i < n; ++ i){
+		if(minpos + i == pos || s[minpos + i] < s[pos + i]){
+			pos += max(0, i - 1);
+			break;
+		}
+		if(s[minpos + i] > s[pos + i]){
+			minpos = pos;
+			break;
+		}
+	}
+	return minpos;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>minimal_rotation</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

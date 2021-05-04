@@ -1,0 +1,47 @@
+<snippet>
+	<content><![CDATA[
+template<class T>
+struct combinatorics{
+	int SZ;
+	vector<T> inv, fact, invfact;
+	combinatorics(int SZ): SZ(SZ), inv(SZ + 1, 1), fact(SZ + 1, 1), invfact(SZ + 1, 1){
+		for(auto i = 1; i <= SZ; ++ i) fact[i] = fact[i - 1] * i;
+		invfact[SZ] = 1 / fact[SZ];
+		for(auto i = SZ - 1; i >= 0; -- i){
+			invfact[i] = invfact[i + 1] * (i + 1);
+			inv[i + 1] = invfact[i + 1] * fact[i];
+		}
+	} // O(SZ)
+	T C(int n, int k){ return n < 0 ? C(-n + k - 1, k) * (k & 1 ? -1 : 1) : n < k || k < 0 ? 0 : fact[n] * invfact[k] * invfact[n - k]; }
+	T P(int n, int k){ return n < k ? 0 : fact[n] * invfact[n - k]; }
+	T H(int n, int k){ return C(n + k - 1, k); }
+	T naive_C(long long n, long long k){
+		if(n < k) return 0;
+		T res = 1;
+		k = min(k, n - k);
+		for(auto i = n; i > n - k; -- i) res *= i;
+		return res * invfact[k];
+	}
+	T naive_P(long long n, int k){
+		if(n < k) return 0;
+		T res = 1;
+		for(auto i = n; i > n - k; -- i) res *= i;
+		return res;
+	}
+	T naive_H(long long n, long long k){ return naive_C(n + k - 1, k); }
+	bool parity_C(long long n, long long k){ return n < k ? 0 : (n & k) == k; }
+	// Catalan's Trapzoids
+	// # of bitstrings of n Xs and k Ys such that in each initial segment, (# of X) + m > (# of Y) 
+	T Cat(int n, int k, int m = 1){
+		if(m <= 0) return 0;
+		else if(k >= 0 && k < m) return C(n + k, k);
+		else if(k < n + m) return C(n + k, k) - C(n + k, k - m);
+		else return 0;
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>combinatorics</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

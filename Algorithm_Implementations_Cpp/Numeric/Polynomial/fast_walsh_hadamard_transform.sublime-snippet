@@ -1,0 +1,55 @@
+<snippet>
+	<content><![CDATA[
+template<class T, char Conv = '^'>
+void fast_walsh_hadamard_transform(vector<T> &a, const bool invert = false){
+	int n = (int)a.size();
+	for(auto len = 1; len < n; len <<= 1){
+		for(auto i = 0; i < n; i += len << 1){
+			for(auto j = 0; j < len; ++ j){
+				T u = a[i + j], v = a[i + j + len];
+				if(Conv == '^') a[i + j] = u + v, a[i + j + len] = u - v;
+				if(Conv == '|') a[i + j + len] += invert ? -u : u;
+				if(Conv == '&') a[i + j] += invert ? -v : v;
+			}
+		}
+	}
+	if(Conv == '^' && invert){
+		T inv_n = T(1) / n;
+		for(auto &x: a) x *= inv_n;
+	}
+}
+template<class T, char Conv = '^'>
+vector<T> convolute(vector<T> p, vector<T> q){
+	int n = max({(int)p.size(), (int)q.size() - 1, 1});
+	if(__builtin_popcount(n) != 1) n = 1 << __lg(n) + 1;
+	p.resize(n), q.resize(n);
+	fast_walsh_hadamard_transform<Conv>(p), fast_walsh_hadamard_transform<Conv>(q);
+	for(auto i = 0; i < n; ++ i) p[i] *= q[i];
+	fast_walsh_hadamard_transform<Conv>(p, true);
+	return p;
+}
+template<class T>
+vector<T> subset_convolute(vector<T> p, vector<T> q){
+	int n = max({(int)p.size(), (int)q.size() - 1, 1});
+	if(__builtin_popcount(n) != 1) n = 1 << __lg(n) + 1;
+	int w = __lg(n);
+	p.resize(n), q.resize(n);
+	vector a(w + 1, vector<Zp>(n)), b(a);
+	for(auto i = 0; i < n; ++ i) a[__builtin_popcount(i)][i] = p[i];
+	for(auto i = 0; i < n; ++ i) b[__builtin_popcount(i)][i] = q[i];
+	for(auto bit = 0; bit <= w; ++ bit) fast_walsh_hadamard_transform<'|'>(a[bit]), fast_walsh_hadamard_transform<'|'>(b[bit]);
+	vector<T> r(n);
+	for(auto bit = 0; bit <= w; ++ bit){
+		vector<T> c(n);
+		for(auto lbit = 0; lbit <= bit; ++ lbit) for(auto i = 0; i < n; ++ i) c[i] += a[lbit][i] * b[bit - lbit][i];
+		fast_walsh_hadamard_transform<'|'>(c, true);
+		for(auto i = 0; i < n; ++ i) if(__builtin_popcount(i) == bit) r[i] = c[i];
+	}
+	return r;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>fast_walsh_hadamard_transform</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

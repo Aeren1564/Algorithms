@@ -1,0 +1,35 @@
+<snippet>
+	<content><![CDATA[
+// Requires graph
+template<class T> // O(V + E)
+void strongly_connected_components(const graph<T> &g, auto act_comp){
+	int n = g.n, it = 0, ncomps = 0, v;
+	vector<int> val(n), comp(n, -1), s, cur;
+	function<int(int)> dfs = [&](int u){
+		int low = val[u] = ++ it;
+		s.push_back(u);
+		for(auto id: g.adj[u]){
+			if(g.ignore && g.ignore(id)) continue;
+			int v = u ^ g.edges[id].from ^ g.edges[id].to;
+			if(comp[v] < 0) low = min(low, val[v] ?: dfs(v));
+		}
+		if(low == val[u]){
+			do{
+				v = s.back(); s.pop_back();
+				comp[v] = ncomps;
+				cur.push_back(v);
+			}while(v != u);
+			act_comp(cur); // Process the component
+			cur.clear();
+			++ ncomps;
+		}
+		return val[u] = low;
+	};
+	for(int u = 0; u < n; ++ u) if(comp[u] < 0) dfs(u);
+} // accesses sccs in the reverse topological order
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>strongly_connected_components</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

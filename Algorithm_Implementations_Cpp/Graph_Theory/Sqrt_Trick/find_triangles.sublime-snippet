@@ -1,0 +1,34 @@
+<snippet>
+	<content><![CDATA[
+// https://i11www.iti.kit.edu/extra/publications/sw-fclt-05_t.pdf
+// O(E sqrt(E)) process calls for graphs without loop or multiedges
+void find_triangles(int n, const vector<array<int, 2>> &edges, auto process){
+	vector<int> deg(n), order(n), pos(n);
+	for(auto [u, v]: edges) ++ deg[u], ++ deg[v];
+	iota(order.begin(), order.end(), 0);
+	sort(order.begin(), order.end(), [&](int u, int v){ return deg[u] > deg[v]; });
+	for(auto i = 0; i < n; ++ i) pos[order[i]] = i;
+	vector<vector<int>> adj(n);
+	for(auto i = 0; i < (int)edges.size(); ++ i){
+		int u = pos[edges[i][0]], v = pos[edges[i][1]];
+		adj[u].push_back(v), adj[v].push_back(u);
+	}
+	vector<vector<int>> A(n);
+	for(auto u = 0; u < n; ++ u) for(auto v: adj[u]) if(u < v){
+		for(auto i = 0, j = 0; i < (int)A[u].size() && j < (int)A[v].size(); ){
+			if(A[u][i] == A[v][i]){
+				process(order[u], order[v], order[A[u][i]]);
+				++ i, ++ j;
+			}
+			else if(A[u][i] < A[v][j]) ++ i;
+			else ++ j;
+		}
+		A[v].push_back(u);
+	}
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>find_triangles</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

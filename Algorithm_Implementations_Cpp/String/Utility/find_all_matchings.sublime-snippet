@@ -1,0 +1,20 @@
+<snippet>
+	<content><![CDATA[
+// returns the list of all positions of text in pattern
+// O(n + m)
+// Requres z_function
+template<class Char_Type>
+vector<int> find_all_matchings(vector<Char_Type> pattern, const vector<Char_Type> &text){
+	int n = (int)pattern.size(), m = (int)text.size();
+	pattern.insert(pattern.end(), text.begin(), text.end());
+	auto p = z_function(pattern);
+	vector<int> pos;
+	for(auto i = n; i < n + m; ++ i) if(p[i] >= n) pos.push_back(i - n);
+	return pos;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>find_all_matchings</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

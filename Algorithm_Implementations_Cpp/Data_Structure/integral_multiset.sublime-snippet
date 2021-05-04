@@ -1,0 +1,74 @@
+<snippet>
+	<content><![CDATA[
+// efficient multiset when only dealing with small integers in [offset, offset + len)
+// Requires fenwick_tree
+template<class T>
+struct integral_multiset{
+	int sz = 0;
+	T offset, maxval;
+	vector<int> freq;
+	fenwick_tree<int> data;
+	integral_multiset(int len, T offset = {}): offset(offset), maxval(offset + len), freq(len), data(len){ }
+	integral_multiset(const vector<T> &init, int len, T offset = 0): offset(offset), maxval(offset + len), freq(len){
+		for(auto x: init){
+			assert(offset <= x && x < maxval);
+			++ freq[x - offset], ++ sz;
+		}
+		data = {freq};
+	}
+	friend ostream &operator<<(ostream &out, integral_multiset ms){
+		out << "{";
+		for(auto x = ms.offset; x < ms.maxval; ++ x) for(auto rep = 0; rep < ms.freq[x]; ++ rep) out << x << ", ";
+		return ms.empty() ? out << "}" : out << "\b\b}";
+	}
+	int size() const{ // O(1)
+		return sz;
+	}
+	bool empty() const{
+		return !sz;
+	}
+	int count(T x) const{ // O(1)
+		assert(offset <= x && x < maxval);
+		return freq[x - offset];
+	}
+	void insert(T x){ // O(log len)
+		assert(offset <= x && x < maxval);
+		data.update(x - offset, 1), ++ freq[x - offset], ++ sz;
+	}
+	bool erase(T x){ // O(log len) if true, O(1) otherwise
+		assert(offset <= x && x < maxval);
+		return freq[x - offset] ? (data.update(x - offset, -1), -- freq[x], -- sz, true) : false;
+	}
+	T find_by_order(int k) const{ // O(log len)
+		assert(k < sz);
+		return data.max_pref([k](int pref){ return pref <= k; }) + offset;
+	}
+	int order_of_key(T x) const{ // O(log len)
+		assert(offset <= x && x < maxval);
+		return data.query(x - offset);
+	}
+	T front() const{ // O(log len)
+		assert(sz);
+		return find_by_order(0) + offset;
+	}
+	T back() const{ // O(log len)
+		assert(sz);
+		return find_by_order(sz - 1) + offset;
+	}
+	int lower_bound(T x) const{ // O(log len), returns maxval if no such element
+		assert(offset <= x && x < maxval);
+		int k = data.query(x - offset) + 1;
+		return data.max_pref([k](int pref){ return pref <= k; }) + offset;
+	}
+	int upper_bound(T x) const{ // O(log len), returns maxval if no such element
+		assert(offset <= x && x < maxval);
+		int k = data.query(x - offset + 1) + 1;
+		return data.max_pref([k](int pref){ return pref <= k; }) + offset;
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>integral_multiset</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

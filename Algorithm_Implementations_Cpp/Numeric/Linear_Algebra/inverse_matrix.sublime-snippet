@@ -1,0 +1,31 @@
+<snippet>
+	<content><![CDATA[
+// Requires matrix
+template<class T, T (*zero)(), T (*one)()> // T must additionally support / and -=
+optional<matrix_base<T, zero, one>> inverse_matrix(matrix_base<T, zero, one> M){
+	assert(M.n == M.m);
+	int n = M.n;
+	matrix_base<T, zero, one> res(n, n, one());
+	for(auto j = 0; j < n; ++ j){
+		int pivot = -1;
+		for(auto i = j; i < n; ++ i) if(M[i][j] != zero()){
+			pivot = i;
+			break;
+		}
+		if(!~pivot) return {};
+		swap(M[j], M[pivot]), swap(res[j], res[pivot]);
+		T inv = one() / M[j][j];
+		for(auto jj = 0; jj < n; ++ jj) M[j][jj] *= inv, res[j][jj] *= inv;
+		for(auto i = 0; i < n; ++ i) if(i != j && M[i][j] != zero()){
+			T d = M[i][j];
+			for(auto jj = 0; jj < n; ++ jj) M[i][jj] -= d * M[j][jj], res[i][jj] -= d * res[j][jj];
+		}
+	}
+	return res;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>inverse_matrix</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

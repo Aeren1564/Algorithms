@@ -1,0 +1,27 @@
+<snippet>
+	<content><![CDATA[
+template<class T>
+struct counting_iterator{
+	T value = 0;
+	using iterator_category = random_access_iterator_tag;
+	using value_type = T;
+	using difference_type = T;
+	using pointer = T *;
+	using reference = T &;
+	counting_iterator(){ }
+	counting_iterator(const T &value): value(value){ }
+	counting_iterator(const counting_iterator &it): value(it.value){ }
+	T &operator*(){ return value; }
+	T operator-(const counting_iterator &it) const{ return value - it.value; }
+	counting_iterator &operator++(){ return ++ value, *this; }
+	counting_iterator &operator--(){ return -- value, *this; }
+	counting_iterator &operator+=(const T &x){ return value += x, *this; }
+};
+using iterint = counting_iterator<int>;
+using iterll = counting_iterator<long long>;
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>counting_iterator</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

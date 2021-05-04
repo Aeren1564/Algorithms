@@ -1,0 +1,20 @@
+<snippet>
+	<content><![CDATA[
+// Requires point and line
+template<class T, bool Strict = true>
+bool in_polygon(const point<T> &p, const vector<point<T>> &poly){
+	int in = 0, n = (int)poly.size();
+	for(auto i = 0; i < n; ++ i){
+		point<T> q = poly[(i + 1) % n];
+		// if(on_segment(p, {poly[i], q})) return !Strict; // for integral coordinates
+		if(distance_to_segment(p, {poly[i], q}) < 1e-9) return !Strict;
+		in ^= ((p.y < poly[i].y) - (p.y < q.y)) * doubled_signed_area(p, poly[i], q) > 0;
+	}
+	return in;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>in_polygon</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

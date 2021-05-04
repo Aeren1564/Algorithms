@@ -1,0 +1,12 @@
+{
+	"auto_complete_delay": 0,
+	"color_scheme": "Packages/Color Scheme - Default/Celeste.sublime-color-scheme",
+	"default_line_ending": "unix",
+	"font_size": 11,
+	"ignored_packages":
+	[
+		"Vintage"
+	],
+	"tab_size": 2,
+	"theme": "Adaptive.sublime-theme"
+}

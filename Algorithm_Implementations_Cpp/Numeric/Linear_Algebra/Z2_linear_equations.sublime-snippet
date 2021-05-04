@@ -1,0 +1,35 @@
+<snippet>
+	<content><![CDATA[
+typedef bitset<1000> bs;
+int solve_linear_equations(vector<bs> A, bs &x, vector<int> b, int m){
+	int n = (int)A.size(), rank = 0, br;
+	vector<int> col(m);
+	iota(col.begin(), col.end(), 0);
+	for(auto i = 0; i < n; ++ i){
+		for(br = i; br < n; ++ br) if(A[br].any()) break;
+		if(br == n){
+			for(auto j = i; j < n; ++ j) if(b[j]) return -1;
+			break;
+		}
+		int bc = (int)A[br]._Find_next(i-1);
+		swap(A[i], A[br]);
+		swap(b[i], b[br]);
+		swap(col[i], col[bc]);
+		for(auto j = 0; j < n; ++ j) if(A[j][i] != A[j][bc]) A[j].flip(i), A[j].flip(bc);
+		for(auto j = i + 1; j < n; ++ j) if(A[j][i]) b[j] ^= b[i], A[j] ^= A[i];
+		++ rank;
+	}
+	x = bs();
+	for(auto i = rank; i --; ){
+		if(!b[i]) continue;
+		x[col[i]] = 1;
+		for(auto j = 0; j < i; ++ j) b[j] ^= A[j][i];
+	}
+	return rank;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>Z2_linear_equations</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

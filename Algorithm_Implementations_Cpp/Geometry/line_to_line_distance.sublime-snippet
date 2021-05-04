@@ -1,0 +1,25 @@
+<snippet>
+	<content><![CDATA[
+// Requires point, line, and line_intersection
+template<class T>
+double distance_between_rays(const line<T> &L, const line<T> &M){
+	if(L || M){
+		if(L.d * M.d >= 0 || (M.p - L.p) * M.d <= 0) return distance_to_line(L.p, M);
+		else return distance(L.p, M.p);
+	}
+	else{
+		if(intersect_no_parallel_overlap<1, 0, 1, 0, long long>(L, M).first) return 0;
+		else return min(distance_to_ray(L.p, M), distance_to_ray(M.p, L));
+	}
+}
+template<class T>
+double distance_between_segments(const line<T> &L, const line<T> &M){
+	if(intersect_closed_segments(L, M).first) return 0;
+	return min({distance_to_segment(L.p, M), distance_to_segment(L.q(), M), distance_to_segment(M.p, L), distance_to_segment(M.q(), L)});
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>line_to_line_distance</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

@@ -1,0 +1,56 @@
+<snippet>
+	<content><![CDATA[
+// Requires graph
+template<class T>
+struct dial{
+	int n;
+	vector<T> dist;
+	vector<int> pv, pe, was;
+	dial(int n){ init(n); }
+	void init(int n){
+		this->n = n;
+		dist.assign(n, numeric_limits<T>::max());
+		pv.assign(n, -1);
+		pe.assign(n, -1);
+		was.assign(n, -1);
+		attempt = 0;
+	}
+	int attempt;
+	// O(|E_C| + min(|V_C| * C, (sum of edge weight))) where
+	// C is the upper bound of edge weight,
+	// V_C is the set of vertices reachable from src, and
+	// E_C is the set of edges reachable from src
+	template<class U>
+	void run(const graph<U> &g, const int C, const vector<int> &src){
+		assert(n == g.n);
+		++ attempt;
+		int it = 0;
+		vector<deque<array<int, 2>>> dqs(C);
+		for(auto u: src){
+			was[u] = attempt;
+			dqs[it].push_back({dist[u] = {}, u});
+			pv[u] = pe[u] = -1;
+		}
+		while(any_of(dqs.begin(), dqs.end(), [&](auto &dq){ return !dq.empty(); })){
+			while(dqs[it].empty()) it = (it + 1) % C;
+			auto [d, u] = dqs[it].front(); dqs[it].pop_front();
+			if(d != dist[u]) continue;
+			for(auto id: g.adj[u]){
+				if(g.ignore && g.ignore(id)) continue;
+				auto &e = g.edges[id];
+				int v = u ^ e.from ^ e.to;
+				if(was[v] != attempt || d + e.cost < dist[v]){
+					was[v] = attempt;
+					dqs[(d + e.cost) % C].push_back({dist[v] = dist[u] + e.cost, v});
+					pv[v] = u, pe[v] = id;
+				}
+			}
+		}
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>dial</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

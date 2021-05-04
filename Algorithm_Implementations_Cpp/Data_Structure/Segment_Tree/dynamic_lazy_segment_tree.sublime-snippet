@@ -1,0 +1,88 @@
+<snippet>
+	<content><![CDATA[
+template<class B, class T, class U, class F1, class F2, class F3, class F4, class F5>
+struct dynamic_lazy_segment_tree{
+	B n; // exclusive upper bound of coordinate
+	vector<int> left, right;
+	vector<T> data;
+	vector<U> updates;
+	F1 TT; // monoid operation (always adjacent)
+	T T_id; // monoid identity
+	F2 T_init;
+	F3 UU; // semigroup operation (superset, subset)
+	F4 U_init; // semigroup default element for the interval [l, r)
+	F5 UT; // action of U on T (superset, subset)
+	dynamic_lazy_segment_tree(B n, F1 TT, T T_id, F2 T_init, F3 UU, F4 U_init, F5 UT): n(n), TT(TT), T_id(T_id), T_init(T_init), UU(UU), U_init(U_init), UT(UT){
+		new_state(-1, -1, T_init(0, n), U_init(0, n));
+	}
+	void extend(int u, B l, B r){
+		if(!~left[u]){
+			B m = l + (r - l >> 1);
+			left[u] = new_state(-1, -1, T_init(l, m), U_init(l, m)); // Separate this on C++14 or below to avoid UB
+			right[u] = new_state(-1, -1, T_init(m, r), U_init(m, r)); // Separate this on C++14 or below to avoid UB
+		}
+	}
+	void push(int u, B l, B r){ // push the internal node u
+		int m = l + (r - l >> 1), v = left[u], w = right[u];
+		data[v] = UT(updates[u], data[v]);
+		updates[v] = UU(updates[u], updates[v]);
+		data[w] = UT(updates[u], data[w]);
+		updates[w] = UU(updates[u], updates[w]);
+		updates[u] = U_init(l, r);
+	}
+	void refresh(int u, B l, B r){
+		data[u] = UT(updates[u], TT(data[left[u]], data[right[u]]));
+	}
+	int last_state(){
+		return (int)data.size() - 1;
+	}
+	int new_state(int v, int w, T x, U y){
+		left.push_back(v), right.push_back(w), data.push_back(x), updates.push_back(y);
+		return last_state();
+	}
+	void update(B ql, B qr, U x){ // Apply x to values at [ql, qr)
+		auto recurse = [&](auto recurse, int u, B l, B r)->void{
+			if(qr <= l || r <= ql) return;
+			if(ql <= l && r <= qr){
+				data[u] = UT(x, data[u]), updates[u] = UU(x, updates[u]);
+				return;
+			}
+			extend(u, l, r), push(u, l, r);
+			B m = l + (r - l >> 1);
+			recurse(recurse, left[u], l, m), recurse(recurse, right[u], m, r);
+			refresh(u, l, r);
+		};
+		recurse(recurse, 0, 0, n);
+	}
+	T query(B ql, B qr){ // find sum{ql<=i<qr}(v[i]) at state u, O(log n)
+		auto recurse = [&](auto recurse, int u, B l, B r)->T{
+			if(qr <= l || r <= ql) return T_id;
+			if(ql <= l && r <= qr) return data[u];
+			extend(u, l, r), push(u, l, r);
+			B m = l + (r - l >> 1);
+			return TT(recurse(recurse, left[u], l, m), recurse(recurse, right[u], m, r));
+		};
+		return recurse(recurse, 0, 0, n);
+	}
+	B max_pref(B ql, auto f){
+		T pref = T_id;
+		auto recurse = [&](auto recurse, int u, B l, B r)->B{
+			if(r <= ql) return -1;
+			if(ql <= l && f(TT(pref, data[u]))){
+				pref = TT(pref, data[u]);
+				return -1;
+			}
+			if(r - l == 1) return r;
+			extend(u, l, r), push(u, l, r);
+			B m = l + (r - l >> 1), p = recurse(recurse, left[u], l, m);
+			return ~p ? p : recurse(recurse, right[u], m, r);
+		};
+		return recurse(recurse, 0, 0, n);
+	} // f(sum[l, r)) is T, T, ..., T, F, F, ..., F, returns max r with T
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>dynamic_lazy_segment_tree</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

@@ -1,0 +1,38 @@
+<snippet>
+	<content><![CDATA[
+// Requires graph
+template<class T> // O(V + E)
+void biconnected_components(const graph<T> &g, auto act_comp, auto act_bridge){
+	int n = g.n, it = 0;
+	vector<int> pos(n), s;
+	auto dfs = [&](int u, int pe, auto dfs)->int{
+		int top = pos[u] = ++ it;
+		for(auto id: g.adj[u]){
+			if(g.ignore && g.ignore(id) || id == pe) continue;
+			int v = u ^ g.edges[id].from ^ g.edges[id].to;
+			if(pos[v]){
+				top = min(top, pos[v]);
+				if(pos[v] < pos[u]) s.push_back(id);
+			}
+			else{
+				int sz = (int)s.size(), up = dfs(v, id, dfs);
+				top = min(top, up);
+				if(up == pos[u]){
+					s.push_back(id);
+					act_comp({s.begin() + sz, s.end()}); // Processes edgelist
+					s.resize(sz);
+				}
+				else if(up < pos[u]) s.push_back(id);
+				else act_bridge(id);
+			}
+		}
+		return top;
+	};
+	for(auto u = 0; u < n; ++ u) if(!pos[u]) dfs(u, -1, dfs);
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>biconnected_components</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

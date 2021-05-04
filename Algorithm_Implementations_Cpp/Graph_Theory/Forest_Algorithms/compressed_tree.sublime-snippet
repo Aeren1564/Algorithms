@@ -1,0 +1,20 @@
+<snippet>
+	<content><![CDATA[
+// Requires graph, sparse_table and lca_solver
+vector<array<int, 2>> compressed_tree(const lca_solver &lca, const vector<int> &subset){ // build the minimal tree containing all the nodes in O(|subset| log |subset|)
+	auto order = subset;
+	const auto &p = lca.pos;
+	auto cmp = [&](int u, int v){ return p[u] < p[v]; };
+	sort(order.begin(), order.end(), cmp);
+	for(auto i = 1, sz = (int)order.size(); i < sz; ++ i) order.push_back(lca.lca(order[i - 1], order[i]));
+	sort(order.begin(), order.end(), cmp), order.erase(unique(order.begin(), order.end()), order.end());
+	vector<array<int, 2>> edges;
+	for(auto i = 1; i < (int)order.size(); ++ i) edges.push_back({lca.lca(order[i - 1], order[i]), order[i]});
+	return edges;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>compressed_tree</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

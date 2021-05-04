@@ -1,0 +1,94 @@
+<snippet>
+	<content><![CDATA[
+// Requires graph
+template<class T, class Monoid_Operation = plus<>>
+struct binary_lifting{
+	int n, h;
+	vector<int> depth;
+	vector<T> vertex_weight;
+	vector<vector<int>> lift;
+	vector<vector<T>> lift_weight;
+	Monoid_Operation TT;
+	T T_id;
+	binary_lifting(Monoid_Operation TT = plus<>(), T T_id = {}): TT(TT), T_id(T_id){ }
+	binary_lifting(const graph<T> &g, const vector<int> &roots, Monoid_Operation TT = plus<>(), T T_id = {}): binary_lifting(g, roots, vector<T>(g.n, T_id), TT, T_id){ }
+	binary_lifting(const graph<T> &g, const vector<int> &roots, const vector<T> &vertex_weight, Monoid_Operation TT = plus<>(), T T_id = {}){
+		n = g.n;
+		vector<int> pv(n, -1), depth(n);
+		vector<T> pw(n, T_id);
+		auto dfs = [&](auto dfs, int u, int pe)->void{
+			for(auto id: g.adj[u]){
+				if(id == pe || g.ignore && g.ignore(id)) continue;
+				auto &e = g.edges[id];
+				int v = u ^ e.from ^ e.to;
+				depth[v] = depth[u] + 1;
+				pv[v] = u;
+				pw[v] = TT(vertex_weight[v], e.cost);
+				dfs(dfs, v, id);
+			}
+		};
+		for(auto u: roots) assert(!depth[u]), pv[u] = u, pw[u] = vertex_weight[u], dfs(dfs, u, -1);
+		*this = binary_lifting(pv, depth, vertex_weight, pw, TT, T_id);
+	}
+	// pv: parent vertex (-1 if root of forest), pw: sum of vertex weight + edge weight above
+	binary_lifting(const vector<int> &pv, const vector<int> &depth, const vector<T> &vertex_weight, const vector<T> &pw, Monoid_Operation TT = plus<>(), T T_id = {}): n((int)pv.size()), depth(depth), vertex_weight(vertex_weight), TT(TT), T_id(T_id){
+		h = __lg(*max_element(depth.begin(), depth.end()) + 1) + 1;
+		lift = vector<vector<int>>(h, pv);
+		lift_weight = vector<vector<T>>(h, pw);
+		for(auto u = 0; u < n; ++ u) if(!~pv[u]) lift[0][u] = u;
+		for(auto d = 1; d < h; ++ d) for(auto u = 0; u < n; ++ u) lift[d][u] = lift[d - 1][lift[d - 1][u]], lift_weight[d][u] = TT(lift_weight[d - 1][u], lift_weight[d - 1][lift[d - 1][u]]);
+	}
+	// get k-th parent of u with the exclusive sum on paths, directed upward
+	pair<int, T> trace_up(int u, int k){ // O(log n)
+		assert(depth[u] >= k);
+		T x = T_id;
+		for(auto d = 0; d < h; ++ d) if(k & 1 << d) x = TT(x, lift_weight[d][u]), u = lift[d][u];
+		return {u, x};
+	}
+	// lca, left exclusive sum, right exclusive sum
+	// assumes u and v are in the same component
+	tuple<int, T, T> query(int u, int v){ // O(log n)
+		bool swapped = false;
+		if(depth[u] < depth[v]) swapped = true, swap(u, v);
+		T x = T_id, y = T_id;
+		tie(u, x) = trace_up(u, depth[u] - depth[v]);
+		if(u == v) return swapped ? tuple<int, T, T>{u, y, x} : tuple<int, T, T>{u, x, y};
+		for(auto d = h - 1; d >= 0; -- d) if(lift[d][u] != lift[d][v]) x = TT(x, lift_weight[d][u]), y = TT(y, lift_weight[d][v]), u = lift[d][u], v = lift[d][v];
+		x = TT(x, lift_weight[0][u]), y = TT(y, lift_weight[0][v]), u = lift[0][u];
+		return swapped ? tuple<int, T, T>{u, y, x} : tuple<int, T, T>{u, x, y};
+	}
+	int parent(int u, int k){ // get k-th parent of u, O(log n)
+		assert(depth[u] >= k);
+		for(auto d = 0; d < h; ++ d) if(k & 1 << d) u = lift[d][u];
+		return u;
+	}
+	int lca(int u, int v){ // O(log n)
+		if(depth[u] < depth[v]) swap(u, v);
+		u = parent(u, depth[u] - depth[v]);
+		if(u == v) return u;
+		for(auto d = 0; d < h; ++ d) if(lift[u] != lift[v]) u = lift[d][u], v = lift[d][v];
+		return u;
+	}
+	int steps(int u, int v, int w = -1){ // get # of edges between u and v, O(log n)
+		return depth[u] + depth[v] - 2 * depth[~w ? w : lca(u, v)];
+	}
+	// get the sum on u-v path plus the weight of the edge above lca
+	// assumes TT is commutative
+	pair<int, T> lca_and_dist(int u, int v){
+		auto [w, x, y] = query(u, v);
+		return {w, TT(TT(x, vertex_weight[w]), y)};
+	}
+	// O(log n)
+	int find_highest(int u, auto pred){
+		assert(pred(T_id));
+		T x = T_id;
+		for(auto d = h - 1; d >= 0; -- d) if(pred(TT(x, lift_weight[d][u]))) x = TT(x, lift_weight[d][u]), u = lift[d][u];
+		return u;
+	} // for parent p of u, pred([u, p)) is T, ..., T, F, ..., F. returns the highest p with T
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>binary_lifting</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

@@ -1,0 +1,54 @@
+<snippet>
+	<content><![CDATA[
+struct functional_graph_processor{
+	int n;
+	vector<vector<int>> cycles; // main cycles
+	vector<int> cycle_id; // id of the cycle it belongs to, -1 if not part of one
+	vector<int> cycle_pos; // position in the cycle, -1 if not part of one
+	vector<int> prev; // previous vertex in the cycle, -1 if not part of one
+	vector<int> size; // size of the weakly connected component of the i-th main cycle
+	vector<int> root; // first reachable node in the main cycle
+	vector<int> depth; // # of edges from the main cycle
+	vector<vector<int>> adj; // forest of arborescences of reversed edges not on the main cycle
+	functional_graph_processor(const vector<int> &next): n((int)next.size()), cycle_id(n, -1), cycle_pos(n, -1), root(n, -1), depth(n, -1), adj(n){
+		vector<bool> was(n);
+		for(auto u = 0; u < n; ++ u){
+			if(was[u]) continue;
+			int v = u;
+			while(!was[v]){
+				was[v] = true;
+				v = next[v];
+			}
+			if(!~depth[v]){
+				int w = v;
+				vector<int> cycle;
+				while(!~depth[w]){
+					cycle_id[w] = (int)cycles.size();
+					cycle_pos[w] = (int)cycle.size();
+					cycle.push_back(w);
+					root[w] = w;
+					depth[w] = 0;
+					w = next[w];
+				}
+				cycles.push_back(cycle);
+				size.push_back((int)cycle.size());
+			}
+			function<void(int)> dfs = [&](int u){
+				if(~depth[u]) return;
+				int v = next[u];
+				dfs(v);
+				root[u] = root[v];
+				++ size[cycle_id[root[u]]];
+				depth[u] = depth[v] + 1;
+				adj[v].push_back(u);
+			};
+			dfs(u);
+		}
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>functional_graph_processor</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

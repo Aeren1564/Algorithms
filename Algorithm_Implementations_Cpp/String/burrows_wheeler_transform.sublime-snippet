@@ -1,0 +1,33 @@
+<snippet>
+	<content><![CDATA[
+// O(n log n)
+// Take all non-empty suffices of S+delim, sort it, then take the last characters.
+// Requires sparse_table and suffix_array
+template<class Char_Type>
+vector<Char_Type> burrows_wheeler_transform(const vector<Char_Type> &s, Char_Type delim = -1){
+	auto sa = suffix_array(s);
+	vector<Char_Type> res(s.size() + 1, delim);
+	for(auto i = 0; i <= (int)s.size(); ++ i) res[i] = sa.sa[i] ? s[sa.sa[i] - 1] : delim;
+	return res;
+}
+// Inverse Transform
+// O(n)
+// delim must be smaller than the characters on s
+template<class Char_Type, int Lim>
+vector<Char_Type> inverse_burrows_wheeler_transform(const vector<Char_Type> &s, Char_Type delim = -1){
+	int n = (int)s.size();
+	vector<int> t(lim), next(n);
+	for(auto &c: s) ++ t[c + 1];
+	for(auto i = 1; i < lim; ++ i) t[i] += t[i - 1];
+	for(auto i = 0; i < n; ++ i) next[t[s[i]] ++] = i;
+	int cur = next[0];
+	vector<Char_Type> res(n - 1, delim);
+	for(auto i = 0; i < n - 1; ++ i) res[i] = s[cur = next[cur]];
+	return move(res);
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>burrows_wheeler_transform</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

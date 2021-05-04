@@ -1,0 +1,37 @@
+<snippet>
+	<content><![CDATA[
+// Given a set of points, consider the weighted complete graph where weight of p and q are their rectilinear distance
+// Returns the edges of MST of form (weight, u, v)
+// Requires point and disjoint_set
+template<class T>
+vector<tuple<T, int, int>> rectilinear_minimum_spanning_tree(vector<point<T>> a){
+	int n = (int)a.size();
+	vector<int> ind(n);
+	iota(ind.begin(), ind.end(), 0);
+	vector<tuple<T, int, int>> edges;
+	for(auto k = 0; k < 4; ++ k){
+		sort(ind.begin(), ind.end(), [&](int i, int j) { return a[i].x - a[j].x < a[j].y - a[i].y; });
+		map<T, int> sweep;
+		for(auto i: ind){
+			for(auto it = sweep.lower_bound(-a[i].y); it != sweep.end(); sweep.erase(it ++)){
+				int j = it->second;
+				point<T> d = a[i] - a[j];
+				if(d.y > d.x) break;
+				edges.push_back({d.x + d.y, i, j});
+			}
+			sweep.insert({-a[i].y, i});
+		}
+		for(auto &p: a) if(k & 1) p.x = -p.x; else swap(p.x, p.y);
+	}
+	sort(edges.begin(), edges.end());
+	disjoint_set dsu(n);
+	vector<tuple<T, int, int>> res;
+	for(auto [x, i, j]: edges) if(dsu.merge(i, j)) res.push_back({x, i, j});
+	return res;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>rectilinear_minimum_spanning_tree</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

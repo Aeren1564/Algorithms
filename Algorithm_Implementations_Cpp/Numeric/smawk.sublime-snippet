@@ -1,0 +1,58 @@
+<snippet>
+	<content><![CDATA[
+template<class T, class Compare = less<>> // http://web.cs.unlv.edu/larmore/Courses/CSC477/monge.pdf
+vector<int> smawk(function<T(int, int)> C, int n, int m, Compare comp = less<>()){
+	// find the row minima in O(n + m)
+	// The matrix has to be monotonic (for all i<j and k<l, a[j][k] = a[j][l] -> a[i][k] <= a[i][l] && a[j][k] < a[j][l] -> a[i][k] < a[i][l])
+	if(!n) return {};
+	function<vector<int>(const vector<int> &, const vector<int> &)> solve = [&](const vector<int> &row, const vector<int> &col){
+		if((int)row.size() == 1) return vector<int>{*min_element(col.begin(), col.end(), [&](int j, int k){ return comp(C(row[0], j), C(row[0], k)); })};
+		if(row.size() < col.size()){ // Reduce
+			vector<array<int, 2>> s; // its head(position in row arrow), active column
+			for(auto j: col){
+				while(true){
+					if(s.empty()){
+						s.push_back({0, j});
+						break;
+					}
+					auto [i, last] = s.back();
+					if(!comp(C(row[i], last), C(row[i], j))) s.pop_back();
+					else{
+						++ i;
+						if(i < (int)row.size()) s.push_back({i, j});
+						break;
+					}
+				}
+			}
+			vector<int> reduced_col((int)s.size());
+			for(int i = 0; i < (int)s.size(); ++ i) reduced_col[i] = s[i][1];
+			return solve(row, reduced_col);
+		}
+		else{ // Interpolate
+			vector<int> reduced_row((int)row.size() / 2), res((int)row.size());
+			for(auto i = 1; i < (int)row.size(); i += 2) reduced_row[i >> 1] = row[i];
+			auto reduced_res = solve(reduced_row, col);
+			for(auto i = 0, it = 0; i < (int)row.size(); ++ i){
+				if(~i & 1){
+					int last = i < (int)row.size() - 1 ? reduced_res[i >> 1] : col.back(), mincol = col[it];
+					while(col[it] < last){
+						++ it;
+						if(comp(C(row[i], col[it]), C(row[i], mincol))) mincol = col[it];
+					}
+					res[i] = mincol;
+				}
+				else res[i] = reduced_res[i >> 1];
+			}
+			return res;
+		}
+	};
+	vector<int> row(n), col(m);
+	iota(row.begin(), row.end(), 0), iota(col.begin(), col.end(), 0);
+	return solve(row, col); // returns indices of minimum column for each row
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>smawk</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

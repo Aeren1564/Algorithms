@@ -1,0 +1,38 @@
+<snippet>
+	<content><![CDATA[
+struct line_type{
+	mutable long long d, k, p;
+	bool operator<(const line_type &otr) const{ return d < otr.d; }
+	bool operator<(long long x) const{ return p < x;}
+};
+template<bool GET_MAX = true>
+struct line_container: multiset<line_type, less<>>{
+	// (for doubles, use inf = 1/.0, div(a,b) = a/b)
+	static constexpr long long inf = numeric_limits<long long>::max();
+	long long div(long long a, long long b){ return a / b - ((a ^ b) < 0 && a % b); }
+	bool isect(iterator x, iterator y){
+		if(y == end()){ x->p = inf; return false; }
+		if(x->d == y->d) x->p = x->k > y->k ? inf : -inf;
+		else x->p = div(y->k - x->k, x->d - y->d);
+		return x->p >= y->p;
+	}
+	void push(line_type L){
+		if(!GET_MAX) L.d = -L.d, L.k = -L.k;
+		L.p = 0;
+		auto z = insert(L), y = z ++, x = y;
+		while(isect(y, z)) z = erase(z);
+		if(x != begin() && isect(-- x, y)) isect(x, y = erase(y));
+		while((y = x) != begin() && (-- x)->p >= y->p) isect(x, erase(y));
+	}
+	long long query(long long x){
+		assert(!empty());
+		auto l = *lower_bound(x);
+		return (l.d * x + l.k) * (GET_MAX ? 1 : -1);
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>line_container</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

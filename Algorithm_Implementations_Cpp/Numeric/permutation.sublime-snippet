@@ -1,0 +1,82 @@
+<snippet>
+	<content><![CDATA[
+struct permutation: vector<int>{
+	using vector<int>::size;
+	permutation(){ }
+	permutation(int n): vector<int>(n){
+		iota(this->begin(), this->end(), 0);
+	}
+	permutation(const vector<int> &a){
+		copy(a.begin(), a.end(), back_inserter(*this));
+	}
+	permutation operator+(const permutation &otr) const{
+		permutation res(size());
+		for(auto i = 0; i < (int)size(); ++ i) res[i] = (*this)[otr[i]];
+		return res;
+	}
+	permutation &operator+=(const permutation &otr){
+		return *this = *this + otr;
+	}
+	permutation operator-() const{
+		permutation res(size());
+		for(auto i = 0; i < (int)size(); ++ i) res[(*this)[i]] = i;
+		return res;
+	}
+	permutation operator-(const permutation &otr) const{
+		permutation res(size());
+		for(auto i = 0; i < (int)size(); ++ i) res[otr[i]] = (*this)[i];
+		return res;
+	}
+	permutation &operator-=(const permutation &otr){
+		return *this = *this - otr;
+	}
+	vector<vector<int>> decompose() const{
+		vector<bool> vis(size());
+		vector<vector<int>> res;
+		for(auto i = 0; i < (int)size(); ++ i) if(!vis[i]){
+			vector<int> cycle;
+			for(auto j = i; !vis[j]; j = (*this)[j]) vis[j] = true, cycle.push_back(j);
+			res.push_back(cycle);
+		}
+		return res;
+	}
+	bool parity() const{
+		bool res = false;
+		for(auto &c: decompose()) res ^= ~(int)c.size() & 1;
+		return res;
+	}
+	template<class T>
+	permutation operator*(T n) const{
+		if(!n) return permutation(size());
+		if(n == 1) return *this;
+		if(n == -1) return -*this;
+		permutation res(size());
+		for(auto cycle: decompose()) for(auto i = 0, j = (int)(n % cycle.size()); i < (int)cycle.size(); ++ i, ++ j){
+			if(j < 0) j += (int)cycle.size();
+			if(j >= (int)cycle.size()) j -= (int)cycle.size();
+			res[cycle[i]] = cycle[j];
+		}
+		return res;
+	}
+	template<class T>
+	permutation &operator*=(T n){
+		return *this = *this * n;
+	}
+	template<class T>
+	vector<T> permute(const vector<T> &a) const{
+		assert((int)a.size() == (int)size());
+		vector<T> b(size());
+		for(auto i = 0; i < (int)size(); ++ i) b[i] = a[(*this)[i]];
+		return b;
+	}
+};
+template<class T>
+permutation operator*(T n, const permutation &p){
+	return p * n;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>permutation</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
