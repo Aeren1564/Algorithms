@@ -1,0 +1,200 @@
+<snippet>
+	<content><![CDATA[
+// Solves https://codeforces.com/contest/1515/problem/H
+template<class T, int lim>
+class binary_trie_split_merge{
+private:
+	T reversed(T x){
+		T res = 0;
+		for(auto bit = 0; bit < lim; ++ bit) res = res << 1 | x & 1, x >>= 1;
+		return res;
+	}
+public:
+	struct node{
+		array<shared_ptr<node>, 2> next;
+		int count = 0;
+		T lazy_xor = 0, sum_and = (1 << lim) - 1, sum_or = 0;
+	};
+	using ptr = shared_ptr<node>;
+	ptr build(const vector<T> &a){
+		ptr root{new node()};
+		for(auto x: a){
+			x = reversed(x);
+			auto u = root;
+			for(auto bit = 0; bit < lim; ++ bit){
+				auto &v = u->next[x >> bit & 1];
+				if(!v) v = ptr{new node()};
+				u = v;
+			}
+			u->count = 1;
+		}
+		auto dfs = [&](auto self, ptr u)->void{
+			if(!u) return;
+			for(auto i = 0; i < 2; ++ i) self(self, u->next[i]);
+			refresh(u);
+		};
+		dfs(dfs, root);
+		return root;
+	}
+private:
+	void apply(ptr u, T lazy_xor){
+		if(!lazy_xor) return;
+		T dif = (u->sum_and ^ u->sum_or) & lazy_xor ^ lazy_xor;
+		u->sum_and ^= dif, u->sum_or ^= dif;
+	}
+	void push(ptr u){
+		if(!u->lazy_xor) return;
+		for(auto i = 0; i < 2; ++ i) if(u->next[i]) u->next[i]->lazy_xor ^= u->lazy_xor >> 1, apply(u->next[i], u->lazy_xor >> 1);
+		if(u->lazy_xor & 1) swap(u->next[0], u->next[1]);
+		u->lazy_xor = 0;
+	}
+	void refresh(ptr u){
+		u->count = 0, u->sum_and = (1 << lim) - 1, u->sum_or = 0;
+		for(auto i = 0; i < 2; ++ i) if(u->next[i]){
+			u->count += u->next[i]->count;
+			u->sum_and &= u->next[i]->sum_and << 1 | 1;
+			u->sum_or |= u->next[i]->sum_or << 1;
+		}
+		if(u->next[0]) u->sum_and ^= 1;
+		if(u->next[1]) u->sum_or ^= 1;
+		u->sum_or &= (1 << lim) - 1;
+		u->count += !u->next[0] && !u->next[1];
+		apply(u, u->lazy_xor);
+	}
+	// O(lim), assumes the subtree of u is not empty
+	T min_element(ptr u){
+		assert(u->count);
+		push(u);
+		if(u->next[0]) return min_element(u->next[0]) << 1;
+		else if(u->next[1]) return min_element(u->next[1]) << 1 | 1;
+		else return 0;
+	}
+	// O(lim), assumes the subtree of u is not empty
+	T max_element(ptr u){
+		assert(u->count);
+		push(u);
+		if(u->next[1]) return max_element(u->next[1]) << 1 | 1;
+		else if(u->next[0]) return max_element(u->next[0]) << 1;
+		else return 0;
+	}
+	// If x is present, return it. Otherwise, return the closest number sharing the longest prefix with x
+	// O(lim)
+	T approximate(ptr u, T x){
+		assert(u->count);
+		if(!u->next[0] && !u->next[1]) return 0;
+		push(u);
+		if(u->next[x & 1]) return approximate(u->next[x & 1], x >> 1) << 1 | x & 1;
+		else if(x & 1) return max_element(u->next[0]) << 1;
+		else return min_element(u->next[1]) << 1 | 1;
+	}
+	// Assumes x and its next is present, return the length of the largest prefix with next element
+	// O(lim)
+	int splitting_depth_with_next(ptr u, T x){
+		if(!u->next[0] && !u->next[1]) return numeric_limits<int>::min();
+		push(u);
+		if(x & 1) return splitting_depth_with_next(u->next[1], x >> 1) + 1;
+		else{
+			int res = splitting_depth_with_next(u->next[0], x >> 1) + 1;
+			if(u->next[1]) res = max(res, 0);
+			return res;
+		}
+	}
+	// Assumes x and its previous is present, return the length of the largest prefix with previous element
+	int splitting_depth_with_prev(ptr u, T x){
+		if(!u->next[0] && !u->next[1]) return numeric_limits<int>::min();
+		push(u);
+		if(~x & 1) return splitting_depth_with_prev(u->next[0], x >> 1) + 1;
+		else{
+			int res = splitting_depth_with_prev(u->next[1], x >> 1) + 1;
+			if(u->next[0]) res = max(res, 0);
+			return res;
+		}
+	}
+	bool cmp(T x, T y){
+		if(x == y) false;
+		T z = (x ^ y) & -(x ^ y);
+		return (x & z) < (y & z);
+	}
+public:
+	// O(lim) time and O(lim) space
+	template<bool REVERSE = true>
+	pair<ptr, ptr> split(ptr u, T x){
+		if(REVERSE) x = reversed(x);
+		if(!u->count || cmp(max_element(u), x)) return {u, ptr{new node()}};
+		else if(!cmp(min_element(u), x)) return {ptr{new node()}, u};
+		T y = approximate(u, x);
+		int obj = cmp(y, x) ? splitting_depth_with_next(u, y) : splitting_depth_with_prev(u, y);
+		auto recurse = [&](auto self, ptr u, T x, int depth)->array<ptr, 2>{
+			if(depth == obj){
+				ptr v{new node()};
+				swap(u->next[1], v->next[1]);
+				refresh(u), refresh(v);
+				return {u, v};
+			}
+			auto t = self(self, u->next[x & 1], x >> 1, depth + 1);
+			u->next[x & 1] = t[~x & 1], refresh(u);
+			ptr v{new node()};
+			v->next[x & 1] = t[x & 1], refresh(v);
+			return x & 1 ? array{u, v} : array{v, u};
+		};
+		auto res = recurse(recurse, u, y, 0);
+		return {res[0], res[1]};
+	}
+	ptr merge(ptr u, ptr v){
+		if(!u || !v) return u ?: v;
+		push(u), push(v);
+		u->next = {merge(u->next[0], v->next[0]), merge(u->next[1], v->next[1])};
+		refresh(u);
+		return u;
+	}
+	// O(1)
+	template<bool REVERSE = true>
+	ptr update_bitwise_xor(ptr u, T x){
+		if(REVERSE) x = reversed(x);
+		u->lazy_xor ^= x, apply(u, x);
+		return u;
+	}
+	// Amortized O(lim^2)
+	template<bool REVERSE = true>
+	ptr update_bitwise_or(ptr u, T x){
+		if(REVERSE) x = reversed(x);
+		auto recurse = [&](auto self, ptr u, T x)->ptr{
+			if(!u || x == (x & u->sum_and)) return u;
+			push(u);
+			if(x & 1) u->next = {0, self(self, merge(u->next[0], u->next[1]), x >> 1)};
+			else u->next = {self(self, u->next[0], x >> 1), self(self, u->next[1], x >> 1)};
+			refresh(u);
+			return u;
+		};
+		return recurse(recurse, update_bitwise_xor<false>(u, u->sum_or & x ^ x), x);
+	}
+	// Amortized O(lim^2)
+	template<bool REVERSE = true>
+	ptr update_bitwise_and(ptr u, T x){
+		if(REVERSE) x = reversed(x);
+		return update_bitwise_xor<false>(update_bitwise_or<false>(update_bitwise_xor<false>(u, (1 << lim) - 1), (1 << lim) - 1 ^ x), (1 << lim) - 1);
+	}
+	void print(ptr u){
+		#ifdef LOCAL
+		string s;
+		auto dfs = [&](auto self, ptr u)->void{
+			if(!u) return;
+			push(u);
+			cerr << "Node: " << s << "\nCount: " << u->count << ", and_sum: " << bitset<lim>(u->sum_and) << ", or_sum: " << bitset<lim>(u->sum_or) << endl;
+			for(auto i = 0; i < 2; ++ i){
+				s.push_back('0' + i);
+				self(self, u->next[i]);
+				s.pop_back();
+			}
+		};
+		dfs(dfs, u);
+		cerr << endl;
+		#endif
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>binary_trie_split_merge</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
