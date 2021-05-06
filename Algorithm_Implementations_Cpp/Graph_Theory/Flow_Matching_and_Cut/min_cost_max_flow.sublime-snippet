@@ -23,7 +23,7 @@ struct min_cost_max_flow{
 	}
 	int insert(int from, int to, T forward_cap, T backward_cap, C cost){
 		assert(0 <= from && from < n && 0 <= to && to < n);
-		int ind = int(edge.size());
+		int ind = (int)edge.size();
 		adj[from].push_back((int)edge.size());
 		edge.push_back({from, to, forward_cap, 0, cost});
 		adj[to].push_back((int)edge.size());
@@ -43,7 +43,7 @@ struct min_cost_max_flow{
 			if(i == sink) found = true;
 			in_queue[i] = false;
 			for(int id : adj[i]){
-				const auto &e = edge[id];
+				auto &e = edge[id];
 				if(e.capacity - e.flow > eps && d[i] + e.cost < d[e.to]){
 					d[e.to] = d[i] + e.cost;
 					pe[e.to] = id;
@@ -58,7 +58,7 @@ struct min_cost_max_flow{
 			T push = numeric_limits<T>::max();
 			int v = sink;
 			while(v != source){
-				const auto &e = edge[pe[v]];
+				auto &e = edge[pe[v]];
 				push = min(push, e.capacity - e.flow);
 				v = e.from;
 			}

@@ -1,0 +1,65 @@
+<snippet>
+	<content><![CDATA[
+// ---------------------------------------------
+// | # of member function calls where          |
+// | R is the size of the answer and           |
+// | N is the size of the ground set           |
+// ---------------------------------------------
+// | Member Function | M1         | M2         |
+// ---------------------------------------------
+// | insert()        | O(R^3)     | O(R^2 * N) |
+// | check()         | O(R^2 * N) | O(R^2 * N) |
+// | clear()         | O(R^2)     | O(R * N)   |
+// ---------------------------------------------
+//
+// Requires matroid
+template<class T, class M1, class M2>
+vector<int> minimum_cost_maximum_common_independent_set_spfa(const vector<T> &cost, M1 m1, M2 m2){
+	int n = (int)cost.size();
+	vector<bool> flag(n);
+	auto augment = [&]()->bool{
+		vector<pair<T, int>> dist(n + 1, {numeric_limits<T>::max() / 2, 0});
+		vector<vector<pair<int, T>>> adj(n + 1);
+		vector<int> pv(n + 1, -1);
+		queue<int> q;
+		vector<bool> in_queue(n + 1, false);
+		m1.clear(), m2.clear();
+		for(auto u = 0; u < n; ++ u) if(flag[u]) m1.insert(u), m2.insert(u);
+		for(auto u = 0; u < n; ++ u) if(!flag[u]){
+			if(m1.check(u)) dist[pv[u] = u] = {cost[u], 0}, q.push(u), in_queue[u] = true;
+			if(m2.check(u)) adj[u].push_back({n, 0});
+		}
+		for(auto u = 0; u < n; ++ u) if(flag[u]){
+			m1.clear(), m2.clear();
+			for(auto v = 0; v < n; ++ v) if(u != v && flag[v]) m1.insert(v), m2.insert(v);
+			for(auto v = 0; v < n; ++ v) if(!flag[v]){
+				if(m1.check(v)) adj[u].push_back({v, cost[v]});
+				if(m2.check(v)) adj[v].push_back({u, -cost[u]});;
+			}
+		}
+		while(!q.empty()){
+			int u = q.front(); q.pop();
+			in_queue[u] = false;
+			for(auto [v, w]: adj[u]) if(pair<T, int> dist_next{dist[u].first + w, dist[u].second + 1}; dist_next < dist[v]){
+				dist[v] = dist_next, pv[v] = u;
+				if(!in_queue[v]) q.push(v), in_queue[v] = true;
+			}
+		}
+		if(!~pv[n]) return false;
+		for(auto u = pv[n]; ; u = pv[u]){
+			flag[u].flip();
+			if(pv[u] == u) break;
+		}
+		return true;
+	};
+	while(augment());
+	vector<int> res;
+	for(auto u = 0; u < n; ++ u) if(flag[u]) res.push_back(u);
+	return res;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>minimum_cost_maximum_common_independent_set_spfa</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
