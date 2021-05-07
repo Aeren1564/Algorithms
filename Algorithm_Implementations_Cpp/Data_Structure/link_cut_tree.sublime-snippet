@@ -2,14 +2,6 @@
 	<content><![CDATA[
 template<class node>
 struct link_cut_tree{
-	vector<node> data;
-	link_cut_tree(int n): data(n){ }
-	node *operator[](int i){
-		return &data[i];
-	}
-	int operator[](node *i){
-		return i - &data[0];
-	}
 	bool connected(node *u, node *v){
 		return lca(u, v) != NULL;
 	}
@@ -17,12 +9,14 @@ struct link_cut_tree{
 		access(u);
 		return size(u->ch[0]);
 	}
-	node *get_root(node *u){ // get root of LCT component
+	// get root of LCT component
+	node *root(node *u){
 		access(u);
 		while(u->ch[0]) u = u->ch[0], u->push();
 		return access(u), u;
 	}
-	node *ancestor(node *u, int k){ // get k-th parent on path to root
+	// get k-th parent on path to root
+	node *ancestor(node *u, int k){
 		k = depth(u) - k;
 		assert(k >= 0);
 		for(; ; u->push()){
@@ -35,60 +29,79 @@ struct link_cut_tree{
 	}
 	node *lca(node *u, node *v){
 		if(u == v) return u;
-		access(u); access(v);
+		access(u), access(v);
 		if(!u->p) return NULL;
-		u->splay(); return u->p ?: u;
+		u->splay();
+		return u->p ?: u;
 	}
 	// make u parent of v
-	void link(node *u, node *v){ assert(!connected(u, v)); make_root(v); access(u); set_link(v, u, 0); v->update(); }
+	void link(node *u, node *v){
+		assert(!connected(u, v));
+		make_root(v);
+		access(u);
+		set_link(v, u, 0);
+		v->refresh();
+	}
 	// cut u from its parent
-	void cut(node *u){ access(u); u->ch[0]->p = NULL; u->ch[0] = NULL; u->update(); }
-	void cut(node *u, node *v){ cut(depth(u) > depth(v) ? u : v); }
-	void make_root(node *u){ access(u); u->rev ^= 1; access(u); assert(!u->ch[0] && !u->ch[1]); }
-	void access(node *u){ // puts u on the preferred path, splay (right subtree is empty)
+	void cut(node *u){
+		access(u);
+		u->ch[0]->p = u->ch[0] = NULL;
+		u->refresh();
+	}
+	// assumes u, v are adjacent in tree
+	void cut(node *u, node *v){
+		cut(depth(u) > depth(v) ? u : v);
+	}
+	// make u root of LCT component
+	void make_root(node *u){
+		access(u);
+		u->reverse();
+		access(u);
+		assert(!u->ch[0] && !u->ch[1]);
+	}
+	// puts u on the preferred path, splay (right subtree is empty)
+	void access(node *u){
 		for(node *v = u, *pre = NULL; v; v = v->p){
-			v->splay(); // now update virtual children
-			if(pre) v->update_vsub(pre, false);
-			if(v->ch[1]) v->update_vsub(v->ch[1], true);
-			v->ch[1] = pre; v->update(); pre = v;
+			v->splay(); // now refresh virtual children
+			if(pre) v->template refresh_virtual<false>(pre);
+			if(v->ch[1]) v->template refresh_virtual<true>(v->ch[1]);
+			v->ch[1] = pre, v->refresh(), pre = v;
 		}
-		u->splay(); assert(!u->ch[1]);
+		u->splay();
+		assert(!u->ch[1]);
 	}
-	void print(){
-		cout << "-----Current LCT info-----\n";
-		for(auto u = 0; u < int(data.size()); ++ u){
-			cout << "Node " << u << "\n" << "parent: ";
-			if(data[u].p) cout << (*this)[data[u].p];
-			cout << "\nSub aux tree size = " << size(&data[u]) << "\nchilds = ";
-			if(data[u].ch[0]) cout << (*this)[data[u].ch[0]] << " ";
-			else cout << "x ";
-			if(data[u].ch[1]) cout << (*this)[data[u].ch[1]];
-			else cout << "x";
-			// cout << "\nvalue = " << data[u].val << "\nsub aux tree value = " << data[u].aux_sum << "\n\n";
-		}
-		cout << "--------------------------\n\n";
+	node *operator[](int i){
+		return &data[i];
 	}
+	int operator[](node *u){
+		return u - &data[0];
+	}
+	vector<node> data;
+	link_cut_tree(int n): data(n){ }
 };
-template<class pnode>
+template<class ptr>
 struct splay_tree{
-	pnode ch[2] = {NULL, NULL}, p = NULL;
+	array<ptr, 2> ch = {};
+	ptr p = {};
 	bool rev = false;
 	int sz = 1;
 	splay_tree(){ }
-	friend int size(pnode u){
+	friend int size(ptr u){
 		return u ? u->sz : 0;
 	}
-	virtual void update(){
-		if(ch[0]) ch[0]->push();
-		if(ch[1]) ch[1]->push();
+	virtual void refresh(){
 		sz = 1 + size(ch[0]) + size(ch[1]);
 	}
 	virtual void push(){
 		if(rev){
-			if(ch[0]) ch[0]->rev ^= 1;
-			if(ch[1]) ch[1]->rev ^= 1;
-			swap(ch[0], ch[1]); rev = 0;
+			if(ch[0]) ch[0]->reverse();
+			if(ch[1]) ch[1]->reverse();
+			rev = false;
 		}
+	}
+	virtual void reverse(){
+		rev ^= true;
+		swap(ch[0], ch[1]);
 	}
 	int dir(){
 		if(!p) return -2; // root of LCT component
@@ -96,48 +109,85 @@ struct splay_tree{
 		if(p->ch[1] == this) return 1; // right child
 		return -1; // root of current splay tree
 	}
-	bool is_root(){ return dir() < 0; }
-	friend void set_link(pnode u, pnode v, int d){
+	bool is_root(){
+		return dir() < 0;
+	}
+	friend void set_link(ptr u, ptr v, int d){
 		if(v) v->p = u;
 		if(d >= 0) u->ch[d] = v;
 	}
-	void rotate(){ // assume p and p->p propagated
+	// assume p and p->p propagated
+	void rotate(){
 		assert(!is_root());
-		int x = dir(); pnode g = p;
-		set_link(g->p, static_cast<pnode>(this), g->dir());
+		int x = dir(); ptr g = p;
+		set_link(g->p, static_cast<ptr>(this), g->dir());
 		set_link(g, ch[x^1], x);
-		set_link(static_cast<pnode>(this), g, x^1);
-		g->update(); update();
+		set_link(static_cast<ptr>(this), g, x^1);
+		g->refresh(); //refresh();
 	}
-	void splay(){ // bring this to top of splay tree
+	// bring this to top of splay tree
+	void splay(){
 		while(!is_root() && !p->is_root()){
 			p->p->push(), p->push(), push();
 			dir() == p->dir() ? p->rotate() : rotate();
 			rotate();
 		}
 		if(!is_root()) p->push(), push(), rotate();
-		push();
+		push(), refresh();
 	}
 };
+// lazy should be I'm ok my childs are not ok (only affect childs)
+// use reverse when the order of the childs matters (fix the node here)
 struct node: splay_tree<node *>{
-	using splay_tree::ch;
-	int val;
-	long long aux_sum;
-	node(): splay_tree(){ }
-	void update() override{
-		splay_tree::update();
+	int size = 1; // includes both aux tree childs and virtual childs
+	int virtual_size = 0; // only include virtual childs
+	long long val = 0;
+	long long aux_sum = 0; // only include childs of auxiliary subtree
+	long long subtr_sum = 0; // includes both aux tree childs and virtual childs
+	long long virtual_subtr_sum = 0; // only include virtual childs
+	long long subtr_lazy = 0;
+	long long virtual_subtr_lazy = 0;
+	node(){ }
+	// requires no lazy propagation in this
+	void refresh() override{
+		splay_tree::refresh();
+		assert(subtr_lazy == 0);
 		aux_sum = val;
-		if(ch[0]) aux_sum += ch[0]->aux_sum;
-		if(ch[1]) aux_sum += ch[1]->aux_sum;
+		subtr_sum = val + virtual_subtr_sum;
+		size = 1 + virtual_size;
+		for(auto i = 0; i < 2; ++ i){
+			if(ch[i]){
+				aux_sum += ch[i]->aux_sum;
+				subtr_sum += ch[i]->subtr_sum;
+				size += ch[i]->size;
+			}
+		}
 	}
-	void update_vsub(node* v, bool add){
-
+	template<bool add>
+	void refresh_virtual(node *u){
+		if(!add) u->apply(virtual_subtr_lazy);
+		virtual_subtr_sum += (add ? +1 : -1) * u->subtr_sum;
+		virtual_size += (add ? +1 : -1) * u->size;
+		if(add) u->apply(-virtual_subtr_lazy);
 	}
-	void push() override{ // make sure push fix the node (don't call splay_tree::update)
+	void push() override{
 		splay_tree::push();
+		if(subtr_lazy){
+			if(ch[0]) ch[0]->apply(subtr_lazy);
+			if(ch[1]) ch[1]->apply(subtr_lazy);
+			subtr_lazy = 0;
+		}
 	}
 	void reverse() override{
 		splay_tree::reverse();
+
+	}
+	void apply(long long lazy){
+		val += lazy;
+		subtr_sum += lazy * size;
+		virtual_subtr_sum += lazy * virtual_size;
+		subtr_lazy += lazy;
+		virtual_subtr_lazy += lazy;
 	}
 };
 ]]></content>

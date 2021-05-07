@@ -1,6 +1,6 @@
 <snippet>
 	<content><![CDATA[
-// Requires graph, sparse_table and lca_solver
+// Requires graph, range_minmax_query_solver, and lca_solver
 vector<array<int, 2>> compressed_tree(const lca_solver &lca, const vector<int> &subset){ // build the minimal tree containing all the nodes in O(|subset| log |subset|)
 	auto order = subset;
 	const auto &p = lca.pos;
