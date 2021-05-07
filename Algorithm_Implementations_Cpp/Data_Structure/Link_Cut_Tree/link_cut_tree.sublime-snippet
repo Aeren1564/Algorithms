@@ -45,7 +45,8 @@ struct link_cut_tree{
 	// cut u from its parent
 	void cut(node *u){
 		access(u);
-		u->ch[0]->p = u->ch[0] = NULL;
+		u->ch[0]->p = NULL;
+		u->ch[0] = NULL;
 		u->refresh();
 	}
 	// assumes u, v are adjacent in tree
@@ -65,7 +66,9 @@ struct link_cut_tree{
 			v->splay(); // now refresh virtual children
 			if(pre) v->template refresh_virtual<false>(pre);
 			if(v->ch[1]) v->template refresh_virtual<true>(v->ch[1]);
-			v->ch[1] = pre, v->refresh(), pre = v;
+			v->ch[1] = pre;
+			v->refresh();
+			pre = v;
 		}
 		u->splay();
 		assert(!u->ch[1]);
@@ -121,9 +124,9 @@ struct splay_tree{
 		assert(!is_root());
 		int x = dir(); ptr g = p;
 		set_link(g->p, static_cast<ptr>(this), g->dir());
-		set_link(g, ch[x^1], x);
-		set_link(static_cast<ptr>(this), g, x^1);
-		g->refresh(); //refresh();
+		set_link(g, ch[x ^ 1], x);
+		set_link(static_cast<ptr>(this), g, x ^ 1);
+		g->refresh();
 	}
 	// bring this to top of splay tree
 	void splay(){
@@ -133,49 +136,44 @@ struct splay_tree{
 			rotate();
 		}
 		if(!is_root()) p->push(), push(), rotate();
-		push(), refresh();
+		push();
+		refresh();
 	}
 };
 // lazy should be I'm ok my childs are not ok (only affect childs)
 // use reverse when the order of the childs matters (fix the node here)
 struct node: splay_tree<node *>{
-	int size = 1; // includes both aux tree childs and virtual childs
-	int virtual_size = 0; // only include virtual childs
+	int size = 1; // includes itself, auxiliary subtrees, and virtual subtrees
+	int virtual_size = 0; // includes virtual subtrees
 	long long val = 0;
-	long long aux_sum = 0; // only include childs of auxiliary subtree
-	long long subtr_sum = 0; // includes both aux tree childs and virtual childs
-	long long virtual_subtr_sum = 0; // only include virtual childs
-	long long subtr_lazy = 0;
-	long long virtual_subtr_lazy = 0;
+	long long subtr_sum = 0; // includes itself, auxiliary subtrees, and virutal subtrees
+	long long virtual_subtr_sum = 0; // includes virtual subtrees
+	long long auxiliary_lazy = 0;
+	long long virtual_lazy = 0;
 	node(){ }
-	// requires no lazy propagation in this
+	// there must be no lazy propagation
 	void refresh() override{
 		splay_tree::refresh();
-		assert(subtr_lazy == 0);
-		aux_sum = val;
+		assert(auxiliary_lazy == 0);
 		subtr_sum = val + virtual_subtr_sum;
 		size = 1 + virtual_size;
-		for(auto i = 0; i < 2; ++ i){
-			if(ch[i]){
-				aux_sum += ch[i]->aux_sum;
-				subtr_sum += ch[i]->subtr_sum;
-				size += ch[i]->size;
-			}
+		for(auto u: ch) if(u){
+			subtr_sum += u->subtr_sum;
+			size += u->size;
 		}
 	}
 	template<bool add>
 	void refresh_virtual(node *u){
-		if(!add) u->apply(virtual_subtr_lazy);
-		virtual_subtr_sum += (add ? +1 : -1) * u->subtr_sum;
-		virtual_size += (add ? +1 : -1) * u->size;
-		if(add) u->apply(-virtual_subtr_lazy);
+		if(!add) u->apply(virtual_lazy);
+		virtual_subtr_sum += (add ? 1 : -1) * u->subtr_sum;
+		virtual_size += (add ? 1 : -1) * u->size;
+		if(add) u->apply(-virtual_lazy);
 	}
 	void push() override{
 		splay_tree::push();
-		if(subtr_lazy){
-			if(ch[0]) ch[0]->apply(subtr_lazy);
-			if(ch[1]) ch[1]->apply(subtr_lazy);
-			subtr_lazy = 0;
+		if(auxiliary_lazy){
+			for(auto u: ch) if(u) u->apply(auxiliary_lazy);
+			auxiliary_lazy = 0;
 		}
 	}
 	void reverse() override{
@@ -186,8 +184,8 @@ struct node: splay_tree<node *>{
 		val += lazy;
 		subtr_sum += lazy * size;
 		virtual_subtr_sum += lazy * virtual_size;
-		subtr_lazy += lazy;
-		virtual_subtr_lazy += lazy;
+		auxiliary_lazy += lazy;
+		virtual_lazy += lazy;
 	}
 };
 ]]></content>
