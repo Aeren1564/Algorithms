@@ -9,9 +9,9 @@ struct floored_root{
 		for(u32 t = 2; t < 1 << 16; ++ t){
 			u64 s = t * t;
 			s = s * s;
-			for(int k = 4; ; ++ k){
+			for(auto k = 4; ; ++ k){
 				pow[k].push_back(s);
-				if (__builtin_umulll_overflow(s, t, &s)) break;
+				if(__builtin_umulll_overflow(s, t, &s)) break;
 			}
 		}
 	}
@@ -22,14 +22,14 @@ struct floored_root{
 	}
 	u64 cbrt(u64 n) const{
 		u64 x = 0, y = 0;
-		for(int s = 63; s >= 0; s -= 3){
+		for(auto s = 63; s >= 0; s -= 3){
 			x <<= 1;
 			y = 3 * x * (x + 1) + 1;
 			if(y <= (n >> s)) n -= y << s, ++ x;
 		}
 		return x;
 	}
-	u64 operator()(u64 n, int k){
+	u64 operator()(u64 n, int k) const{
 		assert(k >= 1);
 		if(k == 1 || n == 0) return n;
 		if(k == 2) return sqrt(n);
