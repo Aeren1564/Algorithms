@@ -59,7 +59,7 @@ struct segment_tree{
 		T sm = T_id;
 		do{
 			-- r;
-			while (r > 1 && r & 1) r >>= 1;
+			while(r > 1 && r & 1) r >>= 1;
 			if(!f(TT(data[r], sm))){
 				while(r < size){
 					r = r << 1 | 1;
