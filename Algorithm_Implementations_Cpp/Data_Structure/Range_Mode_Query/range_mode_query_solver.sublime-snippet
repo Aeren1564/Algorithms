@@ -7,7 +7,8 @@ struct range_mode_query_solver{
 	vector<T> cmpr;
 	vector<int> a, pos;
 	vector<vector<int>> indices, block_mode, block_mode_freq;
-	// O(n + (n/B)^2)
+	// O(n * B) time
+	// O(n + (n/B)^2) space
 	range_mode_query_solver(const vector<T> &_a): n((int)_a.size()), cmpr(_a), a(n), pos(n){
 		sort(cmpr.begin(), cmpr.end());
 		cmpr.erase(unique(cmpr.begin(), cmpr.end()), cmpr.end());
