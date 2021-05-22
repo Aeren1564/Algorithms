@@ -16,7 +16,8 @@ struct range_minmax_query_solver{
 		}
 	}
 	T query(int l, int r) const{ // O(1)
-		if(l >= r) return T_id;
+		assert(0 <= l && l <= r && r <= n);
+		if(l == r) return T_id;
 		int d = __lg(r - l);
 		return cmp(data[d][l], data[d][r - (1 << d)]) ? data[d][l] : data[d][r - (1 << d)];
 	}
