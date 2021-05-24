@@ -60,7 +60,7 @@ struct dfs_forest{
 		};
 		recurse(recurse, u);
 	}
-	template<class U, class F>
+	template<class U, class F = plus<>>
 	void dfs_all(const graph<U> &g, F UT = plus<>()){
 		for(auto u = 0; u < n; ++ u) if(!~depth[u]) dfs<U, F>(g, u, false, UT);
 	}

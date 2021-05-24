@@ -24,7 +24,7 @@ struct bfs_forest{
 	}
 	int attempt = 0;
 	template<class U, class F = plus<>>
-	void bfs(const graph<U> &g, vector<int> src, bool clear_order = true, F UT = plus<>()){
+	void bfs(const graph<U> &g, const vector<int> &src, bool clear_order = true, F UT = plus<>()){
 		assert(n == g.n);
 		++ attempt;
 		if(clear_order) order.clear();
