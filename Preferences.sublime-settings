@@ -1,5 +1,4 @@
 {
-	"auto_complete_delay": 0,
 	"color_scheme": "Packages/Color Scheme - Default/Celeste.sublime-color-scheme",
 	"default_line_ending": "unix",
 	"font_size": 11,
@@ -8,5 +7,13 @@
 		"Vintage"
 	],
 	"tab_size": 2,
-	"theme": "Adaptive.sublime-theme"
+	"theme": "Default.sublime-theme",
+
+	"word_wrap": true,
+	"shift_tab_unindent": true,
+
+	"auto_complete_delay": 0,
+	"tab_completion": false,
+	"auto_complete_cycle": true,
+	"auto_complete_use_history": true
 }

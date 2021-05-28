@@ -1,0 +1,52 @@
+<snippet>
+	<content><![CDATA[
+template<class T>
+struct dijkstra_dense{
+	int n;
+	vector<T> dist;
+	vector<int> pv, was;
+	vector<bool> vis;
+	dijkstra_dense(int n){ init(n); }
+	void init(int n){
+		this->n = n;
+		dist.assign(n, numeric_limits<T>::max());
+		pv.assign(n, -1);
+		was.assign(n, -1);
+		vis.assign(n, false);
+		attempt = 0;
+	}
+	// O(|V|^2 + |E|)
+	int attempt;
+	template<class U>
+	void run(const vector<vector<U>> &adjm, const vector<int> &src){
+		assert(!n && adjm.empty() || n == (int)adjm.size() && n == (int)adjm[0].size());
+		++ attempt;
+		fill(dist.begin(), dist.end(), numeric_limits<T>::max());
+		for(auto u: src){
+			vis[u] = false;
+			was[u] = attempt;
+			dist[u] = {};
+			pv[u] = -1;
+		}
+		for(auto rep = 0; rep < n; ++ rep){
+			int u = -1;
+			for(auto v = 0; v < n; ++ v) if(!vis[v] && (!~u || was[v] == attempt && dist[v] < dist[u])) u = v;
+			if(dist[u] == numeric_limits<T>::max()) break;
+			vis[u] = true;
+			for(auto v = 0; v < n; ++ v){
+				if(was[v] != attempt || dist[u] + adjm[u][v] < dist[v]){
+					vis[v] = false;
+					was[v] = attempt;
+					dist[v] = dist[u] + adjm[u][v];
+					pv[v] = u;
+				}
+			}
+		}
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>dijkstra_dense</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
