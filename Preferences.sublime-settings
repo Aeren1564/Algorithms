@@ -1,4 +1,7 @@
 {
+	"auto_complete_cycle": true,
+	"auto_complete_delay": 0,
+	"auto_complete_use_history": true,
 	"color_scheme": "Packages/Color Scheme - Default/Celeste.sublime-color-scheme",
 	"default_line_ending": "unix",
 	"font_size": 11,
@@ -6,14 +9,9 @@
 	[
 		"Vintage"
 	],
+	"shift_tab_unindent": true,
+	"tab_completion": false,
 	"tab_size": 2,
 	"theme": "Default.sublime-theme",
-
-	"word_wrap": true,
-	"shift_tab_unindent": true,
-
-	"auto_complete_delay": 0,
-	"tab_completion": false,
-	"auto_complete_cycle": true,
-	"auto_complete_use_history": true
+	"word_wrap": true
 }
