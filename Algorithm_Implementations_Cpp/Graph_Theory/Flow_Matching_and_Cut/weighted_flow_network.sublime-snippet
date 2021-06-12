@@ -1,7 +1,7 @@
 <snippet>
 	<content><![CDATA[
 template<class T, class C>
-struct min_cost_max_flow{
+struct weighted_flow_network{
 	static constexpr T eps = (T) 1e-9;
 	struct Edge{
 		int from, to;
@@ -13,13 +13,13 @@ struct min_cost_max_flow{
 	vector<C> d;
 	vector<bool> in_queue;
 	vector<int> q, pe;
-	int n, source, sink;
+	int n;
 	T flow = 0;
 	C cost = 0;
-	min_cost_max_flow(int n, int source, int sink): n(n), source(source), sink(sink), adj(n), d(n), in_queue(n), pe(n){ }
-	void clear(){
+	weighted_flow_network(int n): n(n), adj(n), d(n), in_queue(n), pe(n){ }
+	void clear_flow(){
 		for(auto &e: edge) e.flow = 0;
-		flow = 0;
+		flow = 0, cost = 0;
 	}
 	int insert(int from, int to, T forward_cap, T backward_cap, C cost){
 		assert(0 <= from && from < n && 0 <= to && to < n);
@@ -30,10 +30,11 @@ struct min_cost_max_flow{
 		edge.push_back({to, from, backward_cap, 0, -cost});
 		return ind;
 	}
-	bool expath(){
+	// type 0: augment as long as a path exists
+	// type 1: augment as long as a negative cost path exists
+	bool expath(int source, int sink, bool type){
 		fill(d.begin(), d.end(), numeric_limits<C>::max());
-		q.clear();
-		q.push_back(source);
+		q = {source};
 		d[source] = 0;
 		in_queue[source] = true;
 		int beg = 0;
@@ -63,6 +64,10 @@ struct min_cost_max_flow{
 				v = e.from;
 			}
 			v = sink;
+			assert(push >= 0);
+			if(type && d[sink] >= 0){
+				return false;
+			}
 			while(v != source){
 				auto &e = edge[pe[v]];
 				e.flow += push;
@@ -75,14 +80,17 @@ struct min_cost_max_flow{
 		}
 		return found;
 	}
-	pair<T, C> solve(){ // O(Augmenting Paths) * O(SPFA)
-		while(expath()){ }
+	// type 0: min cost max flow
+	// type 1: min cost flow
+	pair<T, C> solve(int source, int sink, bool type = false){ // O(Augmenting Paths) * O(SPFA)
+		clear_flow();
+		while(expath(source, sink, type)){  }
 		return {flow, cost};
 	}
 };
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
-	<tabTrigger>min_cost_max_flow</tabTrigger> -->
+	<tabTrigger>weighted_flow_network</tabTrigger> -->
 	<!-- Optional: Set a scope to limit where the snippet will trigger -->
 	<scope>source.c++</scope> -->
 </snippet>

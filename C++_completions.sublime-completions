@@ -171,6 +171,7 @@
         { "trigger": "mod2", "contents": "(119 << 23) + 1"},
         { "trigger": "limit", "contents": "numeric_limits<${1:long long}>::${2:max}()"},
         { "trigger": "all", "contents": "$1.begin(), $1.end()"},
+        { "trigger": "rall", "contents": "$1.rbegin(), $1.rend()"},
         { "trigger": "sz", "contents": "(int)$1.size()"},
         { "trigger": "pi", "contents": "const double pi = acos(-1);"},
         { "trigger": "kill", "contents": "auto kill = [](){\n\t${1:cout << -1;}\n\texit(0);\n};"},
