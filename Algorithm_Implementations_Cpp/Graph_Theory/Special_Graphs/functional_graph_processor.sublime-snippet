@@ -33,16 +33,16 @@ struct functional_graph_processor{
 				cycles.push_back(cycle);
 				size.push_back((int)cycle.size());
 			}
-			function<void(int)> dfs = [&](int u){
+			auto dfs = [&](auto self, int u){
 				if(~depth[u]) return;
 				int v = next[u];
-				dfs(v);
+				self(self, v);
 				root[u] = root[v];
 				++ size[cycle_id[root[u]]];
 				depth[u] = depth[v] + 1;
 				adj[v].push_back(u);
 			};
-			dfs(u);
+			dfs(dfs, u);
 		}
 	}
 };

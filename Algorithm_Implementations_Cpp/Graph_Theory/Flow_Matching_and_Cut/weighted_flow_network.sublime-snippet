@@ -32,7 +32,7 @@ struct weighted_flow_network{
 	}
 	// type 0: augment as long as a path exists
 	// type 1: augment as long as a negative cost path exists
-	bool expath(int source, int sink, bool type){
+	bool expath(int source, int sink, bool type = false){
 		fill(d.begin(), d.end(), numeric_limits<C>::max());
 		q = {source};
 		d[source] = 0;
@@ -65,9 +65,7 @@ struct weighted_flow_network{
 			}
 			v = sink;
 			assert(push >= 0);
-			if(type && d[sink] >= 0){
-				return false;
-			}
+			if(type && d[sink] >= 0) return false;
 			while(v != source){
 				auto &e = edge[pe[v]];
 				e.flow += push;

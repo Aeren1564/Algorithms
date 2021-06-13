@@ -15,7 +15,7 @@ vector<array<int, 2>> complement_spanning_forest(const graph<T> &g){
 		while(!dq.empty()){
 			int v = dq.front(); dq.pop_front();
 			for(auto it = alive.begin(); it != alive.end(); ){
-				if(auto it2 = lower_bound(adj[v].begin(), adj[v].end(), *it); it2 != adj[u].end() && *it2 == *it) ++ it;
+				if(auto it2 = lower_bound(adj[v].begin(), adj[v].end(), *it); it2 != adj[v].end() && *it2 == *it) ++ it;
 				else dq.push_back(*it), res.push_back({u, *it}), it = alive.erase(it);
 			}
 		}
