@@ -1,20 +1,20 @@
 <snippet>
 	<content><![CDATA[
 // Requires random
-template<class T, class U>
+template<class T, class U, class F1, class F2, class F3, class F4>
 struct treap{
 	vector<int> left, right, priority, sz, lazy_flip;
 	vector<T> data, subtr_data;
 	vector<U> lazy;
-	function<T(T, T)> TT; // monoid operation (always adjacent)
+	F1 TT; // monoid operation (always adjacent)
 	T T_id; // monoid identity
-	function<U(U, U)> UU; // semigroup operation (superset, subset)
-	function<U()> U_init; // semigroup default element for the interval [l, r)
-	function<T(U, T)> UT; // action of U on T (superset, subset)
+	F2 UU; // semigroup operation (superset, subset)
+	F3 U_init; // semigroup default element for the interval [l, r)
+	F4 UT; // action of U on T (superset, subset)
 	treap(
-		function<T(T, T)> TT, T T_id,
-		function<U(U, U)> UU, function<U()> U_init,
-		function<T(U, T)> UT
+		F1 TT, T T_id,
+		F2 UU, F3 U_init,
+		F4 UT
 	): TT(TT), T_id(T_id), UU(UU), U_init(U_init), UT(UT){ }
 	void push(int u){
 		if(~u){
@@ -155,12 +155,12 @@ struct treap{
 		return build(vector<T>(n, init));
 	}
 	int build(const vector<T> &a){
-		function<int(int, int)> recurse = [&](int l, int r){
+		auto recurse = [&](auto self, int l, int r)->int{
 			if(l == r) return -1;
 			int m = l + (r - l >> 1);
-			return new_node(a[m], recurse(l, m), recurse(m + 1, r));
+			return new_node(a[m], self(self, l, m), self(self, m + 1, r));
 		};
-		return recurse(0, (int)a.size());
+		return recurse(recurse, 0, (int)a.size());
 	}
 };
 ]]></content>
