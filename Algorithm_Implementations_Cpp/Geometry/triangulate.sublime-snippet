@@ -1,0 +1,172 @@
+<snippet>
+	<content><![CDATA[
+// Implementation of https://cs.gmu.edu/~jmlien/teaching/09_fall_cs633/uploads/Main/lecture03.pdf
+// p must be given in CCW, no two adjacent points should coincide, and must not intersect with itself
+// T must be able to hold the cube of maximum abs coordinate
+// O(n log n)
+// Requires point
+template<class T>
+void triangulate(const vector<point<T>> &a, auto process_triangle){
+	int n = (int)a.size();
+	vector<int> order(n);
+	iota(order.begin(), order.end(), 0);
+	sort(order.begin(), order.end(), [&](int i, int j){ return a[i] < a[j]; });
+	point<T> sweep;
+	struct key_type{ // stores the line p-q
+		mutable point<T> p, q;
+	};
+	auto cmp = [&](const key_type &a, const key_type &b)->bool{
+		auto ya = a.p.x == a.q.x ? array{max(a.p.y, a.q.y), T(1)} : array{a.p.y * (a.q.x - sweep.x) + a.q.y * (sweep.x - a.p.x), a.q.x - a.p.x};
+		auto yb = b.p.x == b.q.x ? array{min(b.p.y, b.q.y), T(1)} : array{b.p.y * (b.q.x - sweep.x) + b.q.y * (sweep.x - b.p.x), b.q.x - b.p.x};
+		if(ya[1] < 0) ya = {-ya[0], -ya[1]};
+		if(yb[1] < 0) yb = {-yb[0], -yb[1]};
+		return ya[0] * yb[1] < yb[0] * ya[1];
+	};
+	struct mapped_type{
+		array<int, 2> endpoint, helper;
+	};
+	map<key_type, mapped_type, decltype(cmp)> events(cmp);
+	vector<array<int, 2>> roots;
+	vector<int> id, next;
+	auto new_node = [&](int i)->int{
+		id.push_back(i), next.push_back(-1);
+		return (int)id.size() - 1;
+	};
+	// partition polygon into monotone polygons
+	for(auto i: order){
+		sweep = a[i];
+		int pi = (i + n - 1) % n, ni = (i + 1) % n;
+		if(a[i] < a[pi] && a[i] < a[ni]){
+			if(doubled_signed_area(a[pi], a[i], a[ni]) > 0){ // Start
+				int u = new_node(i), v = new_node(i);
+				events.insert({{a[i], a[pi]}, {{u, v}, {u, -1}}});
+				roots.insert(roots.end(), {u, v});
+			}
+			else{ // Split
+				auto it = events.lower_bound({a[i], a[i]});
+				int u = new_node(i), v = new_node(i);
+				if(~it->second.helper[0] && ~it->second.helper[1]){
+					next[it->second.helper[0]] = u;
+					next[it->second.helper[1]] = v;
+					events.insert({{a[i], a[ni]}, {{it->second.endpoint[0], u}, {-1, u}}});
+					it->second = {{v, it->second.endpoint[1]}, {v, -1}};
+				}
+				else if(~it->second.helper[0]){
+					int j = it->second.helper[0];
+					int w1 = new_node(id[j]);
+					int w2 = new_node(id[j]);
+					roots.push_back({w1, w2});
+					next[w2] = u;
+					next[it->second.endpoint[0]] = v;
+					events.insert(it, {{a[i], a[ni]}, {{w1, u}, {-1, u}}});
+					it->second = {{v, it->second.endpoint[1]}, {v, -1}};
+				}
+				else{
+					int j = it->second.helper[1];
+					int w1 = new_node(id[j]);
+					int w2 = new_node(id[j]);
+					roots.push_back({w1, w2});
+					next[w1] = v;
+					next[it->second.endpoint[1]] = u;
+					events.insert(it, {{a[i], a[pi]}, {{it->second.endpoint[0], u}, {-1, u}}});
+					it->first.p = a[id[j]], it->first.q = a[(id[j] + n - 1) % n];
+					it->second = {{v, w2}, {v, -1}};
+				}
+			}
+		}
+		else if(a[i] > a[pi] && a[i] > a[ni]){ 
+			if(doubled_signed_area(a[pi], a[i], a[ni]) > 0){ // End
+				auto it = events.lower_bound({a[i], a[i]});
+				int u = new_node(i);
+				for(auto v: it->second.endpoint) next[v] = u;
+				for(auto v: it->second.helper) if(~v) next[v] = u;
+				events.erase(it);
+			}
+			else{ // Merge
+				auto l = events.lower_bound({a[i], a[i]}), r = std::next(l);
+				int u = new_node(i), v = new_node(i);
+				if(~l->second.helper[0] && ~l->second.helper[1]){
+					int w = new_node(i);
+					next[l->second.helper[0]] = u;
+					next[l->second.helper[1]] = w;
+					next[l->second.endpoint[1]] = w;
+				}
+				else next[l->second.endpoint[1]] = u;
+				if(~r->second.helper[0] && ~r->second.helper[1]){
+					int w = new_node(i);
+					next[r->second.endpoint[0]] = w;
+					next[r->second.helper[0]] = w;
+					next[r->second.helper[1]] = v;
+				}
+				else next[r->second.endpoint[0]] = v;
+				r->second = {{l->second.endpoint[0], r->second.endpoint[1]}, {u, v}};
+				events.erase(l);
+			}
+		}
+		else{ // Regular
+			auto it = events.lower_bound({a[i], a[i]});
+			int u = new_node(i);
+			if(a[pi] < a[i]){ // Left
+				if(~it->second.helper[0] && ~it->second.helper[1]){
+					int v = new_node(i);
+					next[it->second.endpoint[0]] = v;
+					next[it->second.helper[0]] = v;
+					next[it->second.helper[1]] = u;
+				}
+				else{
+					next[it->second.endpoint[0]] = u;
+				}
+				it->second = {{u, it->second.endpoint[1]}, {u, -1}};
+			}
+			else{ // Right
+				if(~it->second.helper[0] && ~it->second.helper[1]){
+					int v = new_node(i);
+					next[it->second.helper[0]] = u;
+					next[it->second.helper[1]] = v;
+					next[it->second.endpoint[1]] = v;
+				}
+				else{
+					next[it->second.endpoint[1]] = u;
+				}
+				it->first.p = a[i], it->first.q = a[pi];
+				it->second = {{it->second.endpoint[0], u}, {-1, u}};
+			}
+		}
+	}
+	// triangulate each monotone polygons
+	for(auto [p, q]: roots){
+		bool stack_type;
+		vector<int> stack{id[p]};
+		auto push = [&](bool side, int i)->void{
+			if((int)stack.size() == 1){
+				stack.push_back(i);
+				stack_type = side;
+				return;
+			}
+			int last = stack.back(), j = last;
+			stack.pop_back();
+			while(!stack.empty() && doubled_signed_area(a[stack.back()], a[stack_type ? i : j], a[stack_type ? j : i]) > 0){
+				process_triangle(stack.back(), stack_type ? i : j, stack_type ? j : i);
+				j = stack.back();
+				stack.pop_back();
+			}
+			stack.insert(stack.end(), {side == stack_type ? j : last, i});
+			stack_type = side;
+		};
+		p = next[p], q = next[q];
+		while(p != q){
+			bool side;
+			int i;
+			if(a[id[p]] < a[id[q]]) side = false, i = id[p], p = next[p];
+			else side = true, i = id[q], q = next[q];
+			push(side, i);
+		}
+		push(!stack_type, id[p]);
+	}
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>triangulate</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
