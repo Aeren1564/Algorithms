@@ -78,6 +78,7 @@ bool is_sorted(const point<T> &origin, IT begin, IT end){
 
 using pointint = point<int>;
 using pointll = point<long long>;
+using pointlll = point<__int128_t>;
 using pointd = point<double>;
 using pointld = point<long double>;
 ]]></content>

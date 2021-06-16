@@ -1,0 +1,61 @@
+<snippet>
+	<content><![CDATA[
+// type {0: both, 1: lower, 2: upper}
+template<class T, int type = 0>
+struct convex_hull_ind{
+	vector<point<T>> a;
+	vector<int> lower, upper;
+	convex_hull_ind(const vector<point<T>> &_a = {}, bool is_sorted = false): a(_a){
+		vector<int> order((int)a.size());
+		iota(order.begin(), order.end(), 0);
+		if(!is_sorted) sort(order.begin(), order.end(), [&](int i, int j){ return a[i] < a[j]; });
+#define ADDP(C, cmp) while((int)C.size() > 1 && doubled_signed_area(a[C[(int)C.size() - 2]], a[i], a[C.back()]) cmp 0) C.pop_back(); C.push_back(i);
+		for(auto i: order){
+			if(type < 2){ ADDP(lower, >=) }
+			if(!(type & 1)){ ADDP(upper, <=) }
+		}
+#undef ADDP
+		reverse(upper.begin(), upper.end());
+	}
+	point<T> operator[](int i) const{
+		return a[i];
+	}
+	vector<int> get_hull() const{
+		if(type) return type == 1 ? lower : upper;
+		if((int)lower.size() <= 1) return lower;
+		vector<int> res(lower);
+		res.insert(res.end(), ++ upper.begin(), -- upper.end());
+		return res;
+	}
+	// get the point in convex hull with the maximum inner product with p
+	// O(log n)
+	int max_element(const point<T> &p) const{
+		if(p.y >= 0 && !upper.empty()){
+			int low = 0, high = (int)upper.size();
+			while(high - low >= 3){
+				int mid = low + (high - low >> 1);
+				p * a[upper[mid]] <= p * a[upper[mid + 1]] ? low = mid : high = mid + 1;
+			}
+			int res = low;
+			for(auto i = low + 1; i < high; ++ i) if(p * a[upper[res]] < p * a[upper[i]]) res = i;
+			return res;
+		}
+		else{
+			assert(!lower.empty());
+			int low = 0, high = (int)lower.size();
+			while(high - low >= 3){
+				int mid = low + (high - low >> 1);
+				p * a[lower[mid]] >= p * a[lower[mid + 1]] ? low = mid : high = mid + 1;
+			}
+			int res = low;
+			for(auto i = low + 1; i < high; i ++) if(p * a[lower[res]] > p * a[lower[i]]) res = i;
+			return res;
+		}
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>convex_hull_ind</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

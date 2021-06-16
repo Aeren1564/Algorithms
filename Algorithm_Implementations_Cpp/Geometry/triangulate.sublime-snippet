@@ -58,7 +58,7 @@ void triangulate(const vector<point<T>> &a, auto process_triangle){
 					roots.push_back({w1, w2});
 					next[w2] = u;
 					next[it->second.endpoint[0]] = v;
-					events.insert(it, {{a[i], a[ni]}, {{w1, u}, {-1, u}}});
+					events.insert(it, {{a[i], a[pi]}, {{w1, u}, {-1, u}}});
 					it->second = {{v, it->second.endpoint[1]}, {v, -1}};
 				}
 				else{

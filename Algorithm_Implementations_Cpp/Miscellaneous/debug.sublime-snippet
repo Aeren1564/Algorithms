@@ -25,6 +25,23 @@ template<size_t S> ostream &operator<<(ostream &out, const bitset<S> &b){
 	for(auto i = 0; i < S; ++ i) out << b[i];
 	return out;
 }
+ostream &operator<<(ostream &out, __int128_t x){
+	if(!x) return out << 0;
+	if(x < 0) out << "-", x = -x;
+	array<int, 5> a{};
+	int block = 29, it = 0;
+	while(x) a[it ++] = x & (1 << block) - 1, x >>= block;
+	while(it --) out << a[it];
+	return out;
+}
+ostream &operator<<(ostream &out, __uint128_t x){
+	if(!x) return out << 0;
+	array<int, 5> a{};
+	int block = 29, it = 0;
+	while(x) a[it ++] = x & (1 << block) - 1, x >>= block;
+	while(it --) out << a[it];
+	return out;
+}
 void debug_out(){ cerr << "\b\b " << endl; }
 template<class Head, class... Tail>
 void debug_out(Head H, Tail... T){ cerr << H << ", ", debug_out(T...); }

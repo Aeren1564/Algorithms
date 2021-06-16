@@ -6,7 +6,7 @@ struct compare_by_angle{
 	const P origin;
 	compare_by_angle(const P &origin = P()): origin(origin){ }
 	bool operator()(const P &p, const P &q) const{
-		return ori(origin, p, q) > 0;
+		return doubled_signed_area(origin, p, q) > 0;
 	}
 };
 template<class It, class P>

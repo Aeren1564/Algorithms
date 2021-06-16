@@ -5,8 +5,8 @@ template<class T>
 struct line{
 	point<T> p{}, d{}; // p + d*t
 	line(){ }
-	template<class U = T, class V = T> line(point<U> p, point<V> q, bool Two_Points = true): p(p), d(Two_Points ? q - p : q){ }
-	template<class U> line(point<U> d): p(), d(static_cast<point<T>>(d)){ }
+	line(point<T> p, point<T> q, bool Two_Points = true): p(p), d(Two_Points ? q - p : q){ }
+	line(point<T> d): p(), d(static_cast<point<T>>(d)){ }
 	line(T a, T b, T c): p(a ? -c / a : 0, !a && b ? -c / b : 0), d(-b, a){ }
 	template<class U> explicit operator line<U>() const{ return line<U>(point<U>(p), point<U>(d), false); }
 	point<T> q() const{ return p + d; }
@@ -53,6 +53,7 @@ point<double> closest_point_on_segment(const point<T> &p, const line<T> &L){
 
 using lineint = line<int>;
 using linell = line<long long>;
+using linelll = line<__int128_t>;
 using lined = line<double>;
 using lineld = line<long double>;
 ]]></content>

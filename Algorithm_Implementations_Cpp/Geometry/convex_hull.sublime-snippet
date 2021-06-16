@@ -1,82 +1,89 @@
 <snippet>
 	<content><![CDATA[
+// type {0: both, 1: lower, 2: upper}
 template<class T, int type = 0>
-struct convex_hull: pair<vector<point<T>>, vector<point<T>>>{ // (Lower, Upper) type {0: both, 1: lower, 2: upper}
-	using pair<vector<point<T>>, vector<point<T>>>::first;
-	using pair<vector<point<T>>, vector<point<T>>>::second;
+struct convex_hull{ // (Lower, Upper) type {0: both, 1: lower, 2: upper}
+	vector<point<T>> lower, upper;
 	convex_hull(vector<point<T>> arr = {}, bool is_sorted = false){
 		if(!is_sorted) sort(arr.begin(), arr.end()), arr.erase(unique(arr.begin(), arr.end()), arr.end());;
-#define ADDP(C, cmp) while((int)C.size() > 1 && ori(C[(int)C.size() - 2], p, C.back()) cmp 0) C.pop_back(); C.push_back(p);
+#define ADDP(C, cmp) while((int)C.size() > 1 && doubled_signed_area(C[(int)C.size() - 2], p, C.back()) cmp 0) C.pop_back(); C.push_back(p);
 		for(auto &p: arr){
-			if(type < 2){ ADDP(first, >=) }
-			if(!(type & 1)){ ADDP(second, <=) }
+			if(type < 2){ ADDP(lower, >=) }
+			if(!(type & 1)){ ADDP(upper, <=) }
 		}
-		reverse(second.begin(), second.end());
+#undef ADDP
+		reverse(upper.begin(), upper.end());
 	}
 	vector<point<T>> get_hull() const{
-		if(type) return type == 1 ? first : second;
-		if((int)first.size() <= 1) return first;
-		vector<point<T>> res(first);
-		res.insert(res.end(), ++ second.begin(), -- second.end());
+		if(type) return type == 1 ? lower : upper;
+		if((int)lower.size() <= 1) return lower;
+		vector<point<T>> res(lower);
+		res.insert(res.end(), ++ upper.begin(), -- upper.end());
 		return res;
 	}
-	int min_element(const point<T> &p) const{
-		assert(p.y >= 0 && !first.empty());
-		int low = 0, high = (int)first.size();
-		while(high - low >= 3){
-			int mid = low + (high - low >> 1);
-			p * first[mid - 1] >= p * first[mid] ? low = mid - 1 : high = mid;
-		}
-		int res = low;
-		for(auto i = low + 1; i < high; i ++) if(p * first[res] > p * first[i]) res = i;
-		return res;
-	}
+	// get the point in convex hull with the maximum inner product with p
+	// O(log n)
 	int max_element(const point<T> &p) const{
-		assert(p.y >= 0 && !second.empty());
-		int low = 0, high = (int)second.size();
-		while(high - low >= 3){
-			int mid = low + (high - low >> 1);
-			p * second[mid - 1] <= p * second[mid] ? low = mid - 1 : high = mid;
+		if(p.y >= 0 && !upper.empty()){
+			int low = 0, high = (int)upper.size();
+			while(high - low >= 3){
+				int mid = low + (high - low >> 1);
+				p * upper[mid] <= p * upper[mid + 1] ? low = mid : high = mid + 1;
+			}
+			int res = low;
+			for(auto i = low + 1; i < high; ++ i) if(p * upper[res] < p * upper[i]) res = i;
+			return res;
 		}
-		int res = low;
-		for(auto i = low + 1; i < high; ++ i) if(p * second[res] < p * second[i]) res = i;
-		return res;
+		else{
+			assert(!lower.empty());
+			int low = 0, high = (int)lower.size();
+			while(high - low >= 3){
+				int mid = low + (high - low >> 1);
+				p * lower[mid] >= p * lower[mid + 1] ? low = mid : high = mid + 1;
+			}
+			int res = low;
+			for(auto i = low + 1; i < high; i ++) if(p * lower[res] > p * lower[i]) res = i;
+			return res;
+		}
 	}
+	// get the sorted list of points
+	// O(n)
 	vector<point<T>> linearize() const{
-		if(type == 1) return first;
-		if(type == 2){ vector<point<T>> res(second); reverse(res.begin(), res.end()); return res; }
-		if((int)first.size() <= 1) return first;
-		vector<point<T>> res;
-		res.reserve((int)first.size() + (int)second.size());
-		merge(first.begin(), first.end(), ++ second.rbegin(), -- second.rend(), back_inserter(res));
+		if(type == 1) return lower;
+		if(type == 2){ vector<point<T>> res(upper); reverse(res.begin(), res.end()); return res; }
+		if((int)lower.size() <= 1) return lower;
+		vector<point<T>> res((int)lower.size() + (int)upper.size());
+		merge(lower.begin(), lower.end(), ++ upper.rbegin(), -- upper.rend(), res.begin());
 		return res;
 	}
-	convex_hull operator^(const convex_hull &otr) const{ // Convex Hull Merge
-		vector<point<T>> temp, A = linearize(), B = otr.linearize();
-		temp.reserve((int)A.size() + (int)B.size());
-		merge(A.begin(), A.end(), B.begin(), B.end(), back_inserter(temp));
-		return {temp, true};
+	// merge two convex hulls
+	// O(n + m)
+	convex_hull operator^(const convex_hull &otr) const{
+		vector<point<T>> A = linearize(), B = otr.linearize(), C((int)A.size() + (int)B.size());
+		merge(A.begin(), A.end(), B.begin(), B.end(), C.begin());
+		return {C, true};
 	}
 	pair<vector<point<T>>, vector<point<T>>> get_boundary() const{
-		vector<point<T>> L(first), R(second);
-		for(auto i = 1; i < (int)first.size(); ++ i) L[i] -= L[0];
-		for(auto i = 1; i < (int)second.size(); ++ i) R[i] -= R[0];
+		vector<point<T>> L(lower), R(upper);
+		for(auto i = (int)lower.size() - 1; i > 0; -- i) L[i] -= L[i - 1];
+		for(auto i = (int)upper.size() - 1; i > 0; -- i) R[i] -= R[i - 1];
 		return {L, R};
 	}
-	convex_hull operator+(const convex_hull &otr) const{ // Minkowski Sum
-		assert(type == otr.type);
-		compare_by_angle<point<T>> cmp;
+	// Minkowski addition
+	// O(n + m)
+	convex_hull operator+(const convex_hull &otr) const{
 		convex_hull res;
-		pair<vector<point<T>>, vector<point<T>>> A(this->get_boudnary()), B(otr.get_boudnary());
-#define PROCESS(COND, X) \
+		auto A = get_boundary(), B = otr.get_boundary();
+#define PROCESS(COND, X, Y) \
 if(COND && !A.X.empty() && !B.X.empty()){ \
-	res.X.reserve((int)A.X.size() + (int)B.X.size()); \
-	res.X.push_back(A.X.front() + B.X.front()); \
-	merge(A.X.begin() + 1, A.X.end(), B.X.begin() + 1, B.X.end(), back_inserter(res.X)); \
-	for(auto i = 1; i < (int)res.X.size(); ++ i) res.X[i] += res.X[i - 1]; \
+	res.Y.resize((int)A.X.size() + (int)B.X.size()); \
+	res.Y[0] = A.X.front() + B.X.front(); \
+	merge(A.X.begin() + 1, A.X.end(), B.X.begin() + 1, B.X.end(), res.Y.begin(), [&](auto p, auto q){ return doubled_signed_area(point<T>(), p, q) > 0; }); \
+	for(auto i = 1; i < (int)res.Y.size(); ++ i) res.Y[i] += res.Y[i - 1]; \
 }
-		PROCESS(type < 2, first)
-		PROCESS(!(type & 1), second)
+		PROCESS(type < 2, first, lower)
+		PROCESS(!(type & 1), second, upper)
+#undef PROCESS
 		return res;
 	}
 };
