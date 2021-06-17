@@ -66,8 +66,8 @@ struct binary_lifting{
 		if(depth[u] < depth[v]) swap(u, v);
 		u = parent(u, depth[u] - depth[v]);
 		if(u == v) return u;
-		for(auto d = 0; d < h; ++ d) if(lift[u] != lift[v]) u = lift[d][u], v = lift[d][v];
-		return u;
+		for(auto d = h - 1; d >= 0; -- d) if(lift[d][u] != lift[d][v]) u = lift[d][u], v = lift[d][v];
+		return lift[0][u];
 	}
 	int steps(int u, int v, int w = -1){ // get # of edges between u and v, O(log n)
 		return depth[u] + depth[v] - 2 * depth[~w ? w : lca(u, v)];
