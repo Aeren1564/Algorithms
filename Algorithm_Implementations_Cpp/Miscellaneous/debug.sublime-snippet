@@ -42,6 +42,9 @@ ostream &operator<<(ostream &out, __uint128_t x){
 	while(it --) out << a[it];
 	return out;
 }
+ostream &operator<<(ostream &out, const _Bit_reference &bit){
+	return out << bool(bit);
+}
 void debug_out(){ cerr << "\b\b " << endl; }
 template<class Head, class... Tail>
 void debug_out(Head H, Tail... T){ cerr << H << ", ", debug_out(T...); }
