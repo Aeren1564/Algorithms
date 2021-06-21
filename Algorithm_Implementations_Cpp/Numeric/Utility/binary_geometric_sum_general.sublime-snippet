@@ -2,8 +2,8 @@
 	<content><![CDATA[
 // Find 1 + b + b^2 + ... + b^(e-1) on monoid
 // O(log e) applications of add and multiply
-template<class T, class U>
-T binary_geometric_sum_general(T b, U e, function<T(T, T)> add = plus<>(), T zero = 0, function<T(T, T)> multiply = multiplies<>(), T one = 1){
+template<class T, class U, class F1 = plus<>, class F2 = multiplies<>>
+T binary_geometric_sum_general(T b, U e, F1 add = plus<>(), T zero = 0, F2 multiply = multiplies<>(), T one = 1){
 	if(e < 2) return e ? one : zero;
 	int lg = 0;
 	while(e >= (U)1 << lg + 1) ++ lg;
