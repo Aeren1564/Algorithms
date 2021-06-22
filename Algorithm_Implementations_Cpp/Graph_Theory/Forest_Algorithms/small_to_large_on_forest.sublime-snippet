@@ -1,38 +1,29 @@
 <snippet>
 	<content><![CDATA[
-// O(log n) applications of insert() and erase(), O(n) applications of answer()
+// O(n log n) applications of insert() and O(n) applications of answer() and clear()
 // Requires graph
 template<class T>
 struct small_to_large_on_forest{
 	int n;
 	graph<T> g;
 	vector<int> roots, sz, order, pos, end;
-	small_to_large_on_forest(const graph<T> &g, vector<int> roots = {}): n(g.n), g(g), sz(n, 1), pos(n, -1), end(n, -1){
-		function<void(int, int)> dfs = [&](int u, int pe){
+	small_to_large_on_forest(const graph<T> &g, const vector<int> &_roots): n(g.n), g(g), sz(n, 1), pos(n, -1), end(n, -1), roots(_roots){
+		auto dfs = [&](auto self, int u, int pe)->void{
 			pos[u] = (int)order.size();
 			order.push_back(u);
 			for(auto id: g.adj[u]){
 				if(id == pe || g.ignore && g.ignore(id)) continue;
 				auto &e = g.edges[id];
 				int v = u ^ e.from ^ e.to;
-				dfs(v, id);
+				self(self, v, id);
 				sz[u] += sz[v];
 			}
 			end[u] = (int)order.size();
 		};
-		if(roots.empty()){
-			for(auto u = 0; u < n; ++ u) if(!~pos[u]){
-				roots.push_back(u);
-				dfs(u, -1);
-			}
-		}
-		else{
-			this->roots = roots;
-			for(auto u: roots) assert(!~pos[u]), dfs(u, -1);
-		}
+		for(auto u: roots) assert(!~pos[u]), dfs(dfs, u, -1);
 	}
-	void solve(int root, function<void(int)> insert, function<void(int)> erase, function<void(int)> answer){
-		function<void(int, int, bool)> dfs = [&](int u, int pe, bool keep){
+	void solve(int root, auto insert, auto clear, auto answer){
+		auto dfs = [&](auto self, int u, int pe, bool keep)->void{
 			int hv = -1, hid = -1;
 			for(auto id: g.adj[u]){
 				if(id == pe || g.ignore && g.ignore(id)) continue;
@@ -44,25 +35,22 @@ struct small_to_large_on_forest{
 				if(id == pe || id == hid || g.ignore && g.ignore(id)) continue;
 				auto &e = g.edges[id];
 				int v = u ^ e.from ^ e.to;
-				dfs(v, id, false);
+				self(self, v, id, false);
 			}
-			if(~hid) dfs(hv, hid, true);
+			if(~hid) self(self, hv, hid, true);
 			for(auto id: g.adj[u]){
 				if(id == pe || id == hid || g.ignore && g.ignore(id)) continue;
 				auto &e = g.edges[id];
 				int v = u ^ e.from ^ e.to;
 				for(auto i = pos[v]; i < end[v]; ++ i) insert(order[i]);
 			}
-			insert(u);
-			answer(u);
-			if(!keep){
-				for(auto i = pos[u]; i < end[u]; ++ i) erase(order[i]);
-			}
+			answer(u, false), insert(u), answer(u, true);
+			if(!keep) clear(u);
 		};
-		dfs(root, -1, false);
+		dfs(dfs, root, -1, false);
 	}
-	void solve_all(function<void(int)> insert, function<void(int)> erase, function<void(int)> answer){
-		for(auto r: roots) solve(r, insert, erase, answer);
+	void solve(auto insert, auto clear, auto answer){
+		for(auto r: roots) solve(r, insert, clear, answer);
 	}
 };
 ]]></content>

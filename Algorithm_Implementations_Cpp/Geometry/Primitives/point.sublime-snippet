@@ -39,7 +39,7 @@ struct point{
 	bool operator||(const point &otr) const{ return !(*this ^ otr); }
 };
 template<class T> istream &operator>>(istream &in, point<T> &p){ return in >> p.x >> p.y; }
-template<class T> ostream &operator<<(ostream &out, const point<T> &p){ return out << "(" << p.x << ", " << p.y << ")"; }
+template<class T> ostream &operator<<(ostream &out, const point<T> &p){ return out << "{" << p.x << ", " << p.y << "}"; }
 template<class T>
 double distance(const point<T> &p, const point<T> &q){
 	return (p - q).norm();

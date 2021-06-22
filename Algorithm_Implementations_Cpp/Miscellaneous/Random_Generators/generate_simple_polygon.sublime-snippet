@@ -1,0 +1,34 @@
+<snippet>
+	<content><![CDATA[
+// Requires random, point, line, and line_intersection
+vector<point<int>> generate_simple_polygon(int n, int low, int high){
+	assert(n >= 3);
+	vector<point<int>> a(n);
+	auto rnd = randint(low, high + 1);
+	int it = 0;
+	while(true){
+		++ it;
+		for(auto &p: a) p = {rnd(rng), rnd(rng)};
+			for(auto i = 0; i < n; ++ i){
+				if(on_segment(a[i], line(a[(i + 1) % n], a[(i + 2) % n])) || on_segment(a[(i + 2) % n], line(a[i], a[(i + 1) % n]))){
+					goto NEXT;
+				}
+				for(auto j = 0; j < n; ++ j) if(i != j){
+				if(a[i] == a[j]) goto NEXT;
+				if(abs(i - j) != 1 && abs(i - j) != n - 1 && intersect_closed_segments(line(a[i], a[(i + 1) % n]), line(a[j], a[(j + 1) % n]))){
+					goto NEXT;
+				}
+			}
+		}
+		break;
+		NEXT:;
+	}
+	if(doubled_signed_area(a) < 0) reverse(a.begin(), a.end());
+	return a;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>generate_simple_polygon</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

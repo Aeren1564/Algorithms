@@ -4,6 +4,9 @@ struct line_type{
 	mutable long long d, k, p;
 	bool operator<(const line_type &otr) const{ return d < otr.d; }
 	bool operator<(long long x) const{ return p < x;}
+	friend ostream &operator<<(ostream &out, const line_type &L){
+		return out << "{" << L.d << ", " << L.k << ", " << L.p << "}";
+	}
 };
 template<bool GET_MAX = true>
 struct line_container: multiset<line_type, less<>>{

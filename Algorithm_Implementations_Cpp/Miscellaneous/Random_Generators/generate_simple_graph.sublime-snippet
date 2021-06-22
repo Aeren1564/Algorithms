@@ -1,0 +1,20 @@
+<snippet>
+	<content><![CDATA[
+// Requires random
+vector<array<int, 2>> generate_simple_graph(int n, int m){
+	vector<array<int, 2>> res(m);
+	set<array<int, 2>> s;
+	for(auto &[u, v]: res){
+		do{
+			u = rng() % n, v = rng() % n;
+		}while(u == v || s.count({u, v}) || s.count({v, u}));
+		s.insert({u, v}), s.insert({v, u});
+	}
+	return res;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>generate_simple_graph</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

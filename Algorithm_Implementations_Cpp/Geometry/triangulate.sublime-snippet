@@ -1,10 +1,5 @@
 <snippet>
 	<content><![CDATA[
-// Implementation of https://cs.gmu.edu/~jmlien/teaching/09_fall_cs633/uploads/Main/lecture03.pdf
-// p must be given in CCW, no two adjacent points should coincide, and must not intersect with itself
-// T must be able to hold the cube of maximum abs coordinate
-// O(n log n)
-// Requires point
 template<class T>
 void triangulate(const vector<point<T>> &a, auto process_triangle){
 	int n = (int)a.size();
@@ -48,7 +43,7 @@ void triangulate(const vector<point<T>> &a, auto process_triangle){
 				if(~it->second.helper[0] && ~it->second.helper[1]){
 					next[it->second.helper[0]] = u;
 					next[it->second.helper[1]] = v;
-					events.insert({{a[i], a[ni]}, {{it->second.endpoint[0], u}, {-1, u}}});
+					events.insert({{a[i], a[pi]}, {{it->second.endpoint[0], u}, {-1, u}}});
 					it->second = {{v, it->second.endpoint[1]}, {v, -1}};
 				}
 				else if(~it->second.helper[0]){
