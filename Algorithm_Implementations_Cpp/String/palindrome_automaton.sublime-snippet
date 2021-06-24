@@ -1,54 +1,59 @@
 <snippet>
 	<content><![CDATA[
-template<class Str, int lim = 128>
+// Each node represents a unique palindromic substring plus 0 and 1 node representing empty even and odd string
+// Adjacency_Type: array<int, X> or map<Char_Type, int> where X is the size of the alphabet
+template<class Char_Type, class Adjacency_Type>
 struct palindrome_automaton{
-	typedef class Str::value_type Char;
-	struct node{
-		int len, link, depth, cnt = 0; // length, suffix link, depth of the node via suffix link
-		vector<int> next;
-		node(int len, int link, int depth): len(len), link(link), depth(depth), next(lim){ };
-	};
-	vector<int> s = vector<int>{-1};
-	vector<node> state = vector<node>{{0, 1, 0}, {-1, 0, 0}};
-	int lps = 1; // Node containing the longest palindromic suffix
-	long long count = 0; // Number of non-empty palindromic substrings
-	palindrome_automaton(){ }
-	palindrome_automaton(const Str &s){
-		for(auto c: s) push_back(c);
+	// Begin States
+	// len: length of the palindrome
+	// link: suffix link
+	// serial_link[u]: longest proper suffix v with len[u] - len[link[u]] != len[v] - len[link[v]]
+	// depth: # of suffix links till root
+	// occurence: # of occurences of the palindrome as a longest proper palindromic suffix of a prefix
+	vector<int> len{0, -1}, link{1, 0}, serial_link{1, 0}, depth{0, 0}, occurence{0, 0};
+	vector<Adjacency_Type> next = vector<Adjacency_Type>(2);
+	// End States
+	vector<Char_Type> s{-1};
+	int last = 1;
+	long long palindromic_substring_count = 0;
+	int new_state(int l, int u){
+		len.push_back(l);
+		link.push_back(u);
+		serial_link.push_back(l - len[u] == len[u] - len[link[u]] ? serial_link[u] : u);
+		depth.push_back(depth[u] + 1);
+		next.emplace_back();
+		occurence.push_back(0);
+		return (int)len.size() - 1;
 	}
-	int get_link(int u){
-		while(s[int(s.size()) - state[u].len - 2] != s.back()) u = state[u].link;
-		return u;
+	void extend(const vector<Char_Type> &s){
+		for(auto c: s) extend(c);
 	}
-	void push_back(Char c){
-		s.push_back(c), lps = get_link(lps);
-		if(!state[lps].next[c]){
-			state.push_back({state[lps].len + 2, state[get_link(state[lps].link)].next[c], state[state[get_link(state[lps].link)].next[c]].depth + 1});
-			state[lps].next[c] = int(state.size()) - 1;
+	void extend(Char_Type c){
+		s.push_back(c);
+		while(s[(int)s.size() - len[last] - 2] != s.back()) last = link[last];
+		if(!next[last][c]){
+			int u = link[last];
+			while(s[(int)s.size() - len[u] - 2] != s.back()) u = link[u];
+			int v = new_state(len[last] + 2, next[u][c]);
+			next[last][c] = v; // Separated for UB in C++14 or below
 		}
-		lps = state[lps].next[c], count += state[lps].depth, ++ state[lps].cnt;
+		last = next[last][c];
+		palindromic_substring_count += depth[last];
+		++ occurence[last];
 	}
-	void init_cnt(){
-		function<void(int)> dfs = [&](int u){
-			for(int c = 0; c < lim; ++ c) if(state[u].next[c]){
-				dfs(state[u].next[c]);
-				state[u].cnt += state[state[u].next[c]].cnt;
-			}
+	int size() const{ // # of states
+		return (int)len.size();
+	}
+	// count: # of occurences of the palindrome
+	vector<int> count;
+	vector<vector<int>> inv_link;
+	void init_count(){
+		count = occurence, inv_link.assign(size(), {});
+		for(auto u = 2; u < (int)size(); ++ u) inv_link[link[u]].push_back(u);
+		auto dfs = [&](auto self, int u)->void{
+			for(auto v: inv_link[u]) self(self, v), count[u] += count[v];
 		};
-		dfs(0), dfs(1);
-	}
-	void print(){
-		vector<pair<int, string>> q{{1, ""}, {0, ""}};
-		while(!q.empty()){
-			int u;
-			string s;
-			tie(u, s) = q.back(); q.pop_back();
-			auto m = state[u];
-			cerr << "Node " << u << " \"" << s << "\"\nlen = " << m.len << ", link = " << m.link << ", depth = " << m.depth << "\nnext: ";
-			for(int c = 0; c < lim; ++ c) if(m.next[c]) cerr << "(" << char(c) << " -> " << m.next[c] << ") ";
-			cerr << "\n\n";
-			for(int c = lim - 1; c >= 0; -- c) if(m.next[c]) q.push_back({m.next[c], u == 1 ? string{char(c)} : char(c) + s + char(c)});
-		}
+		dfs(dfs, 0);
 	}
 };
 ]]></content>

@@ -3,14 +3,14 @@
 // Requires graph
 // O(V log V)
 template<class T>
-struct centroid_decomposition: graph<int>{ // stores the arborescence
+struct centroid_decomposition{
 	int n, root; // the root of the arborescence
-	vector<int> pe, sz;
+	graph<int> abr; // stores the arborescence
+	vector<int> sz;
 	vector<vector<T>> dist; // dist[u][i]: sum of weights from u to its i-th centroid parent
 	T T_id;
-	using graph<int>::orient;
-	template<class U>
-	centroid_decomposition(const graph<U> &g, T T_id, function<T(U, T)> UT): n(g.n), T_id(T_id), graph<int>(g.n), pe(g.n), dist(g.n){
+	template<class U, class F = plus<>>
+	centroid_decomposition(const graph<U> &g, T T_id = {}, F UT = plus<>()): n(g.n), abr(g.n), T_id(T_id), dist(g.n), sz(g.n){
 		vector<int> dead(n), sz(n);
 		auto centroid = [&](int s){
 			int u = s, pe = -1;
@@ -30,18 +30,18 @@ struct centroid_decomposition: graph<int>{ // stores the arborescence
 			}
 			return u;
 		};
-		function<void(int, int)> dfs_sz = [&](int u, int p){
+		auto dfs_sz = [&](auto self, int u, int p)->void{
 			sz[u] = 1;
 			for(auto id: g.adj[u]){
 				if(g.ignore && g.ignore(id)) continue;
 				auto &e = g.edges[id];
 				int v = u ^ e.from ^ e.to;
 				if(p == v || dead[v]) continue;
-				dfs_sz(v, u);
+				self(self, v, u);
 				sz[u] += sz[v];
 			}
 		};
-		function<void(int, int)> set_distance = [&](int u, int pe){
+		auto set_distance = [&](auto self, int u, int pe)->void{
 			int p = u ^ g.edges[pe].from ^ g.edges[pe].to;
 			dist[u].push_back(UT(g.edges[pe].cost, dist[p].back()));
 			for(auto id: g.adj[u]){
@@ -49,28 +49,28 @@ struct centroid_decomposition: graph<int>{ // stores the arborescence
 				auto &e = g.edges[id];
 				int v = u ^ e.from ^ e.to;
 				if(dead[v]) continue;
-				set_distance(v, id);
+				self(self, v, id);
 			}
 		};
-		function<void(int, int)> construct = [&](int u, int p){
-			dfs_sz(u, p);
+		auto construct = [&](auto self, int u, int p)->void{
+			dfs_sz(dfs_sz, u, p);
 			dead[u = centroid(u)] = true;
 			this->sz[u] = sz[u];
-			if(~p) pe[u] = orient(p, u);
+			if(~p) abr.orient(p, u);
 			else root = u;
 			dist[u].push_back(T_id);
 			for(auto id: g.adj[u]){
 				auto &e = g.edges[id];
 				int v = u ^ e.from ^ e.to;
-				if(!dead[v]) set_distance(v, id);
+				if(!dead[v]) set_distance(set_distance, v, id);
 			}
 			for(auto id: g.adj[u]){
 				auto &e = g.edges[id];
 				int v = u ^ e.from ^ e.to;
-				if(!dead[v]) construct(v, u);
+				if(!dead[v]) self(self, v, u);
 			}
 		};
-		construct(0, -1);
+		construct(construct, 0, -1);
 		for(auto u = 0; u < n; ++ u) reverse(dist[u].begin(), dist[u].end());
 	}
 };
