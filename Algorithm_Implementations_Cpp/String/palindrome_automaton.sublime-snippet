@@ -10,11 +10,11 @@ struct palindrome_automaton{
 	// serial_link[u]: longest proper suffix v with len[u] - len[link[u]] != len[v] - len[link[v]]
 	// depth: # of suffix links till root
 	// occurence: # of occurences of the palindrome as a longest proper palindromic suffix of a prefix
-	vector<int> len{0, -1}, link{1, 0}, serial_link{1, 0}, depth{0, 0}, occurence{0, 0};
+	vector<int> len{0, -1}, link{1, 0}, serial_link{0, 0}, depth{0, 0}, occurence{1, 0};
 	vector<Adjacency_Type> next = vector<Adjacency_Type>(2);
 	// End States
 	vector<Char_Type> s{-1};
-	int last = 1;
+	vector<int> last{0};
 	long long palindromic_substring_count = 0;
 	int new_state(int l, int u){
 		len.push_back(l);
@@ -30,16 +30,17 @@ struct palindrome_automaton{
 	}
 	void extend(Char_Type c){
 		s.push_back(c);
-		while(s[(int)s.size() - len[last] - 2] != s.back()) last = link[last];
-		if(!next[last][c]){
-			int u = link[last];
+		int l = last.back();
+		while(s[(int)s.size() - len[l] - 2] != s.back()) l = link[l];
+		if(!next[l][c]){
+			int u = link[l];
 			while(s[(int)s.size() - len[u] - 2] != s.back()) u = link[u];
-			int v = new_state(len[last] + 2, next[u][c]);
-			next[last][c] = v; // Separated for UB in C++14 or below
+			int v = new_state(len[l] + 2, next[u][c]);
+			next[l][c] = v; // Separated for UB in C++14 or below
 		}
-		last = next[last][c];
-		palindromic_substring_count += depth[last];
-		++ occurence[last];
+		last.push_back(next[l][c]);
+		palindromic_substring_count += depth[last.back()];
+		++ occurence[last.back()];
 	}
 	int size() const{ // # of states
 		return (int)len.size();

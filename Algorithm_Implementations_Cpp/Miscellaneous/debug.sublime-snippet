@@ -45,6 +45,12 @@ ostream &operator<<(ostream &out, __uint128_t x){
 ostream &operator<<(ostream &out, const _Bit_reference &bit){
 	return out << bool(bit);
 }
+template<class T, class A, class C>
+ostream &operator<<(ostream &out, priority_queue<T, A, C> pq){
+	vector<T> a;
+	while(!pq.empty()) a.push_back(pq.top()), pq.pop();
+	return out << a;
+}
 void debug_out(){ cerr << "\b\b " << endl; }
 template<class Head, class... Tail>
 void debug_out(Head H, Tail... T){ cerr << H << ", ", debug_out(T...); }
