@@ -1,0 +1,45 @@
+<snippet>
+	<content><![CDATA[
+// Block min by default. Set cmp = greater for block max
+// Returns indices
+// O(n m)
+template<class T, class Compare = less<>>
+vector<vector<array<int, 2>>> block_minmax_processor_2d(const vector<vector<T>> &a, int xblock, int yblock, Compare cmp = less<>()){
+	int n = (int)a.size(), m = (int)a[0].size();
+	assert(1 <= xblock && xblock <= n && 1 <= yblock && yblock <= m);
+	vector<vector<int>> res_x(n, vector<int>(m - yblock + 1));
+	for(auto i = 0; i < n; ++ i){
+		deque<int> dq;
+		for(auto j = 0; j < yblock - 1; ++ j){
+			while(!dq.empty() && !cmp(a[i][dq.back()], a[i][j])) dq.pop_back();
+			dq.push_back(j);
+		}
+		for(auto j = yblock - 1; j < m; ++ j){
+			while(!dq.empty() && !cmp(a[i][dq.back()], a[i][j])) dq.pop_back();
+			dq.push_back(j);
+			res_x[i][j - yblock + 1] = dq.front();
+			if(dq.front() == j - yblock + 1) dq.pop_front();
+		}
+	}
+	vector<vector<array<int, 2>>> res(n - xblock + 1, vector<array<int, 2>>(m - yblock + 1));
+	for(auto y = 0; y <= m - yblock; ++ y){
+		deque<array<int, 2>> dq;
+		for(auto x = 0; x < xblock - 1; ++ x){
+			while(!dq.empty() && !cmp(a[dq.back()[0]][res_x[dq.back()[0]][y]], a[x][res_x[x][y]])) dq.pop_back();
+			dq.push_back({x, res_x[x][y]});
+		}
+		for(auto x = xblock - 1; x < n; ++ x){
+			while(!dq.empty() && !cmp(a[dq.back()[0]][res_x[dq.back()[0]][y]], a[x][res_x[x][y]])) dq.pop_back();
+			dq.push_back({x, res_x[x][y]});
+			res[x - xblock + 1][y] = dq.front();
+			if(dq.front()[0] == x - xblock + 1) dq.pop_front();
+		}
+	}
+	return res;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>block_minmax_processor_2d</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
