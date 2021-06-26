@@ -1,0 +1,38 @@
+<snippet>
+	<content><![CDATA[
+template<class T, class F>
+struct sparse_table_2d{
+	int n, m;
+	vector<vector<vector<vector<T>>>> data;
+	F TT;
+	T T_id;
+	sparse_table_2d(){ }
+	// O(n m log n log m)
+	sparse_table_2d(const vector<vector<T>> &a, F TT, T T_id): n((int)a.size()), m((int)a[0].size()), TT(TT), T_id(T_id), data({{a}}){
+		for(auto q = 1, j = 1; q << 1 <= m; q <<= 1, ++ j){
+			data[0].push_back(vector<vector<T>>(n, vector<T>(m - (q << 1) + 1)));
+			for(auto ii = 0; ii < (int)data[0][j].size(); ++ ii) for(auto jj = 0; jj < (int)data[0][j][ii].size(); ++ jj) data[0][j][ii][jj] = TT(data[0][j - 1][ii][jj], data[0][j - 1][ii][jj + q]);
+		}
+		for(auto p = 1, i = 1; p << 1 <= n; p <<= 1, ++ i){
+			data.push_back({vector<vector<T>>(n - (p << 1) + 1, vector<T>(m))});
+			for(auto ii = 0; ii < (int)data[i][0].size(); ++ ii) for(auto jj = 0; jj < (int)data[i][0][ii].size(); ++ jj) data[i][0][ii][jj] = TT(data[i - 1][0][ii][jj], data[i - 1][0][ii + p][jj]);
+			for(auto q = 1, j = 1; q << 1 <= m; q <<= 1, ++ j){
+				data[i].push_back(vector<vector<T>>(n - (p << 1) + 1, vector<T>(m - (q << 1) + 1)));
+				for(auto ii = 0; ii < (int)data[i][j].size(); ++ ii) for(auto jj = 0; jj < (int)data[i][j][ii].size(); ++ jj) data[i][j][ii][jj] = TT(data[i - 1][j][ii][jj], data[i - 1][j][ii + p][jj]);
+			}
+		}
+	}
+	// O(1)
+	T query(int xl, int yl, int xr, int yr) const{
+		assert(0 <= xl && xl <= xr && xr <= n && 0 <= yl && yl <= yr && yr <= m);
+		if(xl == xr || yl == yr) return T_id;
+		int xd = __lg(xr - xl), yd = __lg(yr - yl);
+		return TT(TT(data[xd][yd][xl][yl], data[xd][yd][xl][yr - (1 << yd)]), TT(data[xd][yd][xr - (1 << xd)][yl], data[xd][yd][xr - (1 << xd)][yr - (1 << yd)]));
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>sparse_table_2d</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
