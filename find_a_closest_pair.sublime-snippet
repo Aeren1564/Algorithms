@@ -1,0 +1,29 @@
+<snippet>
+	<content><![CDATA[
+template<class T>
+pair<T, pair<int, int>> find_a_closest_pair(const vector<point<T>> &a){
+	int n = (int)a.size();
+	assert(n >= 2);
+	vector<int> order(n);
+	iota(order.begin(), order.end(), 0);
+	sort(order.begin(), order.end(), [&](int i, int j){ return a[i].y < a[j].y; });
+	for(auto t = 1; t < n; ++ t) if(a[order[t - 1]] == a[order[t]]) return {0, {order[t - 1], order[t]}};
+	pair<T, pair<int, int>> res{numeric_limits<T>::max(), {}};
+	map<point<T>, int> s;
+	int t = 0;
+	for(auto i: order){
+		T d = 1 + sqrt(res.first);
+		while(a[order[t]].y <= a[i].y - d) s.erase(a[order[t]]), ++ t;
+		auto low = s.lower_bound({a[i].x - d, a[i].y});
+		auto high = s.upper_bound({a[i].x + d, a[i].y});
+		for(; low != high; ++ low) res = min(res, pair{squared_distance(low->first, a[i]), pair{low->second, i}});
+		s.insert({a[i], i});
+	}
+	return res;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>find_a_closest_pair</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

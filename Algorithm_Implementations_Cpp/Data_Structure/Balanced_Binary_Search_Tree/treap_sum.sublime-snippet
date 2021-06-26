@@ -1,0 +1,136 @@
+<snippet>
+	<content><![CDATA[
+// Requires random
+template<class T, class F>
+struct treap_sum{
+	vector<int> left, right, priority, sz;
+	vector<T> data, subtr_data;
+	F TT; // monoid operation (always adjacent)
+	T T_id; // monoid identity
+	treap_sum(F TT, T T_id): TT(TT), T_id(T_id){ }
+	void refresh(int u){
+		sz[u] = (~left[u] ? sz[left[u]] : 0) + 1 + (~right[u] ? sz[right[u]] : 0);
+		subtr_data[u] = TT(TT(~left[u] ? subtr_data[left[u]] : T_id, data[u]), ~right[u] ? subtr_data[right[u]] : T_id);
+	}
+	void heapify(int u){
+		if(~u){
+			int v = u;
+			if(~left[u] && priority[left[u]] > priority[v]) v = left[u];
+			if(~right[u] && priority[right[u]] > priority[v]) v = right[u];
+			if(u != v) swap(priority[u], priority[v]), heapify(v);
+		}
+	}
+	int get_sz(int u){
+		return ~u ? sz[u] : 0;
+	}
+	template<class Compare = less<>>
+	pair<int, int> split_by_key(int u, T x, Compare cmp = less<>()){ // split into [0, x), [x, inf), datas must be sorted, O(log n)
+		if(!~u) return {-1, -1};
+		if(cmp(data[u], x)){
+			auto [a, b] = split_by_key(right[u], x, cmp);
+			right[u] = a, refresh(u);
+			return {u, b};
+		}
+		else{
+			auto [a, b] = split_by_key(left[u], x, cmp);
+			left[u] = b, refresh(u);
+			return {a, u};
+		}
+	}
+	pair<int, int> split_by_order(int u, int pos){ // split into [0, pos), [pos, inf), O(log n)
+		if(!~u) return {-1, -1};
+		if(get_sz(left[u]) < pos){
+			auto [a, b] = split_by_order(right[u], pos - get_sz(left[u]) - 1);
+			right[u] = a, refresh(u);
+			return {u, b};
+		}
+		else{
+			auto [a, b] = split_by_order(left[u], pos);
+			left[u] = b, refresh(u);
+			return {a, u};
+		}
+	}
+	int append(int u, int v){ // append v onto u, O(log n)
+		if(!~u || !~v) return ~u ? u : v;
+		if(priority[v] < priority[u]){
+			right[u] = append(right[u], v), refresh(u);
+			return u;
+		}
+		else{
+			left[v] = append(u, left[v]), refresh(v);
+			return v;
+		}
+	}
+	template<class Compare = less<>>
+	int insert_by_key(int u, int v, Compare cmp = less<>()){ // datas must be sorted, O(log n)
+		if(!~u) return v;
+		auto [a, b] = split_by_key(u, data[v], cmp);
+		return append(append(a, v), b);
+	}
+	int insert_by_order(int u, int v, int pos){ // O(log n)
+		if(!~u) return v;
+		auto [a, b] = split_by_order(u, pos);
+		return append(append(a, v), b);
+	}
+	template<class Compare = less<>>
+	pair<int, int> erase_by_key(int u, T x, Compare cmp = less<>()){ // Erase the smallest >= x, datas must be sorted, O(log n)
+		if(!~u) return {-1, -1};
+		int a, b, c;
+		tie(a, b) = split_by_key(u, x, cmp);
+		tie(b, c) = split_by_order(b, 1);
+		return {append(a, c), b};
+	} // returns new root, erased root
+	pair<int, int> erase_by_order(int u, int pos){ // O(log n)
+		if(!~u) return {-1, -1};
+		int a, b, c;
+		tie(a, b) = split_by_order(u, pos);
+		tie(b, c) = split_by_order(b, 1);
+		return {append(a, c), b};
+	} // returns new root, erased root
+	template<class Compare = less<>>
+	int unite_by_key(int u, int v, Compare cmp = less<>()){ // datas must be sorted, O(min(sz(u), sz(v)) * log(sz ratio))
+		if(!~u || !~v) return ~u ? u : v;
+		if(priority[u] < priority[v]) swap(u, v);
+		auto [a, b] = split_by_key(v, data[u], cmp);
+		left[u] = unite_by_key(left[u], a, cmp), right[u] = unite_by_key(right[u], b, cmp), refresh(u);
+		return u;
+	}
+	void act_on_subtr(int u, function<void(int)> f){
+		if(~u) act_on_subtr(left[u], f), f(u), act_on_subtr(right[u], f), refresh(u);
+	}
+	void print(int u){
+#ifdef LOCAL
+		cerr << "Elements: ";
+		act_on_subtr(u, [&](int u){
+			cerr << u << " ";
+		});
+		cerr << endl;
+#endif
+	}
+	int new_node(T x, int v = -1, int w = -1){
+		int u = (int)data.size();
+		left.push_back(v), right.push_back(w), priority.push_back(rng()), sz.push_back(1);
+		data.push_back(x), subtr_data.push_back(x);
+		return heapify(u), refresh(u), u;
+	}
+	int build(int n){
+		return build(vector<T>(n, T_id));
+	}
+	int build(int n, T init){
+		return build(vector<T>(n, init));
+	}
+	int build(const vector<T> &a){
+		auto recurse = [&](auto self, int l, int r)->int{
+			if(l == r) return -1;
+			int m = l + (r - l >> 1);
+			return new_node(a[m], self(self, l, m), self(self, m + 1, r));
+		};
+		return recurse(recurse, 0, (int)a.size());
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>treap_sum</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

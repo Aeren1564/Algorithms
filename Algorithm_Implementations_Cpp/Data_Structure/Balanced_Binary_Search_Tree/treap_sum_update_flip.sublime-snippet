@@ -2,7 +2,7 @@
 	<content><![CDATA[
 // Requires random
 template<class T, class U, class F1, class F2, class F3, class F4>
-struct treap{
+struct treap_sum_update_flip{
 	vector<int> left, right, priority, sz, lazy_flip;
 	vector<T> data, subtr_data;
 	vector<U> lazy;
@@ -11,7 +11,7 @@ struct treap{
 	F2 UU; // semigroup operation (superset, subset)
 	F3 U_init; // semigroup default element for the interval [l, r)
 	F4 UT; // action of U on T (superset, subset)
-	treap(
+	treap_sum_update_flip(
 		F1 TT, T T_id,
 		F2 UU, F3 U_init,
 		F4 UT
@@ -165,7 +165,7 @@ struct treap{
 };
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
-	<tabTrigger>treap</tabTrigger> -->
+	<tabTrigger>treap_sum_update_flip</tabTrigger> -->
 	<!-- Optional: Set a scope to limit where the snippet will trigger -->
 	<scope>source.c++</scope> -->
 </snippet>

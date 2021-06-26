@@ -33,7 +33,7 @@ vector<int> find_dominators(const graph<T> &g, int root){
 	graph<int> g_rev = g.transposed();
 	vector<int> idom(n, -1), link(n, -1);
 	vector<vector<int>> bucket(n);
-	for(int it = (int)order.size() - 1; it >= 0; -- it){
+	for(auto it = (int)order.size() - 1; it >= 0; -- it){
 		int w = order[it];
 		for(auto id : g_rev.adj[w]){
 			if(g_rev.ignore != nullptr && g_rev.ignore(id)) continue;
@@ -51,12 +51,12 @@ vector<int> find_dominators(const graph<T> &g, int root){
 		}
 		bucket[order[sdom[w]]].push_back(w);
 	}
-	for(int it = 1; it < (int)order.size(); ++ it) idom[order[it]] = idom[link[order[it]]];
+	for(auto it = 1; it < (int)order.size(); ++ it) idom[order[it]] = idom[link[order[it]]];
 	return idom; // idom[i] -- immediate dominator for vertex i
 }
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
-	<tabTrigger>dominator_tree</tabTrigger> -->
+	<tabTrigger>find_dominators</tabTrigger> -->
 	<!-- Optional: Set a scope to limit where the snippet will trigger -->
 	<scope>source.c++</scope> -->
 </snippet>
