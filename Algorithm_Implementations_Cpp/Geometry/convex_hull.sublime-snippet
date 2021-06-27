@@ -52,7 +52,7 @@ struct convex_hull{ // (Lower, Upper) type {0: both, 1: lower, 2: upper}
 		if(type == 1) return lower;
 		if(type == 2){ vector<point<T>> res(upper); reverse(res.begin(), res.end()); return res; }
 		if((int)lower.size() <= 1) return lower;
-		vector<point<T>> res((int)lower.size() + (int)upper.size());
+		vector<point<T>> res((int)lower.size() + (int)upper.size() - 2);
 		merge(lower.begin(), lower.end(), ++ upper.rbegin(), -- upper.rend(), res.begin());
 		return res;
 	}
@@ -76,15 +76,24 @@ struct convex_hull{ // (Lower, Upper) type {0: both, 1: lower, 2: upper}
 		auto A = get_boundary(), B = otr.get_boundary();
 #define PROCESS(COND, X, Y) \
 if(COND && !A.X.empty() && !B.X.empty()){ \
-	res.Y.resize((int)A.X.size() + (int)B.X.size()); \
+	res.Y.resize((int)A.X.size() + (int)B.X.size() - 1); \
 	res.Y[0] = A.X.front() + B.X.front(); \
-	merge(A.X.begin() + 1, A.X.end(), B.X.begin() + 1, B.X.end(), res.Y.begin(), [&](auto p, auto q){ return doubled_signed_area(point<T>(), p, q) > 0; }); \
+	merge(A.X.begin() + 1, A.X.end(), B.X.begin() + 1, B.X.end(), res.Y.begin() + 1, [&](auto p, auto q){ return (p ^ q) > 0; }); \
 	for(auto i = 1; i < (int)res.Y.size(); ++ i) res.Y[i] += res.Y[i - 1]; \
 }
 		PROCESS(type < 2, first, lower)
 		PROCESS(!(type & 1), second, upper)
 #undef PROCESS
 		return res;
+	}
+	convex_hull operator-() const{
+		auto A = linearize();
+		for(auto &p: A) p = -p;
+		reverse(A.begin(), A.end());
+		return {A, true};
+	}
+	convex_hull operator-(const convex_hull &otr) const{
+		return *this + -otr;
 	}
 };
 ]]></content>
