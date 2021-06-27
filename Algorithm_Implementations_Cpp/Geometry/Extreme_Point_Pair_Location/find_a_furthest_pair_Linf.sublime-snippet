@@ -1,0 +1,23 @@
+<snippet>
+	<content><![CDATA[
+// Returns the pair of squared distance and pair of point indices
+// O(n)
+// Requires point
+template<class T>
+pair<T, pair<int, int>> find_a_furthest_pair_Linf(const vector<point<T>> &a){
+	T imin = min_element(a.begin(), a.end()) - a.begin();
+	T imax = max_element(a.begin(), a.end()) - a.begin();
+	auto cmp_y = [&](auto p, auto q)->bool{ return p.y < q.y; };
+	T jmin = min_element(a.begin(), a.end(), cmp_y) - a.begin();
+	T jmax = max_element(a.begin(), a.end(), cmp_y) - a.begin();
+	return max(
+		pair{a[imax].x - a[imin].x, pair{imin, imax}},
+		pair{a[jmax].y - a[jmin].y, pair{jmin, jmax}}
+	);
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>find_a_furthest_pair_Linf</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

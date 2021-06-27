@@ -1,0 +1,25 @@
+<snippet>
+	<content><![CDATA[
+// Returns the pair of squared distance and pair of point indices
+// O(n log n)
+// Requires point and convex_hull
+template<class T>
+pair<T, pair<int, int>> find_a_furthest_pair_L2(const vector<point<T>> &a){
+	pair<T, point<T>> res;
+	for(auto p: (convex_hull(a) - convex_hull(a)).get_hull()) ctmax(res, pair{p.squared_norm(), p});
+	vector<int> order((int)a.size());
+	iota(order.begin(), order.end(), 0);
+	sort(order.begin(), order.end(), [&](int i, int j){ return a[i] < a[j]; });
+	for(auto i: order){
+		auto q = res.second + a[i];
+		auto it = partition_point(order.begin(), order.end(), [&](int i){ return a[i] < q; });
+		if(it != order.end() && a[*it] == q) return {res.first, {i, *it}};
+	}
+	assert(false);
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>find_a_furthest_pair_L2</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

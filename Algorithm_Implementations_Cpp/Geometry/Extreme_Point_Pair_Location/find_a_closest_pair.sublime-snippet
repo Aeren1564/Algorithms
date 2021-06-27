@@ -1,22 +1,26 @@
 <snippet>
 	<content><![CDATA[
-template<class T>
-pair<T, pair<int, int>> find_a_closest_pair(const vector<point<T>> &a){
+// Find a closest pair of points where the metric is given by L^p norm, 1 <= p <= inf
+// Returns the pair of squared distance and pair of point indices
+// O(n log n)
+// Requires point
+template<class T, class F1 = decltype(squared_distance<T>), class F2 = decltype(::sqrt)>
+pair<T, pair<int, int>> find_a_closest_pair(const vector<point<T>> &a, F1 distance_powered = squared_distance, F2 get_distance = sqrt){
 	int n = (int)a.size();
 	assert(n >= 2);
 	vector<int> order(n);
 	iota(order.begin(), order.end(), 0);
 	sort(order.begin(), order.end(), [&](int i, int j){ return a[i].y < a[j].y; });
 	for(auto t = 1; t < n; ++ t) if(a[order[t - 1]] == a[order[t]]) return {0, {order[t - 1], order[t]}};
-	pair<T, pair<int, int>> res{numeric_limits<T>::max(), {}};
+	pair<T, pair<int, int>> res{numeric_limits<T>::max() / 2, {}};
 	map<point<T>, int> s;
 	int t = 0;
 	for(auto i: order){
-		T d = 1 + sqrt(res.first);
+		T d = 1 + get_distance(res.first);
 		while(a[order[t]].y <= a[i].y - d) s.erase(a[order[t]]), ++ t;
 		auto low = s.lower_bound({a[i].x - d, a[i].y});
 		auto high = s.upper_bound({a[i].x + d, a[i].y});
-		for(; low != high; ++ low) res = min(res, pair{squared_distance(low->first, a[i]), pair{low->second, i}});
+		for(; low != high; ++ low) res = min(res, pair{distance_powered(low->first, a[i]), pair{low->second, i}});
 		s.insert({a[i], i});
 	}
 	return res;
