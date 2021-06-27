@@ -1,33 +1,36 @@
 <snippet>
 	<content><![CDATA[
-template<class T> // Requires number_theoric_transform, O(n log n)
+// Requires number_theoric_transform, O(n log n)
+template<class T>
 vector<T> operator*(const vector<T> &p, const vector<T> &q){
 	return convolute(p, q);
 }
 /*
-template<class T> // O(n m)
+// O(n m)
+template<class T>
 vector<T> operator*(const vector<T> &a, const vector<T> &b){
 	if(a.empty() || b.empty()) return {};
 	vector<T> c(a.size() + b.size() - 1, 0);
 	for(auto i = 0; i < (int)a.size(); ++ i) for(auto j = 0; j < (int)b.size(); ++ j) c[i + j] += a[i] * b[j];
 	return c;
-}*/
+}
+*/
 template<class T>
 vector<T> &operator*=(vector<T> &a, const vector<T> &b){
 	return a = a * b;
 }
-template<class T>
-vector<T> &operator*=(vector<T> &a, T x){
+template<class T, class U>
+vector<T> &operator*=(vector<T> &a, U x){
 	for(auto &c: a) c *= x;
 	return a;
 }
-template<class T>
-vector<T> operator*(const vector<T> &a, T x){
+template<class T, class U>
+vector<T> operator*(const vector<T> &a, U x){
 	vector<T> b = a;
 	return b *= x;
 }
-template<class T>
-vector<T> operator*(T x, const vector<T> &a){
+template<class T, class U>
+vector<T> operator*(U x, const vector<T> &a){
 	vector<T> b = a;
 	return b *= x;
 }
@@ -204,12 +207,12 @@ vector<T> sqrt(const vector<T> &a){
 template<class T>
 vector<T> multiply(const vector<vector<T>> &a){
 	if(a.empty()) return {0};
-	function<vector<T>(int, int)> mult = [&](int l, int r){
+	auto solve = [&](auto self, int l, int r)->vector<T>{
 		if(r - l == 1) return a[l];
 		int m = l + (r - l >> 1);
-		return mult(l, m) * mult(m, r);
+		return self(self, l, m) * self(self, m, r);
 	};
-	return mult(0, (int)a.size());
+	return solve(solve, 0, (int)a.size());
 }
 template<class T>
 T evaluate(const vector<T> &a, const T &x){
@@ -223,17 +226,17 @@ vector<T> evaluate(const vector<T> &a, const vector<T> &x){
 	if(a.empty()) return vector<T>(x.size(), 0);
 	int n = (int)x.size();
 	vector<vector<T>> st((n << 1) - 1);
-	function<void(int, int, int)> build = [&](int u, int l, int r){
+	auto build = [&](auto self, int u, int l, int r)->void{
 		if(r - l == 1) st[u] = vector<T>{-x[l], 1};
 		else{
 			int m = l + (r - l >> 1), v = u + (m - l << 1);
-			build(u + 1, l, m), build(v, m, r);
+			self(self, u + 1, l, m), self(self, v, m, r);
 			st[u] = st[u + 1] * st[v];
 		}
 	};
-	build(0, 0, n);
+	build(build, 0, 0, n);
 	vector<T> res(n);
-	function<void(int, int, int, vector<T>)> eval = [&](int u, int l, int r, vector<T> f){
+	auto eval = [&](auto self, int u, int l, int r, vector<T> f)->void{
 		f %= st[u];
 		if((int)f.size() < 150){
 			for(auto i = l; i < r; ++ i) res[i] = evaluate(f, x[i]);
@@ -242,10 +245,10 @@ vector<T> evaluate(const vector<T> &a, const vector<T> &x){
 		if(r - l == 1) res[l] = f[0];
 		else{
 			int m = l + (r - l >> 1), v = u + (m - l << 1);
-			eval(u + 1, l, m, f), eval(v, m, r, f);
+			self(self, u + 1, l, m, f), self(self, v, m, r, f);
 		}
 	};
-	eval(0, 0, n, a);
+	eval(eval, 0, 0, n, a);
 	return res;
 }
 template<class T>
@@ -254,17 +257,17 @@ vector<T> interpolate(const vector<T> &x, const vector<T> &y){
 	assert(x.size() == y.size());
 	int n = (int)x.size();
 	vector<vector<T>> st((n << 1) - 1);
-	function<void(int, int, int)> build = [&](int u, int l, int r){
+	auto build = [&](auto self, int u, int l, int r)->void{
 		if(r - l == 1) st[u] = vector<T>{-x[l], 1};
 		else{
 			int m = l + (r - l >> 1), v = u + (m - l << 1);
-			build(u + 1, l, m), build(v, m, r);
+			self(self, u + 1, l, m), self(self, v, m, r);
 			st[u] = st[u + 1] * st[v];
 		}
 	};
-	build(0, 0, n);
+	build(build, 0, 0, n);
 	vector<T> m = st[0], dm = derivative(m), val(n);
-	function<void(int, int, int, vector<T>)> eval = [&](int u, int l, int r, vector<T> f){
+	auto eval = [&](auto self, int u, int l, int r, vector<T> f)->void{
 		f %= st[u];
 		if((int)f.size() < 150){
 			for(auto i = l; i < r; ++ i) val[i] = evaluate(f, x[i]);
@@ -273,17 +276,17 @@ vector<T> interpolate(const vector<T> &x, const vector<T> &y){
 		if(r - l == 1) val[l] = f[0];
 		else{
 			int m = l + (r - l >> 1), v = u + (m - l << 1);
-			eval(u + 1, l, m, f), eval(v, m, r, f);
+			self(self, u + 1, l, m, f), self(self, v, m, r, f);
 		}
 	};
-	eval(0, 0, n, dm);
+	eval(eval, 0, 0, n, dm);
 	for(auto i = 0; i < n; ++ i) val[i] = y[i] / val[i];
-	function<vector<T>(int, int, int)> calc = [&](int u, int l, int r){
+	auto calc = [&](auto self, int u, int l, int r)->vector<T>{
 		if(r - l == 1) return vector<T>{val[l]};
 		int m = l + (r - l >> 1), v = u + (m - l << 1);
-		return calc(u + 1, l, m) * st[v] + calc(v, m, r) * st[u + 1];
+		return self(self, u + 1, l, m) * st[v] + self(self, v, m, r) * st[u + 1];
 	};
-	return calc(0, 0, n);
+	return calc(calc, 0, 0, n);
 }
 // f[i] = 1^i + 2^i + ... + base^i
 template<class T>
