@@ -8,7 +8,7 @@ using namespace std;
 int main(){
 	cin.tie(0)->sync_with_stdio(0);
 	cin.exceptions(ios::badbit | ios::failbit);
-	auto __solve_tc = [&](int __tc_num){
+	auto __solve_tc = [&](auto __tc_num)->int{
 		$0
 		return 0;
 	};

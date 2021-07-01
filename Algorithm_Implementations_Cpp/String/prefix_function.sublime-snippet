@@ -3,7 +3,7 @@
 // p[i]: largest proper suffix(prefix if rev) ending(starting if rev) at i
 // that is also a prefix(suffix if rev)
 // O(n)
-template<bool Reverse, class Char_Type>
+template<class Char_Type, bool Reverse = false>
 vector<int> prefix_function(vector<Char_Type> s){
 	if(Reverse) reverse(s.begin(), s.end());
 	int n = (int)s.size();

@@ -124,12 +124,14 @@ struct suffix_array{
 	int n;
 	vector<int> sa, rank, lcp;
 	range_minmax_query_solver<int> rmq;
+	// O(n + upper) without compute_lcp
 	suffix_array(const vector<int> &s, int upper, bool prepare_lcp): n((int)s.size()){
 		assert(0 <= upper);
 		for(auto d: s) assert(0 <= d && d < upper);
 		sa = sa_is(s, upper);
 		if(prepare_lcp) compute_lcp(s);
-	} // O(n + upper) without compute_lcp
+	}
+	// O(n log n) time, O(n) space without compute_lcp
 	template<class T>
 	suffix_array(const vector<T> &s, bool prepare_lcp): n((int)s.size()){
 		vector<int> idx(n);
@@ -143,9 +145,12 @@ struct suffix_array{
 		}
 		sa = sa_is(s2, now + 1);
 		if(prepare_lcp) compute_lcp(s);
-	} // O(n log n) time, O(n) space without compute_lcp
-	int query(int i, int j){
+	}
+	// O(1)
+	int longest_common_prefix(int i, int j){
+		assert(0 <= i && i <= n && 0 <= j && j <= n);
 		if(i == j) return n - i;
+		if(i == n || j == n) return 0;
 		return rmq.query(min(rank[i], rank[j]), max(rank[i], rank[j]));
 	}
 };
