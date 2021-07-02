@@ -1,0 +1,46 @@
+<snippet>
+	<content><![CDATA[
+// Given a grid with obstacles, for each rectangle of dimension H*W, find the number of ways to place X*Y rectangles within the grid.
+// O(n m)
+vector<vector<int>> count_rectangles_within_grid(const vector<vector<bool>> &grid){
+	int n = (int)grid.size(), m = (int)grid[0].size();
+	vector<vector<int>> cnt(n + 3, vector<int>(m + 3));
+	vector<int> maxh(m);
+	for(auto i = 0; i < n; ++ i){
+		vector<int> maxh_next(m);
+		for(auto j = 0; j < m; ++ j) if(grid[i][j]) maxh_next[j] = maxh[j] + 1;
+		swap(maxh, maxh_next);
+		vector<array<int, 2>> left(m), right(m), stack;
+		stack = {{0, 0}};
+		for(auto j = 0; j < m; ++ j){
+			while((int)stack.size() >= 2 && stack.back()[0] >= maxh[j]) stack.pop_back();
+			left[j] = {stack.back()};
+			stack.push_back({maxh[j], j + 1});
+		}
+		stack = {{0, m}};
+		for(auto j = m - 1; j >= 0; -- j){
+			while((int)stack.size() >= 2 && stack.back()[0] > maxh[j]) stack.pop_back();
+			right[j] = {stack.back()};
+			stack.push_back({maxh[j], j});
+		}
+		for(auto j = 0; j < m; ++ j){
+			int len = right[j][1] - left[j][1];
+			int xl = max(left[j][0], right[j][0]) + 1, xr = maxh[j] + 1, yl = 1, yr = len + 1;
+			cnt[xl][yl] += len, cnt[xl][yl + 1] -= len + 1, cnt[xl][yr + 1] += 1;
+			cnt[xl + 1][yl] -= len, cnt[xl + 1][yl + 1] += len + 1, cnt[xl + 1][yr + 1] -= 1;
+			cnt[xr][yl] -= len, cnt[xr][yl + 1] += len + 1, cnt[xr][yr + 1] -= 1;
+			cnt[xr + 1][yl] += len, cnt[xr + 1][yl + 1] -= len + 1, cnt[xr + 1][yr + 1] += 1;
+		}
+	}
+	for(auto x = 1; x <= n; ++ x) for(auto y = 1; y <= m; ++ y) cnt[x][y] += cnt[x][y - 1];
+	for(auto x = 1; x <= n; ++ x) for(auto y = 1; y <= m; ++ y) cnt[x][y] += cnt[x - 1][y];
+	for(auto x = 1; x <= n; ++ x) for(auto y = 1; y <= m; ++ y) cnt[x][y] += cnt[x][y - 1];
+	for(auto x = 1; x <= n; ++ x) for(auto y = 1; y <= m; ++ y) cnt[x][y] += cnt[x - 1][y];
+	return cnt;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>count_rectangles_within_grid</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

@@ -28,7 +28,7 @@ template<class T>
 vector<T> convolute(const vector<T> &p, const vector<T> &q){
 	if(min(p.size(), q.size()) < 250){
 		vector<T> res((int)p.size() + (int)q.size() - 1);
-		for(size_t i = 0; i < p.size(); ++ i) for(size_t j = 0; j < q.size(); ++ j) res[i + j] += p[i] * q[j];
+		for(auto i = 0; i < p.size(); ++ i) for(auto j = 0; j < q.size(); ++ j) res[i + j] += p[i] * q[j];
 		return res;
 	}
 	vector<complex<double>> f(p.begin(), p.end()), g(q.begin(), q.end());

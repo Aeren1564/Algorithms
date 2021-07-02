@@ -4,7 +4,7 @@
 // so that sum(abs(xi - x(i+1)) + abs(yi - y(i+1)) + abs(zi - z(i+1)))) is small
 // and process queries on the new order.
 // N * BX inc_x and dec_x calls, N * BY + X * Y / BX inc_y and dec_y calls, and N * X * Y / BX / BY inc_z and dec_z calls
-// set BX = cbrt(X Y) to achieve N cbrt(X Y) calls
+// set BX = BY = cbrt(X Y) to achieve N cbrt(X Y) calls
 template<int BX, int BY>
 struct mo_3d{
 	vector<array<int, 4>> points; // x, y, z, ind
@@ -14,7 +14,7 @@ struct mo_3d{
 	// starting from (0, 0, 0), access each points and execute queries
 	void solve(auto inc_x, auto dec_x, auto inc_y, auto dec_y, auto inc_z, auto dec_z, auto process){
 		auto cmp = [&](const auto &p, const auto &q)->bool{
-			return p[0] / BX != q[0] / BX ? p[0] < q[0] : p[1] / BY != q[1] / BY ? p[0] / BX & 1 ^ p[1] < q[1] : p[1] < q[1] : (p[0] / BX ^ p[1] / BX) & 1 ^ p[2] < q[2];
+			return p[0] / BX != q[0] / BX ? p[0] < q[0] : p[1] / BY != q[1] / BY ? p[1] < q[1] : p[2] < q[2];
 		};
 		sort(points.begin(), points.end(), cmp);
 		int x = 0, y = 0, z = 0;
