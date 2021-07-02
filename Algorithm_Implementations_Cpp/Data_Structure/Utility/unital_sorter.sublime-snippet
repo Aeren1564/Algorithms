@@ -4,6 +4,7 @@ struct unital_sorter{
 	// n: # of items
 	// m: maximum possible freq
 	// order: list of items sorted by freq (tie broken arbitrarily)
+	// pos[x]: position of the item x in order
 	// freq[x]: frequency of the item x
 	// fpos[f]: starting position of items for freqeuncy f
 	int n, m;
