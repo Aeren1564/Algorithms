@@ -27,6 +27,34 @@ struct mo_2d{
 		}
 	}
 };
+/*
+int l = 0, r = 0;
+	auto inc_x = [&]()->void{
+		// erase a[l]
+
+		++ l;
+	};
+	auto dec_x = [&]()->void{
+		-- l;
+		// insert a[l]
+
+	};
+	auto inc_y = [&]()->void{
+		// insert a[r]
+
+		++ r;
+	};
+	auto dec_y = [&]()->void{
+		-- r;
+		// erase a[r]
+
+	};
+	vector<int> res(qn);
+	auto process = [&](int qi)->void{
+		
+	};
+	mo.solve(inc_x, dec_x, inc_y, dec_y, process);
+*/
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
 	<tabTrigger>mo_2d</tabTrigger> -->

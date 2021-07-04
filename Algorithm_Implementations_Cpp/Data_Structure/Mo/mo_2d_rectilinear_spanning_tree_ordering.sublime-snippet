@@ -16,7 +16,7 @@ struct mo_2d_rectilinear_spanning_tree_ordering{
 		vector<vector<int>> adj(n);
 		for(auto [ignore, i, j]: rectilinear_minimum_spanning_tree<int>(points)) adj[i].push_back(j), adj[j].push_back(i);
 		int x = 0, y = 0;
-		auto dfs = [&](auto dfs, int u, int p)->void{
+		auto dfs = [&](auto self, int u, int p)->void{
 			for(auto v: adj[u]){
 				if(v != p){
 					auto [qx, qy] = points[v];
@@ -25,7 +25,7 @@ struct mo_2d_rectilinear_spanning_tree_ordering{
 					while(x < qx) inc_x(), ++ x;
 					while(qy < y) dec_y(), -- y;
 					process(ind[v]);
-					dfs(dfs, v, u);
+					self(self, v, u);
 					qx = points[u].x, qy = points[u].y;
 					while(qx < x) dec_x(), -- x;
 					while(y < qy) inc_y(), ++ y;
