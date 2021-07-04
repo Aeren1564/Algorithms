@@ -30,14 +30,14 @@ struct relative_query_solver_offline{ // TYPE: {0: distinct value query, 1: comp
 	int upper_bound(T k){ // inclusive
 		return std::upper_bound(cmpr.begin(), cmpr.end(), k, cmp) - cmpr.begin();
 	}
-	void count_distinct(int i, int ql, int qr){
-		assert(!TYPE), queries.push_back({ql, ql, qr, i});
+	void count_distinct(int qi, int ql, int qr){
+		assert(!TYPE), queries.push_back({ql, ql, qr, qi});
 	}
-	void count_less(int i, int ql, int qr, T k){
-		assert(TYPE), queries.push_back({lower_bound(k), ql, qr, i});
+	void count_less(int qi, int ql, int qr, T k){
+		assert(TYPE), queries.push_back({lower_bound(k), ql, qr, qi});
 	}
-	void count_equal_or_less(int i, int ql, int qr, T k){
-		assert(TYPE), queries.push_back({upper_bound(k), ql, qr, i});
+	void count_equal_or_less(int qi, int ql, int qr, T k){
+		assert(TYPE), queries.push_back({upper_bound(k), ql, qr, qi});
 	}
 	void solve(auto f){ // f(index, answer)
 		sort(queries.begin(), queries.end()), sort(event.begin(), event.end(), greater<>());

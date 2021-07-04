@@ -6,25 +6,34 @@ struct segment_tree{
 	vector<T> data;
 	F TT; // monoid operation (always adjacent)
 	T T_id; // monoid identity
+	// O(n)
 	segment_tree(int n, F TT, T T_id): segment_tree(vector<T>(n, T_id), TT, T_id){}
+	// O(n)
 	segment_tree(int n, T init, F TT, T T_id): segment_tree(vector<T>(n, init), TT, T_id){}
+	// O(n)
 	segment_tree(const vector<T> &a, F TT, T T_id): n((int)a.size()), TT(TT), T_id(T_id){ // O(n)
 		log = __lg(max(n - 1, 1)) + 1, size = 1 << log;
 		data = vector<T>(size << 1, T_id);
 		copy(a.begin(), a.end(), data.begin() + size);
 		for(auto i = size - 1; i >= 1; -- i) refresh(i);
 	}
-	void refresh(int i){ data[i] = TT(data[i << 1], data[i << 1 | 1]); }
-	void set(int p, T x){ // O(log n)
+	// O(1)
+	void refresh(int i){
+		data[i] = TT(data[i << 1], data[i << 1 | 1]);
+	}
+	// O(log n)
+	void set(int p, T x){
 		assert(0 <= p && p < n);
 		data[p += size] = x;
 		for(auto i = 1; i <= log; ++ i) refresh(p >> i);
 	}
-	T query(int p){ // O(1)
+	// O(1)
+	T query(int p) const{
 		assert(0 <= p && p < n);
 		return data[p + size];
 	}
-	T query(int l, int r){ // O(log n)
+	// O(log n)
+	T query(int l, int r) const{
 		assert(0 <= l && l <= r && r <= n);
 		T res_left = T_id, res_right = T_id;
 		for(l += size, r += size; l < r; l >>= 1, r >>= 1){
@@ -33,8 +42,13 @@ struct segment_tree{
 		}
 		return TT(res_left, res_right);
 	}
-	T query_all(){ return data[1]; } // O(1)
-	int max_pref(int l, auto f){ // O(log n)
+	// O(1)
+	T query_all() const{
+		return data[1];
+	}
+	// f(sum[l, r)) is T, T, ..., T, F, F, ..., F, returns max r with T
+	// O(log n)
+	int max_pref(int l, auto f) const{
 		assert(0 <= l && l <= n);
 		if(l == n) return n;
 		l += size;
@@ -51,8 +65,10 @@ struct segment_tree{
 			sm = TT(sm, data[l ++]);
 		}while((l & -l) != l);
 		return n;
-	} // f(sum[l, r)) is T, T, ..., T, F, F, ..., F, returns max r with T
-	int min_suff(int r, auto f){ // O(log n)
+	}
+	// f(sum[l, r)) is F, F, ..., F, T, T, ..., T, returns min l with T
+	// O(log n)
+	int min_suff(int r, auto f) const{
 		assert(0 <= r && r <= n);
 		if(r == 0) return 0;
 		r += size;
@@ -70,7 +86,7 @@ struct segment_tree{
 			sm = TT(data[r], sm);
 		}while((r & -r) != r);
 		return 0;
-	} // f(sum[l, r)) is F, F, ..., F, T, T, ..., T, returns min l with T
+	}
 };
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
