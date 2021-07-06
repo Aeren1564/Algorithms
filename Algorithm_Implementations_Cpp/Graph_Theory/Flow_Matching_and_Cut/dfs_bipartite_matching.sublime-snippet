@@ -41,14 +41,14 @@ struct dfs_bipartite_matching{
 	pair<vector<int>, vector<int>> minimum_vertex_cover(){
 		solve();
 		vector<int> L, R, visL(n), visR(m);
-		function<void(int)> dfs = [&](int u){
+		auto dfs = [&](auto self, int u)->void{
 			visL[u] = true;
 			for(auto v: adj[u]) if(v != pu[u] && !visR[v]){
 				visR[v] = true, R.push_back(v);
-				if(~pv[v]) dfs(pv[v]);
+				if(~pv[v]) self(self, pv[v]);
 			}
 		};
-		for(auto u = 0; u < n; ++ u) if(!visL[u] && pu[u] == -1) dfs(u);
+		for(auto u = 0; u < n; ++ u) if(!visL[u] && pu[u] == -1) dfs(dfs, u);
 		for(auto u = 0; u < n; ++ u) if(!visL[u]) L.push_back(u);
 		return {L, R};
 	}

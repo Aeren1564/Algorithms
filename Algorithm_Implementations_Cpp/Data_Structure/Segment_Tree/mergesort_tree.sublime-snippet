@@ -10,7 +10,7 @@ struct mergesort_tree{
 		for(auto i = n; i < n << 1; ++ i) data[i] = {a[i - n]};
 		for(auto i = n - 1; i > 0; -- i) merge(data[i << 1].begin(), data[i << 1].end(), data[i << 1 | 1].begin(), data[i << 1 | 1].end(), back_inserter(data[i]), cmp);
 	}
-// O(log^2 n)
+	// O(log^2 n)
 	int count_less(int l, int r, T k) const{
 		assert(0 <= l && l <= r && r <= n);
 		int res = 0;
@@ -45,8 +45,8 @@ struct mergesort_tree{
 		assert(0 <= l && l <= r && r <= n);
 		int res = 0;
 		for(l += n, r += n; l < r; l >>= 1, r >>= 1){
-			if(l & 1) res += data[l].end() - lower_bound(data[l].begin(), data[l].end(), k, cmp) - data[l].begin(), ++ l;
-			if(r & 1) -- r, res += data[r].end() - lower_bound(data[r].begin(), data[r].end(), k, cmp) - data[r].begni();
+			if(l & 1) res += data[l].end() - lower_bound(data[l].begin(), data[l].end(), k, cmp), ++ l;
+			if(r & 1) -- r, res += data[r].end() - lower_bound(data[r].begin(), data[r].end(), k, cmp);
 		}
 		return res;
 	}
@@ -56,7 +56,7 @@ struct mergesort_tree{
 		int res = 0;
 		for(l += n, r += n; l < r; l >>= 1, r >>= 1){
 			if(l & 1) res += lower_bound(data[l].begin(), data[l].end(), kr, cmp) - lower_bound(data[l].begin(), data[l].end(), kl, cmp), ++ l;
-			if(r & 1) -- r, res += data[r].end() - lower_bound(data[r].begin(), data[r].end(), kr, cmp) - lower_bound(data[r].begin(), data[r].end(), kl, cmp);
+			if(r & 1) -- r, res += lower_bound(data[r].begin(), data[r].end(), kr, cmp) - lower_bound(data[r].begin(), data[r].end(), kl, cmp);
 		}
 		return res;
 	}
@@ -65,8 +65,8 @@ struct mergesort_tree{
 		assert(0 <= l && l <= r && r <= n);
 		vector<T> res;
 		for(l += n, r += n; l < r; l >>= 1, r >>= 1){
-			if(int sz = (int)res.size(); l & 1) res.insert(res.end(), data[l].begin(), data[l].end()), inplace_merge(res.begin(), res.begin() + sz, res.end(), cmp), ++ l;
-			if(int sz = (int)res.size(); r & 1) -- r, res.insert(res.begin(), data[r].begin(), data[r].end()), inplace_merge(res.begin(), res.end() - sz, res.end(), cmp);
+			if(auto sz = (int)res.size(); l & 1) res.insert(res.end(), data[l].begin(), data[l].end()), inplace_merge(res.begin(), res.begin() + sz, res.end(), cmp), ++ l;
+			if(auto sz = (int)res.size(); r & 1) -- r, res.insert(res.begin(), data[r].begin(), data[r].end()), inplace_merge(res.begin(), res.end() - sz, res.end(), cmp);
 		}
 		return res;
 	}

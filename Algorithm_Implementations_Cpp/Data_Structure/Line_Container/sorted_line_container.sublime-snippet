@@ -4,7 +4,7 @@
 template<class T, bool GET_MAX = false>
 struct sorted_line_container: deque<array<T, 3>>{
 #define USE(x) using deque<array<T, 3>>::x;
-	USE(size) USE(empty) USE(front) USE(back) USE(begin) USE(end) USE(rbegin) USE(rend) USE(pop_front) USE(pop_back)
+	USE(size) USE(empty) USE(front) USE(back) USE(begin) USE(end) USE(rbegin) USE(rend) USE(pop_front) USE(pop_back) USE(erase) USE(push_back) USE(push_front)
 #undef USE
 	static constexpr T inf = numeric_limits<T>::max();
 	// (for doubles, use inf = 1/.0, div(a,b) = a/b)
@@ -59,7 +59,7 @@ struct sorted_line_container: deque<array<T, 3>>{
 	// O(1)
 	T inc_query(T x){
 		assert(!empty());
-		while((int)size() >= 2 && eval(*begin(), x) <= eval(++ begin(), x)) pop_front();
+		while((int)size() >= 2 && eval(*begin(), x) <= eval(*++ begin(), x)) pop_front();
 		return eval(*begin(), x) * (GET_MAX ? 1 : -1);
 	}
 	// Other queries must not be called
@@ -67,7 +67,7 @@ struct sorted_line_container: deque<array<T, 3>>{
 	T query(T x){
 		assert(!empty());
 		if((int)size() == 1) return eval(*begin(), x) * (GET_MAX ? 1 : -1);
-		if(eval(*begin(), x) >= eval(++ begin(), x)) return eval(begin(), x) * (GET_MAX ? 1 : -1);
+		if(eval(*begin(), x) >= eval(*++ begin(), x)) return eval(*begin(), x) * (GET_MAX ? 1 : -1);
 		int low = 0, high = (int)size() - 1;
 		while(high - low >= 2){
 			int mid = low + (high - low >> 1);

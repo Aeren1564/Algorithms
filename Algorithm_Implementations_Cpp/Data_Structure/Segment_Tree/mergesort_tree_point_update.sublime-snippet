@@ -1,0 +1,70 @@
+<snippet>
+	<content><![CDATA[
+// Assumes all elements are distinct
+// Requires order_statistics_tree
+template<class T, class Compare = less<>>
+struct mergesort_tree_point_update{
+	int n;
+	Compare cmp;
+	vector<T> a;
+	vector<order_statistic_set<T, Compare>> data;
+	// O(n log^2 n)
+	mergesort_tree_point_update(const vector<T> &a, Compare cmp = less<>()): n((int)a.size()), a(a), data(n << 1, order_statistic_set<T, Compare>(cmp)), cmp(cmp){
+		for(auto i = n; i < n << 1; ++ i) data[i].insert(a[i - n]);
+		for(auto i = n - 1; i > 0; -- i){
+			data[i] = data[i << 1];
+			for(auto x: data[i << 1 | 1]) data[i].insert(x);
+		}
+	}
+	// O(log^2 n)
+	void set(int p, T x){
+		for(auto q = p + n; q; q >>= 1) data[q].erase(a[p]), data[q].insert(x);
+		a[p] = x;
+	}
+	// O(log^2 n)
+	int count_less(int l, int r, T k) const{
+		assert(0 <= l && l <= r && r <= n);
+		int res = 0;
+		for(l += n, r += n; l < r; l >>= 1, r >>= 1){
+			if(l & 1) res += data[l].order_of_key(k), ++ l;
+			if(r & 1) -- r, res += data[r].order_of_key(k);
+		}
+		return res;
+	}
+	// O(log^2 n)
+	int count_equal_or_greater(int l, int r, T k) const{
+		assert(0 <= l && l <= r && r <= n);
+		int res = 0;
+		for(l += n, r += n; l < r; l >>= 1, r >>= 1){
+			if(l & 1) res += (int)data[l].size() - data[l].order_of_key(k), ++ l;
+			if(r & 1) -- r, res += (int)data[r].size() - data[r].order_of_key(k);
+		}
+		return res;
+	}
+	// O(log^2 n)
+	int count_within(int l, int r, T kl, T kr) const{
+		assert(0 <= l && l <= r && r <= n);
+		int res = 0;
+		for(l += n, r += n; l < r; l >>= 1, r >>= 1){
+			if(l & 1) res += data[l].order_of_key(kr) - data[l].order_of_key(kl), ++ l;
+			if(r & 1) -- r, res += data[r].order_of_key(kr) - data[r].order_of_key(kl);
+		}
+		return res;
+	}
+	// O(SZ log n) where SZ is the size of the answer
+	vector<T> get_sorted_list(int l, int r) const{
+		assert(0 <= l && l <= r && r <= n);
+		vector<T> res;
+		for(l += n, r += n; l < r; l >>= 1, r >>= 1){
+			if(auto sz = (int)res.size(); l & 1) res.insert(res.end(), data[l].begin(), data[l].end()), inplace_merge(res.begin(), res.begin() + sz, res.end(), cmp), ++ l;
+			if(auto sz = (int)res.size(); r & 1) -- r, res.insert(res.begin(), data[r].begin(), data[r].end()), inplace_merge(res.begin(), res.end() - sz, res.end(), cmp);
+		}
+		return res;
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>mergesort_tree_point_update</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
