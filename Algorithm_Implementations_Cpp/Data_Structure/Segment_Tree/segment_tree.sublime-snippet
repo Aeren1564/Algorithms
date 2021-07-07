@@ -46,11 +46,12 @@ struct segment_tree{
 	T query_all() const{
 		return data[1];
 	}
-	// f(sum[l, r)) is T, T, ..., T, F, F, ..., F, returns max r with T
+	// f(sum[l, r)) is T, T, ..., T, F, F, ..., F, returns min r with F (n + 1 if no such r)
 	// O(log n)
 	int max_pref(int l, auto f) const{
 		assert(0 <= l && l <= n);
-		if(l == n) return n;
+		if(!f(T_id)) return l;
+		// if(l == n) return n + 1; // is this needed?
 		l += size;
 		T sm = T_id;
 		do{
@@ -60,17 +61,18 @@ struct segment_tree{
 					l = l << 1;
 					if(f(TT(sm, data[l]))) sm = TT(sm, data[l ++]);
 				}
-				return l - size;
+				return l - size + 1;
 			}
 			sm = TT(sm, data[l ++]);
 		}while((l & -l) != l);
-		return n;
+		return n + 1;
 	}
-	// f(sum[l, r)) is F, F, ..., F, T, T, ..., T, returns min l with T
+	// f(sum[l, r)) is F, F, ..., F, T, T, ..., T, returns max l with F (-1 if no such l)
 	// O(log n)
 	int min_suff(int r, auto f) const{
 		assert(0 <= r && r <= n);
-		if(r == 0) return 0;
+		if(!f(T_id)) return r;
+		// if(r == 0) return -1; // is this needed?
 		r += size;
 		T sm = T_id;
 		do{
@@ -81,11 +83,11 @@ struct segment_tree{
 					r = r << 1 | 1;
 					if(f(TT(data[r], sm))) sm = TT(data[r --], sm);
 				}
-				return r + 1 - size;
+				return r - size;
 			}
 			sm = TT(data[r], sm);
 		}while((r & -r) != r);
-		return 0;
+		return -1;
 	}
 };
 ]]></content>

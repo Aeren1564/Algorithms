@@ -32,13 +32,15 @@ struct lazy_segment_tree{
 		int h = log - __lg(i);
 		updates[i] = U_init((i << h) - size, (i + 1 << h) - size);
 	}
-	T query(int p){ // O(log n)
+	// O(log n)
+	T query(int p){
 		assert(0 <= p && p < n);
 		p += size;
 		for(auto i = log; i >= 1; -- i) push(p >> i);
 		return data[p];
 	}
-	T query(int l, int r){ // O(log n)
+	// O(log n)
+	T query(int l, int r){
 		assert(0 <= l && l <= r && r <= n);
 		if(l == r) return T_id;
 		l += size, r += size;
@@ -53,22 +55,28 @@ struct lazy_segment_tree{
 		}
 		return TT(res_left, res_right);
 	}
-	T query_all(){ return data[1]; } // O(1)
-	void set(int p, T x){ // O(log n)
+	// O(1)
+	T query_all(){
+		return data[1];
+	}
+	// O(log n)
+	void set(int p, T x){
 		assert(0 <= p && p < n);
 		p += size;
 		for(auto i = log; i >= 1; -- i) push(p >> i);
 		data[p] = x;
 		for(auto i = 1; i <= log; ++ i) refresh(p >> i);
 	}
-	void update(int p, U f){ // O(log n)
+	// O(log n)
+	void update(int p, U f){
 		assert(0 <= p && p < n);
 		p += size;
 		for(auto i = log; i >= 1; -- i) push(p >> i);
 		data[p] = UT(f, data[p]);
 		for(auto i = 1; i <= log; ++ i) refresh(p >> i);
 	}
-	void update(int l, int r, U f){ // O(log n)
+	// O(log n)
+	void update(int l, int r, U f){
 		assert(0 <= l && l <= r && r <= n);
 		if(l == r) return;
 		l += size, r += size;
@@ -87,9 +95,12 @@ struct lazy_segment_tree{
 			if(r >> i << i != r) refresh(r - 1 >> i);
 		}
 	}
-	int max_pref(int l, auto g){ // O(log n)
-		assert(0 <= l && l <= n), assert(g(T_id));
-		if(l == n) return n;
+	// f(sum[l, r)) is T, T, ..., T, F, F, ..., F, returns min r with F (n + 1 if no such r)
+	// O(log n)
+	int max_pref(int l, auto g){
+		assert(0 <= l && l <= n);
+		if(!g(T_id)) return l;
+		// if(l == n) return n + 1; // is this needed?
 		l += size;
 		for(auto i = log; i >= 1; -- i) push(l >> i);
 		T sm = T_id;
@@ -101,16 +112,19 @@ struct lazy_segment_tree{
 					l = l << 1;
 					if(g(TT(sm, data[l]))) sm = TT(sm, data[l ++]);
 				}
-				return l - size;
+				return l - size + 1;
 			}
 			sm = TT(sm, data[l]);
 			++ l;
 		}while((l & -l) != l);
-		return n;
-	} // f(sum[l, r)) is T, T, ..., T, F, F, ..., F, returns max r with T
-	int min_suff(int r, auto g){ // O(log n)
-		assert(0 <= r && r <= n), assert(g(T_id));
-		if(r == 0) return 0;
+		return n + 1;
+	}
+	// f(sum[l, r)) is F, F, ..., F, T, T, ..., T, returns max l with F (-1 if no such l)
+	// O(log n)
+	int min_suff(int r, auto g){
+		assert(0 <= r && r <= n);
+		if(!g(T_id)) return r;
+		// if(r == 0) return -1; // is this needed?
 		r += size;
 		for(auto i = log; i >= 1; -- i) push(r - 1 >> i);
 		T sm = T_id;
@@ -123,12 +137,12 @@ struct lazy_segment_tree{
 					r = r << 1 | 1;
 					if(g(TT(data[r], sm))) sm = TT(data[r --], sm);
 				}
-				return r + 1 - size;
+				return r - size;
 			}
 			sm = TT(data[r], sm);
 		}while((r & -r) != r);
-		return 0;
-	} // f(sum[l, r)) is F, F, ..., F, T, T, ..., T, returns min l with T
+		return -1;
+	}
 };
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
