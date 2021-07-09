@@ -1,0 +1,24 @@
+<snippet>
+	<content><![CDATA[
+// O(n log n)
+// Requires fenwick_tree
+template<class T, class Compare = less<>>
+long long count_inversions(const vector<T> &a, bool count_equal = false, Compare cmp = less<>()){
+	int n = (int)a.size();
+	vector<T> cmpr = a;
+	sort(cmpr.begin(), cmpr.end(), cmp);
+	fenwick_tree<int> rsumq(n);
+	long long res = 0;
+	for(auto x: a){
+		int i = lower_bound(cmpr.begin(), cmpr.end(), x, cmp) - cmpr.begin();
+		res += rsumq.query(i + !count_equal, n);
+		rsumq.update(i, 1);
+	}
+	return res;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>count_inversions</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

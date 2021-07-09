@@ -35,9 +35,29 @@ struct fenwick_tree{
 		if(!f({})) return 0;
 		int p = 0;
 		T pref{};
-		for(auto i = __lg(n + 1); i >= 0; -- i) if(p + (1 << i) <= n && f(pref + data[p + (1 << i) - 1])){
-			pref += data[p + (1 << i) - 1];
-			p += 1 << i;
+		for(auto pw = 1 << __lg(n + 1); pw; pw >>= 1) if(p + pw <= n && f(pref + data[p + pw - 1])){
+			pref += data[p + pw - 1];
+			p += pw;
+		}
+		return p + 1;
+	}
+	int lower_bound(T x) const{
+		if(x <= T{}) return 0;
+		int p = 0;
+		T pref{};
+		for(auto pw = 1 << __lg(n + 1); pw; pw >>= 1) if(p + pw <= n && pref + data[p + pw - 1] < x){
+			pref += data[p + pw - 1];
+			p += pw;
+		}
+		return p + 1;
+	}
+	int upper_bound(T x) const{
+		if(x < T{}) return 0;
+		int p = 0;
+		T pref{};
+		for(auto pw = 1 << __lg(n + 1); pw; pw >>= 1) if(p + pw <= n && pref + data[p + pw - 1] <= x){
+			pref += data[p + pw - 1];
+			p += pw;
 		}
 		return p + 1;
 	}
