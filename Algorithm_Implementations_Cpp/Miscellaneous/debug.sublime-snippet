@@ -57,12 +57,29 @@ void debug_out(Head H, Tail... T){ cerr << H << ", ", debug_out(T...); }
 void debug2_out(){ }
 template<class Head, class... Tail>
 void debug2_out(Head H, Tail... T){ cerr << "\n"; for(auto x: H) cerr << x << "\n"; debug2_out(T...); }
+void debug_frac_out(){ cerr << "\b\b " << endl; }
+template<class Head, class... Tail>
+void debug_frac_out(Head H, Tail... T){
+	for(auto d = 1; ; ++ d){
+		if((H * d).value <= 1000000){
+			cerr << H * d << "/" << d << ", ";
+			break;
+		}
+		else if((-H * d).value <= 1000000){
+			cerr << "-" << -H * d << "/" << d << ", ";
+			break;
+		}
+	}
+	debug_frac_out(T...);
+}
 enum CODE{ CCRED = 31, CCGREEN = 32, CCYELLOW = 33, CCBLUE = 34, CCDEFAULT = 39 };
 #define debug(...) cerr << "\033[" << (int)CODE(CCRED) << "m[" << #__VA_ARGS__ << "]: \033[" << (int)CODE(CCYELLOW) << "m", debug_out(__VA_ARGS__), cerr << "\33[" << (int)CODE(CCDEFAULT) << "m";
 #define debug2(...) cerr << "\033[" << (int)CODE(CCRED) << "m[" << #__VA_ARGS__ << "] \033[" << (int)CODE(CCYELLOW) << "m", debug2_out(__VA_ARGS__), cerr << "\33[" << (int)CODE(CCDEFAULT) << "m";
+#define debug_frac(...) cerr << "\033[" << (int)CODE(CCRED) << "m[" << #__VA_ARGS__ << "]: \033[" << (int)CODE(CCYELLOW) << "m", debug_frac_out(__VA_ARGS__), cerr << "\33[" << (int)CODE(CCDEFAULT) << "m";
 #else
 #define debug(...) 42
 #define debug2(...) 42
+#define debug_frac(...) 42
 #endif
 // DEBUG END
 ]]></content>

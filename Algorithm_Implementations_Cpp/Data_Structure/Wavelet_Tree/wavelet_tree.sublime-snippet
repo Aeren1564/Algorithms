@@ -7,13 +7,13 @@ struct wavelet_tree{
 	wavelet_tree(const vector<int> &a, int sigma): data(sigma << 1), sigma(sigma){
 		assert(all_of(a.begin(), a.end(), [&](int x){ return 0 <= x && x < sigma; }));
 		auto temp = a;
-		auto build = [&](auto build, int u, int l, int r, int low, int high)->void{
+		auto build = [&](auto self, int u, int l, int r, int low, int high)->void{
 			if(r - l == 1) return;
 			int m = l + (r - l >> 1);
 			data[u].resize(high - low + 1);
 			for(auto i = low; i < high; ++ i) data[u][i - low + 1] = data[u][i - low] + (temp[i] < m);
 			int mid = stable_partition(temp.begin() + low, temp.begin() + high, [&](int x){ return x < m; }) - temp.begin();
-			build(build, u << 1, l, m, low, mid), build(build, u << 1 | 1, m, r, mid, high);
+			self(self, u << 1, l, m, low, mid), self(self, u << 1 | 1, m, r, mid, high);
 		};
 		build(build, 1, 0, sigma, 0, (int)a.size());
 	}
@@ -35,11 +35,11 @@ struct wavelet_tree{
 	// O(log sigma)
 	int count(int ql, int qr, int xl, int xr) const{
 		if(qr <= ql || xr <= xl) return 0;
-		auto recurse = [&](auto recurse, int u, int l, int r, int cl, int cr){
+		auto recurse = [&](auto self, int u, int l, int r, int cl, int cr)->int{
 			if(r <= xl || xr <= l) return 0;
 			if(xl <= l && r <= xr) return cr - cl;
 			int m = l + (r - l >> 1), lcnt = data[u][cl], rcnt = data[u][cr];
-			return recurse(recurse, u << 1, l, m, lcnt, rcnt) + recurse(recurse, u << 1 | 1, m, r, cl - lcnt, cr - rcnt);
+			return self(self, u << 1, l, m, lcnt, rcnt) + self(self, u << 1 | 1, m, r, cl - lcnt, cr - rcnt);
 		};
 		return recurse(recurse, 1, 0, sigma, ql, qr);
 	}

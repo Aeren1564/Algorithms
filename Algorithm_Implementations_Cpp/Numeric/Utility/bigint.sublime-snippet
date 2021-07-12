@@ -29,17 +29,20 @@ struct bigint_base{
 		return res;
 	}
 	bigint_base(): sign(1){ }
+	bigint_base(int v): bigint_base((long long)v){ }
 	bigint_base(long long v){ *this = v; }
 	bigint_base(const string &s){ read(s); }
-	void operator=(const bigint_base &v){
+	bigint_base &operator=(const bigint_base &v){
 		sign = v.sign;
 		a = v.a;
+		return *this;
 	}
-	void operator=(long long v){
+	bigint_base &operator=(long long v){
 		sign = 1;
 		a.clear();
 		if(v < 0) sign = -1, v = -v;
 		for(; v > 0; v = v / base) a.push_back(v % base);
+		return *this;
 	}
 	bigint_base operator+(const bigint_base &v) const{
 		if(sign == v.sign){
@@ -70,7 +73,7 @@ struct bigint_base{
 		}
 		return *this + (-v);
 	}
-	void operator*=(int v){
+	bigint_base &operator*=(int v){
 		if(v < 0) sign = -sign, v = -v;
 		for(auto i = 0, carry = 0; i < (int)a.size() || carry; ++ i){
 			if(i == (int)a.size()) a.push_back(0);
@@ -80,18 +83,16 @@ struct bigint_base{
 			//asm("divl %%ecx" : "=a"(carry), "=d"(a[i]) : "A"(cur), "c"(base));
 		}
 		trim();
+		return *this;
 	}
 	bigint_base operator*(int v) const{
 		bigint_base res = *this;
 		res *= v;
 		return res;
 	}
-	void operator*=(long long v){
+	bigint_base &operator*=(long long v){
 		if(v < 0) sign = -sign, v = -v;
-		if(v > base){
-			*this = *this * (v / base) * base + *this * (v % base);
-			return ;
-		}
+		if(v > base) return *this = *this * (v / base) * base + *this * (v % base);
 		for(auto i = 0, carry = 0; i < (int)a.size() || carry; ++ i){
 			if(i == (int)a.size()) a.push_back(0);
 			long long cur = a[i] * (long long)v + carry;
@@ -100,6 +101,7 @@ struct bigint_base{
 			//asm("divl %%ecx" : "=a"(carry), "=d"(a[i]) : "A"(cur), "c"(base));
 		}
 		trim();
+		return *this;
 	}
 	bigint_base operator*(long long v) const{
 		bigint_base res = *this;
@@ -126,7 +128,7 @@ struct bigint_base{
 	}
 	bigint_base operator/(const bigint_base &v) const{ return divmod(*this, v).first; }
 	bigint_base operator%(const bigint_base &v) const{ return divmod(*this, v).second; }
-	void operator/=(int v){
+	bigint_base &operator/=(int v){
 		if(v < 0) sign = -sign, v = -v;
 		for(auto i = (int)a.size() - 1, rem = 0; i >= 0; -- i){
 			long long cur = a[i] + rem * (long long)base;
@@ -134,6 +136,7 @@ struct bigint_base{
 			rem = (int)(cur % v);
 		}
 		trim();
+		return *this;
 	}
 	bigint_base operator/(int v) const{
 		bigint_base res = *this;
@@ -146,10 +149,10 @@ struct bigint_base{
 		for(auto i = (int)a.size() - 1; i >= 0; -- i) m = (a[i] + m * (long long)base) % v;
 		return m * sign;
 	}
-	void operator+=(const bigint_base &v){ *this = *this + v; }
-	void operator-=(const bigint_base &v){ *this = *this - v; }
-	void operator*=(const bigint_base &v){ *this = *this * v; }
-	void operator/=(const bigint_base &v){ *this = *this / v; }
+	bigint_base &operator+=(const bigint_base &v){ return *this = *this + v; }
+	bigint_base &operator-=(const bigint_base &v){ return *this = *this - v; }
+	bigint_base &operator*=(const bigint_base &v){ return *this = *this * v; }
+	bigint_base &operator/=(const bigint_base &v){ return *this = *this / v; }
 	bool operator<(const bigint_base &v) const{
 		if(sign != v.sign) return sign < v.sign;
 		if(a.size() != v.a.size()) return (int)a.size() * sign < (int)v.a.size() * v.sign;

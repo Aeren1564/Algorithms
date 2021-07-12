@@ -202,6 +202,7 @@
         
         { "trigger": "fopen", "contents" : "ifstream cin; ofstream cout;\ncin.open(\"$1.in\"); cout.open(\"$1.out\");"},
         { "trigger": "fclose", "contents": "cin.close(); cout.close();"},
-        { "trigger": "initialize", "contents": "	cin.tie(0)->sync_with_stdio(0), cin.exceptions(ios::badbit | ios::failbit);"}
+        { "trigger": "initialize", "contents": "	cin.tie(0)->sync_with_stdio(0), cin.exceptions(ios::badbit | ios::failbit);"},
+        { "trigger": "local", "contents": "#ifdef LOCAL\n$0\n#endif"}
     ]
 }
