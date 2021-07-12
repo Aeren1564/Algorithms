@@ -31,7 +31,7 @@ struct fenwick_tree{
 	}
 	// f(sum[0, r)) is T, T, ..., T, F, F, ..., F, returns min r with F (n + 1 if no such r)
 	// O(log n)
-	template<class F> int max_pref(F f) const{
+	int max_pref(auto f) const{
 		if(!f({})) return 0;
 		int p = 0;
 		T pref{};

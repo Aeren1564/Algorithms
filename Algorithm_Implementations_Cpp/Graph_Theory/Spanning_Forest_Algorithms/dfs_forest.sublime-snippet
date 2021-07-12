@@ -33,7 +33,7 @@ struct dfs_forest{
 		root[u] = u;
 		pv[u] = pe[u] = -1;
 		if(clear_order) order.clear();
-		auto recurse = [&](auto recurse, int u)->void{
+		auto recurse = [&](auto self, int u)->void{
 			was[u] = attempt;
 			pos[u] = (int)order.size();
 			order.push_back(u);
@@ -52,7 +52,7 @@ struct dfs_forest{
 				pv[v] = u;
 				pe[v] = id;
 				root[v] = root[u];
-				recurse(recurse, v);
+				self(self, v);
 				sz[u] += sz[v];
 				min_depth[u] = min(min_depth[u], min_depth[v]);
 			}

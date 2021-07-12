@@ -1,31 +1,32 @@
 <snippet>
 	<content><![CDATA[
-template<class T>
+template<class T, class F = plus<>, class I = minus<>>
 struct fenwick_tree_general{
 	int n;
 	vector<T> data;
-	function<T(T, T)> TT;
+	F TT;
 	T T_id;
+	I TinvT;
 	fenwick_tree_general(){ }
-	fenwick_tree_general(int n, function<T(T, T)> TT, T T_id): n(n), data(n, T_id), TT(TT), T_id(T_id){ }
-	fenwick_tree_general(int n, T init, function<T(T, T)> TT, T T_id): fenwick_tree_general(vector<T>(n, init), TT, T_id){ }
-	fenwick_tree_general(const vector<T> &v, function<T(T, T)> TT, T T_id): n((int)v.size()), data(v), TT(TT), T_id(T_id){
+	fenwick_tree_general(int n, F TT = plus<>(), T T_id = {}, I TinvT = minus<>()): fenwick_tree_general(vector<T>(n, T_id), TT, T_id, TinvT){ }
+	fenwick_tree_general(int n, T init, F TT = plus<>(), T T_id = {}, I TinvT = minus<>()): fenwick_tree_general(vector<T>(n, init), TT, T_id, TinvT){ }
+	fenwick_tree_general(const vector<T> &v, F TT = plus<>(), T T_id = {}, I TinvT = minus<>()): n((int)v.size()), data(v), TT(TT), T_id(T_id), TinvT(TinvT){
 		for(auto i = 1; i <= n; ++ i) if(i + (i & -i) <= n) data[i + (i & -i) - 1] = TT(data[i + (i & -i) - 1], data[i - 1]);
 	}
 	void update(int p, T x){
 		assert(0 <= p && p < n);
 		for(++ p; p <= n; p += p & -p) data[p - 1] = TT(data[p - 1], x);
 	}
-	T query(int r){
+	T query(int r) const{
 		T s = T_id;
 		for(; r > 0; r -= r & -r) s = TT(s, data[r - 1]);
 		return s;
 	}
-	T query(int l, int r, function<T(T, T)> TinvT){
+	T query(int l, int r) const{
 		assert(0 <= l && l <= r && r <= n);
 		return TinvT(query(r), query(l));
 	}
-	template<class F> int max_pref(F f){
+	int max_pref(auto f) const{
 		int p = 0;
 		T pref = T_id;
 		for(auto i = __lg(n + 1); i >= 0; -- i) if(p + (1 << i) <= n && f(TT(pref, data[p + (1 << i) - 1]))){
