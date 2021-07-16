@@ -27,6 +27,7 @@
     	{ "trigger": "reserve", "contents": "reserve(${1:n})"},
         { "trigger": "accumulate", "contents": "accumulate(${1:$2.begin(), $2.end()}, ${3:0LL}$4)"},
         { "trigger": "partial_sum", "contents": "partial_sum(${1:$2.begin(), $2.end()}, $3)"},
+        { "trigger": "inclusive_scan", "contents": "inclusive_scan(${1:$2.begin(), $2.end()}, $3.begin() + 1, ${4:plus<>()}, ${5:0LL})"},
         { "trigger": "iota", "contents": "iota(${1:$2.begin(), $2.end()}, ${3:0})"},
         { "trigger": "partition", "contents": "partition(${1:$2.begin(), $2.end()}, $3)"},
         { "trigger": "max_element", "contents": "max_element(${1:$2.begin(), $2.end()}$3)"},
