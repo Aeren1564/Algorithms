@@ -23,7 +23,7 @@ struct two_sat_solver{
 	void at_most_one(const vector<int> &arr){
 		if((int)arr.size() <= 1) return;
 		int cur = ~arr[0];
-		for(int u = 2; u < (int)arr.size(); ++ u){
+		for(auto u = 2; u < (int)arr.size(); ++ u){
 			int next = add_var();
 			either(cur, ~arr[u]), either(cur, next), either(~arr[u], next);
 			cur = ~next;
@@ -45,8 +45,8 @@ struct two_sat_solver{
 	}
 	bool solve(){
 		value.assign(n, -1), val.assign(2 * n, 0), comp = val;
-		for(int u = 0; u < n << 1; ++ u) if(!comp[u]) dfs(u);
-		for(int u = 0; u < n; ++ u) if(comp[u << 1] == comp[u << 1 ^ 1]) return false;
+		for(auto u = 0; u < n << 1; ++ u) if(!comp[u]) dfs(u);
+		for(auto u = 0; u < n; ++ u) if(comp[u << 1] == comp[u << 1 ^ 1]) return false;
 		return true;
 	}
 };
