@@ -9,7 +9,7 @@ struct two_sat_solver{
 	int add_var(){
 		adj.emplace_back();
 		adj.emplace_back();
-		return ++ n;
+		return n ++;
 	}
 	void either(int u, int v){
 		u = max(2 * u, -1 - 2 * u);
