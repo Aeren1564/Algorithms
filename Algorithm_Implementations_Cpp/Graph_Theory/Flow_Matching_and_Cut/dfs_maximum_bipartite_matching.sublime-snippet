@@ -1,10 +1,10 @@
 <snippet>
 	<content><![CDATA[
-struct dfs_bipartite_matching{
-	int n, m, flow = 0;
+struct dfs_maximum_bipartite_matching{
+	int n, m, matching = 0;
 	vector<vector<int>> adj;
 	vector<int> pu, pv; // u is matched with pu[u] and v with pv[v], -1 if no match
-	dfs_bipartite_matching(int n, int m): n(n), m(m), pu(n, -1), pv(m, -1), cur(n), adj(n){ }
+	dfs_maximum_bipartite_matching(int n, int m): n(n), m(m), pu(n, -1), pv(m, -1), cur(n), adj(n){ }
 	int insert(int from, int to){
 		adj[from].push_back(to);
 		return (int)adj[from].size() - 1;
@@ -23,15 +23,16 @@ struct dfs_bipartite_matching{
 		}
 		return false;
 	}
-	int solve(){ // O(VE)
+	// O(VE)
+	int maximum_matching(){
 		while(true){
 			int augment = 0;
 			++ id;
 			for(auto u = 0; u < n; ++ u) if(pu[u] == -1 && dfs(u)) ++ augment;
 			if(!augment) break;
-			flow += augment;
+			matching += augment;
 		}
-		return flow;
+		return matching;
 	}
 	int run_once(int v){
 		if(pu[v] != -1) return 0;
@@ -39,7 +40,7 @@ struct dfs_bipartite_matching{
 		return dfs(v);
 	}
 	pair<vector<int>, vector<int>> minimum_vertex_cover(){
-		solve();
+		maximum_matching();
 		vector<int> L, R, visL(n), visR(m);
 		auto dfs = [&](auto self, int u)->void{
 			visL[u] = true;
@@ -55,7 +56,7 @@ struct dfs_bipartite_matching{
 };
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
-	<tabTrigger>dfs_bipartite_matching</tabTrigger> -->
+	<tabTrigger>dfs_maximum_bipartite_matching</tabTrigger> -->
 	<!-- Optional: Set a scope to limit where the snippet will trigger -->
 	<scope>source.c++</scope> -->
 </snippet>
