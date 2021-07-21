@@ -1,0 +1,79 @@
+<snippet>
+	<content><![CDATA[
+template<class T>
+struct hungarian_weighted_bipartite_matching{
+	int n; // maximum number of vertices on each bipartition
+	vector<int> pu, pv;
+	hungarian_weighted_bipartite_matching(int n): n(n), pu(n), pv(n), l_x(n), l_y(n), slack(n), slack_x(n), tree_x(n), tree_y(n), s(n), t(n){
+	}
+	vector<T> l_x, l_y, slack;
+	vector<int> slack_x, tree_x, tree_y;
+	vector<bool> s, t;
+	// assign 0 to the non-linked and negative pairs for maximum weight matching
+	// assign -infty to the non-linked pairs for maximum weight maximum matching
+	// infity should satisfy infity > n * (max_weight - min_weight)
+	// O(n ^ 3)
+	template<class U>
+	T optimal_matching(const vector<vector<U>> &adjm){
+		if(!n) return 0;
+		assert((int)adjm.size() == n && (int)adjm[0].size() == n);
+		fill(pu.begin(), pu.end(), -1);
+		fill(pv.begin(), pv.end(), -1);
+		fill(l_x.begin(), l_x.end(), 0);
+		fill(l_y.begin(), l_y.end(), 0);
+		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < n; ++ j) l_x[i] = max<T>(l_x[i], adjm[i][j]);
+		for(auto rep = n; rep > 0; ){
+			fill(tree_x.begin(), tree_x.end(), -1);
+			fill(tree_y.begin(), tree_y.end(), -1);
+			fill(s.begin(), s.end(), false);
+			fill(t.begin(), t.end(), false);
+			int s_start;
+			for(auto i = 0; i < n; ++ i) if(!~pu[i]){
+				s[i] = true, s_start = i;
+				break;
+			}
+			for(auto i = 0; i < n; ++ i){
+				slack[i] = l_x[s_start] + l_y[i] - adjm[s_start][i];
+				slack_x[i] = s_start;
+			}
+			FLAG:;
+			int y = -1;
+			for(auto i = 0; i < n; ++ i) if(!slack[i] && !t[i]) y = i;
+			if(!~y){
+				T alpha = numeric_limits<T>::max();
+				for(auto i = 0; i < n; ++ i) if(!t[i]) alpha = min(alpha, slack[i]);
+				for(auto i = 0; i < n; ++ i){
+					if(s[i]) l_x[i] -= alpha;
+					if(t[i]) l_y[i] += alpha;
+				}
+				for(auto i = 0; i < n; ++ i) if(!t[i]){
+					slack[i] -= alpha;
+					if(!slack[i]) y = i;
+				}
+			}
+			if(!~pv[y]){
+				tree_y[y] = slack_x[y];
+				while(~y){
+					int x = tree_y[y], next_y = pu[x];
+					pv[y] = x, pu[x] = y;
+					y = next_y;
+				}
+				-- rep;
+			}
+			else{
+				int z = pv[y];
+				tree_x[z] = y, tree_y[y] = slack_x[y];
+				s[z] = true, t[y] = true;
+				for(auto i = 0; i < n; ++ i) if(auto temp = l_x[z] + l_y[i] - adjm[z][i]; temp < slack[i]) slack[i] = temp, slack_x[i] = z;
+				goto FLAG;
+			}
+		}
+		return accumulate(l_x.begin(), l_x.end(), accumulate(l_y.begin(), l_y.end(), T{}));
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>hungarian_weighted_bipartite_matching</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
