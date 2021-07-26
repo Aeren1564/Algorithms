@@ -1,0 +1,115 @@
+<snippet>
+	<content><![CDATA[
+// Given an array of distinct integers,
+// a subarray S is said to be consecutive if max(S) - min(S) = len(S), and
+// a consecutive subarray S is said to be primitive if for any other consecutive subarray T, either S and T are disjoint or one contains the other
+// A consecutive subarray can be partitioned uniquely into maximum primitive consecutive subarrays.
+// There are O(n) primitive consecutive subarrays.
+// They form a forest of arboresence according to inclusion relation
+// Cut: Childs of the node are not sorted in either order. Here, any consecutive interval of childs of length >= 2 is not a consecutive subarray.
+// Join: Childs of the node are sorted in either order. Here, any consecutive interval of childs form a consecutive subarray
+// Requires lazy_segment_tree_range_add_range_min_index
+template<class T>
+struct cut_join_tree{
+	int n = 0;
+	// 0: leaf, 1: cut, 2: join(increasing), 3: join(decreasing)
+	vector<int> type;
+	// index range of a node u
+	vector<array<int, 2>> index_range;
+	// value range of a node u
+	vector<array<T, 2>> value_range;
+	// childs of a node u
+	vector<vector<int>> adj;
+	// set of root of the forest
+	vector<int> root;
+	cut_join_tree(int mx): ds(mx){ }
+	cut_join_tree(const vector<T> &a): ds((int)a.size()){
+		for(auto x: a) extend(x);
+	}
+	vector<pair<T, int>> min_stack, max_stack;
+	lazy_segment_tree_range_add_range_min_index<T, T> ds;
+	int new_node(int t, array<int, 2> ind, array<T, 2> val){
+		int u = (int)type.size();
+		type.push_back(t);
+		index_range.push_back(ind);
+		value_range.push_back(val);
+		adj.emplace_back();
+		return u;
+	}
+	// Assumes x has never been inserted before
+	// Amortized O(log n)
+	void extend(T x){
+		assert(n < ds.n);
+		ds.update(0, (int)root.size(), -1);
+		while(!min_stack.empty() && min_stack.back().first > x){
+			auto [px, r] = min_stack.back();
+			min_stack.pop_back();
+			ds.update(min_stack.empty() ? 0 : min_stack.back().second + 1, r + 1, px - x);
+		}
+		min_stack.push_back({x, (int)root.size()});
+		while(!max_stack.empty() && max_stack.back().first < x){
+			auto [px, r] = max_stack.back();
+			max_stack.pop_back();
+			ds.update(max_stack.empty() ? 0 : max_stack.back().second + 1, r + 1, x - px);
+		}
+		max_stack.push_back({x, (int)root.size()});
+		int u = new_node(0, {n, n + 1}, {x, x + 1});
+		while(!root.empty()){
+			int v = root.back();
+			if(type[v] == 2 && value_range[v][1] == value_range[u][0]){
+				adj[v].push_back(u);
+				index_range[v][1] = n + 1;
+				value_range[v][1] = value_range[u][1];
+				u = v;
+				root.pop_back();
+			}
+			else if(type[root.back()] == 3 && value_range[u][1] == value_range[v][0]){
+				adj[v].push_back(u);
+				index_range[v][1] = n + 1;
+				value_range[v][0] = value_range[u][0];
+				u = v;
+				root.pop_back();
+			}
+			else if(auto [minval, i] = ds.query(0, (int)root.size()); !minval){
+				if(i == (int)root.size() - 1){
+					int w = new_node(2 + (value_range[v][0] > value_range[u][0]), {index_range[v][0], n + 1}, {min(value_range[v][0], value_range[u][0]), max(value_range[v][1], value_range[u][1])});
+					adj[w] = {v, u};
+					u = w;
+					root.pop_back();
+				}
+				else{
+					int w = new_node(1, {index_range[root[i]][0], n + 1}, accumulate(root.begin() + i, root.end(), value_range[u], [&](array<T, 2> val, int u){ return array<T, 2>{min(val[0], value_range[u][0]), max(val[1], value_range[u][1])}; }));
+					adj[w] = {root.begin() + i, root.end()};
+					adj[w].push_back(u);
+					u = w;
+					root.resize(i);
+				}
+			}
+			else break;
+		}
+		root.push_back(u);
+		T last = -1;
+		while(!min_stack.empty() && (int)root.size() <= min_stack.back().second){
+			last = min_stack.back().first;
+			min_stack.pop_back();
+		}
+		if(~last) min_stack.push_back({last, (int)root.size() - 1});
+		last = -1;
+		while(!max_stack.empty() && (int)root.size() <= max_stack.back().second){
+			last = max_stack.back().first;
+			max_stack.pop_back();
+		}
+		if(~last) max_stack.push_back({last, (int)root.size() - 1});
+		ds.set((int)root.size() - 1, (value_range[u][1] - value_range[u][0]) - (index_range[u][1] - index_range[u][0]));
+		++ n;
+	}
+	int size() const{
+		return (int)type.size();
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>cut_join_tree</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
