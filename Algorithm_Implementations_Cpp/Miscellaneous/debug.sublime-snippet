@@ -3,7 +3,7 @@
 // DEBUG BEGIN
 #ifdef LOCAL
 template<class L, class R> ostream &operator<<(ostream &out, const pair<L, R> &p){
-	return out << "(" << p.first << ", " << p.second << ")";
+	return out << "{" << p.first << ", " << p.second << "}";
 }
 template<class Tuple, size_t N> struct TuplePrinter{
 	static ostream &print(ostream &out, const Tuple &t){ return TuplePrinter<Tuple, N-1>::print(out, t) << ", " << get<N-1>(t); }
@@ -12,7 +12,7 @@ template<class Tuple> struct TuplePrinter<Tuple, 1>{
 	static ostream &print(ostream &out, const Tuple& t){ return out << get<0>(t); }
 };
 template<class... Args> ostream &print_tuple(ostream &out, const tuple<Args...> &t){
-	return TuplePrinter<decltype(t), sizeof...(Args)>::print(out << "(", t) << ")";
+	return TuplePrinter<decltype(t), sizeof...(Args)>::print(out << "{", t) << "}";
 }
 template<class ...Args> ostream &operator<<(ostream &out, const tuple<Args...> &t){
 	return print_tuple(out, t);
@@ -73,9 +73,9 @@ void debug_frac_out(Head H, Tail... T){
 	debug_frac_out(T...);
 }
 enum CODE{ CCRED = 31, CCGREEN = 32, CCYELLOW = 33, CCBLUE = 34, CCDEFAULT = 39 };
-#define debug(...) cerr << "\033[" << (int)CODE(CCRED) << "m[" << #__VA_ARGS__ << "]: \033[" << (int)CODE(CCYELLOW) << "m", debug_out(__VA_ARGS__), cerr << "\33[" << (int)CODE(CCDEFAULT) << "m";
-#define debug2(...) cerr << "\033[" << (int)CODE(CCRED) << "m[" << #__VA_ARGS__ << "] \033[" << (int)CODE(CCYELLOW) << "m", debug2_out(__VA_ARGS__), cerr << "\33[" << (int)CODE(CCDEFAULT) << "m";
-#define debug_frac(...) cerr << "\033[" << (int)CODE(CCRED) << "m[" << #__VA_ARGS__ << "]: \033[" << (int)CODE(CCYELLOW) << "m", debug_frac_out(__VA_ARGS__), cerr << "\33[" << (int)CODE(CCDEFAULT) << "m";
+#define debug(...) cerr << "\033[" << (int)CODE(CCRED) << "m[" << #__VA_ARGS__ << "]: \033[" << (int)CODE(CCBLUE) << "m", debug_out(__VA_ARGS__), cerr << "\33[" << (int)CODE(CCDEFAULT) << "m";
+#define debug2(...) cerr << "\033[" << (int)CODE(CCRED) << "m[" << #__VA_ARGS__ << "] \033[" << (int)CODE(CCBLUE) << "m", debug2_out(__VA_ARGS__), cerr << "\33[" << (int)CODE(CCDEFAULT) << "m";
+#define debug_frac(...) cerr << "\033[" << (int)CODE(CCRED) << "m[" << #__VA_ARGS__ << "]: \033[" << (int)CODE(CCBLUE) << "m", debug_frac_out(__VA_ARGS__), cerr << "\33[" << (int)CODE(CCDEFAULT) << "m";
 #else
 #define debug(...) 42
 #define debug2(...) 42
