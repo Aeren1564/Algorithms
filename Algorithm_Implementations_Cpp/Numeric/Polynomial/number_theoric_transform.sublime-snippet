@@ -30,7 +30,7 @@ template<class T>
 vector<T> convolute(vector<T> p, vector<T> q){
 	if(min(p.size(), q.size()) < 60){
 		vector<T> res((int)p.size() + (int)q.size() - 1);
-		for(size_t i = 0; i < p.size(); ++ i) for(size_t j = 0; j < q.size(); ++ j) res[i + j] += p[i] * q[j];
+		for(auto i = 0; i < (int)p.size(); ++ i) for(auto j = 0; j < (int)q.size(); ++ j) res[i + j] += p[i] * q[j];
 		return res;
 	}
 	int m = max((int)p.size() + (int)q.size() - 1, 1), n = m;
