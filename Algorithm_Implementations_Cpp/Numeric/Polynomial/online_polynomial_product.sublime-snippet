@@ -1,0 +1,31 @@
+<snippet>
+	<content><![CDATA[
+// Requires polynomial
+template<class T>
+struct online_polynomial_product{
+	const vector<T> a;
+	vector<T> b, c;
+	online_polynomial_product(const vector<T> &a): a(a){ }
+	T add(const T &val){
+		int i = (int)b.size();
+		b.push_back(val);
+		if((int)c.size() <= i) c.resize(i + 1);
+		c[i] += a[0] * b[i];
+		int z = 1;
+		while((i & z - 1) == z - 1 && (int)a.size() > z){
+			vector<T> a_mul(a.begin() + z, a.begin() + min(z << 1, (int)a.size()));
+			vector<T> b_mul(b.end() - z, b.end());
+			vector<T> c_mul = a_mul * b_mul;
+			if((int)c.size() <= i + (int)c_mul.size()) c.resize(i + c_mul.size() + 1);
+			for(auto j = 0; j < (int)c_mul.size(); ++ j) c[i + 1 + j] += c_mul[j];
+			z <<= 1;
+		}
+		return c[i];
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>online_polynomial_product</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

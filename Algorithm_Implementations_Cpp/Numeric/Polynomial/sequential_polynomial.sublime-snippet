@@ -1,0 +1,30 @@
+<snippet>
+	<content><![CDATA[
+// Returns (x + 1) * (x + 2) * ... * (x + n)
+// O((Complexity of product))
+// Requires polynomial
+template<class T>
+vector<T> sequential_polynomial(int n){
+	if(n == 0) return {1};
+	if(n % 2 == 1) return sequential_polynomial<T>(n - 1) * vector<T>{n, 1};
+	vector<T> c = sequential_polynomial<T>(n / 2), a = c;
+	reverse(a.begin(), a.end());
+	T f = 1;
+	for(auto i = n / 2 - 1; i >= 0; -- i) f *= n / 2 - i, a[i] *= f;
+	vector<T> b(n / 2 + 1);
+	b[0] = 1;
+	for(auto i = 1; i <= n / 2; ++ i) b[i] = b[i - 1] * (n / 2) / i;
+	vector<T> h = a * b;
+	h.resize(n / 2 + 1);
+	reverse(h.begin(), h.end());
+	f = 1;
+	for(auto i = 1; i <= n / 2; ++ i) f /= i, h[i] *= f;
+	vector<T> res = c * h;
+	return res;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>sequential_polynomial</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

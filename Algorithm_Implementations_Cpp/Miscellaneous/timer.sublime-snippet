@@ -1,0 +1,21 @@
+<snippet>
+	<content><![CDATA[
+struct timer{
+	chrono::time_point<chrono::high_resolution_clock> init = chrono::high_resolution_clock::now(), current = chrono::high_resolution_clock::now();
+	// Measures time from last measure() call(construction if no such call)
+	double measure(){
+		auto t = chrono::duration<double>(chrono::high_resolution_clock::now() - current).count();
+		current = chrono::high_resolution_clock::now();
+		return t;
+	}
+	// Measures time from the construction
+	double measure_from_start(){
+		return chrono::duration<double>(chrono::high_resolution_clock::now() - init).count();
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>timer</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.cpp</scope> -->
+</snippet>

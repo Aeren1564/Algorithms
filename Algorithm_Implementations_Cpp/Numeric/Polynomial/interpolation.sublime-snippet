@@ -1,0 +1,47 @@
+<snippet>
+	<content><![CDATA[
+// O((Complexity of product) * log n)
+// Requires polynomial
+template<class T>
+vector<T> interpolation(const vector<T> &x, const vector<T> &y){
+	assert(x.size() == y.size());
+	if(x.empty()) return { };
+	int n = (int)x.size();
+	vector<vector<T>> st((n << 1) - 1);
+	auto build = [&](auto self, int u, int l, int r)->void{
+		if(r - l == 1) st[u] = vector<T>{-x[l], 1};
+		else{
+			int m = l + (r - l >> 1), v = u + (m - l << 1);
+			self(self, u + 1, l, m), self(self, v, m, r);
+			st[u] = st[u + 1] * st[v];
+		}
+	};
+	build(build, 0, 0, n);
+	vector<T> m = st[0], dm = derivative(m), val(n);
+	auto eval = [&](auto self, int u, int l, int r, vector<T> f)->void{
+		f %= st[u];
+		if((int)f.size() < 150){
+			for(auto i = l; i < r; ++ i) val[i] = evaluate(f, x[i]);
+			return;
+		}
+		if(r - l == 1) val[l] = f[0];
+		else{
+			int m = l + (r - l >> 1), v = u + (m - l << 1);
+			self(self, u + 1, l, m, f), self(self, v, m, r, f);
+		}
+	};
+	eval(eval, 0, 0, n, dm);
+	for(auto i = 0; i < n; ++ i) val[i] = y[i] / val[i];
+	auto calc = [&](auto self, int u, int l, int r)->vector<T>{
+		if(r - l == 1) return vector<T>{val[l]};
+		int m = l + (r - l >> 1), v = u + (m - l << 1);
+		return self(self, u + 1, l, m) * st[v] + self(self, v, m, r) * st[u + 1];
+	};
+	return calc(calc, 0, 0, n);
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>interpolation</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

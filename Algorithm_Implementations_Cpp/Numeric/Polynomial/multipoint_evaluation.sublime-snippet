@@ -1,0 +1,41 @@
+<snippet>
+	<content><![CDATA[
+// O((Complexity of product) * log n)
+// Requires polynomial
+template<class T>
+vector<T> multipoint_evaluation(const vector<T> &a, const vector<T> &x){
+	if(x.empty()) return {};
+	if(a.empty()) return vector<T>(x.size(), 0);
+	int n = (int)x.size();
+	vector<vector<T>> st((n << 1) - 1);
+	auto build = [&](auto self, int u, int l, int r)->void{
+		if(r - l == 1) st[u] = vector<T>{-x[l], 1};
+		else{
+			int m = l + (r - l >> 1), v = u + (m - l << 1);
+			self(self, u + 1, l, m), self(self, v, m, r);
+			st[u] = st[u + 1] * st[v];
+		}
+	};
+	build(build, 0, 0, n);
+	vector<T> res(n);
+	auto eval = [&](auto self, int u, int l, int r, vector<T> f)->void{
+		f %= st[u];
+		if((int)f.size() < 150){
+			for(auto i = l; i < r; ++ i) res[i] = evaluate(f, x[i]);
+			return;
+		}
+		if(r - l == 1) res[l] = f[0];
+		else{
+			int m = l + (r - l >> 1), v = u + (m - l << 1);
+			self(self, u + 1, l, m, f), self(self, v, m, r, f);
+		}
+	};
+	eval(eval, 0, 0, n, a);
+	return res;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>multipoint_evaluation</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

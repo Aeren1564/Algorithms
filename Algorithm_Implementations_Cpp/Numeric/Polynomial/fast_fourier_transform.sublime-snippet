@@ -1,45 +1,51 @@
 <snippet>
 	<content><![CDATA[
-void fast_fourier_transform(vector<complex<double>> &a, const bool invert = false){ // O(n log n)
+// O(n log n)
+void fast_fourier_transform(vector<complex<double>> &a, bool invert = false){
 	int n = (int)a.size();
+	static vector<complex<double>> root(2, 1);
+	static vector<complex<long double>> root_ld(2, 1);
+	for(static int k = 2; k < n; k <<= 1){
+		root.resize(n), root_ld.resize(n);
+		auto theta = polar(1.0L, acos(-1.0L) / k);
+		for(auto i = k; i < k << 1; ++ i) root[i] = root_ld[i] = i & 1 ? root_ld[i >> 1] * theta : root_ld[i >> 1];
+	}
 	for(auto i = 1, j = 0; i < n; ++ i){
 		int bit = n >> 1;
 		for(; j & bit; bit >>= 1) j ^= bit;
 		j ^= bit;
 		if(i < j) swap(a[i], a[j]);
 	}
-	for(auto len = 1; len < n; len <<= 1){
-		double theta = acos(-1) / len * (invert ? -1 : 1);
-		complex<double> w(cos(theta), sin(theta));
-		for(auto i = 0; i < n; i += len << 1){
-			complex<double> wj(1);
-			for(auto j = 0; j < len; ++ j, wj *= w){
-				complex<double> u = a[i + j], v = wj * a[i + j + len];
-				a[i + j] = u + v, a[i + j + len] = u - v;
-			}
-		}
+	for(auto k = 1; k < n; k <<= 1) for(auto i = 0; i < n; i += k << 1) for(auto j = 0; j < k; ++ j){
+		auto x = (double *)&root[j + k], y = (double *)&a[i + j + k];
+		complex<double> z(x[0] * y[0] - x[1] * y[1], x[0] * y[1] + x[1] * y[0]);
+		a[i + j + k] = a[i + j] - z, a[i + j] += z;
 	}
 	if(invert){
-		double inv_n = 1.0 / n;
+		reverse(a.begin() + 1, a.end());
+		auto inv_n = 1.0 / n;
 		for(auto &x: a) x *= inv_n;
 	}
 }
+// Safe for sum(p[i]^2 + q[i]^2) lg2(n) < 9e14
+// O(n log n)
 template<class T>
-vector<T> convolute(const vector<T> &p, const vector<T> &q){
-	if(min(p.size(), q.size()) < 250){
+vector<T> convolute_integral(const vector<T> &p, const vector<T> &q){
+	if(min(p.size(), q.size()) < 150){
 		vector<T> res((int)p.size() + (int)q.size() - 1);
 		for(auto i = 0; i < p.size(); ++ i) for(auto j = 0; j < q.size(); ++ j) res[i + j] += p[i] * q[j];
 		return res;
 	}
-	vector<complex<double>> f(p.begin(), p.end()), g(q.begin(), q.end());
-	int m = max(int(p.size()) + int(q.size()) - 1, 1), n = m;
-	if(__builtin_popcount(n) != 1) n = 1 << __lg(n) + 1;
-	f.resize(n), g.resize(n);
-	fast_fourier_transform(f), fast_fourier_transform(g);
-	for(auto i = 0; i < n; ++ i) f[i] *= g[i];
-	fast_fourier_transform(f, true);
-	vector<T> res(m);
-	for(auto i = 0; i < m; ++ i) res[i] = round(f[i].real());
+	int n = 1 << __lg((int)p.size() + (int)q.size() - 1) + 1;
+	vector<complex<double>> f(n), g(n);
+	copy(p.begin(), p.end(), f.begin());
+	for(auto i = 0; i < (int)q.size(); ++ i) f[i].imag(q[i]);
+	fast_fourier_transform(f);
+	for(auto &x: f) x *= x;
+	for(auto i = 0; i < n; ++ i) g[i] = f[i] - conj(f[-i & n - 1]);
+	fast_fourier_transform(g, true);
+	vector<T> res((int)p.size() + (int)q.size() - 1);
+	for(auto i = 0; i < (int)res.size(); ++ i) res[i] = round(g[i].imag() / 4);
 	return res;
 }
 ]]></content>

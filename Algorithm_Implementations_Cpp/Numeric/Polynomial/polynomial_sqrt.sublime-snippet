@@ -1,0 +1,25 @@
+<snippet>
+	<content><![CDATA[
+// O((Complexity of product) log n)
+// Requires polynomial
+template<class T>
+vector<T> polynomial_sqrt(const vector<T> &a){
+	assert(!a.empty() && a[0] == 1);
+	int n = (int)a.size();
+	vector<T> b = {1};
+	while((int)b.size() < n){
+		vector<T> x(a.begin(), a.begin() + min(a.size(), b.size() << 1));
+		b.resize(b.size() << 1);
+		x *= inverse(b);
+		T inv2 = 1 / static_cast<T>(2);
+		for(auto i = (int)b.size() >> 1; i < (int)min(x.size(), b.size()); ++ i) b[i] = x[i] * inv2;
+	}
+	b.resize(n);
+	return b;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>polynomial_sqrt</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

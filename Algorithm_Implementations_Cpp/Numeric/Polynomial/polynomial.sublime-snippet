@@ -1,11 +1,31 @@
 <snippet>
 	<content><![CDATA[
-// Requires number_theoric_transform, O(n log n)
+
+// O(n log n)
+// Requires number_theoric_transform
 template<class T>
 vector<T> operator*(const vector<T> &p, const vector<T> &q){
-	return convolute(p, q);
+	return convolute_ntt(p, q);
 }
+
 /*
+// O(n log n)
+// Requires fast_fourier_transform
+template<class T>
+vector<T> operator*(const vector<T> &p, const vector<T> &q){
+	return convolute_integral(p, q);
+}
+*/
+/*
+// O(n log n)
+// Requires fast_fourier_transform and convolute_modular
+template<class T>
+vector<T> operator*(const vector<T> &p, const vector<T> &q){
+	return convolute_modular(p, q);
+}
+*/
+/*
+// Naive multiplication
 // O(n m)
 template<class T>
 vector<T> operator*(const vector<T> &a, const vector<T> &b){
@@ -190,22 +210,7 @@ vector<T> operator^(const vector<T> &a, U e){
 	return b ^= e;
 }
 template<class T>
-vector<T> sqrt(const vector<T> &a){
-	assert(!a.empty() && a[0] == 1);
-	int n = (int)a.size();
-	vector<T> b = {1};
-	while((int)b.size() < n){
-		vector<T> x(a.begin(), a.begin() + min(a.size(), b.size() << 1));
-		b.resize(b.size() << 1);
-		x *= inverse(b);
-		T inv2 = 1 / static_cast<T>(2);
-		for(auto i = (int)b.size() >> 1; i < (int)min(x.size(), b.size()); ++ i) b[i] = x[i] * inv2;
-	}
-	b.resize(n);
-	return b;
-}
-template<class T>
-vector<T> multiply(const vector<vector<T>> &a){
+vector<T> multiply_all(const vector<vector<T>> &a){
 	if(a.empty()) return {0};
 	auto solve = [&](auto self, int l, int r)->vector<T>{
 		if(r - l == 1) return a[l];
@@ -214,141 +219,12 @@ vector<T> multiply(const vector<vector<T>> &a){
 	};
 	return solve(solve, 0, (int)a.size());
 }
-template<class T>
-T evaluate(const vector<T> &a, const T &x){
+template<class T, class U>
+T evaluate(const vector<T> &a, U x){
 	T res = {};
 	for(auto i = (int)a.size() - 1; i >= 0; -- i) res = res * x + a[i];
 	return res;
 }
-template<class T>
-vector<T> evaluate(const vector<T> &a, const vector<T> &x){
-	if(x.empty()) return {};
-	if(a.empty()) return vector<T>(x.size(), 0);
-	int n = (int)x.size();
-	vector<vector<T>> st((n << 1) - 1);
-	auto build = [&](auto self, int u, int l, int r)->void{
-		if(r - l == 1) st[u] = vector<T>{-x[l], 1};
-		else{
-			int m = l + (r - l >> 1), v = u + (m - l << 1);
-			self(self, u + 1, l, m), self(self, v, m, r);
-			st[u] = st[u + 1] * st[v];
-		}
-	};
-	build(build, 0, 0, n);
-	vector<T> res(n);
-	auto eval = [&](auto self, int u, int l, int r, vector<T> f)->void{
-		f %= st[u];
-		if((int)f.size() < 150){
-			for(auto i = l; i < r; ++ i) res[i] = evaluate(f, x[i]);
-			return;
-		}
-		if(r - l == 1) res[l] = f[0];
-		else{
-			int m = l + (r - l >> 1), v = u + (m - l << 1);
-			self(self, u + 1, l, m, f), self(self, v, m, r, f);
-		}
-	};
-	eval(eval, 0, 0, n, a);
-	return res;
-}
-template<class T>
-vector<T> interpolate(const vector<T> &x, const vector<T> &y){
-	if(x.empty()) return { };
-	assert(x.size() == y.size());
-	int n = (int)x.size();
-	vector<vector<T>> st((n << 1) - 1);
-	auto build = [&](auto self, int u, int l, int r)->void{
-		if(r - l == 1) st[u] = vector<T>{-x[l], 1};
-		else{
-			int m = l + (r - l >> 1), v = u + (m - l << 1);
-			self(self, u + 1, l, m), self(self, v, m, r);
-			st[u] = st[u + 1] * st[v];
-		}
-	};
-	build(build, 0, 0, n);
-	vector<T> m = st[0], dm = derivative(m), val(n);
-	auto eval = [&](auto self, int u, int l, int r, vector<T> f)->void{
-		f %= st[u];
-		if((int)f.size() < 150){
-			for(auto i = l; i < r; ++ i) val[i] = evaluate(f, x[i]);
-			return;
-		}
-		if(r - l == 1) val[l] = f[0];
-		else{
-			int m = l + (r - l >> 1), v = u + (m - l << 1);
-			self(self, u + 1, l, m, f), self(self, v, m, r, f);
-		}
-	};
-	eval(eval, 0, 0, n, dm);
-	for(auto i = 0; i < n; ++ i) val[i] = y[i] / val[i];
-	auto calc = [&](auto self, int u, int l, int r)->vector<T>{
-		if(r - l == 1) return vector<T>{val[l]};
-		int m = l + (r - l >> 1), v = u + (m - l << 1);
-		return self(self, u + 1, l, m) * st[v] + self(self, v, m, r) * st[u + 1];
-	};
-	return calc(calc, 0, 0, n);
-}
-// f[i] = 1^i + 2^i + ... + base^i
-template<class T>
-vector<T> faulhaber(const T &base, int n){
-	vector<T> ex(n + 1);
-	T e = 1;
-	for(auto i = 0; i <= n; ++ i) ex[i] = e, e /= i + 1;
-	vector<T> den = ex;
-	den.erase(den.begin());
-	for(auto &d : den) d = -d;
-	vector<T> num(n);
-	T p = 1;
-	for(auto i = 0; i < n; ++ i) p *= base + 1, num[i] = ex[i + 1] * (1 - p);
-	vector<T> res = num * inverse(den);
-	res.resize(n);
-	T f = 1;
-	for(auto i = 0; i < n; ++ i) res[i] *= f, f *= i + 1;
-	return res;
-}
-// (x + 1) * (x + 2) * ... * (x + n)
-// (can be optimized with precomputed inverses)
-template<class T>
-vector<T> sequence(int n){
-	if(n == 0) return {1};
-	if(n % 2 == 1) return sequence<T>(n - 1) * vector<T>{n, 1};
-	vector<T> c = sequence<T>(n / 2), a = c;
-	reverse(a.begin(), a.end());
-	T f = 1;
-	for(auto i = n / 2 - 1; i >= 0; -- i) f *= n / 2 - i, a[i] *= f;
-	vector<T> b(n / 2 + 1);
-	b[0] = 1;
-	for(auto i = 1; i <= n / 2; ++ i) b[i] = b[i - 1] * (n / 2) / i;
-	vector<T> h = a * b;
-	h.resize(n / 2 + 1);
-	reverse(h.begin(), h.end());
-	f = 1;
-	for(auto i = 1; i <= n / 2; ++ i) f /= i, h[i] *= f;
-	vector<T> res = c * h;
-	return res;
-}
-template<class T>
-struct online_product{
-	const vector<T> a;
-	vector<T> b, c;
-	online_product(const vector<T> &a): a(a){ }
-	T add(const T &val){
-		int i = (int)b.size();
-		b.push_back(val);
-		if((int)c.size() <= i) c.resize(i + 1);
-		c[i] += a[0] * b[i];
-		int z = 1;
-		while((i & z - 1) == z - 1 && (int)a.size() > z){
-			vector<T> a_mul(a.begin() + z, a.begin() + min(z << 1, (int)a.size()));
-			vector<T> b_mul(b.end() - z, b.end());
-			vector<T> c_mul = a_mul * b_mul;
-			if((int)c.size() <= i + (int)c_mul.size()) c.resize(i + c_mul.size() + 1);
-			for(auto j = 0; j < (int)c_mul.size(); ++ j) c[i + 1 + j] += c_mul[j];
-			z <<= 1;
-		}
-		return c[i];
-	}
-};
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
 	<tabTrigger>polynomial</tabTrigger> -->

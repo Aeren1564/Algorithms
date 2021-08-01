@@ -7,15 +7,17 @@ struct lazy_segment_tree_range_add_range_min_index{
 	T inf = numeric_limits<T>::max() / 2;
 	vector<pair<T, int>> data;
 	vector<U> updates;
-	lazy_segment_tree_range_add_range_min_index(int n): lazy_segment_tree_range_add_range_min_index(vector<T>(n, inf)){ }
-	lazy_segment_tree_range_add_range_min_index(int n, T init): lazy_segment_tree_range_add_range_min_index(vector<T>(n, init)){ }
+	lazy_segment_tree_range_add_range_min_index(int n): lazy_segment_tree_range_add_range_min_index(vector<T>(n, numeric_limits<T>::max() / 2)){  }
+	lazy_segment_tree_range_add_range_min_index(int n, T init): lazy_segment_tree_range_add_range_min_index(vector<T>(n, init)){  }
 	lazy_segment_tree_range_add_range_min_index(const vector<T> &a): n((int)a.size()){ // O(n)
 		log = __lg(max(n - 1, 1)) + 1, size = 1 << log;
-		data = vector<pair<T, int>>(size << 1), updates = vector<U>(size);
+		data = vector<pair<T, int>>(size << 1, {inf, numeric_limits<int>::max()}), updates = vector<U>(size);
 		for(auto i = 0; i < n; ++ i) data[i + size] = pair<T, int>{a[i], -i};
 		for(auto i = size - 1; i >= 1; -- i) refresh(i);
 	}
-	void refresh(int i){ data[i] = min(data[i << 1], data[i << 1 | 1]); }
+	void refresh(int i){
+		data[i] = min(data[i << 1], data[i << 1 | 1]);
+	}
 	void apply(int i, U f){
 		data[i].first += f;
 		if(i < size) updates[i] += f;
@@ -40,12 +42,11 @@ struct lazy_segment_tree_range_add_range_min_index{
 			if(l >> i << i != l) push(l >> i);
 			if(r >> i << i != r) push(r - 1 >> i);
 		}
-		pair<T, int> res_left{inf, -1}, res_right{inf, -1};
+		pair<T, int> res{inf, -1};
 		for(; l < r; l >>= 1, r >>= 1){
-			if(l & 1) res_left = min(res_left, data[l ++]);
-			if(r & 1) res_right = min(data[-- r], res_right);
+			if(l & 1) res = min(res, data[l ++]);
+			if(r & 1) res = min(data[-- r], res);
 		}
-		auto res = min(res_left, res_right);
 		return {res.first, -res.second};
 	}
 	// O(1)

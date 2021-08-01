@@ -1,8 +1,7 @@
 <snippet>
 	<content><![CDATA[
-using namespace chrono;
-mt19937 rng(high_resolution_clock::now().time_since_epoch().count());
-mt19937_64 rngll(high_resolution_clock::now().time_since_epoch().count());
+mt19937 rng(chrono::high_resolution_clock::now().time_since_epoch().count());
+mt19937_64 rngll(chrono::high_resolution_clock::now().time_since_epoch().count());
 using randint = uniform_int_distribution<int>;
 using randll = uniform_int_distribution<long long>;
 using randd = uniform_real_distribution<double>;

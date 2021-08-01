@@ -1,5 +1,6 @@
 <snippet>
 	<content><![CDATA[
+// NTTmod: 998244353(2^23*7*17,3),754974721(2^24*3^2*5,11),469762049(2^26*7,3),167772161(2^25*5,3)
 // Requires modular
 template<class T, int root = 15311432, int root_pw = 1 << 23, int inv_root = 469870224>
 void number_theoric_transform(vector<T> &a, const bool invert = false){
@@ -25,16 +26,16 @@ void number_theoric_transform(vector<T> &a, const bool invert = false){
 		T inv_n = T(1) / n;
 		for(auto &x: a) x *= inv_n;
 	}
-} // NTTmod: 998244353(2^23*7*17,3),754974721(2^24*3^2*5,11),469762049(2^26*7,3),167772161(2^25*5,3)
+}
+// O(n log n)
 template<class T>
-vector<T> convolute(vector<T> p, vector<T> q){
+vector<T> convolute_ntt(vector<T> p, vector<T> q){
 	if(min(p.size(), q.size()) < 60){
 		vector<T> res((int)p.size() + (int)q.size() - 1);
 		for(auto i = 0; i < (int)p.size(); ++ i) for(auto j = 0; j < (int)q.size(); ++ j) res[i + j] += p[i] * q[j];
 		return res;
 	}
-	int m = max((int)p.size() + (int)q.size() - 1, 1), n = m;
-	if(__builtin_popcount(n) != 1) n = 1 << __lg(n) + 1;
+	int m = (int)p.size() + (int)q.size() - 1, n = 1 << __lg(m) + 1;
 	p.resize(n), q.resize(n);
 	number_theoric_transform(p), number_theoric_transform(q);
 	for(auto i = 0; i < n; ++ i) p[i] *= q[i];

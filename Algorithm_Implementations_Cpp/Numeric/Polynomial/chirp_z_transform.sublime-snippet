@@ -1,0 +1,51 @@
+<snippet>
+	<content><![CDATA[
+// returns {p[base^0], p[base^2], ..., p[base^2(n-1)]}
+// O(max(deg(p), n) log max(deg(p), n))
+// Requires polynomial
+template<class T>
+vector<T> chirp_z_transform_even(const vector<T> &p, int n, T base){
+	if(p.empty() || all_of(p.begin(), p.end(), [&](auto x){ return !x; })) return vector<T>(n, 0);
+	auto augment_sq = [&](const vector<T> &p, T base)->vector<T>{
+		T cur = base, tot = 1, sqbase = base * base;
+		auto res = p;
+		for(auto i = 0; i < (int)p.size(); ++ i) res[i] *= tot, tot *= cur, cur *= sqbase;
+		return res;
+	};
+	int m = (int)p.size();
+	vector<T> vv(m + n);
+	T inv = T(1) / base, sqinv = inv * inv, cur = inv, tot = 1;
+	for(auto i = 0; i <= max(n - 1, m); ++ i){
+		if(i <= m) vv[m - i] = tot;
+		if(i < n) vv[m + i] = tot;
+		tot *= cur, cur *= sqinv;
+	}
+	auto res = augment_sq(p, base) * vv;
+	res = augment_sq(vector<T>(res.begin() + min((int)res.size(), m), res.begin() + min((int)res.size(), m + n)), base);
+	res.resize(n);
+	return res;
+}
+// returns {p[base^0], p[base^1], ..., p[base^(n-1)]}
+// O(max(deg(p), n) log max(deg(p), n))
+// Requires polynomial
+template<class T>
+vector<T> chirp_z_transform(const vector<T> &p, int n, T base){
+	auto augment = [&](const vector<T> &p, T base)->vector<T>{
+		T tot = 1;
+		auto res = p;
+		for(auto i = 0; i < (int)p.size(); ++ i) res[i] *= tot, tot *= base;
+		return res;
+	};
+	auto even = chirp_z_transform_even(p, n + 1 >> 1, base);
+	auto odd = chirp_z_transform_even(augment(p, base), n >> 1, base);
+	vector<T> res(n);
+	for(auto i = 0; i < n >> 1; ++ i) res[i << 1] = even[i], res[i << 1 | 1] = odd[i];
+	if(n & 1) res.back() = even.back();
+	return res;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>chirp_z_transform</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

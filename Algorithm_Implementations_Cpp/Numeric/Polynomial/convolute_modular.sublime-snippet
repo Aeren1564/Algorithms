@@ -1,0 +1,36 @@
+<snippet>
+	<content><![CDATA[
+// Safe for any integer mod
+// O(n log n)
+// Requires fast_fourier_transform and modular
+template<class T>
+vector<T> convolute_modular(const vector<T> &p, const vector<T> &q){
+	if(min(p.size(), q.size()) < 150){
+		vector<T> res((int)p.size() + (int)q.size() - 1);
+		for(auto i = 0; i < p.size(); ++ i) for(auto j = 0; j < q.size(); ++ j) res[i + j] += p[i] * q[j];
+		return res;
+	}
+	int n = 1 << __lg((int)p.size() + (int)q.size() - 1) + 1;
+	vector<complex<double>> L(n), R(n), outL(n), outR(n);
+	const int cut = 32000;
+	for(auto i = 0; i < (int)p.size(); ++ i) L[i] = {p[i].value / cut, p[i].value % cut};
+	for(auto i = 0; i < (int)q.size(); ++ i) R[i] = {q[i].value / cut, q[i].value % cut};
+	fast_fourier_transform(L), fast_fourier_transform(R);
+	for(auto i = 0; i < n; ++ i){
+		int j = -i & n - 1;
+		outL[i] = (L[i] + conj(L[j])) * R[i] / 2.0;
+		outR[i] = (L[i] - conj(L[j])) * R[i] / 2i;
+	}
+	fast_fourier_transform(outL, true), fast_fourier_transform(outR, true);
+	vector<T> res((int)p.size() + (int)q.size() - 1);
+	for(auto i = 0; i < (int)res.size(); ++ i){
+		res[i] = ((T)(long long)round(outL[i].real()) * cut + (T)(long long)(round(outL[i].imag()) + round(outR[i].real()))) * cut + (T)(long long)round(outR[i].imag());
+	}
+	return res;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>convolute_modular</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

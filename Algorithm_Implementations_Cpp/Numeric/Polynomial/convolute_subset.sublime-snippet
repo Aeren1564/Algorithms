@@ -3,7 +3,7 @@
 // O(n log^2 n)
 // Requires fast_walsh_hadamard_transform
 template<class T>
-vector<T> subset_convolute(vector<T> p, vector<T> q){
+vector<T> convolute_subset(vector<T> p, vector<T> q){
 	int n = max({(int)p.size(), (int)q.size() - 1, 1});
 	if(__builtin_popcount(n) != 1) n = 1 << __lg(n) + 1;
 	int w = __lg(n);
@@ -23,7 +23,7 @@ vector<T> subset_convolute(vector<T> p, vector<T> q){
 }
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
-	<tabTrigger>subset_convolution</tabTrigger> -->
+	<tabTrigger>convolute_subset</tabTrigger> -->
 	<!-- Optional: Set a scope to limit where the snippet will trigger -->
 	<scope>source.c++</scope> -->
 </snippet>

@@ -19,7 +19,7 @@ void fast_walsh_hadamard_transform(vector<T> &a, const bool invert = false){
 	}
 }
 template<class T, char Conv = '^'>
-vector<T> convolute(vector<T> p, vector<T> q){
+vector<T> convolute_fwht(vector<T> p, vector<T> q){
 	int n = max({(int)p.size(), (int)q.size() - 1, 1});
 	if(__builtin_popcount(n) != 1) n = 1 << __lg(n) + 1;
 	p.resize(n), q.resize(n);
