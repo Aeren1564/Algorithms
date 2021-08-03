@@ -3,7 +3,7 @@
 template<typename T>
 struct modular_base{
 	using Type = typename decay<decltype(T::value)>::type;
-	static vector<Type> MOD_INV;
+	static vector<Type> _MOD_INV;
 	constexpr modular_base(): value(){ }
 	template<typename U> modular_base(const U &x){ value = normalize(x); }
 	template<typename U> static Type normalize(const U &x){
@@ -65,7 +65,7 @@ struct modular_base{
 	}
 	modular_base &operator/=(const modular_base &otr){
 		Type a = otr.value, m = mod(), u = 0, v = 1;
-		if(a < (int)MOD_INV.size()) return *this *= MOD_INV[a];
+		if(a < (int)_MOD_INV.size()) return *this *= _MOD_INV[a];
 		while(a){
 			Type t = m / a;
 			m -= t * a; swap(a, m);
@@ -74,7 +74,6 @@ struct modular_base{
 		assert(m == 1);
 		return *this *= u;
 	}
-	template<typename U> friend const modular_base<U> &abs(const modular_base<U> &v){ return v; }
 	Type value;
 };
 template<typename T> bool operator==(const modular_base<T> &lhs, const modular_base<T> &rhs){ return lhs.value == rhs.value; }
@@ -106,6 +105,19 @@ template<typename T> istream &operator>>(istream &in, modular_base<T> &number){
 	return in;
 }
 template<typename T> ostream &operator<<(ostream &out, const modular_base<T> &number){ return out << number(); }
+template<typename T> vector<typename modular_base<T>::Type> modular_base<T>::_MOD_INV;
+template<typename T>
+void precalc_inverse(int SZ){
+	auto &inv = T::_MOD_INV;
+	if(inv.empty()) inv.assign(2, 1);
+	for(; inv.size() <= SZ; ) inv.push_back((T::mod() - 1LL * T::mod() / (int)inv.size() * inv[T::mod() % (int)inv.size()]) % T::mod());
+}
+template<typename T>
+vector<T> precalc_power(T base, int SZ){
+	vector<T> res(SZ + 1, 1);
+	for(auto i = 1; i <= SZ; ++ i) res[i] = res[i - 1] * base;
+	return res;
+}
 
 /*
 using ModType = int;
@@ -119,21 +131,6 @@ using modular = modular_base<VarMod>;
 constexpr int mod = (119 << 23) + 1; // 998244353
 // constexpr int mod = 1e9 + 9; // 1000000009
 using modular = modular_base<integral_constant<decay<decltype(mod)>::type, mod>>;
-
-template<typename T> vector<typename modular_base<T>::Type> modular_base<T>::MOD_INV;
-template<typename T = integral_constant<decay<decltype(mod)>::type, mod>>
-void precalc_inverse(int SZ){
-	auto &inv = modular_base<T>::MOD_INV;
-	if(inv.empty()) inv.assign(2, 1);
-	for(; inv.size() <= SZ; ) inv.push_back((mod - 1LL * mod / (int)inv.size() * inv[mod % (int)inv.size()]) % mod);
-}
-
-template<typename T>
-vector<T> precalc_power(T base, int SZ){
-	vector<T> res(SZ + 1, 1);
-	for(auto i = 1; i <= SZ; ++ i) res[i] = res[i - 1] * base;
-	return res;
-}
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
 	<tabTrigger>modular</tabTrigger> -->
