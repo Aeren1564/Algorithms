@@ -10,9 +10,9 @@ struct lazy_segment_tree{
 	F2 UU; // semigroup operation (superset, subset)
 	F3 U_init; // semigroup default element for the interval [l, r)
 	F4 UT; // action of U on T (superset, subset)
-	lazy_segment_tree(int n, F1 TT, T T_id, F2 UU, F3 U_init, F4 UT): lazy_segment_tree(vector<T>(n, T_id), TT, T_id, UU, U_init, UT){ }
-	lazy_segment_tree(int n, T init, F1 TT, T T_id, F2 UU, F3 U_init, F4 UT): lazy_segment_tree(vector<T>(n, init), TT, T_id, UU, U_init, UT){ }
-	lazy_segment_tree(const vector<T> &a, F1 TT, T T_id, F2 UU, F3 U_init, F4 UT): n((int)a.size()), TT(TT), T_id(T_id), UU(UU), U_init(U_init), UT(UT){ // O(n)
+	lazy_segment_tree(int n, F1 TT, T T_id, F2 UU, F3 U_init, F4 UT, U _type_deducer): lazy_segment_tree(vector<T>(n, T_id), TT, T_id, UU, U_init, UT, _type_deducer){ }
+	lazy_segment_tree(int n, T init, F1 TT, T T_id, F2 UU, F3 U_init, F4 UT, U _type_deducer): lazy_segment_tree(vector<T>(n, init), TT, T_id, UU, U_init, UT, _type_deducer){ }
+	lazy_segment_tree(const vector<T> &a, F1 TT, T T_id, F2 UU, F3 U_init, F4 UT, U): n((int)a.size()), TT(TT), T_id(T_id), UU(UU), U_init(U_init), UT(UT){ // O(n)
 		log = __lg(max(n - 1, 1)) + 1, size = 1 << log;
 		data = vector<T>(size << 1, T_id), updates = vector<U>(size);
 		copy(a.begin(), a.end(), data.begin() + size);
@@ -22,7 +22,9 @@ struct lazy_segment_tree{
 		}
 		for(auto i = size - 1; i >= 1; -- i) refresh(i);
 	}
-	void refresh(int i){ data[i] = TT(data[i << 1], data[i << 1 | 1]); }
+	void refresh(int i){
+		data[i] = TT(data[i << 1], data[i << 1 | 1]);
+	}
 	void apply(int i, U f){
 		data[i] = UT(f, data[i]);
 		if(i < size) updates[i] = UU(f, updates[i]);

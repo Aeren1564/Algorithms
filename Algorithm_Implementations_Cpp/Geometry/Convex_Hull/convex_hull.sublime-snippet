@@ -23,7 +23,7 @@ struct convex_hull{ // (Lower, Upper) type {0: both, 1: lower, 2: upper}
 	}
 	// get the point in convex hull with the maximum inner product with p
 	// O(log n)
-	int max_element(const point<T> &p) const{
+	pair<bool, int> max_element(const point<T> &p) const{
 		if(p.y >= 0 && !upper.empty()){
 			int low = 0, high = (int)upper.size();
 			while(high - low >= 3){
@@ -32,7 +32,7 @@ struct convex_hull{ // (Lower, Upper) type {0: both, 1: lower, 2: upper}
 			}
 			int res = low;
 			for(auto i = low + 1; i < high; ++ i) if(p * upper[res] < p * upper[i]) res = i;
-			return res;
+			return {1, res};
 		}
 		else{
 			assert(!lower.empty());
@@ -43,7 +43,7 @@ struct convex_hull{ // (Lower, Upper) type {0: both, 1: lower, 2: upper}
 			}
 			int res = low;
 			for(auto i = low + 1; i < high; i ++) if(p * lower[res] > p * lower[i]) res = i;
-			return res;
+			return {0, res};
 		}
 	}
 	// get the sorted list of points
