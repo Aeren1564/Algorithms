@@ -2,7 +2,7 @@
 	<content><![CDATA[
 // O(n log n)
 template<class T, char Conv = '^'>
-void fast_walsh_hadamard_transform(vector<T> &a, const bool invert = false){
+void fast_walsh_hadamard_transform(vector<T> &a, bool invert = false){
 	int n = (int)a.size();
 	for(auto len = 1; len < n; len <<= 1){
 		for(auto i = 0; i < n; i += len << 1){

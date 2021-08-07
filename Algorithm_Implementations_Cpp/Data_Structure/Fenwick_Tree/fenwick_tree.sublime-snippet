@@ -13,6 +13,8 @@ struct fenwick_tree{
 	fenwick_tree(const vector<T> &v): n((int)v.size()), data(v){
 		for(auto i = 1; i <= n; ++ i) if(i + (i & -i) <= n) data[i + (i & -i) - 1] += data[i - 1];
 	}
+	fenwick_tree(const fenwick_tree &otr): n(otr.n), data(otr.data){
+	}
 	// O(log n)
 	void update(int p, T x){
 		assert(0 <= p && p < n);

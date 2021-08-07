@@ -1,0 +1,53 @@
+<snippet>
+	<content><![CDATA[
+// Note: construction of an AC-automaton is offline.
+// O(log(sigma) * (sum of length)) where sigma is the size of alphabets
+template<class Char_Type>
+struct aho_corasic_automaton_unfixed{
+	// Begin States
+	vector<int> len{0}, link{-1}, exit_link{-1};
+	vector<bool> is_terminal{false};
+	vector<map<Char_Type, int>> next{{}};
+	// End States
+	int new_state(){
+		len.push_back(0);
+		link.push_back(-1);
+		exit_link.push_back(-1);
+		is_terminal.push_back(false);
+		next.push_back({});
+		return (int)len.size() - 1;
+	}
+	aho_corasic_automaton_unfixed(){ }
+	aho_corasic_automaton_unfixed(const vector<vector<Char_Type>> &patterns){
+		for(auto s: patterns){
+			int u = 0;
+			for(auto c: s){
+				if(!next[u].count(c)) next[u][c] = new_state(), len[next[u][c]] = len[u] + 1;
+				u = next[u][c];
+			}
+			is_terminal[u] = true;
+		}
+		deque<int> dq{0};
+		while(!dq.empty()){
+			int u = dq.front(); dq.pop_front();
+			for(auto [c, v]: next[u]){
+				link[v] = next_state(link[u], c);
+				exit_link[v] = is_terminal[link[v]] ? link[v] : exit_link[link[v]];
+				dq.push_back(v); 
+			}
+		}
+	}
+	int next_state(int u, Char_Type c){
+		while(~u && !next[u].count(c)) u = link[u];
+		return ~u ? next[u][c] : 0;
+	}
+	int size() const{ // # of states
+		return (int)len.size();
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>aho_corasic_automaton_unfixed</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
