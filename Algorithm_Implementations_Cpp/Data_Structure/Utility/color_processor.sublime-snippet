@@ -3,7 +3,7 @@
 template<class B, class C> // coordinate type, color type
 struct color_processor{
 	map<array<B, 2>, C> intervals;
-	color_processor(C init = {}): intervals({{{numeric_limits<B>::min(), numeric_limits<B>::max()}, init}}){ }
+	color_processor(C initial_color = {}): intervals({{{numeric_limits<B>::min(), numeric_limits<B>::max()}, initial_color}}){ }
 	auto belongs(B p){
 		return prev(intervals.upper_bound({p, numeric_limits<B>::max()}));
 	}
@@ -22,8 +22,8 @@ struct color_processor{
 				it = intervals.insert({{x.first[0], r}, x.second}).first;
 				intervals.insert({{r, x.first[1]}, x.second});
 			}
-			process(max(l, it->first[0]), min(r, it->first[1]), it->second, c);
-			// process(l, r, pc, c): color of range [l, r) is changed from pc to c
+			process(max(l, it->first[0]), min(r, it->first[1]), it->second);
+			// process(l, r, pc): color of range [l, r) is changed from pc to c
 			I = {min(I[0], it->first[0]), max(I[1], it->first[1])};
 			it = intervals.erase(it);
 		}
