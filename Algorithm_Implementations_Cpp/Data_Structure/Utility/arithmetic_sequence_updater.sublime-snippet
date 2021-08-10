@@ -1,0 +1,28 @@
+<snippet>
+	<content><![CDATA[
+template<class T>
+struct arithmetic_sequence_updater{
+	int n;
+	vector<T> data;
+	arithmetic_sequence_updater(int n): n(n), data(n + 2){}
+	void update(int l, int r, T start, T step){
+		assert(0 <= l && l <= r && r <= n);
+		data[l] += start;
+		data[l + 1] -= start - step;
+		data[r] -= start + (r - l) * step;
+		data[r + 1] += start + (r - l - 1) * step;
+	}
+	// must only be called once
+	vector<T> solve() const{
+		vector<T> res(data.begin(), data.end() - 2);
+		for(auto i = 1; i < n; ++ i) res[i] += res[i - 1];
+		for(auto i = 1; i < n; ++ i) res[i] += res[i - 1];
+		return res;
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>arithmetic_sequence_updater</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
