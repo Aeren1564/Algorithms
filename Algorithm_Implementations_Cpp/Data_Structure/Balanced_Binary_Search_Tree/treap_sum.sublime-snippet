@@ -61,6 +61,9 @@ struct treap_sum{
 			return v;
 		}
 	}
+	int append(initializer_list<int> list){
+		return accumulate(list.begin(), list.end(), -1, [&](int u, int v){ return append(u, v); });
+	}
 	template<class Compare = less<>>
 	int insert_by_key(int u, int v, Compare cmp = less<>()){ // datas must be sorted, O(log n)
 		if(!~u) return v;
