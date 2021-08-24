@@ -27,6 +27,10 @@ bool on_segment(const point<T> &p, const line<T> &L){
 	return L ? (L.p - p || L.q() - p) && (L.p - p) * (L.q() - p) <= 0 : p == L.p;
 }
 template<class T>
+bool on_open_segment(const point<T> &p, const line<T> &L){
+	return L ? (L.p - p || L.q() - p) && (L.p - p) * (L.q() - p) < 0 : p == L.p;
+}
+template<class T>
 double distance_to_line(const point<T> &p, const line<T> &L){
 	return L ? abs(p - L.p ^ L.d) / L.d.norm() : distance(p, L.p);
 }

@@ -22,7 +22,7 @@ struct number_theory{
 		vector<int> phi(SZ + 1, 1);
 		for(auto i = 2; i <= SZ; ++ i){
 			if(i / lpf[i] % lpf[i]) phi[i] = phi[i / lpf[i]] * (lpf[i] - 1);
-			else phi[i] = phi[i / lpf[i]] * (lpf[i] - 1);
+			else phi[i] = phi[i / lpf[i]] * lpf[i];
 		}
 		return phi;
 	}

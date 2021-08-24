@@ -63,6 +63,24 @@ optional<line<double>> intersect_closed_segments(const line<T> &L, const line<T>
 	if(0 <= ls && ls <= s && 0 <= rs && rs <= s) return line<double>(static_cast<point<double>>(L.p) + 1.0 * ls / s * static_cast<point<double>>(L.d), point<double>());
 	else return {};
 }
+// Assumes nothing
+template<class T>
+optional<line<double>> intersect_open_segments(const line<T> &L, const line<T> &M){
+	auto s = L.d ^ M.d, ls = (M.p - L.p) ^ M.d;
+	if(!s){
+		if(ls) return {};
+		auto Lp = L.p, Lq = L.q(), Mp = M.p, Mq = M.q();
+		if(Lp > Lq) swap(Lp, Lq);
+		if(Mp > Mq) swap(Mp, Mq);
+		line<T> res(max(Lp, Mp), min(Lq, Mq));
+		if(res.d > point<T>()) return static_cast<line<double>>(res);
+		return {};
+	}
+	auto rs = (M.p - L.p) ^ L.d;
+	if(s < 0) s = -s, ls = -ls, rs = -rs;
+	if(0 < ls && ls < s && 0 < rs && rs < s) return line<double>(static_cast<point<double>>(L.p) + 1.0 * ls / s * static_cast<point<double>>(L.d), point<double>());
+	else return {};
+}
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
 	<tabTrigger>line_intersection</tabTrigger> -->

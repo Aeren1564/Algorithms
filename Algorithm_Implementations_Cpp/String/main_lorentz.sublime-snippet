@@ -1,17 +1,19 @@
 <snippet>
 	<content><![CDATA[
-// Requires sparse_table and suffix_array
-template<class Char_Type> // O(n log n)
+// Returns O(n log n) tuples {l, r, p} indicating that [i, i + p) equals [i + p, i + 2 * p) for all i in [l, r)
+// O(n log n)
+// Requires range_minmax_query_solver and suffix_array
+template<class Char_Type>
 vector<array<int, 3>> main_lorentz(const vector<Char_Type> &s){
 	int n = (int)s.size();
-	suffix_array sa(s), rsa({s.rbegin(), s.rend()});
+	suffix_array sa(s, true), rsa(vector<int>{s.rbegin(), s.rend()}, true);
 	vector<array<int, 3>> res;
-	for(auto p = 1; p << 1 <= n; ++ p){ // do in O(n / p) for period p
-		for(auto i = 0, lst = -1; i + p <= n; i += p){
-			int l = i - rsa.query(n - i - p, n - i), r = i - p + sa.query(i, i + p);
-			if(l > r || l == lst) continue;
-			res.push_back({lst = l, r + 1, p});
-		} // s.substr(i, p) == s.substr(i + p, p) for each i in [l, r)
+	for(auto p = 1; p << 1 <= n; ++ p){
+		for(auto i = 0, last = -1; i + p <= n; i += p){
+			int l = i - rsa.longest_common_prefix(n - i - p, n - i), r = i - p + sa.longest_common_prefix(i, i + p);
+			if(l > r || l == last) continue;
+			res.push_back({last = l, r + 1, p});
+		}
 	}
 	return res;
 }

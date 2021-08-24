@@ -1,0 +1,55 @@
+<snippet>
+	<content><![CDATA[
+// Implmentation of the lagrange optimization at https://koosaga.com/243
+// T f(T lambda, vector<int> &prev, vector<int> &cnt): Solve the dp augmented by lambda, store the previous state in prev and # of "splits" of each prefix in cnt. Should return the optimal cost.
+// n: length of the interval of our dp.
+// k: sought # of splits
+// lambda must lie in [low, high)
+// NOTE: the cost function must be multiplied by 2.
+// Returns {optimal_answer, array of sizes of prefix}
+// O(log MAXVAL) calls of f()
+template<class T, bool GET_MAX = true>
+pair<T, vector<int>> lagrange_optimization(int n, int k, auto f, T low, T high){
+	T resp, resq;
+	vector<int> prevp(n + 1), cntp(n + 1), prevq(n + 1), cntq(n + 1);
+	auto pred = [&](T lambda){
+		swap(resp, resq), swap(prevp, prevq), swap(cntp, cntq);
+		resp = f(lambda, prevp, cntp);
+		return GET_MAX ? cntp.back() <= k : cntp.back() >= k;
+	};
+	for(-- low; high - low >= 2; ){
+		auto mid = low + (high - low >> 1);
+		(pred(mid << 1 | 1) ? low : high) = mid;
+	}
+	T lambda = low << 1 | 1;
+	pred(lambda + 2), pred(lambda);
+	if(cntp.back() == k){
+		vector<int> path{n};
+		for(auto u = n; u; ) path.push_back(u = prevp[u]);
+		return {resp - lambda * k >> 1, path};
+	}
+	else{
+		resp = resp - lambda * cntp.back() >> 1;
+		resq = resq - (lambda + 2) * cntq.back() >> 1;
+		T res = resp + (resq - resp) / (cntq.back() - cntp.back()) * (k - cntp.back());
+		int i = n, j = n, d = k - cntp.back();
+		while(true){
+			if(prevp[i] <= prevq[j]){
+				while(prevp[i] <= prevq[j] && cntq[j] - cntp[i] > d) j = prevq[j];
+				if(prevp[i] <= prevq[j] && cntq[j] - cntp[i] == d) break;
+			}
+			else i = prevp[i], j = prevq[j];
+		}
+		vector<int> path{n};
+		for(auto u = n; u != i; ) path.push_back(u = prevp[u]);
+		path.push_back(prevq[j]);
+		for(auto u = prevq[j]; u; ) path.push_back(u = prevq[u]);
+		return {res, path};
+	}
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>lagrange_optimization</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
