@@ -5,7 +5,7 @@ template<class T>
 struct dijkstra{
 	int n;
 	vector<T> dist;
-	vector<int> pv, pe, was;
+	vector<int> pv, pe, was, order;
 	dijkstra(int n){ init(n); }
 	void init(int n){
 		this->n = n;
@@ -29,9 +29,11 @@ struct dijkstra{
 			pq.push({dist[u] = {}, u});
 			pv[u] = pe[u] = -1;
 		}
+		order.clear();
 		while(!pq.empty()){
 			auto [d, u] = pq.top(); pq.pop();
 			if(d != dist[u]) continue;
+			order.push_back(u);
 			for(auto id: g.adj[u]){
 				if(g.ignore && g.ignore(id)) continue;
 				auto &e = g.edges[id];
