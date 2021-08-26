@@ -1,0 +1,125 @@
+<snippet>
+	<content><![CDATA[
+// Requires weighted_flow_network
+template<class T, class C>
+struct cycle_cancelling_minimum_cost_maximum_flow{
+	static constexpr T eps = (T)1e-9, inf = numeric_limits<T>::max();
+	weighted_flow_network<T, C> &F;
+	cycle_cancelling_minimum_cost_maximum_flow(weighted_flow_network<T, C> &F): F(F), ptr(F.n), level(F.n), q(F.n), d(F.n), pe(F.n), in_queue(F.n), in_queue_cnt(F.n){ }
+	vector<int> ptr, level, q;
+	bool bfs(int source, int sink){
+		fill(level.begin(), level.end(), -1);
+		q[0] = sink;
+		level[sink] = 0;
+		int beg = 0, end = 1;
+		while(beg < end){
+			int i = q[beg ++];
+			for(auto ind: F.adj[i]){
+				auto &e = F.edges[ind];
+				auto &re = F.edges[ind ^ 1];
+				if(re.capacity - re.flow > eps && level[e.to] == -1){
+					level[e.to] = level[i] + 1;
+					if(e.to == source) return true;
+					q[end ++] = e.to;
+				}
+			}
+		}
+		return false;
+	}
+	T dfs(int u, T w, int sink){
+		if(u == sink) return w;
+		int &j = ptr[u];
+		while(j >= 0){
+			int ind = F.adj[u][j];
+			auto &e = F.edges[ind];
+			if(e.capacity - e.flow > eps && level[e.to] == level[u] - 1){
+				T flow = dfs(e.to, min(e.capacity - e.flow, w), sink);
+				if(flow > eps){
+					F.add_flow(ind, flow);
+					return flow;
+				}
+			}
+			-- j;
+		}
+		return 0;
+	}
+	// Find a maximum source-sink flow
+	// O(V^2 E) ( O(E min(V^2/3, E^1/2)) for unit network )
+	T maximum_flow(int source, int sink){
+		while(bfs(source, sink)){
+			for(auto i = 0; i < F.n; ++ i) ptr[i] = (int)F.adj[i].size() - 1;
+			T sum = 0;
+			while(true){
+				T add = dfs(source, inf, sink);
+				if(add <= eps) break;
+				sum += add;
+			}
+			if(sum <= eps) break;
+			F.flow += sum;
+		}
+		return F.flow;
+	}
+	// Find a minimum source-sink cut
+	// res[u] = [0 if u belongs to source-side, otherwise 1]
+	// O(V^2 E) ( O(E min(V^2/3, E^1/2)) for unit network )
+	pair<T, vector<bool>> minimum_cut(int source, int sink){
+		T cut = maximum_flow(source, sink);
+		vector<bool> res(F.n);
+		for(auto i = 0; i < F.n; ++ i) res[i] = !!~level[i];
+		return {cut, res};
+	}
+	vector<C> d;
+	vector<bool> in_queue;
+	vector<int> pe, in_queue_cnt;
+	// O(V E^2 Maximum_Edge_Capacity * Maximum_Edge_Cost)
+	pair<T, C> minimum_cost_maximum_flow(int source, int sink){
+		maximum_flow(source, sink);
+		bool found;
+		do{
+			found = false;
+			fill(d.begin(), d.end(), 0);
+			iota(q.begin(), q.end(), 0);
+			fill(in_queue.begin(), in_queue.end(), true);
+			fill(in_queue_cnt.begin(), in_queue_cnt.end(), 0);
+			int beg = 0;
+			while(beg < (int)q.size()){
+				int i = q[beg ++];
+				in_queue[i] = false;
+				++ in_queue_cnt[i];
+				if(in_queue_cnt[i] == F.n){
+					found = true;
+					int u = i;
+					T push = numeric_limits<T>::max();
+					do{
+						auto &e = F.edges[pe[u]];
+						push = min(push, e.capacity - e.flow);
+						u = e.from;
+					}while(u != i);
+					do{
+						F.add_flow(pe[u], push);
+						u = F.edges[pe[u]].from;
+					}while(u != i);
+					break;
+				}
+				for(auto id: F.adj[i]){
+					auto &e = F.edge[id];
+					if(e.capacity - e.flow > eps && d[i] + e.cost < d[e.to]){
+						d[e.to] = d[i] + e.cost;
+						pe[e.to] = id;
+						if(!in_queue[e.to]){
+							q.push_back(e.to);
+							in_queue[e.to] = true;
+						}
+					}
+				}
+			}
+		}while(found);
+		return {F.flow, F.cost};
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>cycle_cancelling_minimum_cost_maximum_flow</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

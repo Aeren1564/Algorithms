@@ -2,7 +2,6 @@
 	<content><![CDATA[
 template<class T, class C>
 struct weighted_flow_network{
-	static constexpr T eps = (T) 1e-9;
 	struct Edge{
 		int from, to;
 		T capacity, flow;
@@ -10,13 +9,10 @@ struct weighted_flow_network{
 	};
 	vector<vector<int>> adj;
 	vector<Edge> edge;
-	vector<C> d;
-	vector<bool> in_queue;
-	vector<int> q, pe;
 	int n;
 	T flow = 0;
 	C cost = 0;
-	weighted_flow_network(int n): n(n), adj(n), d(n), in_queue(n), pe(n){ }
+	weighted_flow_network(int n): n(n), adj(n){ }
 	void clear_flow(){
 		for(auto &e: edge) e.flow = 0;
 		flow = 0, cost = 0;
@@ -30,60 +26,10 @@ struct weighted_flow_network{
 		edge.push_back({to, from, backward_cap, 0, -cost});
 		return ind;
 	}
-	// type 0: augment as long as a path exists
-	// type 1: augment as long as a negative cost path exists
-	bool expath(int source, int sink, bool type = false){
-		fill(d.begin(), d.end(), numeric_limits<C>::max());
-		q = {source};
-		d[source] = 0;
-		in_queue[source] = true;
-		int beg = 0;
-		bool found = false;
-		while(beg < (int)q.size()){
-			int i = q[beg ++];
-			if(i == sink) found = true;
-			in_queue[i] = false;
-			for(int id : adj[i]){
-				auto &e = edge[id];
-				if(e.capacity - e.flow > eps && d[i] + e.cost < d[e.to]){
-					d[e.to] = d[i] + e.cost;
-					pe[e.to] = id;
-					if(!in_queue[e.to]){
-						q.push_back(e.to);
-						in_queue[e.to] = true;
-					}
-				}
-			}
-		}
-		if(found){
-			T push = numeric_limits<T>::max();
-			int v = sink;
-			while(v != source){
-				auto &e = edge[pe[v]];
-				push = min(push, e.capacity - e.flow);
-				v = e.from;
-			}
-			v = sink;
-			assert(push >= 0);
-			if(type && d[sink] >= 0) return false;
-			while(v != source){
-				auto &e = edge[pe[v]];
-				e.flow += push;
-				auto &back = edge[pe[v] ^ 1];
-				back.flow -= push;
-				v = e.from;
-			}
-			flow += push;
-			cost += push * d[sink];
-		}
-		return found;
-	}
-	// type 0: min cost max flow
-	// type 1: min cost flow
-	pair<T, C> solve(int source, int sink, bool type = false){ // O(Augmenting Paths) * O(SPFA)
-		clear_flow();
-		while(expath(source, sink, type)){  }
-		return {flow, cost};
+	void add_flow(int i, T f){
+		edge[i].flow += f;
+		cost += f * edge[i].cost;
+		edge[i ^ 1].flow -= f;
 	}
 };
 ]]></content>

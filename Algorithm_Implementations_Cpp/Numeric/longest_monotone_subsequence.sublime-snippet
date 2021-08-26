@@ -12,7 +12,6 @@ vector<int> longest_monotone_subsequence(const vector<T> &a, Compare cmp = less<
 	int n = (int)a.size();
 	vector<int> prev(n), active;
 	for(auto i = 0; i < n; ++ i){
-		// change 0 -> i for longest non-decreasing subsequence
 		auto it = partition_point(active.begin(), active.end(), [&](int j){ return cmp(a[j], a[i]); });
 		if(it == active.end()) active.emplace_back(), it = std::prev(active.end());
 		*it = i;

@@ -1,0 +1,74 @@
+<snippet>
+	<content><![CDATA[
+// Requires weighted_flow_network
+template<class T, class C>
+struct minimum_cost_maximum_flow{
+	static constexpr T eps = (T) 1e-9;
+	weighted_flow_network<T, C> &F;
+	minimum_cost_maximum_flow(weighted_flow_network<T, C> &F): d(F.n), in_queue(F.n), pe(F.n){ }
+	// type 0: augment as long as a path exists
+	// type 1: augment as long as a negative cost path exists
+	vector<C> d;
+	vector<bool> in_queue;
+	vector<int> q, pe;
+	bool expath(int source, int sink, bool type = false){
+		fill(d.begin(), d.end(), numeric_limits<C>::max());
+		q = {source};
+		d[source] = 0;
+		in_queue[source] = true;
+		int beg = 0;
+		bool found = false;
+		while(beg < (int)q.size()){
+			int i = q[beg ++];
+			if(i == sink) found = true;
+			in_queue[i] = false;
+			for(auto id: F.adj[i]){
+				auto &e = F.edge[id];
+				if(e.capacity - e.flow > eps && d[i] + e.cost < d[e.to]){
+					d[e.to] = d[i] + e.cost;
+					pe[e.to] = id;
+					if(!in_queue[e.to]){
+						q.push_back(e.to);
+						in_queue[e.to] = true;
+					}
+				}
+			}
+		}
+		if(found){
+			T push = numeric_limits<T>::max();
+			int v = sink;
+			while(v != source){
+				auto &e = F.edge[pe[v]];
+				push = min(push, e.capacity - e.flow);
+				v = e.from;
+			}
+			v = sink;
+			assert(push >= 0);
+			if(type && d[sink] >= 0) return false;
+			while(v != source){
+				auto &e = F.edge[pe[v]];
+				e.flow += push;
+				auto &back = F.edge[pe[v] ^ 1];
+				back.flow -= push;
+				v = e.from;
+			}
+			F.flow += push;
+			F.cost += push * d[sink];
+		}
+		return found;
+	}
+	// type 0: min cost max flow
+	// type 1: min cost flow
+	// O(Augmenting Paths) * O(SPFA)
+	pair<T, C> solve(int source, int sink, bool type = false){
+		F.clear_flow();
+		while(expath(source, sink, type));
+		return {F.flow, F.cost};
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>minimum_cost_maximum_flow</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

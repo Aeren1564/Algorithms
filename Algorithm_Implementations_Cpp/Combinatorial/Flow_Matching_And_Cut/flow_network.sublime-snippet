@@ -1,0 +1,36 @@
+<snippet>
+	<content><![CDATA[
+template<class T>
+struct flow_network{
+	int n;
+	vector<vector<int>> adj;
+	struct edge{
+		int from, to;
+		T capacity, flow;
+	};
+	vector<edge> edges;
+	T flow = 0;
+	flow_network(int n): n(n), adj(n){ }
+	void clear_flow(){
+		for(auto &e: edges) e.flow = 0;
+		flow = 0;
+	}
+	int insert(int from, int to, T forward_cap, T backward_cap){
+		int ind = (int)edges.size();
+		adj[from].push_back(ind);
+		edges.push_back({from, to, forward_cap, 0});
+		adj[to].push_back(ind + 1);
+		edges.push_back({to, from, backward_cap, 0});
+		return ind;
+	}
+	void add_flow(int i, T f){
+		edges[i].flow += f;
+		edges[i ^ 1].flow -= f;
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>flow_network</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

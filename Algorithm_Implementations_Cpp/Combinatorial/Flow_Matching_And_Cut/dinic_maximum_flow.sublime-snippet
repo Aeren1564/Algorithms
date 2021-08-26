@@ -1,38 +1,11 @@
 <snippet>
 	<content><![CDATA[
+// Requires flow_network
 template<class T>
-struct flow_network{
-	int n;
-	vector<vector<int>> adj;
-	struct edge{
-		int from, to;
-		T capacity, flow;
-	};
-	vector<edge> edges;
-	T flow = 0;
-	flow_network(int n): n(n), adj(n){ }
-	void clear_flow(){
-		for(auto &e: edges) e.flow = 0;
-		flow = 0;
-	}
-	int insert(int from, int to, T forward_cap, T backward_cap){
-		int ind = (int)edges.size();
-		adj[from].push_back(ind);
-		edges.push_back({from, to, forward_cap, 0});
-		adj[to].push_back(ind + 1);
-		edges.push_back({to, from, backward_cap, 0});
-		return ind;
-	}
-	void add_flow(int i, T f){
-		edges[i].flow += f;
-		edges[i ^ 1].flow -= f;
-	}
-};
-template<class T>
-struct dinic{
+struct dinic_maximum_flow{
 	static constexpr T eps = (T)1e-9, inf = numeric_limits<T>::max();
 	flow_network<T> &F;
-	dinic(flow_network<T> &F): F(F), ptr(F.n), level(F.n), q(F.n){ }
+	dinic_maximum_flow(flow_network<T> &F): F(F), ptr(F.n), level(F.n), q(F.n){ }
 	vector<int> ptr, level, q;
 	bool bfs(int source, int sink){
 		fill(level.begin(), level.end(), -1);
@@ -70,9 +43,9 @@ struct dinic{
 		}
 		return 0;
 	}
-	// find a maximum source-tink flow
+	// Find a maximum source-sink flow
 	// O(V^2 E) ( O(E min(V^2/3, E^1/2)) for unit network )
-	T max_flow(int source, int sink){
+	T maximum_flow(int source, int sink){
 		while(bfs(source, sink)){
 			for(auto i = 0; i < F.n; ++ i) ptr[i] = (int)F.adj[i].size() - 1;
 			T sum = 0;
@@ -86,19 +59,19 @@ struct dinic{
 		}
 		return F.flow;
 	}
-	// Find a minimum s-t cut
-	// res[u] = [u belongs to the s-side]
+	// Find a minimum source-sink cut
+	// res[u] = [0 if u belongs to source-side, otherwise 1]
 	// O(V^2 E) ( O(E min(V^2/3, E^1/2)) for unit network )
-	pair<T, vector<bool>> min_cut(int s, int t){
-		T cut = max_flow(s, t);
+	pair<T, vector<bool>> minimum_cut(int source, int sink){
+		T cut = maximum_flow(source, sink);
 		vector<bool> res(F.n);
-		for(auto i = 0; i < F.n; ++ i) res[i] = !~level[i];
+		for(auto i = 0; i < F.n; ++ i) res[i] = !!~level[i];
 		return {cut, res};
 	}
 };
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
-	<tabTrigger>dinic_maxflow</tabTrigger> -->
+	<tabTrigger>dinic_maximum_flow</tabTrigger> -->
 	<!-- Optional: Set a scope to limit where the snippet will trigger -->
 	<scope>source.c++</scope> -->
 </snippet>
