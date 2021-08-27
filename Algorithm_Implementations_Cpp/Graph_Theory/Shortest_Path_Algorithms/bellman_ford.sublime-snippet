@@ -30,9 +30,9 @@ struct bellman_ford{
 			pv[u] = pe[u] = -1;
 		}
 		int x;
-		for(int rep = 0; rep < n; ++ rep){
+		for(auto rep = 0; rep < n; ++ rep){
 			x = -1;
-			for(int id = 0; id < (int)g.edges.size(); ++ id){
+			for(auto id = 0; id < (int)g.edges.size(); ++ id){
 				if(g.ignore && g.ignore(id)) continue;
 				auto [u, v, w] = g.edges[id];
 				if(was[u] == attempt && dist[u] + w < dist[v]){

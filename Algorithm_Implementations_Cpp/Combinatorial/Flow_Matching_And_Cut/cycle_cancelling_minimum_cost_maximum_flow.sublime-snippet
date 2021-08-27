@@ -5,7 +5,7 @@ template<class T, class C>
 struct cycle_cancelling_minimum_cost_maximum_flow{
 	static constexpr T eps = (T)1e-9, inf = numeric_limits<T>::max();
 	weighted_flow_network<T, C> &F;
-	cycle_cancelling_minimum_cost_maximum_flow(weighted_flow_network<T, C> &F): F(F), ptr(F.n), level(F.n), q(F.n), d(F.n), pe(F.n), in_queue(F.n), in_queue_cnt(F.n){ }
+	cycle_cancelling_minimum_cost_maximum_flow(weighted_flow_network<T, C> &F): F(F), ptr(F.n), level(F.n), q(F.n), d(F.n), pe(F.n){ }
 	vector<int> ptr, level, q;
 	bool bfs(int source, int sink){
 		fill(level.begin(), level.end(), -1);
@@ -69,52 +69,59 @@ struct cycle_cancelling_minimum_cost_maximum_flow{
 		return {cut, res};
 	}
 	vector<C> d;
-	vector<bool> in_queue;
-	vector<int> pe, in_queue_cnt;
-	// O(V E^2 Maximum_Edge_Capacity * Maximum_Edge_Cost)
-	pair<T, C> minimum_cost_maximum_flow(int source, int sink){
-		maximum_flow(source, sink);
-		bool found;
-		do{
-			found = false;
+	vector<int> pe;
+	// Returns a point in a negative cycle, -1 if no such cycle.
+	// O(VE)
+	void augment_with_negative_cycles(){
+		while(true){
 			fill(d.begin(), d.end(), 0);
-			iota(q.begin(), q.end(), 0);
-			fill(in_queue.begin(), in_queue.end(), true);
-			fill(in_queue_cnt.begin(), in_queue_cnt.end(), 0);
-			int beg = 0;
-			while(beg < (int)q.size()){
-				int i = q[beg ++];
-				in_queue[i] = false;
-				++ in_queue_cnt[i];
-				if(in_queue_cnt[i] == F.n){
-					found = true;
-					int u = i;
-					T push = numeric_limits<T>::max();
-					do{
-						auto &e = F.edges[pe[u]];
-						push = min(push, e.capacity - e.flow);
-						u = e.from;
-					}while(u != i);
-					do{
-						F.add_flow(pe[u], push);
-						u = F.edges[pe[u]].from;
-					}while(u != i);
-					break;
-				}
-				for(auto id: F.adj[i]){
-					auto &e = F.edge[id];
-					if(e.capacity - e.flow > eps && d[i] + e.cost < d[e.to]){
-						d[e.to] = d[i] + e.cost;
-						pe[e.to] = id;
-						if(!in_queue[e.to]){
-							q.push_back(e.to);
-							in_queue[e.to] = true;
-						}
-					}
+			int x;
+			for(auto rep = 0; rep < F.n; ++ rep){
+				x = -1;
+				for(auto id = 0; id < (int)F.edges.size(); ++ id){
+					auto [u, v, cap, flow, cost] = F.edges[id];
+					if(cap - flow > eps && d[u] + cost < d[v]) d[v] = d[u] + cost, pe[v] = id, x = v;
 				}
 			}
-		}while(found);
+			if(!~x) break;
+			for(auto rep = 0; rep < F.n; ++ rep) x = F.edges[pe[x]].from;
+			vector<int> cycle;
+			for(auto u = x; u != x || cycle.empty(); u = F.edges[pe[u]].from) cycle.push_back(pe[u]);
+			reverse(cycle.begin(), cycle.end());
+			T push = numeric_limits<T>::max();
+			for(auto id: cycle){
+				auto &e = F.edges[id];
+				push = min(push, e.capacity - e.flow);
+				x = e.to;
+			}
+			for(auto id: cycle){
+				F.add_flow(id, push);
+				x = F.edges[id].to;
+			}
+		}
+	}
+	pair<T, C> minimum_cost_maximum_flow(int source, int sink){
+		maximum_flow(source, sink);
+		augment_with_negative_cycles();
 		return {F.flow, F.cost};
+	}
+	pair<T, C> minimum_cost_flow(int source, int sink, int upper = numeric_limits<int>::max()){
+		pair<C, T> res{numeric_limits<C>::max(), numeric_limits<T>::max()};
+		augment_with_negative_cycles();
+		res = min(res, pair{F.cost, F.flow});
+		while(bfs(source, sink)){
+			for(auto i = 0; i < F.n; ++ i) ptr[i] = (int)F.adj[i].size() - 1;
+			T sum = 0;
+			while(true){
+				if(!dfs(source, 1, sink)) break;
+				++ sum, ++ F.flow;
+				augment_with_negative_cycles();
+				res = min(res, pair{F.cost, F.flow});
+				if(F.flow == upper) break;
+			}
+			if(sum <= eps || F.flow == upper) break;
+		}
+		return {res.second, res.first};
 	}
 };
 ]]></content>

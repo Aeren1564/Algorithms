@@ -23,7 +23,7 @@ struct minimum_cost_maximum_flow{
 			if(i == sink) found = true;
 			in_queue[i] = false;
 			for(auto id: F.adj[i]){
-				auto &e = F.edge[id];
+				auto &e = F.edges[id];
 				if(e.capacity - e.flow > eps && d[i] + e.cost < d[e.to]){
 					d[e.to] = d[i] + e.cost;
 					pe[e.to] = id;
@@ -38,7 +38,7 @@ struct minimum_cost_maximum_flow{
 			T push = numeric_limits<T>::max();
 			int v = sink;
 			while(v != source){
-				auto &e = F.edge[pe[v]];
+				auto &e = F.edges[pe[v]];
 				push = min(push, e.capacity - e.flow);
 				v = e.from;
 			}
@@ -46,9 +46,9 @@ struct minimum_cost_maximum_flow{
 			assert(push >= 0);
 			if(type && d[sink] >= 0) return false;
 			while(v != source){
-				auto &e = F.edge[pe[v]];
+				auto &e = F.edges[pe[v]];
 				e.flow += push;
-				auto &back = F.edge[pe[v] ^ 1];
+				auto &back = F.edges[pe[v] ^ 1];
 				back.flow -= push;
 				v = e.from;
 			}

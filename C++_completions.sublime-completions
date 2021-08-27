@@ -24,7 +24,7 @@
         
     	{ "trigger": "sort", "contents": "sort(${1:$2.begin(), $2.end()}$3)"},
     	{ "trigger": "reverse", "contents": "reverse(${1:$2.begin(), $2.end()})"},
-        { "trigger": "rotate", "contents": "rotate($1, $2, $3)"},
+        { "trigger": "rotate", "contents": "rotate($1.begin(), $1.begin() + $2, $1.end())"},
     	{ "trigger": "reserve", "contents": "reserve(${1:n})"},
         { "trigger": "accumulate", "contents": "accumulate(${1:$2.begin(), $2.end()}, ${3:0LL}$4)"},
         { "trigger": "partial_sum", "contents": "partial_sum(${1:$2.begin(), $2.end()}, $3)"},

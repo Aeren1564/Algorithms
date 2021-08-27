@@ -1,10 +1,11 @@
 <snippet>
 	<content><![CDATA[
+// Returns a pair {starting vertex, list edges in cycle in order}
+// O(n + m)
 template<class T>
-optional<vector<int>> find_a_reachable_cycle(const graph<T> &g, const vector<int> &sources){
-	int n = g.n;
-	bool found = false;
-	vector<int> cycle, was(n, -1), s;
+optional<pair<int, vector<int>>> find_a_reachable_cycle(const graph<T> &g, const vector<int> &sources){
+	int n = g.n, beg = -1;
+	vector<int> edge_cycle, was(n, -1), s;
 	auto dfs = [&](auto self, int u, int pe)->void{
 		for(auto id: g.adj[u]){
 			if(id == pe || g.ignore && g.ignore(id)) continue;
@@ -15,19 +16,19 @@ optional<vector<int>> find_a_reachable_cycle(const graph<T> &g, const vector<int
 				s.push_back(id);
 				self(self, v, id);
 				s.pop_back();
-				if(found) return;
+				if(~beg) return;
 			}
 			else if(was[v] >= 0){
-				found = true;
-				cycle = {s.begin() + was[v], s.end()};
-				cycle.push_back(id);
+				beg = v;
+				edge_cycle = {s.begin() + was[v], s.end()};
+				edge_cycle.push_back(id);
 				return;
 			}
 		}
 		was[u] = -2;
 	};
-	for(auto src: sources) if(!~was[src] && !found) was[src] = 0, dfs(dfs, src, -1);
-	if(found) return cycle;
+	for(auto src: sources) if(!~was[src] && !~beg) was[src] = 0, dfs(dfs, src, -1);
+	if(~beg) return pair{beg, edge_cycle};
 	else return {};
 }
 ]]></content>
