@@ -1,63 +1,97 @@
 <snippet>
 	<content><![CDATA[
+// Refer to
+// https://konaeakira.github.io/posts/using-the-shortest-path-faster-algorithm-to-find-negative-cycles.html
+// for the benchmark
 // Requires graph
 template<class T>
 struct spfa{
 	int n;
 	vector<T> dist;
-	vector<int> pv, pe, was, cnt;
-	vector<bool> inq;
-	spfa(int n){ init(n); }
+	vector<int> pv, pe;
+	spfa(int n){
+		init(n);
+	}
 	void init(int n){
 		this->n = n;
 		dist.assign(n, numeric_limits<T>::max());
 		pv.assign(n, -1);
 		pe.assign(n, -1);
 		was.assign(n, -1);
-		cnt.assign(n, 0);
-		inq.assign(n, false);
-		attempt = 0;
+		in_queue.assign(n, false);
+		state.assign(n, 0);
+		attempt;
 	}
-	int attempt;
-	// Returns true if there's a negative cycle
+	vector<int> stack, state;
+	template<class U>
+	optional<pair<int, vector<int>>> detect_negative_cycle(const graph<U> &g){
+		stack.clear();
+		fill(state.begin(), state.end(), 0);
+		for(auto s = 0; s < n; ++ s){
+			if(state[s]) continue;
+			for(auto u = s; ; ){
+				if(state[u]){
+					if(state[u] == 1){
+						stack.erase(stack.begin(), find(stack.begin(), stack.end(), u));
+						assert(!stack.empty() && stack[0] == u);
+						vector<int> cycle;
+						for(auto u: stack) cycle.push_back(pe[u]);
+						reverse(cycle.begin(), cycle.end());
+						return pair{u, cycle};
+					}
+					break;
+				}
+				stack.push_back(u);
+				state[u] = 1;
+				if(!~pe[u]) break;
+				u = g.edges[pe[u]].from;
+			}
+			for(auto u: stack) state[u] = 2;
+			stack.clear();
+		}
+		return {};
+	}
+	// Returns the negative cycle (list of edge ids) if there's one.
 	// O(|E_C| * |V_C|) where
 	// V_C is the set of vertices reachable from src and
 	// E_C is the set of edges reachable from src
+	int attempt;
+	vector<int> in_queue, q, was;
 	template<class U>
-	bool run(const graph<U> &g, const vector<int> &src){
+	optional<pair<int, vector<int>>> run(const graph<U> &g, const vector<int> &src, bool negative_cycle_presence = false){
 		assert(n == g.n);
 		++ attempt;
-		deque<int> dq;
+		q = src;
 		for(auto u: src){
 			was[u] = attempt;
 			dist[u] = {};
-			cnt[u] = 0;
-			pv[u] = pe[u] = true;
-			dq.push_back(u);
-			inq[u] = true;
+			pv[u] = pe[u] = -1;
+			in_queue[u] = true;
 		}
-		while(!dq.empty()){
-			int u = dq.front(); dq.pop_front();
-			inq[u] = false;
+		int beg = 0, iter = 0;
+		while(beg < (int)q.size()){
+			int u = q[beg ++];
+			in_queue[u] = false;
 			for(auto id: g.adj[u]){
 				if(g.ignore && g.ignore(id)) continue;
 				auto [u, v, w] = g.edges[id];
 				if(was[v] != attempt || dist[u] + w < dist[v]){
 					if(was[v] != attempt){
 						was[v] = attempt;
-						cnt[v] = 0;
-						inq[v] = false;
+						in_queue[v] = false;
 					}
 					dist[v] = dist[u] + w;
 					pv[v] = u, pe[v] = id;
-					if(!inq[v]){
-						dq.push_back(v), inq[v] = true, ++ cnt[v];
-						if(cnt[v] > g.n) return true;
+					if(negative_cycle_presence && ++ iter == n){
+						if(auto t = detect_negative_cycle(g)) return t;
+						iter = 0;
 					}
+					if(!in_queue[v]) q.push_back(v), in_queue[v] = true;
 				}
 			}
 		}
-		return false;
+		if(negative_cycle_presence) if(auto t = detect_negative_cycle(g)) return t;
+		return {};
 	}
 };
 ]]></content>

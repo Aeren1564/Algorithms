@@ -1,5 +1,6 @@
 <snippet>
 	<content><![CDATA[
+// Very slow, use SPFA version instead
 // Requires weighted_flow_network
 template<class T, class C>
 struct cycle_cancelling_minimum_cost_maximum_flow{
