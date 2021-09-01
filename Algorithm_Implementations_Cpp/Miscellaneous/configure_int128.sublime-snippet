@@ -1,0 +1,46 @@
+<snippet>
+	<content><![CDATA[
+istream &operator>>(istream &in, __int128_t &x){
+	char s[40];
+	in >> s;
+	x = 0;
+	for(int i = s[0] == '-'; s[i]; ++ i) x = x * 10 + s[i] - '0';
+	if(s[0] == '-') x = -x;
+	return in;
+}
+ostream &operator<<(ostream &out, __int128_t x){
+	if(!x) return out << 0;
+	if(x < 0) out << "-", x = -x;
+	int a[5];
+	static constexpr int block = 29, full_mask = (1 << block) - 1;
+	int it = 0;
+	while(x) a[it ++] = x & full_mask, x >>= block;
+	while(it --) out << a[it];
+	return out;
+}
+__int128_t abs(__int128_t x){
+	return x >= 0 ? x : -x;
+}
+istream &operator>>(istream &in, __uint128_t &x){
+	char s[40];
+	in >> s;
+	x = 0;
+	for(int i = s[0] == '-'; s[i]; ++ i) x = x * 10 + s[i] - '0';
+	if(s[0] == '-') x = -x;
+	return in;
+}
+ostream &operator<<(ostream &out, __uint128_t x){
+	if(!x) return out << 0;
+	array<int, 5> a{};
+	static constexpr int block = 29, full_mask = (1 << block) - 1;
+	int it = 0;
+	while(x) a[it ++] = x & full_mask, x >>= block;
+	while(it --) out << a[it];
+	return out;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>configure_int128</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

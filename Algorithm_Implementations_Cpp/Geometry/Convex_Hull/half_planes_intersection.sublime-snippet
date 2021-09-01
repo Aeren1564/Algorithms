@@ -4,10 +4,11 @@
 // If the intersection is unbounded or empty, returns an empty list
 // Equivalent to finding convex hull by duality
 // O(n log n) (or O(n) if is_sorted is true)
+// T must be able to hold max_coordinate ^ 4
 // Requires point and line
 template<class T>
 vector<line<T>> half_planes_intersection(vector<line<T>> a, bool is_sorted = false){
-	static constexpr T eps = (T) 1e-10;
+	static constexpr T eps = (T) 1e-9;
 	auto sign = [&](const line<T> &l){
 		return abs(l.d.y) <= eps ? l.p.x > l.q().x : l.p.y > l.q().y;
 	};
@@ -17,20 +18,16 @@ vector<line<T>> half_planes_intersection(vector<line<T>> a, bool is_sorted = fal
 		});
 	}
 	deque<line<T>> dq;
-	auto intersect = [&](const line<T> &l, const line<T> &m)->optional<point<T>>{
-		auto s = l.d ^ m.d;
-		if(abs(s) <= eps) return {};
-		return l.p + (m.p - l.p ^ m.d) / s * l.d;
-	};
 	auto bad = [&](const line<T> &l, const line<T> &m, const line<T> &n)->bool{ // n contains intersection of l and n
-		auto it = intersect(l, m);
-		if(!it) return false;
-		return (n.d ^ *it - n.p) <= eps;
+		auto s = l.d ^ m.d;
+		if(abs(s) <= eps) return false;
+		auto p = n.d ^ (l.p * s + (m.p - l.p ^ m.d) * l.d) - n.p * s;
+		return s > 0 ? p <= eps : p >= -eps;
 	};
 	for(auto p: a){
 		if(!dq.empty() && (dq.back() || p)) continue;
-		while(dq.size() >= 2 && bad(dq[(int)dq.size() - 2], dq.back(), p)) dq.pop_back();
-		while(dq.size() >= 2 && bad(dq[0], dq[1], p)) dq.pop_front();
+		while((int)dq.size() >= 2 && bad(dq[(int)dq.size() - 2], dq.back(), p)) dq.pop_back();
+		while((int)dq.size() >= 2 && bad(dq[0], dq[1], p)) dq.pop_front();
 		if((int)dq.size() < 2 || !bad(dq.back(), p, dq.front())) dq.push_back(p);
 	}
 	if((int)dq.size() < 3) dq.clear();
