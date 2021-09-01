@@ -8,12 +8,33 @@ struct line{
 	line(point<T> p, point<T> q, bool Two_Points = true): p(p), d(Two_Points ? q - p : q){ }
 	line(point<T> d): p(), d(static_cast<point<T>>(d)){ }
 	line(T a, T b, T c): p(a ? -c / a : 0, !a && b ? -c / b : 0), d(-b, a){ }
-	template<class U> explicit operator line<U>() const{ return line<U>(point<U>(p), point<U>(d), false); }
-	point<T> q() const{ return p + d; }
-	operator bool() const{ return d.x != 0 || d.y != 0; }
-	tuple<T, T, T> coef() const{ return {d.y, -d.x, d.perp() * p}; } // d.y (X - p.x) - d.x (Y - p.y) = 0
-	bool operator||(const line<T> &L) const{ return d || L.d; }
+	template<class U> explicit operator line<U>() const{
+		return line<U>(point<U>(p), point<U>(d), false);
+	}
+	point<T> q() const{
+		return p + d;
+	}
+	operator bool() const{
+		return d.x != 0 || d.y != 0;
+	}
+	tuple<T, T, T> coef() const{
+		return {d.y, -d.x, d.perp() * p};
+	} // d.y (X - p.x) - d.x (Y - p.y) = 0
+	bool operator||(const line<T> &L) const{
+		return d || L.d;
+	}
+	line translate(T x) const{
+		auto dir = d.perp();
+		return {p + dir.unit() * x, d, false};
+	}
 };
+template<class T> istream &operator>>(istream &in, line<T> &l){
+	in >> l.p >> l.d, l.d -= l.p;
+	return in;
+}
+template<class T> ostream &operator<<(ostream &out, const line<T> &l){
+	return out << "{" << l.p << " -> " << l.q() << "}";
+}
 template<class T>
 bool on_line(const point<T> &p, const line<T> &L){
 	return L ? p - L.p || L.d : p == L.p;

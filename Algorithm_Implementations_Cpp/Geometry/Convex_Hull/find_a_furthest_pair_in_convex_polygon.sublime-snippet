@@ -1,0 +1,22 @@
+<snippet>
+	<content><![CDATA[
+// a must be a convex polygon (given in CCW)
+// Returns a tuple (squared distance, first point index, second point index)
+// O(n)
+// Requires point
+template<class T>
+tuple<T, int, int> find_a_furthest_pair_in_convex_polygon(const vector<point<T>> &a){
+	int n = (int)a.size();
+	tuple<T, int, int> res{numeric_limits<T>::min(), -1, -1};
+	for(auto i = 0, j = (i + 1) % n; i < n; ++ i){
+		while((a[(i + 1) % n] - a[i] ^ a[(j + 1) % n] - a[j]) > 0) j = (j + 1) % n;
+		res = max(res, tuple{squared_distance(a[i], a[j]), i, j});
+	}
+	return res;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>find_a_furthest_pair_in_convex_polygon</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

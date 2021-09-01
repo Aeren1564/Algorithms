@@ -32,7 +32,7 @@ template<int LA, int LB, int RA, int RB, class T>
 optional<point<double>> intersect_no_parallel_overlap(const line<T> &L, const line<T> &M){
 	auto s = L.d ^ M.d;
 	if(s == 0) return {};
-	auto ls = (M.p - L.p) ^ M.d, rs = (M.p - L.p) ^ L.d;
+	auto ls = M.p - L.p ^ M.d, rs = M.p - L.p ^ L.d;
 	if(s < 0) s = -s, ls = -ls, rs = -rs;
 	if(EndpointChecker<LA>()(decltype(ls)(0), ls) && EndpointChecker<LB>()(ls, s) &&
 	EndpointChecker<RA>()(decltype(rs)(0), rs) && EndpointChecker<RB>()(rs, s)){
@@ -48,7 +48,7 @@ optional<point<double>> intersect_closed_segments_no_parallel_overlap(const line
 // Assumes nothing
 template<class T>
 optional<line<double>> intersect_closed_segments(const line<T> &L, const line<T> &M){
-	auto s = L.d ^ M.d, ls = (M.p - L.p) ^ M.d;
+	auto s = L.d ^ M.d, ls = M.p - L.p ^ M.d;
 	if(!s){
 		if(ls) return {};
 		auto Lp = L.p, Lq = L.q(), Mp = M.p, Mq = M.q();
@@ -58,7 +58,7 @@ optional<line<double>> intersect_closed_segments(const line<T> &L, const line<T>
 		if(res.d >= point<T>()) return static_cast<line<double>>(res);
 		return {};
 	}
-	auto rs = (M.p - L.p) ^ L.d;
+	auto rs = M.p - L.p ^ L.d;
 	if(s < 0) s = -s, ls = -ls, rs = -rs;
 	if(0 <= ls && ls <= s && 0 <= rs && rs <= s) return line<double>(static_cast<point<double>>(L.p) + 1.0 * ls / s * static_cast<point<double>>(L.d), point<double>());
 	else return {};
@@ -66,7 +66,7 @@ optional<line<double>> intersect_closed_segments(const line<T> &L, const line<T>
 // Assumes nothing
 template<class T>
 optional<line<double>> intersect_open_segments(const line<T> &L, const line<T> &M){
-	auto s = L.d ^ M.d, ls = (M.p - L.p) ^ M.d;
+	auto s = L.d ^ M.d, ls = M.p - L.p ^ M.d;
 	if(!s){
 		if(ls) return {};
 		auto Lp = L.p, Lq = L.q(), Mp = M.p, Mq = M.q();

@@ -1,0 +1,44 @@
+<snippet>
+	<content><![CDATA[
+// Each half planes are identified by the left side of the given directed line
+// If the intersection is unbounded or empty, returns an empty list
+// Equivalent to finding convex hull by duality
+// O(n log n) (or O(n) if is_sorted is true)
+// Requires point and line
+template<class T>
+vector<line<T>> half_planes_intersection(vector<line<T>> a, bool is_sorted = false){
+	static constexpr T eps = (T) 1e-10;
+	auto sign = [&](const line<T> &l){
+		return abs(l.d.y) <= eps ? l.p.x > l.q().x : l.p.y > l.q().y;
+	};
+	if(!is_sorted){
+		stable_sort(a.begin(), a.end(), [&](const line<T> &l, const line<T> &m){
+			return sign(l) != sign(m) ? sign(l) < sign(m) : l.d || m.d ? (l.d ^ m.p - l.p) < 0 : (l.d ^ m.d) > 0;
+		});
+	}
+	deque<line<T>> dq;
+	auto intersect = [&](const line<T> &l, const line<T> &m)->optional<point<T>>{
+		auto s = l.d ^ m.d;
+		if(abs(s) <= eps) return {};
+		return l.p + (m.p - l.p ^ m.d) / s * l.d;
+	};
+	auto bad = [&](const line<T> &l, const line<T> &m, const line<T> &n)->bool{ // n contains intersection of l and n
+		auto it = intersect(l, m);
+		if(!it) return false;
+		return (n.d ^ *it - n.p) <= eps;
+	};
+	for(auto p: a){
+		if(!dq.empty() && (dq.back() || p)) continue;
+		while(dq.size() >= 2 && bad(dq[(int)dq.size() - 2], dq.back(), p)) dq.pop_back();
+		while(dq.size() >= 2 && bad(dq[0], dq[1], p)) dq.pop_front();
+		if((int)dq.size() < 2 || !bad(dq.back(), p, dq.front())) dq.push_back(p);
+	}
+	if((int)dq.size() < 3) dq.clear();
+	return {dq.begin(), dq.end()};
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>half_planes_intersection</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
