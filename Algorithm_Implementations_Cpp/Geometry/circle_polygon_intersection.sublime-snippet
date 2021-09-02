@@ -1,0 +1,30 @@
+<snippet>
+	<content><![CDATA[
+// Reads a circle and a CCW polygon, and returns their intersection area.
+// T must be of floating type
+// O(n)
+// Requires point
+template<class T>
+T circle_polygon_intersection(const point<T> &c, T r, const vector<point<T>> &a){
+	auto arg = [&](const point<T> &p, const point<T> &q)->T{
+		return atan2(p ^ q, p * q);
+	};
+	auto f = [&](const point<T> &p, const point<T> &q)->T{
+		T r2 = r * r / 2;
+		auto d = q - p, b = d * p / (d * d), c = (p * p - r * r) / (d * d), det = b * b - c;
+		if(det <= 0) return arg(p, q) * r2;
+		auto s = max<T>(0, -b - sqrt(det)), t = min<T>(1, -b + sqrt(det));
+		if(t < 0 || 1 <= s) return arg(p, q) * r2;
+		auto u = p + d * s, v = p + d * t;
+		return arg(p, u) * r2 + (u ^ v) / 2 + arg(v, q) * r2;
+	};
+	T res = 0;
+	for(auto i = 0; i < (int)a.size(); ++ i) res += f(a[i] - c, a[(i + 1) % (int)a.size()] - c);
+	return res;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>circle_polygon_intersection</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
