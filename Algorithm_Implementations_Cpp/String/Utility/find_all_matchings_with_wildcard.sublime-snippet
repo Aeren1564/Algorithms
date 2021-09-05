@@ -1,0 +1,33 @@
+<snippet>
+	<content><![CDATA[
+// Returns the list of all positions of text in pattern
+// 0 represents wildcard, where it can match with any character
+// Assumes low alphabet size. Switch to higher percision FFT if not.
+// O((n + m) log (n + m))
+// Requres fast_fourier_transform and convolute_integral
+template<class Char_Type>
+vector<int> find_all_matchings_with_wildcard(const vector<Char_Type> &text, const vector<Char_Type> &pattern){
+	int n = (int)text.size(), m = (int)pattern.size();
+	vector<long long> p(n), q(m), r(n + m - 1), temp;
+	for(auto e = 1; e <= 3; ++ e){
+		for(auto i = 0; i < n; ++ i){
+			p[i] = 1;
+			for(auto rep = e; rep; -- rep) p[i] *= text[i];
+		}
+		for(auto j = 0; j < m; ++ j){
+			q[j] = 1;
+			for(auto rep = 4 - e; rep; -- rep) q[j] *= pattern[m - 1 - j];
+		}
+		temp = convolute_integral(p, q);
+		for(auto k = 0; k < n + m - 1; ++ k) r[k] += (e == 2 ? -2 : 1) * temp[k];
+	}
+	vector<int> res;
+	for(auto i = 0; i + m <= n; ++ i) if(!r[i + m - 1]) res.push_back(i);
+	return res;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>find_all_matchings_with_wildcard</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

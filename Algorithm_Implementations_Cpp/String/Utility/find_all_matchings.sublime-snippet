@@ -1,15 +1,15 @@
 <snippet>
 	<content><![CDATA[
-// returns the list of all positions of text in pattern
+// Returns the list of positions of pattern in text
 // O(n + m)
 // Requres z_function
 template<class Char_Type>
-vector<int> find_all_matchings(vector<Char_Type> pattern, const vector<Char_Type> &text){
-	int n = (int)pattern.size(), m = (int)text.size();
+vector<int> find_all_matchings(const vector<Char_Type> &text, vector<Char_Type> pattern){
+	int n = (int)text.size(), m = (int)pattern.size();
 	pattern.insert(pattern.end(), text.begin(), text.end());
 	auto p = z_function(pattern);
 	vector<int> pos;
-	for(auto i = n; i < n + m; ++ i) if(p[i] >= n) pos.push_back(i - n);
+	for(auto i = m; i < n + m; ++ i) if(p[i] >= m) pos.push_back(i - m);
 	return pos;
 }
 ]]></content>

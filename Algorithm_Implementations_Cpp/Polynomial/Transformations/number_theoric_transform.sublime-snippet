@@ -27,22 +27,6 @@ void number_theoric_transform(vector<T> &a, const bool invert = false){
 		for(auto &x: a) x *= inv_n;
 	}
 }
-// O(n log n)
-template<class T>
-vector<T> convolute_ntt(vector<T> p, vector<T> q){
-	if(min(p.size(), q.size()) < 60){
-		vector<T> res((int)p.size() + (int)q.size() - 1);
-		for(auto i = 0; i < (int)p.size(); ++ i) for(auto j = 0; j < (int)q.size(); ++ j) res[i + j] += p[i] * q[j];
-		return res;
-	}
-	int m = (int)p.size() + (int)q.size() - 1, n = 1 << __lg(m) + 1;
-	p.resize(n), q.resize(n);
-	number_theoric_transform(p), number_theoric_transform(q);
-	for(auto i = 0; i < n; ++ i) p[i] *= q[i];
-	number_theoric_transform(p, true);
-	p.resize(m);
-	return p;
-}
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
 	<tabTrigger>number_theoric_transform</tabTrigger> -->

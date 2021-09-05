@@ -1,34 +1,8 @@
 <snippet>
 	<content><![CDATA[
-// O(n log n)
-void fast_fourier_transform(vector<complex<double>> &a, bool invert = false){
-	int n = (int)a.size();
-	static vector<complex<double>> root(2, 1);
-	static vector<complex<long double>> root_ld(2, 1);
-	for(static int k = 2; k < n; k <<= 1){
-		root.resize(n), root_ld.resize(n);
-		auto theta = polar(1.0L, acos(-1.0L) / k);
-		for(auto i = k; i < k << 1; ++ i) root[i] = root_ld[i] = i & 1 ? root_ld[i >> 1] * theta : root_ld[i >> 1];
-	}
-	for(auto i = 1, j = 0; i < n; ++ i){
-		int bit = n >> 1;
-		for(; j & bit; bit >>= 1) j ^= bit;
-		j ^= bit;
-		if(i < j) swap(a[i], a[j]);
-	}
-	for(auto k = 1; k < n; k <<= 1) for(auto i = 0; i < n; i += k << 1) for(auto j = 0; j < k; ++ j){
-		auto x = (double *)&root[j + k], y = (double *)&a[i + j + k];
-		complex<double> z(x[0] * y[0] - x[1] * y[1], x[0] * y[1] + x[1] * y[0]);
-		a[i + j + k] = a[i + j] - z, a[i + j] += z;
-	}
-	if(invert){
-		reverse(a.begin() + 1, a.end());
-		auto inv_n = 1.0 / n;
-		for(auto &x: a) x *= inv_n;
-	}
-}
 // Safe for sum(p[i]^2 + q[i]^2) lg2(n) < 9e14
 // O(n log n)
+// Requires fast_fourier_transform
 template<class T>
 vector<T> convolute_integral(const vector<T> &p, const vector<T> &q){
 	if(min(p.size(), q.size()) < 150){
@@ -50,7 +24,7 @@ vector<T> convolute_integral(const vector<T> &p, const vector<T> &q){
 }
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
-	<tabTrigger>fast_fourier_transform</tabTrigger> -->
+	<tabTrigger>convolute_integral</tabTrigger> -->
 	<!-- Optional: Set a scope to limit where the snippet will trigger -->
 	<scope>source.c++</scope> -->
 </snippet>
