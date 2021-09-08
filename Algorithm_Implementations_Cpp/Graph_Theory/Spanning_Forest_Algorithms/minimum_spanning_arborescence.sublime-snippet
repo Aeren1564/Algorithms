@@ -1,6 +1,6 @@
 <snippet>
 	<content><![CDATA[
-// Returns {min_cost, parent_vertices} or {0, empty_vector}
+// Returns {min_cost, parent_vertices}
 // O(E log V)
 // Requires graph and rollback_disjoint_set
 template<class U, class T>
