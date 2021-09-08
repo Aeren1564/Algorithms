@@ -8,7 +8,7 @@ optional<pair<U, vector<int>>> minimum_spanning_arborescence(const graph<T> &g, 
 	using edge = typename graph<T>::edge;
 	struct node{ /// lazy skew heap node
 		edge key;
-		node *l, *r;
+		shared_ptr<node> l, r;
 		U delta;
 		void prop(){
 			key.cost += delta;
@@ -18,22 +18,22 @@ optional<pair<U, vector<int>>> minimum_spanning_arborescence(const graph<T> &g, 
 		}
 		edge top() { prop(); return key; }
 	};
-	function<node *(node *, node *)> merge = [&](node *a, node *b){
+	auto merge = [&](auto self, shared_ptr<node> a, shared_ptr<node> b)->shared_ptr<node>{
 		if(!a || !b) return a ?: b;
 		a->prop(), b->prop();
 		if(a->key.cost > b->key.cost) swap(a, b);
-		swap(a->l, (a->r = merge(b, a->r)));
+		swap(a->l, (a->r = self(self, b, a->r)));
 		return a;
 	};
-	auto pop = [&](node *&a){
-		a->prop(), a = merge(a->l, a->r);
+	auto pop = [&](shared_ptr<node> &a){
+		a->prop(), a = merge(merge, a->l, a->r);
 	};
 	int n = g.n;
 	U cost = {};
 	vector<int> pv(n);
 	rollback_disjoint_set dsu(n);
-	vector<node *> heap(n);
-	for(auto e: g.edges) heap[e.to] = merge(heap[e.to], new node{e});
+	vector<shared_ptr<node>> heap(n);
+	for(auto e: g.edges) heap[e.to] = merge(merge, heap[e.to], shared_ptr<node>(new node{e}));
 	vector<int> seen(n, -1), path(n);
 	seen[src] = src;
 	vector<edge> Q(n), in(n, {-1, -1}), comp;
@@ -47,9 +47,9 @@ optional<pair<U, vector<int>>> minimum_spanning_arborescence(const graph<T> &g, 
 			Q[qi] = e, path[qi ++] = u, seen[u] = s;
 			cost += e.cost, u = dsu.root(e.from);
 			if(seen[u] == s){ // found cycle, contract
-				node *cyc = 0;
+				shared_ptr<node> cyc;
 				int end = qi, time = dsu.time();
-				do cyc = merge(cyc, heap[w = path[-- qi]]);
+				do cyc = merge(merge, cyc, heap[w = path[-- qi]]);
 				while(dsu.merge(u, w));
 				u = dsu.root(u), heap[u] = cyc, seen[u] = -1;
 				cycs.push_front({u, time, {&Q[qi], &Q[end]}});
