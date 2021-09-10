@@ -2,21 +2,21 @@
 	<content><![CDATA[
 // Returns the polygon on the left of line l
 // T must be of floating type
-// Requires point, line, and line_intersection
+// Requires point and line
 template<class T>
 vector<point<T>> polygon_cut(const vector<point<T>> &a, const line<T> &l){
 	vector<point<T>> res;
 	for(auto i = 0; i < (int)a.size(); ++ i){
 		auto cur = a[i], prev = i ? a[i - 1] : a.back();
 		bool side = doubled_signed_area(l.p, l.q(), cur) > 0;
-		if(side != (doubled_signed_area(l.p, l.q(), prev) > 0)) res.push_back(*intersect_no_parallel_overlap<0, 0, 0, 0, T>(l, {cur, prev}));
+		if(side != (doubled_signed_area(l.p, l.q(), prev) > 0)) res.push_back(l.p + (cur - l.p ^ prev - cur) / (l.d ^ prev - cur) * l.d);
 		if(side) res.push_back(cur);
 	}
 	return res;
 }
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
-	<!-- <tabTrigger>hello</tabTrigger> -->
+	<tabTrigger>polygon_cut</tabTrigger> -->
 	<!-- Optional: Set a scope to limit where the snippet will trigger -->
-	<!-- <scope>source.python</scope> -->
+	<scope>source.c++</scope> -->
 </snippet>
