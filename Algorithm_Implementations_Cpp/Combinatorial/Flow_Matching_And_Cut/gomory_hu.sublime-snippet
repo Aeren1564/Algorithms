@@ -1,22 +1,23 @@
 <snippet>
 	<content><![CDATA[
-// Requires graph and dinic
+// Returns a tree T where for all s!=t, min s-t cut of g equals
+// min_{e is in s-t path in T}( (capacity of S_e-T_e cut in G) = (capacity of s-t edge in T) ) 
+// n - 1 dinic_maximum_flow.minimum_cut() calls
+// Requires flow_network and dinic_maximum_flow
 template<class T>
-graph<T> gomory_hu(const graph<T> &g){ // calls max_flow V-1 times
-	int n = g.n;
-	flow_network<T> F(n, 0, 1);
-	for(auto &e: g.edges) F.insert(e.from, e.to, e.cost, e.cost);
-	graph<T> res(n);
+vector<tuple<int, int, T>> gomory_hu_tree(int n, const vector<tuple<int, int, T>> &edges){
+	flow_network<T> F(n);
+	for(auto &[u, v, w]: edges) F.insert(u, v, w, w);
+	vector<tuple<int, int, T>> res(n - 1);
 	vector<int> pr(n);
-	for(int i = 1; i < n; ++ i){
-		F.clear_flow(), F.source = i, F.sink = pr[i];
-		dinic<T> D(F);
-		auto [flow, cut] = D.min_cut();
-		for(int j = i + 1; j < n; ++ j) if(cut[j] == cut[i] && pr[j] == pr[i]) pr[j] = i;
-		res.link(i, pr[i], flow);
+	for(auto i = 1; i < n; ++ i){
+		F.clear_flow();
+		auto [flow, cut] = dinic_maximum_flow<T>(F).minimum_cut(pr[i], i);
+		for(auto j = i + 1; j < n; ++ j) if(cut[j] == cut[i] && pr[j] == pr[i]) pr[j] = i;
+		res[i - 1] = {pr[i], i, flow};
 	} // can be optimized by compressing components
-	return res; // returns a tree T where for all s!=t, min s-t cut of g equals 
-} // min_{e is in s-t path in T}( (capacity of S_e-T_e cut in G) = (capacity of s-t edge in T) )
+	return res;
+}
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
 	<tabTrigger>gomory_hu</tabTrigger> -->
