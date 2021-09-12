@@ -184,8 +184,6 @@
         { "trigger": "_Find_next", "contents": "_Find_next($1)"},
 
     	{ "trigger": "precision", "contents": "cout << fixed << setprecision(15);"},
-        { "trigger": "high_resolution_clock", "contents": "high_resolution_clock${1:::now()}"},
-        { "trigger": "duration", "contents": "duration<${1:double}>(${2:high_resolution_clock::now() - START}).count()"},
         { "trigger": "mod1", "contents": "1e9 + 7"},
         { "trigger": "mod2", "contents": "(119 << 23) + 1"},
         { "trigger": "limit", "contents": "numeric_limits<${1:long long}>::${2:max}()"},
