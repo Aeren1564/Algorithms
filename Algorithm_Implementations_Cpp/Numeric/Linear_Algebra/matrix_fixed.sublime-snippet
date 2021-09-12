@@ -51,9 +51,9 @@ struct matrix_fixed_base: array<array<T, m>, n>{
 	matrix_fixed_base &transpose(){
 		return *this = transposed();
 	}
-	vector<T> maps_to(const vector<T> &v) const{
-		assert(m == (int)v.size());
-		vector<T> res(n, zero());
+	array<T, n> maps_to(const array<T, m> &v) const{
+		array<T, n> res;
+		res.fill(zero());
 		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) res[i] += (*this)[i][j] * v[j];
 		return res;
 	}
