@@ -1,0 +1,103 @@
+<snippet>
+	<content><![CDATA[
+// g must be an edge cactus
+// O(n)
+template<class T, class U>
+vector<int> maximum_independent_set_on_cactus(const graph<T> &g, const vector<U> &weight){
+	assert((int)weight.size() == g.n);
+	int n = g.n;
+	vector<int> order, roots, pos(n, -1), depth(n), pv(n, -1), pe(n, -1);
+	vector<array<int, 2>> min_depth(n);
+	auto dfs = [&](auto self, int u, int p)->void{
+		pos[u] = (int)order.size();
+		order.push_back(u);
+		min_depth[u] = {depth[u], u};
+		for(auto id: g.adj[u]){
+			if(id == p || g.ignore && g.ignore(id)) continue;
+			auto &e = g.edges[id];
+			int v = u ^ e.from ^ e.to;
+			if(!~pos[v]){
+				pv[v] = u;
+				pe[v] = id;
+				depth[v] = depth[u] + 1;
+				self(self, v, id);
+				min_depth[u] = min(min_depth[u], min_depth[v]);
+			}
+			else if(depth[v] < depth[u]) min_depth[u] = min(min_depth[u], array{depth[v], u});
+		}
+	};
+	for(auto u = 0; u < n; ++ u) if(!~pos[u]) roots.push_back(u), dfs(dfs, u, -1);
+	vector<array<U, 2>> dp(n);
+	for(auto t = n - 1; t >= 0; -- t){
+		int u = order[t];
+		dp[u][1] = weight[u];
+		for(auto id: g.adj[u]){
+			if(id == pe[u] || g.ignore && g.ignore(id)) continue;
+			auto &e = g.edges[id];
+			int v = u ^ e.from ^ e.to;
+			if(pv[v] != u || min_depth[v][0] < depth[u]) continue;
+			if(min_depth[v][0] > depth[u]) dp[u] = {dp[u][0] + max(dp[v][0], dp[v][1]), dp[u][1] + dp[v][0]};
+			else{
+				static vector<int> cycle;
+				cycle.clear();
+				for(auto w = min_depth[v][1]; w != u; w = pv[w]) cycle.push_back(w);
+				array<U, 4> dp_cycle{dp[cycle[0]][0], numeric_limits<U>::min() / 2, numeric_limits<U>::min() / 2, dp[cycle[0]][1]};
+				for(auto t = 1; t < (int)cycle.size(); ++ t){
+					int v = cycle[t];
+					dp_cycle = {
+						dp[v][0] + max(dp_cycle[0], dp_cycle[1]),
+						dp[v][1] + dp_cycle[0],
+						dp[v][0] + max(dp_cycle[2], dp_cycle[3]),
+						dp[v][1] + dp_cycle[2]
+					};
+				}
+				dp[u] = {dp[u][0] + *max_element(dp_cycle.begin(), dp_cycle.end()), dp[u][1] + dp_cycle[0]};
+			}
+		}
+	}
+	vector<int> state(n, -1);
+	for(auto u: roots) state[u] = dp[u][0] < dp[u][1];
+	for(auto u: order){
+		for(auto id: g.adj[u]){
+			if(id == pe[u] || g.ignore && g.ignore(id)) continue;
+			auto &e = g.edges[id];
+			int v = u ^ e.from ^ e.to;
+			if(pv[v] != u || min_depth[v][0] < depth[u]) continue;
+			if(min_depth[v][0] > depth[u]) state[v] = state[u] ? 0 : dp[v][0] < dp[v][1];
+			else{
+				static vector<int> cycle;
+				cycle.clear();
+				for(auto w = min_depth[v][1]; w != u; w = pv[w]) cycle.push_back(w);
+				vector<array<U, 4>> dp_cycle((int)cycle.size());
+				dp_cycle[0] = {dp[cycle[0]][0], numeric_limits<U>::min() / 2, numeric_limits<U>::min() / 2, dp[cycle[0]][1]};
+				for(auto t = 1; t < (int)cycle.size(); ++ t){
+					int v = cycle[t];
+					dp_cycle[t] = {
+						dp[v][0] + max(dp_cycle[t - 1][0], dp_cycle[t - 1][1]),
+						dp[v][1] + dp_cycle[t - 1][0],
+						dp[v][0] + max(dp_cycle[t - 1][2], dp_cycle[t - 1][3]),
+						dp[v][1] + dp_cycle[t - 1][2]
+					};
+				}
+				int fstate, bstate;
+				if(state[u]) fstate = bstate = 0;
+				else if(max(dp_cycle.back()[0], dp_cycle.back()[1]) >= max(dp_cycle.back()[2], dp_cycle.back()[3])) fstate = 0, bstate = dp_cycle.back()[0] < dp_cycle.back()[1];
+				else fstate = 1, bstate = dp_cycle.back()[2] < dp_cycle.back()[3];
+				state[cycle.back()] = bstate;
+				for(auto t = (int)cycle.size() - 2; t >= 0; -- t){
+					int v = cycle[t], nv = cycle[t + 1];
+					state[v] = state[nv] ? 0 : dp_cycle[t][fstate << 1] < dp_cycle[t][fstate << 1 | 1];
+				}
+			}
+		}
+	}
+	vector<int> res;
+	for(auto u = 0; u < n; ++ u) if(state[u]) res.push_back(u);
+	return res;
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>maximum_independent_set_on_cactus</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
