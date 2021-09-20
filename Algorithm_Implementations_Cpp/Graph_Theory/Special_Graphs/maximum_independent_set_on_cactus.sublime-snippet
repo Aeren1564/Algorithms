@@ -1,7 +1,8 @@
 <snippet>
 	<content><![CDATA[
 // g must be an edge cactus
-// O(n)
+// O(|V| + |E|)
+// Requires graph
 template<class T, class U>
 vector<int> maximum_independent_set_on_cactus(const graph<T> &g, const vector<U> &weight){
 	assert((int)weight.size() == g.n);
