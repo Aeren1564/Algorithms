@@ -13,6 +13,9 @@ struct disjoint_set{
 		p[u] += p[v], p[v] = u;
 		return true;
 	}
+	void clear(){
+		fill(p.begin(), p.end(), -1);
+	}
 	vector<vector<int>> group_up(){
 		vector<vector<int>> g((int)p.size());
 		for(auto i = 0; i < (int)p.size(); ++ i) g[root(i)].push_back(i);
