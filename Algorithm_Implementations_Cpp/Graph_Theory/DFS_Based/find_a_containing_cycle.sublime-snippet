@@ -1,5 +1,6 @@
 <snippet>
 	<content><![CDATA[
+// O(|V| + |E|)
 template<class T>
 optional<vector<int>> find_a_containing_cycle(const graph<T> &g, const vector<int> &sources){
 	int n = g.n;
@@ -8,7 +9,7 @@ optional<vector<int>> find_a_containing_cycle(const graph<T> &g, const vector<in
 	auto dfs = [&](auto self, int src, int u, int pe)->void{
 		for(auto id: g.adj[u]){
 			if(id == pe || g.ignore && g.ignore(id)) continue;
-			auto &e = g.edges[id];
+			auto &e = g.edge[id];
 			int v = u ^ e.from ^ e.to;
 			if(!~was[v]){
 				was[v] = was[u] + 1;

@@ -16,8 +16,8 @@ struct cycle_cancelling_minimum_cost_maximum_flow{
 		while(beg < end){
 			int i = q[beg ++];
 			for(auto ind: F.adj[i]){
-				auto &e = F.edges[ind];
-				auto &re = F.edges[ind ^ 1];
+				auto &e = F.edge[ind];
+				auto &re = F.edge[ind ^ 1];
 				if(re.capacity - re.flow > eps && level[e.to] == -1){
 					level[e.to] = level[i] + 1;
 					if(e.to == source) return true;
@@ -32,7 +32,7 @@ struct cycle_cancelling_minimum_cost_maximum_flow{
 		int &j = ptr[u];
 		while(j >= 0){
 			int ind = F.adj[u][j];
-			auto &e = F.edges[ind];
+			auto &e = F.edge[ind];
 			if(e.capacity - e.flow > eps && level[e.to] == level[u] - 1){
 				T flow = dfs(e.to, min(e.capacity - e.flow, w), sink);
 				if(flow > eps){
@@ -79,25 +79,25 @@ struct cycle_cancelling_minimum_cost_maximum_flow{
 			int x;
 			for(auto rep = 0; rep < F.n; ++ rep){
 				x = -1;
-				for(auto id = 0; id < (int)F.edges.size(); ++ id){
-					auto [u, v, cap, flow, cost] = F.edges[id];
+				for(auto id = 0; id < (int)F.edge.size(); ++ id){
+					auto [u, v, cap, flow, cost] = F.edge[id];
 					if(cap - flow > eps && d[u] + cost < d[v]) d[v] = d[u] + cost, pe[v] = id, x = v;
 				}
 			}
 			if(!~x) break;
-			for(auto rep = 0; rep < F.n; ++ rep) x = F.edges[pe[x]].from;
+			for(auto rep = 0; rep < F.n; ++ rep) x = F.edge[pe[x]].from;
 			vector<int> cycle;
-			for(auto u = x; u != x || cycle.empty(); u = F.edges[pe[u]].from) cycle.push_back(pe[u]);
+			for(auto u = x; u != x || cycle.empty(); u = F.edge[pe[u]].from) cycle.push_back(pe[u]);
 			reverse(cycle.begin(), cycle.end());
 			T push = numeric_limits<T>::max();
 			for(auto id: cycle){
-				auto &e = F.edges[id];
+				auto &e = F.edge[id];
 				push = min(push, e.capacity - e.flow);
 				x = e.to;
 			}
 			for(auto id: cycle){
 				F.add_flow(id, push);
-				x = F.edges[id].to;
+				x = F.edge[id].to;
 			}
 		}
 	}

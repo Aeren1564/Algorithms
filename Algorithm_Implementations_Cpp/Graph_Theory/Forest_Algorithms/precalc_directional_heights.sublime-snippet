@@ -1,6 +1,7 @@
 <snippet>
 	<content><![CDATA[
 // Reads undirected forest
+// O(|V|)
 template<class T>
 array<vector<int>, 2> precalc_directional_heights(const graph<T> &g, const vector<int> &roots){
 	int n = g.n;
@@ -10,7 +11,7 @@ array<vector<int>, 2> precalc_directional_heights(const graph<T> &g, const vecto
 		vis[u] = true;
 		for(auto id: g.adj[u]){
 			if(g.ignore && g.ignore(id)) continue;
-			auto &e = g.edges[id];
+			auto &e = g.edge[id];
 			int v = u ^ e.from ^ e.to;
 			if(vis[v]) continue;
 			self(self, v);
@@ -24,7 +25,7 @@ array<vector<int>, 2> precalc_directional_heights(const graph<T> &g, const vecto
 		array<int, 2> mx{};
 		for(auto id: g.adj[u]){
 			if(g.ignore && g.ignore(id)) continue;
-			auto &e = g.edges[id];
+			auto &e = g.edge[id];
 			int v = u ^ e.from ^ e.to;
 			if(vis[v]) continue;
 			if(mx[0] < height_up[v] + e.cost) mx = {height_up[v] + e.cost, mx[0]};
@@ -32,7 +33,7 @@ array<vector<int>, 2> precalc_directional_heights(const graph<T> &g, const vecto
 		}
 		for(auto id: g.adj[u]){
 			if(g.ignore && g.ignore(id)) continue;
-			auto &e = g.edges[id];
+			auto &e = g.edge[id];
 			int v = u ^ e.from ^ e.to;
 			if(vis[v]) continue;
 			height_down[v] = height_up[v] + e.cost != mx[0] ? mx[0] : mx[1];

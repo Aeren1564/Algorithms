@@ -10,7 +10,7 @@ vector<int> find_all_centroids(const graph<T> &g, const vector<int> &subtr_sz, i
 	while(1){
 		for(auto id: g.adj[u]){
 			if(id == pe || g.ignore && g.ignore(id)) continue;
-			auto &e = g.edges[id];
+			auto &e = g.edge[id];
 			int v = u ^ e.from ^ e.to;
 			if(subtr_sz[v] > subtr_sz[s] >> 1){
 				u = v, pe = id;
@@ -22,7 +22,7 @@ vector<int> find_all_centroids(const graph<T> &g, const vector<int> &subtr_sz, i
 	}
 	for(auto id: g.adj[u]){
 		if(id == pe || g.ignore && g.ignore(id)) continue;
-		auto &e = g.edges[id];
+		auto &e = g.edge[id];
 		int v = u ^ e.from ^ e.to;
 		if(subtr_sz[s] - subtr_sz[v] <= subtr_sz[s] >> 1) return {u, v};
 	}

@@ -8,7 +8,7 @@ vector<tuple<T, int, int>> rectilinear_minimum_spanning_tree(vector<point<T>> a)
 	int n = (int)a.size();
 	vector<int> ind(n);
 	iota(ind.begin(), ind.end(), 0);
-	vector<tuple<T, int, int>> edges;
+	vector<tuple<T, int, int>> edge;
 	for(auto k = 0; k < 4; ++ k){
 		sort(ind.begin(), ind.end(), [&](int i, int j) { return a[i].x - a[j].x < a[j].y - a[i].y; });
 		map<T, int> sweep;
@@ -17,16 +17,16 @@ vector<tuple<T, int, int>> rectilinear_minimum_spanning_tree(vector<point<T>> a)
 				int j = it->second;
 				point<T> d = a[i] - a[j];
 				if(d.y > d.x) break;
-				edges.push_back({d.x + d.y, i, j});
+				edge.push_back({d.x + d.y, i, j});
 			}
 			sweep.insert({-a[i].y, i});
 		}
 		for(auto &p: a) if(k & 1) p.x = -p.x; else swap(p.x, p.y);
 	}
-	sort(edges.begin(), edges.end());
+	sort(edge.begin(), edge.end());
 	disjoint_set dsu(n);
 	vector<tuple<T, int, int>> res;
-	for(auto [x, i, j]: edges) if(dsu.merge(i, j)) res.push_back({x, i, j});
+	for(auto [x, i, j]: edge) if(dsu.merge(i, j)) res.push_back({x, i, j});
 	return res;
 }
 ]]></content>

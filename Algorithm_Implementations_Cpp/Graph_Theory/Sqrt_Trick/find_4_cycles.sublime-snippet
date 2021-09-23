@@ -1,15 +1,15 @@
 <snippet>
 	<content><![CDATA[
 // O(V + E sqrt(E)) for graphs without loops or multiedges
-void find_4_cycles(int n, const vector<array<int, 2>> &edges, auto process, int th = 1){
+void find_4_cycles(int n, const vector<array<int, 2>> &edge, auto process, int th = 1){
 	vector<int> deg(n), order(n), pos(n);
-	for(auto [u, v]: edges) ++ deg[u], ++ deg[v];
+	for(auto [u, v]: edge) ++ deg[u], ++ deg[v];
 	iota(order.begin(), order.end(), 0);
 	sort(order.begin(), order.end(), [&](int u, int v){ return deg[u] > deg[v]; });
 	for(auto i = 0; i < n; ++ i) pos[order[i]] = i;
 	vector<vector<int>> adj(n);
-	for(auto i = 0; i < (int)edges.size(); ++ i){
-		int u = pos[edges[i][0]], v = pos[edges[i][1]];
+	for(auto i = 0; i < (int)edge.size(); ++ i){
+		int u = pos[edge[i][0]], v = pos[edge[i][1]];
 		adj[u].push_back(v), adj[v].push_back(u);
 	}
 	vector<vector<int>> found(n);

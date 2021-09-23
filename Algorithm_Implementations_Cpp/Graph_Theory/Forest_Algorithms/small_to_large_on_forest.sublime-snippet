@@ -1,6 +1,6 @@
 <snippet>
 	<content><![CDATA[
-// O(n log n) applications of insert() and O(n) applications of answer() and clear()
+// O(|V| log |V|) applications of insert() and O(n) applications of answer() and clear()
 // Requires graph
 template<class T>
 struct small_to_large_on_forest{
@@ -13,7 +13,7 @@ struct small_to_large_on_forest{
 			order.push_back(u);
 			for(auto id: g.adj[u]){
 				if(id == pe || g.ignore && g.ignore(id)) continue;
-				auto &e = g.edges[id];
+				auto &e = g.edge[id];
 				int v = u ^ e.from ^ e.to;
 				self(self, v, id);
 				sz[u] += sz[v];
@@ -27,20 +27,20 @@ struct small_to_large_on_forest{
 			int hv = -1, hid = -1;
 			for(auto id: g.adj[u]){
 				if(id == pe || g.ignore && g.ignore(id)) continue;
-				auto &e = g.edges[id];
+				auto &e = g.edge[id];
 				int v = u ^ e.from ^ e.to;
 				if(!~hv || sz[hv] < sz[v]) hv = v, hid = id;
 			}
 			for(auto id: g.adj[u]){
 				if(id == pe || id == hid || g.ignore && g.ignore(id)) continue;
-				auto &e = g.edges[id];
+				auto &e = g.edge[id];
 				int v = u ^ e.from ^ e.to;
 				self(self, v, id, false);
 			}
 			if(~hid) self(self, hv, hid, true);
 			for(auto id: g.adj[u]){
 				if(id == pe || id == hid || g.ignore && g.ignore(id)) continue;
-				auto &e = g.edges[id];
+				auto &e = g.edge[id];
 				int v = u ^ e.from ^ e.to;
 				for(auto i = pos[v]; i < end[v]; ++ i) insert(order[i]);
 			}

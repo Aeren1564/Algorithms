@@ -44,7 +44,7 @@ struct spfa{
 				stack.push_back(u);
 				state[u] = 1;
 				if(!~pe[u]) break;
-				u = g.edges[pe[u]].from;
+				u = g.edge[pe[u]].from;
 			}
 			for(auto u: stack) state[u] = 2;
 			stack.clear();

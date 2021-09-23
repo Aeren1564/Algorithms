@@ -10,8 +10,8 @@ struct flow_decomposition{
 	vector<T> cycle_flows;
 	flow_decomposition(flow_network<T> &F): F(F){ }
 	void decompose(int source, int sink){
-		vector<T> fs(F.edges.size());
-		for(auto i = 0; i < (int) F.edges.size(); i++) fs[i] = F.edges[i].f;
+		vector<T> fs(F.edge.size());
+		for(auto i = 0; i < (int) F.edge.size(); i++) fs[i] = F.edge[i].f;
 		paths.clear();
 		path_flows.clear();
 		cycles.clear();
@@ -47,7 +47,7 @@ struct flow_decomposition{
 					bool found = false;
 					for(auto i = 0; i < (int) path.size(); ++ i){
 						int id = path[i];
-						auto &e = F.edges[id];
+						auto &e = F.edge[id];
 						if(e.from == u){
 							path.erase(path.begin(), path.begin() + i);
 							found = true;
@@ -64,7 +64,7 @@ struct flow_decomposition{
 					int id = F.g[u][ptr[u]];
 					if(fs[id] > eps){
 						path.push_back(id);
-						u = F.edges[id].to;
+						u = F.edge[id].to;
 						found = true;
 						break;
 					}

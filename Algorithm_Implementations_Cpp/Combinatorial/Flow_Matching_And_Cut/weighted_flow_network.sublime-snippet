@@ -2,34 +2,34 @@
 	<content><![CDATA[
 template<class T, class C>
 struct weighted_flow_network{
-	struct Edge{
+	struct E{
 		int from, to;
 		T capacity, flow;
 		C cost;
 	};
 	vector<vector<int>> adj;
-	vector<Edge> edges;
+	vector<E> edge;
 	int n;
 	T flow = 0;
 	C cost = 0;
 	weighted_flow_network(int n): n(n), adj(n){ }
 	void clear_flow(){
-		for(auto &e: edges) e.flow = 0;
+		for(auto &e: edge) e.flow = 0;
 		flow = 0, cost = 0;
 	}
 	int insert(int from, int to, T forward_cap, T backward_cap, C cost){
 		assert(0 <= from && from < n && 0 <= to && to < n);
-		int ind = (int)edges.size();
-		adj[from].push_back((int)edges.size());
-		edges.push_back({from, to, forward_cap, 0, cost});
-		adj[to].push_back((int)edges.size());
-		edges.push_back({to, from, backward_cap, 0, -cost});
+		int ind = (int)edge.size();
+		adj[from].push_back((int)edge.size());
+		edge.push_back({from, to, forward_cap, 0, cost});
+		adj[to].push_back((int)edge.size());
+		edge.push_back({to, from, backward_cap, 0, -cost});
 		return ind;
 	}
 	void add_flow(int i, T f){
-		edges[i].flow += f;
-		cost += f * edges[i].cost;
-		edges[i ^ 1].flow -= f;
+		edge[i].flow += f;
+		cost += f * edge[i].cost;
+		edge[i ^ 1].flow -= f;
 	}
 };
 ]]></content>

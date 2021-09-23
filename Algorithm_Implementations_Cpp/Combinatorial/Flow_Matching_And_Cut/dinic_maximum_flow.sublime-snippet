@@ -15,8 +15,8 @@ struct dinic_maximum_flow{
 		while(beg < end){
 			int i = q[beg ++];
 			for(auto ind: F.adj[i]){
-				auto &e = F.edges[ind];
-				auto &re = F.edges[ind ^ 1];
+				auto &e = F.edge[ind];
+				auto &re = F.edge[ind ^ 1];
 				if(re.capacity - re.flow > eps && level[e.to] == -1){
 					level[e.to] = level[i] + 1;
 					if(e.to == source) return true;
@@ -31,7 +31,7 @@ struct dinic_maximum_flow{
 		int &j = ptr[u];
 		while(j >= 0){
 			int ind = F.adj[u][j];
-			auto &e = F.edges[ind];
+			auto &e = F.edge[ind];
 			if(e.capacity - e.flow > eps && level[e.to] == level[u] - 1){
 				T flow = dfs(e.to, min(e.capacity - e.flow, w), sink);
 				if(flow > eps){

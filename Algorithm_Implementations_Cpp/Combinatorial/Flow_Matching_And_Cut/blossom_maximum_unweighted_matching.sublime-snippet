@@ -42,7 +42,7 @@ vector<int> blossom_maximum_unweighted_matching(const graph<T> &g){
 			int v = q.front(); q.pop();
 			for(auto id : g.adj[v]){
 				if(g.ignore && g.ignore(id)) continue;
-				auto &e = g.edges[id];
+				auto &e = g.edge[id];
 				int x = e.from ^ e.to ^ v;
 				if(label[x] == -1){
 					label[x] = 1, parent[x] = v;
@@ -67,7 +67,7 @@ vector<int> blossom_maximum_unweighted_matching(const graph<T> &g){
 		shuffle(order.begin(), order.end(), mt19937(787788));
 		for(auto i: order) if(mate[i] == -1) for(auto id: g.adj[i]){
 			if(g.ignore && g.ignore(id)) continue;
-			auto &e = g.edges[id];
+			auto &e = g.edge[id];
 			int to = e.from ^ e.to ^ i;
 			if(mate[to] == -1){
 				mate[i] = to, mate[to] = i;

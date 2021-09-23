@@ -22,7 +22,7 @@ struct spfa_minimum_cost_maximum_flow{
 			if(u == sink) found = true;
 			in_queue[u] = false;
 			for(auto id: F.adj[u]){
-				auto &e = F.edges[id];
+				auto &e = F.edge[id];
 				if(e.capacity - e.flow > eps && d[u] + e.cost < d[e.to]){
 					d[e.to] = d[u] + e.cost;
 					pe[e.to] = id;
@@ -37,7 +37,7 @@ struct spfa_minimum_cost_maximum_flow{
 			T push = numeric_limits<T>::max();
 			int u = sink;
 			while(u != source){
-				auto &e = F.edges[pe[u]];
+				auto &e = F.edge[pe[u]];
 				push = min(push, e.capacity - e.flow);
 				u = e.from;
 			}
@@ -46,7 +46,7 @@ struct spfa_minimum_cost_maximum_flow{
 			if(type && d[sink] >= 0) return false;
 			while(u != source){
 				F.add_flow(pe[u], push);
-				u = F.edges[pe[u]].from;
+				u = F.edge[pe[u]].from;
 			}
 			F.flow += push;
 		}
@@ -72,7 +72,7 @@ struct spfa_minimum_cost_maximum_flow{
 							assert(!stack.empty() && stack[0] == u);
 							T flow = numeric_limits<T>::max();
 							for(auto u: stack){
-								auto &e = F.edges[pe[u]];
+								auto &e = F.edge[pe[u]];
 								flow = min(flow, e.capacity - e.flow);
 							}
 							for(auto u: stack) F.add_flow(pe[u], flow);
@@ -83,7 +83,7 @@ struct spfa_minimum_cost_maximum_flow{
 					stack.push_back(u);
 					state[u] = 1;
 					if(!~pe[u]) break;
-					u = F.edges[pe[u]].from;
+					u = F.edge[pe[u]].from;
 				}
 				for(auto u: stack) state[u] = 2;
 				stack.clear();
@@ -94,7 +94,7 @@ struct spfa_minimum_cost_maximum_flow{
 			int u = q[beg ++];
 			in_queue[u] = false;
 			for(auto id: F.adj[u]){
-				auto &e = F.edges[id];
+				auto &e = F.edge[id];
 				if(e.capacity - e.flow > eps && d[u] + e.cost < d[e.to]){
 					d[e.to] = d[u] + e.cost;
 					pe[e.to] = id;

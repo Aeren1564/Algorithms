@@ -14,21 +14,21 @@ bool spanning_tree_polytope_separation_oracle(const graph<T> &g, T c = 1){
 	T tot = 0;
 	flow_network<T> F(n);
 	vector<T> delta(n);
-	for(auto id = 0; id < (int)g.edges.size(); ++ id){
+	for(auto id = 0; id < (int)g.edge.size(); ++ id){
 		if(g.ignore && g.ignore(id)) continue;
-		auto &e = g.edges[id];
+		auto &e = g.edge[id];
 		if(e.cost < 0) return false;
 		F.insert(e.from, e.to, e.cost, e.cost);
 		delta[e.from] += e.cost, delta[e.to] += e.cost, tot += e.cost;
 	}
 	if(c * (n - 1) != tot) return false;
-	int m = (int)F.edges.size();
+	int m = (int)F.edge.size();
 	vector<int> sz(n);
 	for(auto u = 0; u < n; ++ u) sz[u] = (int)F.adj[u].size();
 	for(auto t = 1; t < n; ++ t){
 		int s = 0;
 		for(auto rep = 0; rep < 2; ++ rep){
-			F.edges.resize(m);
+			F.edge.resize(m);
 			for(auto u = 0; u < n; ++ u) F.adj[u].resize(sz[u]);
 			F.clear_flow();
 			for(auto u = 0; u < n; ++ u) F.insert(s, u, delta[u], 0), F.insert(u, t, 2 * c, 0);

@@ -4,6 +4,7 @@
 // undirected graphs are regarded as its canonical directed representation
 // C=1 : returns weakly connected components
 // C=2 : returns bipartite colorings
+// O(|V| + |E|)
 // Requires graph
 template<class T, int C = 2>
 void greedy_coloring(const graph<T> &g, auto act){
@@ -17,7 +18,7 @@ void greedy_coloring(const graph<T> &g, auto act){
 		auto dfs = [&](auto self, int u)->void{
 			for(auto id: g.adj[u]){
 				if(g.ignore && g.ignore(id)) continue;
-				auto &e = g.edges[id];
+				auto &e = g.edge[id];
 				int v = u ^ e.from ^ e.to;
 				if(!~was[v]){
 					split[was[v] = (was[u] + 1) % C].push_back(v);
@@ -29,7 +30,7 @@ void greedy_coloring(const graph<T> &g, auto act){
 			}
 			for(auto id: rg.adj[u]){
 				if(rg.ignore && rg.ignore(id)) continue;
-				auto &e = rg.edges[id];
+				auto &e = rg.edge[id];
 				int v = u ^ e.from ^ e.to;
 				if(!~was[v]){
 					split[was[v] = (was[u] + C - 1) % C].push_back(v);

@@ -10,7 +10,7 @@ tree_decomposition_chordal(const graph<T> &g){
 	vector<int> pos(n);
 	for(auto i = 0; i < n; ++ i) pos[order[i]] = i;
 	vector<vector<int>> bags;
-	vector<array<int, 2>> edges;
+	vector<array<int, 2>> edge;
 	vector<int> label(n, -1);
 	reverse(order.begin(), order.end());
 	for(auto u: order){
@@ -19,14 +19,14 @@ tree_decomposition_chordal(const graph<T> &g){
 		vector<int> bag{u};
 		for(auto id: g.adj[u]){
 			if(g.ignore && g.ignore(id)) continue;
-			auto &e = g.edges[id];
+			auto &e = g.edge[id];
 			int v = u ^ e.from ^ e.to;
 			if(pos[u] < pos[v]) bag.push_back(v);
 		}
-		if((int)bag.size() >= 2) edges.push_back({i, label[*min_element(bag.begin() + 1, bag.end(), [&](int u, int v){ return pos[u] < pos[v]; })]});
+		if((int)bag.size() >= 2) edge.push_back({i, label[*min_element(bag.begin() + 1, bag.end(), [&](int u, int v){ return pos[u] < pos[v]; })]});
 		bags.push_back(bag);
 	}
-	return {bags, edges};
+	return {bags, edge};
 }
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->

@@ -1,0 +1,65 @@
+<snippet>
+	<content><![CDATA[
+// B must be equal or greater than 2
+// Partition the sorted elements according to capacity, and track the sum of each blocks
+template<class T, class U, class Compare = less<>, class Plus = plus<>, class Minus = minus<>>
+struct block_sum_processor{
+	int B;
+	Plus op;
+	Minus inv_op;
+	vector<U> sum;
+	vector<multiset<T>> data;
+	vector<int> capacity;
+	block_sum_processor(int B = 2, U init = {}, Compare cmp = less<>(), Plus op = plus<>(), Minus inv_op = minus<>()): B(B), sum(B, init), data(B), capacity(B - 1), op(op), inv_op(inv_op){ }
+	// O(B log n)
+	void insert(T x){
+		sum[0] = op(sum[0], x);
+		data[0].insert(x);
+		for(auto i = 0; i < B - 1 && (int)data[i].size() > capacity[i]; ++ i){
+			sum[i + 1] = op(sum[i + 1], *data[i].rbegin());
+			data[i + 1].insert(data[i + 1].begin(), *data[i].rbegin());
+			sum[i] = inv_op(sum[i], *data[i].rbegin());
+			data[i].erase(prev(data[i].end()));
+		}
+	}
+	// O(B log n)
+	void erase(T x){
+		int i = 0;
+		while(i < B && data[i].find(x) == data[i].end()) ++ i;
+		assert(i < B);
+		data[i].erase(data[i].find(x));
+		sum[i] = inv_op(sum[i], x);
+		for(; i < B - 1 && (int)data[i].size() < capacity[i] && !data[i + 1].empty(); ++ i){
+			sum[i] = op(sum[i], *data[i + 1].begin());
+			data[i].insert(data[i].end(), *data[i + 1].begin());
+			sum[i + 1] = inv_op(sum[i + 1], *data[i + 1].begin());
+			data[i + 1].erase(data[i + 1].begin());
+		}
+	}
+	// O(B log n)
+	void increase_capacity(int i = 0){
+		assert(0 <= i && i < B - 1);
+		for(++ capacity[i]; i < B - 1 && (int)data[i].size() < capacity[i] && !data[i + 1].empty(); ++ i){
+			sum[i] = op(sum[i], *data[i + 1].begin());
+			data[i].insert(data[i].end(), *data[i + 1].begin());
+			sum[i + 1] = inv_op(sum[i + 1], *data[i + 1].begin());
+			data[i + 1].erase(data[i + 1].begin());
+		}
+	}
+	// O(B log n)
+	void decrease_capacity(int i = 0){
+		assert(0 <= i && i < B - 1 && capacity[i]);
+		for(-- capacity[i]; i < B - 1 && (int)data[i].size() > capacity[i]; ++ i){
+			sum[i + 1] = op(sum[i + 1], *data[i].rbegin());
+			data[i + 1].insert(data[i + 1].begin(), *data[i].rbegin());
+			sum[i] = inv_op(sum[i], *data[i].rbegin());
+			data[i].erase(prev(data[i].end()));
+		}
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>block_sum_processor</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

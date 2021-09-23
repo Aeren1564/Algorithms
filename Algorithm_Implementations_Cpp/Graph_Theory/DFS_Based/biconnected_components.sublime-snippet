@@ -9,7 +9,7 @@ void biconnected_components(const graph<T> &g, auto act_comp, auto act_bridge){
 		int top = pos[u] = ++ it;
 		for(auto id: g.adj[u]){
 			if(g.ignore && g.ignore(id) || id == pe) continue;
-			int v = u ^ g.edges[id].from ^ g.edges[id].to;
+			int v = u ^ g.edge[id].from ^ g.edge[id].to;
 			if(pos[v]){
 				top = min(top, pos[v]);
 				if(pos[v] < pos[u]) s.push_back(id);

@@ -1,7 +1,7 @@
 <snippet>
 	<content><![CDATA[
 // Returns a pair {starting vertex, list edges in cycle in order}
-// O(n + m)
+// O(|V| + |E|)
 template<class T>
 optional<pair<int, vector<int>>> find_a_reachable_cycle(const graph<T> &g, const vector<int> &sources){
 	int n = g.n, beg = -1;
@@ -9,7 +9,7 @@ optional<pair<int, vector<int>>> find_a_reachable_cycle(const graph<T> &g, const
 	auto dfs = [&](auto self, int u, int pe)->void{
 		for(auto id: g.adj[u]){
 			if(id == pe || g.ignore && g.ignore(id)) continue;
-			auto &e = g.edges[id];
+			auto &e = g.edge[id];
 			int v = u ^ e.from ^ e.to;
 			if(!~was[v]){
 				was[v] = was[u] + 1;

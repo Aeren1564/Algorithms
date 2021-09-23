@@ -19,7 +19,9 @@ struct lexicographical_bfs_forest{
 		attempt = 0;
 	}
 	int attempt;
-	template<class T> // O(V+E), perform lexicographical bfs with tie broken by the initial order
+	// Perform lexicographical bfs with tie broken by the initial order
+	// O(|V| + |E|)
+	template<class T>
 	void bfs(const graph<T> &g, const vector<int> &initial_order, bool complement = false){
 		++ attempt;
 		order.clear();
@@ -27,7 +29,7 @@ struct lexicographical_bfs_forest{
 		vector<vector<int>> adj(n); // adj list sorted by the initial ordering
 		for(auto u: initial_order) for(auto id: g.adj[u]){
 			if(g.ignore && g.ignore(id)) continue;
-			auto &e = g.edges[id];
+			auto &e = g.edge[id];
 			int v = u ^ e.from ^ e.to;
 			adj[v].push_back(u);
 		}

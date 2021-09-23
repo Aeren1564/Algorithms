@@ -18,25 +18,25 @@ struct heavy_light_decomposition{
 	template<class T>
 	heavy_light_decomposition(const graph<T> &g, const vector<int> &roots): n(g.n), roots(roots), adj(n), pv(n, -1), pe(n, -1), sz(n, 1), depth(n), next(n), prev(n), pos(n), end(n){
 		iota(prev.begin(), prev.end(), 0);
-		for(auto id = 0; id < (int)g.edges.size(); ++ id){
+		for(auto id = 0; id < (int)g.edge.size(); ++ id){
 			if(g.ignore && g.ignore(id)) continue;
-			auto &e = g.edges[id];
+			auto &e = g.edge[id];
 			adj[e.from].push_back(id), adj[e.to].push_back(id);
 		}
 		auto dfs_init = [&](auto self, int u, int root)->void{
 			next[u] = root;
 			if(~pe[u]) adj[u].erase(find(adj[u].begin(), adj[u].end(), pe[u]));
 			for(auto &id: adj[u]){
-				auto &e = g.edges[id];
+				auto &e = g.edge[id];
 				int v = u ^ e.from ^ e.to;
 				pv[v] = u, pe[v] = id, depth[v] = depth[u] + 1;
 				self(self, v, u);
 				sz[u] += sz[v];
-				auto &f = g.edges[adj[u][0]];
+				auto &f = g.edge[adj[u][0]];
 				if(sz[v] > sz[u ^ f.from ^ f.to]) swap(id, adj[u][0]);
 			}
 			if(!adj[u].empty()){
-				auto &e = g.edges[adj[u][0]];
+				auto &e = g.edge[adj[u][0]];
 				prev[u] = prev[u ^ e.from ^ e.to];
 			}
 		};
@@ -45,10 +45,10 @@ struct heavy_light_decomposition{
 			pos[u] = timer ++;
 			order.push_back(u);
 			if(!adj[u].empty()){
-				auto &f = g.edges[adj[u][0]];
+				auto &f = g.edge[adj[u][0]];
 				int hv = u ^ f.from ^ f.to;
 				for(auto id: adj[u]){
-					auto &e = g.edges[id];
+					auto &e = g.edge[id];
 					int v = u ^ e.from ^ e.to;
 					next[v] = (v == hv ? next[u] : v);
 					self(self, v);
@@ -99,7 +99,7 @@ struct heavy_light_decomposition{
 		vector<bool> is_head(n, true);
 		for(auto u = 0; u < n; ++ u){
 			if(g.degree(u)){
-				auto &e = g.edges[adj[u][0]];
+				auto &e = g.edge[adj[u][0]];
 				int v = u ^ e.from ^ e.to;
 				is_head[pos[v]] = false;
 				weights[pos[u]] = sz[u] - sz[v];

@@ -1,7 +1,7 @@
 <snippet>
 	<content><![CDATA[
 // Requires graph
-// O(V log V)
+// O(|V| log |V|)
 template<class T>
 struct centroid_decomposition{
 	int n, root; // the root of the arborescence
@@ -17,7 +17,7 @@ struct centroid_decomposition{
 			while(true){
 				for(auto id: g.adj[u]){
 					if(id == pe || g.ignore && g.ignore(id)) continue;
-					auto &e = g.edges[id];
+					auto &e = g.edge[id];
 					int v = u ^ e.from ^ e.to;
 					if(dead[v]) continue;
 					if(sz[v] > sz[s] >> 1){
@@ -34,7 +34,7 @@ struct centroid_decomposition{
 			sz[u] = 1;
 			for(auto id: g.adj[u]){
 				if(g.ignore && g.ignore(id)) continue;
-				auto &e = g.edges[id];
+				auto &e = g.edge[id];
 				int v = u ^ e.from ^ e.to;
 				if(p == v || dead[v]) continue;
 				self(self, v, u);
@@ -42,11 +42,11 @@ struct centroid_decomposition{
 			}
 		};
 		auto set_distance = [&](auto self, int u, int pe)->void{
-			int p = u ^ g.edges[pe].from ^ g.edges[pe].to;
-			dist[u].push_back(UT(g.edges[pe].cost, dist[p].back()));
+			int p = u ^ g.edge[pe].from ^ g.edge[pe].to;
+			dist[u].push_back(UT(g.edge[pe].cost, dist[p].back()));
 			for(auto id: g.adj[u]){
 				if(id == pe || g.ignore && g.ignore(id)) continue;
-				auto &e = g.edges[id];
+				auto &e = g.edge[id];
 				int v = u ^ e.from ^ e.to;
 				if(dead[v]) continue;
 				self(self, v, id);
@@ -60,12 +60,12 @@ struct centroid_decomposition{
 			else root = u;
 			dist[u].push_back(T_id);
 			for(auto id: g.adj[u]){
-				auto &e = g.edges[id];
+				auto &e = g.edge[id];
 				int v = u ^ e.from ^ e.to;
 				if(!dead[v]) set_distance(set_distance, v, id);
 			}
 			for(auto id: g.adj[u]){
-				auto &e = g.edges[id];
+				auto &e = g.edge[id];
 				int v = u ^ e.from ^ e.to;
 				if(!dead[v]) self(self, v, u);
 			}

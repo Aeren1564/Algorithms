@@ -19,25 +19,25 @@ vector<int> minimum_cost_maximum_common_independent_set_bellman_ford(const vecto
 	vector<bool> flag(n);
 	auto augment = [&]()->bool{
 		vector<pair<T, int>> dist(n + 1, {numeric_limits<T>::max() / 2, 0});
-		vector<tuple<int, int, T>> edges;
+		vector<tuple<int, int, T>> edge;
 		vector<int> pv(n + 1, -1);
 		m1.clear(), m2.clear();
 		for(auto u = 0; u < n; ++ u) if(flag[u]) m1.insert(u), m2.insert(u);
 		for(auto u = 0; u < n; ++ u) if(!flag[u]){
 			if(m1.check(u)) dist[pv[u] = u] = {cost[u], 0};
-			if(m2.check(u)) edges.emplace_back(u, n, 0);
+			if(m2.check(u)) edge.emplace_back(u, n, 0);
 		}
 		for(auto u = 0; u < n; ++ u) if(flag[u]){
 			m1.clear(), m2.clear();
 			for(auto v = 0; v < n; ++ v) if(u != v && flag[v]) m1.insert(v), m2.insert(v);
 			for(auto v = 0; v < n; ++ v) if(!flag[v]){
-				if(m1.check(v)) edges.push_back({u, v, cost[v]});
-				if(m2.check(v)) edges.push_back({v, u, -cost[u]});
+				if(m1.check(v)) edge.push_back({u, v, cost[v]});
+				if(m2.check(v)) edge.push_back({v, u, -cost[u]});
 			}
 		}
 		for(auto changed = true; changed; ){
 			changed = false;
-			for(auto [u, v, w]: edges) if(pair<T, int> dist_next{dist[u].first + w, dist[u].second + 1}; ~pv[u] && dist_next < dist[v]) dist[v] = dist_next, pv[v] = u, changed = true;
+			for(auto [u, v, w]: edge) if(pair<T, int> dist_next{dist[u].first + w, dist[u].second + 1}; ~pv[u] && dist_next < dist[v]) dist[v] = dist_next, pv[v] = u, changed = true;
 		}
 		if(!~pv[n]) return false;
 		for(auto u = pv[n]; ; u = pv[u]){

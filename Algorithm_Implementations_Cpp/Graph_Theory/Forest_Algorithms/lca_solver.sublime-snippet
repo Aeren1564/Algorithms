@@ -5,6 +5,7 @@ struct lca_solver{
 	int n;
 	vector<int> pv, pe, pos, end, depth, order, pos_order;
 	range_minmax_query_solver<int> rmq;
+	// O(|V| log |V|)
 	template<class T>
 	lca_solver(const graph<T> &g, const vector<int> &roots): n(g.n), pv(n, -1), pe(n, -1), depth(n), pos(n, -1), end(n, -1){
 		int it = 0;
@@ -13,7 +14,7 @@ struct lca_solver{
 			order.push_back(u), pos_order.push_back(pos[u]);
 			for(auto id: g.adj[u]){
 				if(id == pe[u] || g.ignore && g.ignore(id)) continue;
-				auto &e = g.edges[id];
+				auto &e = g.edge[id];
 				int v = u ^ e.from ^ e.to;
 				pv[v] = u;
 				pe[v] = id;
@@ -27,15 +28,18 @@ struct lca_solver{
 		rmq = {pos_order};
 	}
 	// assumes u and v are on the same component
+	// O(1)
 	int lca(int u, int v) const{
 		if(u == v) return u;
 		tie(u, v) = minmax(pos[u], pos[v]);
 		return order[rmq.query(u, v)];
 	}
 	// assumes u and v are on the same component
+	// O(1)
 	int steps(int u, int v, int w = -1) const{
 		return depth[u] + depth[v] - 2 * depth[~w ? w : lca(u, v)];
 	}
+	// O(1)
 	bool ancestor_of(int u, int v) const{
 		return pos[u] <= pos[v] && end[v] <= end[v];
 	}

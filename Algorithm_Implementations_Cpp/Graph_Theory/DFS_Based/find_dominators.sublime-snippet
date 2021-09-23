@@ -10,7 +10,7 @@ vector<int> find_dominators(const graph<T> &g, int root){
 		order.push_back(u);
 		for(auto id : g.adj[u]){
 			if(g.ignore != nullptr && g.ignore(id)) continue;
-			auto &e = g.edges[id];
+			auto &e = g.edge[id];
 			int v = e.to;
 			if(!~pos[v]){
 				parent[v] = u;
@@ -37,7 +37,7 @@ vector<int> find_dominators(const graph<T> &g, int root){
 		int w = order[it];
 		for(auto id : g_rev.adj[w]){
 			if(g_rev.ignore != nullptr && g_rev.ignore(id)) continue;
-			auto &e = g_rev.edges[id];
+			auto &e = g_rev.edge[id];
 			int u = e.to;
 			if(~pos[u]) sdom[w] = min(sdom[w], sdom[find_best(find_best, u)]);
 		}
@@ -45,7 +45,7 @@ vector<int> find_dominators(const graph<T> &g, int root){
 		for(auto u: bucket[w]) link[u] = find_best(find_best, u);
 		for(auto id: g.adj[w]){
 			if(g.ignore != nullptr && g.ignore(id)) continue;
-			auto &e = g.edges[id];
+			auto &e = g.edge[id];
 			int u = e.to;
 			if(parent[u] == w) p[u] = w;
 		}

@@ -5,9 +5,9 @@
 // Requires graph and rollback_disjoint_set
 template<class U, class T>
 optional<pair<U, vector<int>>> minimum_spanning_arborescence(const graph<T> &g, int src){
-	using edge = typename graph<T>::edge;
+	using E = typename graph<T>::E;
 	struct node{ /// lazy skew heap node
-		edge key;
+		E key;
 		shared_ptr<node> l, r;
 		U delta;
 		void prop(){
@@ -16,7 +16,7 @@ optional<pair<U, vector<int>>> minimum_spanning_arborescence(const graph<T> &g, 
 			if(r) r->delta += delta;
 			delta = 0;
 		}
-		edge top() { prop(); return key; }
+		E top() { prop(); return key; }
 	};
 	auto merge = [&](auto self, shared_ptr<node> a, shared_ptr<node> b)->shared_ptr<node>{
 		if(!a || !b) return a ?: b;
@@ -33,16 +33,16 @@ optional<pair<U, vector<int>>> minimum_spanning_arborescence(const graph<T> &g, 
 	vector<int> pv(n);
 	rollback_disjoint_set dsu(n);
 	vector<shared_ptr<node>> heap(n);
-	for(auto e: g.edges) heap[e.to] = merge(merge, heap[e.to], shared_ptr<node>(new node{e}));
+	for(auto e: g.edge) heap[e.to] = merge(merge, heap[e.to], shared_ptr<node>(new node{e}));
 	vector<int> seen(n, -1), path(n);
 	seen[src] = src;
-	vector<edge> Q(n), in(n, {-1, -1}), comp;
-	deque<tuple<int, int, vector<edge>>> cycs;
+	vector<E> Q(n), in(n, {-1, -1}), comp;
+	deque<tuple<int, int, vector<E>>> cycs;
 	for(auto s = 0; s < n; ++ s){
 		int u = s, qi = 0, w;
 		while(seen[u] < 0){
 			if(!heap[u]) return {};
-			edge e = heap[u]->top();
+			E e = heap[u]->top();
 			heap[u]->delta -= e.cost, pop(heap[u]);
 			Q[qi] = e, path[qi ++] = u, seen[u] = s;
 			cost += e.cost, u = dsu.root(e.from);
@@ -59,7 +59,7 @@ optional<pair<U, vector<int>>> minimum_spanning_arborescence(const graph<T> &g, 
 	}
 	for(auto &[u, t, comp]: cycs){ // restore sol (optional)
 		dsu.reverse_to(t);
-		edge ine = in[u];
+		E ine = in[u];
 		for(auto &e: comp) in[dsu.root(e.to)] = e;
 		in[dsu.root(ine.to)] = ine;
 	}

@@ -36,7 +36,7 @@ struct dijkstra{
 			order.push_back(u);
 			for(auto id: g.adj[u]){
 				if(g.ignore && g.ignore(id)) continue;
-				auto &e = g.edges[id];
+				auto &e = g.edge[id];
 				int v = u ^ e.from ^ e.to;
 				if(was[v] != attempt || dist[u] + e.cost < dist[v]){
 					pq.push({dist[v] = dist[u] + e.cost, v});

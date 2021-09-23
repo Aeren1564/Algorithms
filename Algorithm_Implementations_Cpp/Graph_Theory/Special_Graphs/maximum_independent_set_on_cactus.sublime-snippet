@@ -15,7 +15,7 @@ vector<int> maximum_independent_set_on_cactus(const graph<T> &g, const vector<U>
 		min_depth[u] = {depth[u], u};
 		for(auto id: g.adj[u]){
 			if(id == p || g.ignore && g.ignore(id)) continue;
-			auto &e = g.edges[id];
+			auto &e = g.edge[id];
 			int v = u ^ e.from ^ e.to;
 			if(!~pos[v]){
 				pv[v] = u;
@@ -34,7 +34,7 @@ vector<int> maximum_independent_set_on_cactus(const graph<T> &g, const vector<U>
 		dp[u][1] = weight[u];
 		for(auto id: g.adj[u]){
 			if(id == pe[u] || g.ignore && g.ignore(id)) continue;
-			auto &e = g.edges[id];
+			auto &e = g.edge[id];
 			int v = u ^ e.from ^ e.to;
 			if(pv[v] != u || min_depth[v][0] < depth[u]) continue;
 			if(min_depth[v][0] > depth[u]) dp[u] = {dp[u][0] + max(dp[v][0], dp[v][1]), dp[u][1] + dp[v][0]};
@@ -61,7 +61,7 @@ vector<int> maximum_independent_set_on_cactus(const graph<T> &g, const vector<U>
 	for(auto u: order){
 		for(auto id: g.adj[u]){
 			if(id == pe[u] || g.ignore && g.ignore(id)) continue;
-			auto &e = g.edges[id];
+			auto &e = g.edge[id];
 			int v = u ^ e.from ^ e.to;
 			if(pv[v] != u || min_depth[v][0] < depth[u]) continue;
 			if(min_depth[v][0] > depth[u]) state[v] = state[u] ? 0 : dp[v][0] < dp[v][1];

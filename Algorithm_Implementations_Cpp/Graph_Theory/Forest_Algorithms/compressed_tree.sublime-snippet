@@ -8,9 +8,9 @@ vector<array<int, 2>> compressed_tree(const lca_solver &lca, const vector<int> &
 	sort(order.begin(), order.end(), cmp);
 	for(auto i = 1, sz = (int)order.size(); i < sz; ++ i) order.push_back(lca.lca(order[i - 1], order[i]));
 	sort(order.begin(), order.end(), cmp), order.erase(unique(order.begin(), order.end()), order.end());
-	vector<array<int, 2>> edges;
-	for(auto i = 1; i < (int)order.size(); ++ i) edges.push_back({lca.lca(order[i - 1], order[i]), order[i]});
-	return edges;
+	vector<array<int, 2>> edge;
+	for(auto i = 1; i < (int)order.size(); ++ i) edge.push_back({lca.lca(order[i - 1], order[i]), order[i]});
+	return edge;
 }
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->

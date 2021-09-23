@@ -32,9 +32,9 @@ struct bellman_ford{
 		int x;
 		for(auto rep = 0; rep < n; ++ rep){
 			x = -1;
-			for(auto id = 0; id < (int)g.edges.size(); ++ id){
+			for(auto id = 0; id < (int)g.edge.size(); ++ id){
 				if(g.ignore && g.ignore(id)) continue;
-				auto [u, v, w] = g.edges[id];
+				auto [u, v, w] = g.edge[id];
 				if(was[u] == attempt && dist[u] + w < dist[v]){
 					was[v] = attempt;
 					dist[v] = max(dist[u] + w, numeric_limits<T>::min() / 2);
@@ -46,7 +46,7 @@ struct bellman_ford{
 		if(!~x) return {};
 		for(auto i = 0; i < g.n; ++ i) x = pv[x];
 		vector<int> cycle;
-		for(auto u = x; u != x || cycle.empty(); u = g.edges[pe[u]].from) cycle.push_back(pe[u]);
+		for(auto u = x; u != x || cycle.empty(); u = g.edge[pe[u]].from) cycle.push_back(pe[u]);
 		return {{cycle.rbegin(), cycle.rend()}};
 	}
 };

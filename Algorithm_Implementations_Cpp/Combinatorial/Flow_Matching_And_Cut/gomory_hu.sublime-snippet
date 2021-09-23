@@ -5,9 +5,9 @@
 // n - 1 dinic_maximum_flow.minimum_cut() calls
 // Requires flow_network and dinic_maximum_flow
 template<class T>
-vector<tuple<int, int, T>> gomory_hu_tree(int n, const vector<tuple<int, int, T>> &edges){
+vector<tuple<int, int, T>> gomory_hu_tree(int n, const vector<tuple<int, int, T>> &edge){
 	flow_network<T> F(n);
-	for(auto &[u, v, w]: edges) F.insert(u, v, w, w);
+	for(auto &[u, v, w]: edge) F.insert(u, v, w, w);
 	vector<tuple<int, int, T>> res(n - 1);
 	vector<int> pr(n);
 	for(auto i = 1; i < n; ++ i){

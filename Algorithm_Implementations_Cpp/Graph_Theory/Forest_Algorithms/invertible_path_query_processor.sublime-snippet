@@ -23,7 +23,7 @@ struct invertible_path_query_processor{
 				root[u] = r;
 				for(auto id: g.adj[u]){
 					if(p == id || g.ignore && g.ignore(id)) continue;
-					auto &e = g.edges[id];
+					auto &e = g.edge[id];
 					int v = u ^ e.from ^ e.to;
 					pv[v] = u;
 					pe[v] = id;

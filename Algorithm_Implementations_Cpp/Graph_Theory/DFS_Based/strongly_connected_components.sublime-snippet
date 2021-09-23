@@ -1,7 +1,8 @@
 <snippet>
 	<content><![CDATA[
 // Requires graph
-template<class T> // O(V + E)
+// O(|V| + |E|)
+template<class T>
 void strongly_connected_components(const graph<T> &g, auto act_comp){
 	int n = g.n, it = 0, ncomps = 0, v;
 	vector<int> val(n), comp(n, -1), s, cur;
@@ -10,7 +11,8 @@ void strongly_connected_components(const graph<T> &g, auto act_comp){
 		s.push_back(u);
 		for(auto id: g.adj[u]){
 			if(g.ignore && g.ignore(id)) continue;
-			int v = u ^ g.edges[id].from ^ g.edges[id].to;
+			auto &e = g.edge[id];
+			int v = u ^ e.from ^ e.to;
 			if(comp[v] < 0) low = min(low, val[v] ?: self(self, v));
 		}
 		if(low == val[u]){

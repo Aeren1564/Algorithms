@@ -12,7 +12,7 @@ struct skew_binary_lifting{
 		for(auto u = 0; u < (int)pv.size(); ++ u) if(~pv[u]) g.orient(pv[u], u); else roots.push_back(u);
 		*this = skew_binary_lifting(g, roots);
 	}
-	// O(n)
+	// O(|V|)
 	template<class T>
 	skew_binary_lifting(const graph<T> &g, const vector<int> &roots): n(g.n){
 		n = g.n;
@@ -22,7 +22,7 @@ struct skew_binary_lifting{
 		auto dfs = [&](auto self, int u, int pe)->void{
 			for(auto id: g.adj[u]){
 				if(id == pe || g.ignore && g.ignore(id)) continue;
-				auto &e = g.edges[id];
+				auto &e = g.edge[id];
 				int v = u ^ e.from ^ e.to;
 				depth[v] = depth[u] + 1;
 				pv[v] = u;
@@ -49,7 +49,7 @@ struct skew_binary_lifting{
 		lift.push_back(depth[lift[u]] - depth[u] == depth[lift[lift[u]]] - depth[lift[u]] ? lift[lift[u]] : u);
 	}
 	// Get the k-th ancestor of u;
-	// O(log n)
+	// O(log |V|)
 	int ancestor(int u, int k) const{
 		assert(depth[u] >= k);
 		k = depth[u] - k;
@@ -57,7 +57,7 @@ struct skew_binary_lifting{
 		return u;
 	}
 	// Assumes u and v lies on the same arboresence
-	// O(log n)
+	// O(log |V|)
 	int lca(int u, int v) const{
 		if(depth[u] < depth[v]) swap(u, v);
 		while(depth[u] > depth[v]) u = depth[lift[u]] >= depth[v] ? lift[u] : pv[u];
@@ -66,12 +66,12 @@ struct skew_binary_lifting{
 	}
 	// Get # of edges between u and v
 	// Assumes u and v lies on the same arboresence
-	// O(log n)
+	// O(log |V|)
 	int steps(int u, int v, int w = -1) const{
 		return depth[u] + depth[v] - 2 * depth[~w ? w : lca(u, v)];
 	}
 	// For an ancestor p of u, pred(p) is T, ..., T, F, ..., F in decreasing order of depth. Returns the highest p with T
-	// O(log n)
+	// O(log |V|)
 	int find_highest(int u, auto pred) const{
 		assert(pred(u));
 		while(pv[u] != u){

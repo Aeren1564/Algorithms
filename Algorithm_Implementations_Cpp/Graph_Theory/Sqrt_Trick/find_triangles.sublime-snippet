@@ -2,15 +2,15 @@
 	<content><![CDATA[
 // https://i11www.iti.kit.edu/extra/publications/sw-fclt-05_t.pdf
 // O(E sqrt(E)) process calls for graphs without loop or multiedges
-void find_triangles(int n, const vector<array<int, 2>> &edges, auto process){
+void find_triangles(int n, const vector<array<int, 2>> &edge, auto process){
 	vector<int> deg(n), order(n), pos(n);
-	for(auto [u, v]: edges) ++ deg[u], ++ deg[v];
+	for(auto [u, v]: edge) ++ deg[u], ++ deg[v];
 	iota(order.begin(), order.end(), 0);
 	sort(order.begin(), order.end(), [&](int u, int v){ return deg[u] > deg[v]; });
 	for(auto i = 0; i < n; ++ i) pos[order[i]] = i;
 	vector<vector<int>> adj(n);
-	for(auto i = 0; i < (int)edges.size(); ++ i){
-		int u = pos[edges[i][0]], v = pos[edges[i][1]];
+	for(auto i = 0; i < (int)edge.size(); ++ i){
+		int u = pos[edge[i][0]], v = pos[edge[i][1]];
 		adj[u].push_back(v), adj[v].push_back(u);
 	}
 	vector<vector<int>> A(n);

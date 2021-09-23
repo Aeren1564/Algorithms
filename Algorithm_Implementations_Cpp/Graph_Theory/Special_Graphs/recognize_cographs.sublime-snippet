@@ -1,7 +1,7 @@
 <snippet>
 	<content><![CDATA[
 // implementation of https://www.researchgate.net/publication/220753117_A_Simple_Linear_Time_LexBFS_Cograph_Recognition_Algorithm
-// O(V+E)
+// O(|V| + |E|)
 // Requires graph and lexicographical_bfs_forest
 template<class T>
 bool recognize_cographs(const graph<T> &g){
@@ -13,7 +13,7 @@ bool recognize_cographs(const graph<T> &g){
 	for(auto u: lbf.order){
 		for(auto id: g.adj[u]){
 			if(g.ignore && g.ignore(id)) continue;
-			auto &e = g.edges[id];
+			auto &e = g.edge[id];
 			int v = u ^ e.from ^ e.to;
 			adj[v].push_back(u);
 		}
@@ -63,7 +63,7 @@ bool recognize_cographs(const graph<T> &g){
 	for(auto u: lbf.order){
 		for(auto id: g.adj[u]){
 			if(g.ignore && g.ignore(id)) continue;
-			auto &e = g.edges[id];
+			auto &e = g.edge[id];
 			int v = u ^ e.from ^ e.to;
 			adj[v].push_back(u);
 		}

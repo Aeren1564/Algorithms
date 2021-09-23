@@ -41,7 +41,7 @@ struct dfs_forest{
 			min_depth[u] = depth[u];
 			for(auto id: g.adj[u]){
 				if(id == pe[u] || g.ignore && g.ignore(id)) continue;
-				auto &e = g.edges[id];
+				auto &e = g.edge[id];
 				int v = e.from ^ e.to ^ u;
 				if(was[v] == attempt){
 					min_depth[u] = min(min_depth[u], depth[v]);

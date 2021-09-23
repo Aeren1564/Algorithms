@@ -1,12 +1,13 @@
 <snippet>
 	<content><![CDATA[
+// O(|V| log |V| + |E|)
 template<class T>
-vector<int> lexicographical_topological_sort(const graph<T> &g){ // O(V log V + E), returns less than n elem if there's a cycle
+vector<int> lexicographical_topological_sort(const graph<T> &g){
 	int n = g.n;
 	vector<int> indeg(n), res;
 	for(int u = 0; u < n; ++ u) for(auto id: g.adj[u]){
 		if(g.ignore && g.ignore(id)) continue;
-		auto &e = g.edges[id];
+		auto &e = g.edge[id];
 		int v = u ^ e.from ^ e.to;
 		++ indeg[v];
 	}
@@ -17,12 +18,12 @@ vector<int> lexicographical_topological_sort(const graph<T> &g){ // O(V log V + 
 		res.push_back(u);
 		for(auto id: g.adj[u]){
 			if(g.ignore && g.ignore(id)) continue;
-			auto &e = g.edges[id];
+			auto &e = g.edge[id];
 			int v = u ^ e.from ^ e.to;
 			if(!-- indeg[v]) q.push(v);
 		}
 	}
-	return res;
+	return (int)res.size() == n ? optional{res} : optional<vector<int>>{};
 }
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
