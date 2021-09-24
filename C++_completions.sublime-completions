@@ -159,9 +159,9 @@
     	{ "trigger": "gpq", "contents": "priority_queue<$1, vector<$1>, greater<>>"},
         { "trigger": "function", "contents": "[&]($1)->${2:void}{\n\t$0\n};"},
         { "trigger": "recursion", "contents": "y_combinator([&](auto self, $1)->${2:void}{\n\t$0\n});"},
-        { "trigger": "dfs", "contents": "y_combinator([&](auto self, ${1:int u, int pe})->${2:void}{\n\tfor(auto id: ${3:g}.adj[u]){\n\t\tif(id == pe || $3.ignore && $3.ignore(id)) continue;\n\t\tauto &e = $3.edges[id];\n\t\tint v = u ^ e.from ^ e.to;\n\t\t$0self(v, id);\n\t}\n})(${4:0, -1});"},
+        { "trigger": "dfs", "contents": "y_combinator([&](auto self, ${1:int u, int pe})->${2:void}{\n\tfor(auto id: ${3:g}.adj[u]){\n\t\tif(id == pe || $3.ignore && $3.ignore(id)) continue;\n\t\tauto &e = $3.edge[id];\n\t\tint v = u ^ e.from ^ e.to;\n\t\t$0self(v, id);\n\t}\n})(${4:0, -1});"},
         { "trigger": "raw_dfs", "contents": "y_combinator([&](auto self, ${1:int u, int p})->${2:void}{\n\tfor(auto v: adj[u]){\n\t\tif(v == p) continue;\n\t\t$0self(v, u);\n\t}\n})(${3:0, -1});"},
-        { "trigger": "iterate_adj", "contents": "for(auto id: ${1:g}.adj[u]){\n\tif($2$1.ignore && $1.ignore(id)) continue;\n\tauto &e = $1.edges[id];\n\tint v = u ^ e.from ^ e.to;\n\t$0\n}"},
+        { "trigger": "iterate_adj", "contents": "for(auto id: ${1:g}.adj[u]){\n\tif($2$1.ignore && $1.ignore(id)) continue;\n\tauto &e = $1.edge[id];\n\tint v = u ^ e.from ^ e.to;\n\t$0\n}"},
         { "trigger": "lambda", "contents": "[&]($1){ $2 }"},
         { "trigger": "unique", "contents": "$1.erase(unique($1.begin(), $1.end()), $1.end())"},
 		
