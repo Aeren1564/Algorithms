@@ -2,7 +2,7 @@
 	<content><![CDATA[
 struct functional_graph_processor{
 	int n;
-	vector<vector<int>> cycles; // main cycles
+	vector<vector<int>> cycle; // main cycles
 	vector<int> cycle_id; // id of the cycle it belongs to, -1 if not part of one
 	vector<int> cycle_pos; // position in the cycle, -1 if not part of one
 	vector<int> prev; // previous vertex in the cycle, -1 if not part of one
@@ -21,19 +21,19 @@ struct functional_graph_processor{
 			}
 			if(!~depth[v]){
 				int w = v;
-				vector<int> cycle;
+				vector<int> c;
 				while(!~depth[w]){
-					cycle_id[w] = (int)cycles.size();
+					cycle_id[w] = (int)cycle.size();
 					cycle_pos[w] = (int)cycle.size();
-					cycle.push_back(w);
+					c.push_back(w);
 					root[w] = w;
 					depth[w] = 0;
 					w = next[w];
 				}
-				cycles.push_back(cycle);
+				cycle.push_back(c);
 				size.push_back((int)cycle.size());
 			}
-			auto dfs = [&](auto self, int u){
+			auto dfs = [&](auto self, int u)->void{
 				if(~depth[u]) return;
 				int v = next[u];
 				self(self, v);
