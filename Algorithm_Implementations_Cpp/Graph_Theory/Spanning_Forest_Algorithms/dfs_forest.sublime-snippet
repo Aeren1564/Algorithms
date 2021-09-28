@@ -5,7 +5,7 @@ template<class T>
 struct dfs_forest{
 	int n;
 	vector<T> dist;
-	vector<int> pv, pe, order, pos, end, sz, root, depth, min_depth, was;
+	vector<int> pv, pe, order, pos, end, size, root, depth, min_depth, was;
 	T T_id;
 	dfs_forest(int n, T T_id = 0): T_id(T_id){ init(n); }
 	void init(int n){
@@ -15,7 +15,7 @@ struct dfs_forest{
 		order.clear();
 		pos.assign(n, -1);
 		end.assign(n, -1);
-		sz.assign(n, 0);
+		size.assign(n, 0);
 		root.assign(n, -1);
 		depth.assign(n, -1);
 		min_depth.assign(n, -1);
@@ -37,7 +37,7 @@ struct dfs_forest{
 			was[u] = attempt;
 			pos[u] = (int)order.size();
 			order.push_back(u);
-			sz[u] = 1;
+			size[u] = 1;
 			min_depth[u] = depth[u];
 			for(auto id: g.adj[u]){
 				if(id == pe[u] || g.ignore && g.ignore(id)) continue;
@@ -53,7 +53,7 @@ struct dfs_forest{
 				pe[v] = id;
 				root[v] = root[u];
 				self(self, v);
-				sz[u] += sz[v];
+				size[u] += size[v];
 				min_depth[u] = min(min_depth[u], min_depth[v]);
 			}
 			end[u] = (int)order.size();
