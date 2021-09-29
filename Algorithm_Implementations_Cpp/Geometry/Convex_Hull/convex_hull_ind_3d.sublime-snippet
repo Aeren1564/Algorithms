@@ -1,0 +1,64 @@
+<snippet>
+	<content><![CDATA[
+// O(n^2)
+// Requires point3
+template<class T>
+vector<array<int, 3>> convex_hull_ind_3d(const vector<point3<T>> &a){
+	struct PR{
+		int a, b;
+		void ins(int x){ (a == -1 ? a : b) = x; }
+		void rem(int x){ (a == x ? a : b) = -1; }
+		int cnt(){ return (a != -1) + (b != -1); }
+	};
+	struct F{
+		point3<T> q;
+		int a, b, c;
+	};
+	int n = (int)a.size();
+	vector E(n, vector<PR>(n, {-1, -1}));
+	#define E(x, y) E[f.x][f.y]
+	vector<F> FS;
+	auto mf = [&](int i, int j, int k, int l){
+		point3<T> q = a[j] - a[i] ^ a[k] - a[i];
+		if(q * a[l] > q * a[i]) q = q * -1;
+		F f{q, i, j, k};
+		E(a, b).ins(k);
+		E(a, c).ins(j);
+		E(b, c).ins(i);
+		FS.push_back(f);
+	};
+	for(auto i = 0; i < 4; ++ i) for(auto j = i + 1; j < 4; ++ j) for(auto k = j + 1; k < 4; ++ k) mf(i, j, k, 6 - i - j - k);
+	for(auto i = 4; i < n; ++ i){
+		for(auto j = 0; j < (int)FS.size(); ++ j){
+			F f = FS[j];
+			if(f.q * a[i] > f.q * a[f.a]){
+				E(a, b).rem(f.c);
+				E(a, c).rem(f.b);
+				E(b, c).rem(f.a);
+				swap(FS[j --], FS.back());
+				FS.pop_back();
+			}
+		}
+		int nw = (int)FS.size();
+		for(auto j = 0; j < nw; ++ j){
+			F f = FS[j];
+			#define C(a, b, c) if(E(a, b).cnt() != 2) mf(f.a, f.b, i, f.c)
+			C(a, b, c);
+			C(a, c, b);
+			C(b, c, a);
+		}
+	}
+	for(auto &it: FS) if((a[it.b] - a[it.a] ^ a[it.c] - a[it.a]) * it.q <= 0) swap(it.c, it.b);
+	vector<array<int, 3>> res((int)FS.size());
+	for(auto i = 0; i < (int)FS.size(); ++ i){
+		auto [ignore, a, b, c] = FS[i];
+		res[i] = {a, b, c};
+	}
+	return res;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>convex_hull_ind_3d</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

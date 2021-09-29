@@ -49,7 +49,7 @@ struct point{
 		return x * x + y * y;
 	}
 	double angle() const{
-	return atan2(y, x);
+		return atan2(y, x);
 	} // [-pi, pi]
 	point<double> unit() const{
 		return point<double>(x, y) / norm();
