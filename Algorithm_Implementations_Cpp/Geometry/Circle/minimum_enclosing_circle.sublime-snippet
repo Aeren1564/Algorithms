@@ -1,0 +1,27 @@
+<snippet>
+	<content><![CDATA[
+// Expected O(n)
+// Requires point and triangle_centers
+template<class T>
+pair<point<T>, double> minimum_enclosing_circle(vector<point<T>> a){
+	int n = (int)a.size();
+	shuffle(a.begin(), a.end(), mt19937(1564));
+	point<T> o = a[0];
+	double r = 0, EPS = 1 + 1e-8;
+	for(auto i = 0; i < n; ++ i) if((o - a[i]).norm() > r * EPS){
+		o = a[i], r = 0;
+		for(auto j = 0; j < i; ++ j) if((o - a[j]).norm() > r * EPS){
+			o = (a[i] + a[j]) / 2, r = (o - a[i]).norm();
+			for(auto k = 0; k < j; ++ k) if((o - a[k]).norm() > r * EPS){
+				o = circumcenter(a[i], a[j], a[k]), r = (o - a[i]).norm();
+			}
+		}
+	}
+	return {o, r};
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>minimum_enclosing_circle</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

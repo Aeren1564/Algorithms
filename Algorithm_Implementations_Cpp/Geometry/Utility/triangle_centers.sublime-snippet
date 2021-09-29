@@ -1,16 +1,33 @@
 <snippet>
 	<content><![CDATA[
-// Requires point, line, and line_intersection
+// Requires point
 #define T double
 #define POINTS const point<T> &p, const point<T> &q, const point<T> &r
-point<T> mean(POINTS, T a, T b, T c){ return (a * p + b * q + c * r) / (a + b + c); }
-point<T> circumcenter(POINTS){ return *intersect_no_parallel_overlap<0, 0, 0, 0>(line<T>((p + q) / 2, (p - q).perp(), false), line<T>((q + r) / 2, (q - r).perp(), false)); }
-T circumradius(POINTS){ return (p - q).norm() * (q - r).norm() * (r - p).norm() / (2 * doubled_signed_area(p, q, r)); }
-point<T> incenter(POINTS){ return mean(p, q, r, (p - q).norm(), (q - r).norm(), (r - p).norm()); }
-T inradius(POINTS){ return doubled_signed_area(p, q, r) / ((p - q).norm() + (q - r).norm() + (r - p).norm()); }
-point<T> orthocenter(POINTS){ return mean(p, q, r, (q - p ^ r - p) / ((q - p) * (r - p)), (r - q ^ p - q) / ((r - q) * (p - q)), (p - r ^ q - r) / ((p - r) * (q - r))); }
-template<int i> point<T> excenter(POINTS){ return mean(p, q, r, (i == 0 ? -1 : 1) * (p - q).norm(), (i == 1 ? -1 : 1) * (q - r).norm(), (i == 2 ? -1 : 1) * (r - p).norm()); }
-template<int i> T exradius(POINTS){ return doubled_signed_area(p, q, r) / ((i == 0 ? -1 : 1) * (p - q).norm() + (i == 1 ? -1 : 1) * (q - r).norm() + (i == 2 ? -1 : 1) * (r - p).norm()); }
+point<T> weighted_mean(POINTS, T a = 0.5, T b = 0.5, T c = 0.5){
+	return (a * p + b * q + c * r) / (a + b + c);
+}
+point<T> circumcenter(POINTS){
+	point<T> a = r - p, b = q - p;
+	return p + (a * b.squared_norm() - b * a.squared_norm()).perp() / (2 * a ^ b);
+}
+T circumradius(POINTS){
+	return (p - q).norm() * (q - r).norm() * (r - p).norm() / (2 * doubled_signed_area(p, q, r));
+}
+point<T> incenter(POINTS){
+	return weighted_mean(p, q, r, (p - q).norm(), (q - r).norm(), (r - p).norm());
+}
+T inradius(POINTS){
+	return doubled_signed_area(p, q, r) / ((p - q).norm() + (q - r).norm() + (r - p).norm());
+}
+point<T> orthocenter(POINTS){
+	return weighted_mean(p, q, r, (q - p ^ r - p) / ((q - p) * (r - p)), (r - q ^ p - q) / ((r - q) * (p - q)), (p - r ^ q - r) / ((p - r) * (q - r)));
+}
+template<int i> point<T> excenter(POINTS){
+	return weighted_mean(p, q, r, (i == 0 ? -1 : 1) * (p - q).norm(), (i == 1 ? -1 : 1) * (q - r).norm(), (i == 2 ? -1 : 1) * (r - p).norm());
+}
+template<int i> T exradius(POINTS){
+	return doubled_signed_area(p, q, r) / ((i == 0 ? -1 : 1) * (p - q).norm() + (i == 1 ? -1 : 1) * (q - r).norm() + (i == 2 ? -1 : 1) * (r - p).norm());
+}
 #undef POINTS
 #undef T
 ]]></content>
