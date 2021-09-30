@@ -21,7 +21,7 @@ vector<line<T>> half_planes_intersection(vector<line<T>> a, bool is_sorted = fal
 	auto bad = [&](const line<T> &l, const line<T> &m, const line<T> &n)->bool{ // n contains intersection of l and n
 		auto s = l.d ^ m.d;
 		if(abs(s) <= eps) return false;
-		auto p = n.d ^ (l.p * s + (m.p - l.p ^ m.d) * l.d) - n.p * s;
+		auto p = n.d ^ (l.p * s + l.d * (m.p - l.p ^ m.d)) - n.p * s;
 		return s > 0 ? p <= eps : p >= -eps;
 	};
 	for(auto p: a){
