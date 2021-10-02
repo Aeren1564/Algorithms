@@ -105,6 +105,7 @@
         { "trigger": "get", "contents": "get<$1>($2)"},
 
         { "trigger": "ll", "contents": "long long"},
+        { "trigger": "ull", "contents": "unsigned long long"},
 
         { "trigger": "ab", "contents": "array<bool, ${1:2}>"},
         { "trigger": "ai", "contents": "array<int, ${1:2}>"},
