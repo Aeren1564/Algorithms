@@ -1,12 +1,14 @@
 <snippet>
 	<content><![CDATA[
-template<class T>
-struct static_to_dynamic_converter{ // Support insertion in a static data structure, assuming query results can be obtained from its disjoint subsets
+// Support insertion in a static data structure, assuming query results can be obtained from its disjoint subsets
+template<class T, class B, class C>
+struct static_to_dynamic_converter{
 	vector<T> elements;
-	function<void(int, const vector<T> &)> build; // build(i, a): assign structure constructed from a onto the i-th set
-	function<void(int)> clear; // clear(i): assign empty structure onto the i-th set
-	static_to_dynamic_converter(function<void(int, const vector<T> &)> build, function<void(int)> clear): build(build), clear(clear){ }
-	void insert(T e){ // amortized O(clear + build(n) / n)
+	B build; // build(i, a): assign structure constructed from a onto the i-th set
+	C clear; // clear(i): assign empty structure onto the i-th set
+	static_to_dynamic_converter(B build, C clear): build(build), clear(clear){ }
+	// Amortized O(clear + build(n) / n)
+	void insert(T e){
 		elements.push_back(e);
 		int ind = __builtin_ctz((int)elements.size());
 		build(ind, {elements.end() - (1 << ind), elements.end()});

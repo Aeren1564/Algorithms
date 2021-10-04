@@ -1,14 +1,15 @@
 <snippet>
 	<content><![CDATA[
-template<class E> // Noam's queue trick
-struct query_queue{ // for a commutative data structure supporting true O(T(n)) insertion, support front-deletion in O(T(n) log n) online.
-	function<void(E)> insert;
-	function<int()> time;
-	function<void(int)> reverse_to;
+// For a commutative data structure supporting true O(T(n)) insertion, support front-deletion in O(T(n) log n) online.
+template<class E, class I, class T, class R>
+struct query_queue{
+	I insert;
+	T time;
+	R reverse_to;
 	int zero_cnt = 0;
 	vector<int> log;
 	vector<pair<bool, E>> s, tmp[2]; // 0: delete state, 1: insert state
-	query_queue(function<void(E)> insert, function<int()> time, function<void(int)> reverse_to): insert(insert), time(time), reverse_to(reverse_to), log({time()}){ }
+	query_queue(I insert, T time, R reverse_to): insert(insert), time(time), reverse_to(reverse_to), log({time()}){ }
 	void pop(){
 		if(!zero_cnt){
 			zero_cnt = (int)s.size(), reverse(s.begin(), s.end()), reverse_to(log[0]), log.resize(1);
