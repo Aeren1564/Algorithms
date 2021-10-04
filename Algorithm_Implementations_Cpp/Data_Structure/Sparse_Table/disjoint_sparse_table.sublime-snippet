@@ -6,6 +6,7 @@ struct disjoint_sparse_table{
 	vector<vector<T>> data;
 	F TT;
 	T T_id;
+	// O(n log n) time and space
 	disjoint_sparse_table(const vector<T> &a, F TT, T T_id): n((int)a.size()), TT(TT), T_id(T_id){
 		log = __lg(max(n - 1, 1)) + 1, size = 1 << log;
 		data.assign(log + 1, vector<T>(size, T_id));
