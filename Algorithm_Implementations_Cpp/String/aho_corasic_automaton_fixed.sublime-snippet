@@ -2,7 +2,7 @@
 	<content><![CDATA[
 // Note: construction of an AC-automaton is offline.
 // O(sigma * (sum of length)) where sigma is the size of alphabets
-// all alphabets must be within [0, sigma)
+// All alphabets must be within [0, sigma)
 template<class Char_Type, int sigma>
 struct aho_corasic_automaton_fixed{
 	// Begin States
