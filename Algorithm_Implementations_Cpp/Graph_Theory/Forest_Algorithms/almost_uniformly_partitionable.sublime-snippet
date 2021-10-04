@@ -1,14 +1,14 @@
 <snippet>
 	<content><![CDATA[
 // Implementation of http://www.ecei.tohoku.ac.jp/alg/nishizeki/sub/j/DVD/PDF_P/P109.pdf
-// Returns a boolean array a of length p where a[i] = [there exists a partition of the tree g into i+1 subtrees
+// Returns an array a of length p where a[i] = [there exists a partition of the tree g into i+1 subtrees
 // such that sum of weight of each components is in [low, high)
 // O(p^3 * |V|)
 // Requires graph
 template<class T, class U>
-vector<bool> almost_uniformly_partitionable(const graph<T> &g, const vector<U> &weight, int p, U low, U high){
+vector<int> almost_uniformly_partitionable(const graph<T> &g, const vector<U> &weight, int p, U low, U high){
 	assert(p >= 0 && low <= high);
-	if(!p || low == high || any_of(weight.begin(), weight.end(), [&](auto x){ return x >= high; })) return vector<bool>(p);
+	if(!p || low == high || any_of(weight.begin(), weight.end(), [&](auto x){ return x >= high; })) return vector<int>(p);
 	vector<int> sz(g.n, 1);
 	const U len = high - low;
 	auto dfs = [&](auto self, int u, int pe)->vector<vector<array<U, 2>>>{
@@ -19,7 +19,7 @@ vector<bool> almost_uniformly_partitionable(const graph<T> &g, const vector<U> &
 			auto &e = g.edge[id];
 			int v = u ^ e.from ^ e.to;
 			auto dpv = self(self, v, id);
-			vector<bool> valid(p);
+			vector<int> valid(p);
 			for(auto i = 0; i < (int)dpv.size(); ++ i) for(auto [l, r]: dpv[i]) if(low < r && l < high){
 				valid[i] = true;
 				break;
@@ -58,7 +58,7 @@ vector<bool> almost_uniformly_partitionable(const graph<T> &g, const vector<U> &
 		return dp;
 	};
 	auto dp = dfs(dfs, 0, -1);
-	vector<bool> res(p);
+	vector<int> res(p);
 	for(auto i = 0; i < p; ++ i) for(auto [l, r]: dp[i]) if(low < r && l < high){
 		res[i] = true;
 		break;
