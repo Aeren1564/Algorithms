@@ -3,11 +3,11 @@
 template<bool GET_MAX = true>
 struct kinetic_tournament{
 	const long long inf = numeric_limits<long long>::max();
-	typedef pair<long long, long long> line;
-	inline long long eval(const line& ln, long long t){
+	using line = pair<long long, long long>;
+	long long eval(const line& ln, long long t){
 		return ln.first * t + ln.second;
 	}
-	inline bool cmp(const line& line1, const line& line2){
+	bool cmp(const line& line1, const line& line2){
 		auto x = eval(line1, temp), y = eval(line2, temp);
 		if(x != y) return x < y;
 		return line1.first < line2.first;
@@ -34,30 +34,36 @@ struct kinetic_tournament{
 			melt[u] = min(melt[u], t);
 		}
 	}
-	void set(int p, line L){ // set line[p] = L, O(log n)
+	// line[p] = L
+	// O(log n)
+	void set(int p, line L){
 		if(GET_MAX) L = {-L.first, -L.second};
-		function<void(int, int, int)> recurse = [&](int u, int l, int r){
+		auto recurse = [&](auto self, int u, int l, int r)->void{
 			if(p < l || r <= p) return;
 			if(r - l == 1){
 				tree[u] = L;
 				return;
 			}
 			int m = l + (r - l >> 1);
-			recurse(u + 1, l, m), recurse(u + (m - l << 1), m, r);
+			self(self, u + 1, l, m), self(self, u + (m - l << 1), m, r);
 			melt[u] = 0, rebuild(u, l, r);
 		};
-		recurse(0, 0, n);
+		recurse(recurse, 0, 0, n);
 	}
-	long long query(int ql, int qr){ // Find min{ql<=i<qr}( line[i].eval(temp) ), O(log n)
-		function<long long(int, int, int)> recurse = [&](int u, int l, int r){
+	// Find min{ql<=i<qr}( line[i].eval(temp) )
+	// O(log n)
+	long long query(int ql, int qr){
+		auto recurse = [&](auto self, int u, int l, int r)->long long{
 			if(qr <= l || r <= ql) return inf;
 			if(ql <= l && r <= qr) return eval(tree[u], temp);
 			int m = l + (r - l >> 1);
-			return min(recurse(u + 1, l, m), recurse(u + (m - l << 1), m, r));
+			return min(self(self, u + 1, l, m), self(self, u + (m - l << 1), m, r));
 		};
-		return recurse(0, 0, n) * (GET_MAX ? -1 : 1);
+		return recurse(recurse, 0, 0, n) * (GET_MAX ? -1 : 1);
 	}
-	void heaten(long long new_temp){ // Increase temperature to new_temp, O(m alpha(m) log^2 n) for m sequence of operations
+	// Increase temperature to new_temp
+	// O(m alpha(m) log^2 n) for m sequence of operations
+	void heaten(long long new_temp){
 		assert(new_temp >= temp);
 		temp = new_temp;
 		rebuild(0, 0, n);
@@ -65,13 +71,13 @@ struct kinetic_tournament{
 	kinetic_tournament(int n): kinetic_tournament(vector<line>(n, {0, inf})){ }
 	kinetic_tournament(vector<line> lines): n((int)lines.size()), tree(n << 1, {0, inf}), melt(n << 1, inf){
 		if(GET_MAX) for(auto &L: lines) L = {-L.first, -L.second};
-		function<void(int, int, int)> build = [&](int u, int l, int r){
+		auto build = [&](auto self, int u, int l, int r)->void{
 			if(r - l == 1){
 				tree[u] = lines[l];
 				return;
 			}
 			int m = l + (r - l >> 1), v = u + 1, w = u + (m - l << 1);
-			build(v, l, m), build(w, m, r);
+			self(self, v, l, m), self(self, w, m, r);
 			auto line1 = tree[v], line2 = tree[w];
 			if(!cmp(line1, line2)) swap(line1, line2);
 			tree[u] = line1, melt[u] = min(melt[v], melt[w]);
@@ -81,7 +87,7 @@ struct kinetic_tournament{
 				melt[u] = min(melt[u], t);
 			}
 		};
-		build(0, 0, n);
+		build(build, 0, 0, n);
 	}
 	int n; // size
 	long long temp = 0; // current temperature

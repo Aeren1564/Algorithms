@@ -1,6 +1,5 @@
 <snippet>
 	<content><![CDATA[
-// B: block size
 template<int B, class T>
 struct range_mode_query_solver{
 	int n;
