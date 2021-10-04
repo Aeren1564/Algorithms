@@ -43,6 +43,7 @@ struct two_sat_solver{
 		}while(v != u);
 		return val[u] = low;
 	}
+	// O(n)
 	bool solve(){
 		value.assign(n, -1), val.assign(2 * n, 0), comp = val;
 		for(auto u = 0; u < n << 1; ++ u) if(!comp[u]) dfs(u);

@@ -11,7 +11,7 @@ vector<int> lexicographical_topological_sort(const graph<T> &g){
 		int v = u ^ e.from ^ e.to;
 		++ indeg[v];
 	}
-	priority_queue<int, vector<int>, greater<int>> q;
+	priority_queue<int, vector<int>, greater<>> q;
 	for(int u = 0; u < n; ++ u) if (!indeg[u]) q.push(u);
 	while(!q.empty()){
 		int u = q.top(); q.pop();
