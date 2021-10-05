@@ -2,8 +2,7 @@
 	<content><![CDATA[
 // f[i] = 1^i + 2^i + ... + base^i
 // Returns f[0], f[1], ..., f[n-1]
-// TODO: Change this to linear version
-// O((Complexity of product))
+// O((Complexity of product of n term polynomial))
 // Requires polynomial
 template<class T>
 vector<T> evaluate_faulhaber(T base, int n){

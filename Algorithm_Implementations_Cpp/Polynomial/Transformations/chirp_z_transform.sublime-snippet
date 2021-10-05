@@ -1,6 +1,6 @@
 <snippet>
 	<content><![CDATA[
-// returns {p[base^0], p[base^2], ..., p[base^2(n-1)]}
+// Returns {p[base^0], p[base^2], ..., p[base^2(n-1)]}
 // O(max(deg(p), n) log max(deg(p), n))
 // Requires polynomial
 template<class T>
