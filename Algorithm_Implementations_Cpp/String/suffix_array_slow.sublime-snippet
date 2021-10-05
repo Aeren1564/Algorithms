@@ -1,0 +1,78 @@
+<snippet>
+	<content><![CDATA[
+struct suffix_array_slow{
+	int n;
+	// data: sorted sequence of suffices including the empty suffix
+	// rank[i]: position of the suffix i in the suffix array
+	// lcp[i]: longest common prefix of data[i] and data[i + 1]
+	vector<int> data, rank, lcp;
+	// O(n log n)
+	template<class T>
+	suffix_array_slow(vector<T> s){
+		auto cmpr = s;
+		sort(cmpr.begin(), cmpr.end());
+		for(auto &c: s) c = lower_bound(cmpr.begin(), cmpr.end(), c) - cmpr.begin();
+		*this = suffix_array_slow(s, (int)s.size());
+	}
+	// Assumes every element in s lies in [0, sigma)
+	// O(n log n + sigma)
+	template<class T>
+	suffix_array_slow(vector<T> s, int sigma): n((int)s.size()), lcp(n){
+		++ sigma;
+		for(auto &c: s) ++ c;
+		s.push_back(0);
+		tie(data, rank) = sort_cyclic_shift(s, sigma);
+		int k = 0;
+		for(auto i = 0; i <= n; ++ i){
+			if(rank[i] == n){
+				k = 0;
+				continue;
+			}
+			int j = data[rank[i] + 1];
+			while(i + k <= n && j + k <= n && s[i + k] == s[j + k]){
+				++ k;
+			}
+			lcp[rank[i]] = k;
+			if(k) -- k;
+		}
+	}
+	// O(n log n)
+	pair<vector<int>, vector<int>> sort_cyclic_shift(const vector<int> &s, int sigma){
+		int n = (int)s.size();
+		vector<int> sa(n), rank(n), cnt(max(sigma, n));
+		for(auto i = 0; i < n; ++ i) ++ cnt[s[i]];
+		for(auto i = 1; i < sigma; ++ i) cnt[i] += cnt[i - 1];
+		for(auto i = 0; i < n; ++ i) sa[-- cnt[s[i]]] = i;
+		rank[sa[0]] = 0;
+		int classes = 1;
+		for(auto i = 1; i < n; ++ i){
+			if(s[sa[i]] != s[sa[i - 1]]) ++ classes;
+			rank[sa[i]] = classes - 1;
+		}
+		vector<int> dn(n), rn(n);
+		for(auto h = 0; 1 << h < n; ++ h){
+			for(auto i = 0; i < n; ++ i){
+				dn[i] = sa[i] - (1 << h);
+				if(dn[i] < 0) dn[i] += n;
+			}
+			fill(cnt.begin(), cnt.begin() + classes, 0);
+			for(auto i = 0; i < n; ++ i) ++ cnt[rank[dn[i]]];
+			for(auto i = 1; i < classes; ++ i) cnt[i] += cnt[i - 1];
+			for(auto i = n - 1; i >= 0; -- i) sa[-- cnt[rank[dn[i]]]] = dn[i];
+			rn[sa[0]] = 0;
+			classes = 1;
+			for(auto i = 1; i < n; ++ i){
+				if(rank[sa[i - 1]] != rank[sa[i]] || rank[(sa[i - 1] + (1 << h)) % n] != rank[(sa[i] + (1 << h)) % n]) ++ classes;
+				rn[sa[i]] = classes - 1;
+			}
+			swap(rank, rn);
+		}
+		return {sa, rank};
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>suffix_array_slow</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
