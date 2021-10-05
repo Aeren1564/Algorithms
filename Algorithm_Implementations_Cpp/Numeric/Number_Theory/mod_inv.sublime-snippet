@@ -1,5 +1,6 @@
 <snippet>
 	<content><![CDATA[
+// O(log a)
 template<class T>
 T mod_inv(T a, T mod){
 	assert(mod >= 1);

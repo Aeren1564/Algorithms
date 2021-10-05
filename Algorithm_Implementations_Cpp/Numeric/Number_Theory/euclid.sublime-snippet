@@ -1,10 +1,11 @@
 <snippet>
 	<content><![CDATA[
 // Returns g=gcd(a,b), and x and y store values with ax+by=g
-typedef long long ll;
-ll euclid(ll a, ll b, ll &x, ll &y){
+// O(log min(a, b))
+template<class T>
+T euclid(T a, T b, T &x, T &y){
 	if(b){
-		ll d = euclid(b, a % b, y, x);
+		T d = euclid(b, a % b, y, x);
 		return y -= a / b * x, d;
 	}
 	return x = 1, y = 0, a;

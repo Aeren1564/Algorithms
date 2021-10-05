@@ -1,6 +1,6 @@
 <snippet>
 	<content><![CDATA[
-// return the minimum x > 0 with a^x = b
+// Returns the minimum x > 0 with a^x = b
 // O(sqrt(mod)) applications of hash map
 // Requires modular
 template<class T>
