@@ -152,7 +152,7 @@ struct suffix_array{
 	// RMQ must be built over lcp
 	// O(1)
 	template<class RMQ>
-	int longest_common_prefix(int i, int j, const RMQ &rmq){
+	int longest_common_prefix(int i, int j, const RMQ &rmq) const{
 		assert(0 <= i && i <= n && 0 <= j && j <= n);
 		return i == j ? n - i : rmq.query(min(rank[i], rank[j]), max(rank[i], rank[j]));
 	}
