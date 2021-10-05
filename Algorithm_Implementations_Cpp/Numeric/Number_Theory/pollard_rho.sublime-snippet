@@ -1,8 +1,8 @@
 <snippet>
 	<content><![CDATA[
-// correctness proved in https://github.com/kth-competitive-programming/kactl/blob/master/doc/modmul-proof.pdf
+// Correctness proved in https://github.com/kth-competitive-programming/kactl/blob/master/doc/modmul-proof.pdf
 // twice faster than (__int128_t)a * b % M
-typedef unsigned long long ull;
+using ull = unsigned long long;
 ull mod_mul(ull a, ull b, ull M){
 	long long res = a * b - M * ull(1.L / M * a * b);
 	return res + M * (res < 0) - M * (res >= (long long)M);
@@ -36,7 +36,8 @@ ull get_factor(ull n){
 	}
 	return gcd(prd, n);
 }
-vector<ull> factorize(ull n){ // returns the prime factors in arbitrary order
+// Returns the prime factors in arbitrary order
+vector<ull> factorize(ull n){
 	if(n == 1) return {};
 	if(isprime(n)) return {n};
 	ull x = get_factor(n);

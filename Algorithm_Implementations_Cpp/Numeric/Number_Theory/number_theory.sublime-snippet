@@ -57,11 +57,6 @@ struct number_theory{
 		return is_prime;
 	}
 };
-/*
-Given a set A of n-tuples of postive integers and functions f, g
-\sum_{x \in A} f(gcd(x)) g(x)
-= \sum_{l=1}^\infty(f conv mu)(l) \sum{x \in A and l | x_i for all i} g(x)
-*/
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
 	<tabTrigger>number_theory</tabTrigger> -->

@@ -1,0 +1,36 @@
+<snippet>
+	<content><![CDATA[
+/*
+Given a set A of n-tuples of postive integers and functions f, g
+\sum_{x \in A} f(gcd(x)) g(x)
+= \sum_{l=1}^\infty(f conv mu)(l) \sum{x \in A and l | x_i for all i} g(x)
+
+e: multiplicative identity (e(x) = [x == 1])
+1: constant function
+1_C: indicator function
+id: identity function
+id_k: k-th power function
+mu: mobius function
+phi: euler totient function
+sigma_k: sum of k-th power of divisors
+sigma = sigma_1
+d = sigma_0
+
+1 * mu = e
+g = f * 1 iff f = g * mu
+sigma_k = id_k * 1
+sigma = id * 1
+d = 1 * 1
+id_k = sigma_k * mu
+id = sigma * mu
+1 = d * mu
+phi * 1 = id
+phi = id * mu
+sigma = phi * d
+*/
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>dirichlet_convolution_formulae</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
