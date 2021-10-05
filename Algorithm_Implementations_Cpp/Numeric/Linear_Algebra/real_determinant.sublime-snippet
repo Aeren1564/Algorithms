@@ -1,10 +1,11 @@
 <snippet>
 	<content><![CDATA[
-// Requires matrix
-template<class T, T (*zero)(), T (*one)()>
-T real_determinant(matrix_base<T, zero, one> M){ // For reals, O(n^3)
-	assert(M.n == M.m);
-	int n = M.n;
+// O(n^3)
+template<class T>
+T real_determinant(vector<vector<T>> M){
+	if(M.empty()) return 1;
+	int n = (int)M.size();
+	assert((int)M[0].size() == n);
 	T res = 1;
 	for(auto i = 0; i < n; ++ i){
 		int b = i;

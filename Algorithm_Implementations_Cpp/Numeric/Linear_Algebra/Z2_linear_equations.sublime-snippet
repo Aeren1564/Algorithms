@@ -1,7 +1,7 @@
 <snippet>
 	<content><![CDATA[
-typedef bitset<1000> bs;
-int solve_linear_equations(vector<bs> A, bs &x, vector<int> b, int m){
+template<int B>
+int solve_linear_equations(vector<bitset<B>> A, bitset<B> &x, vector<int> b, int m){
 	int n = (int)A.size(), rank = 0, br;
 	vector<int> col(m);
 	iota(col.begin(), col.end(), 0);
@@ -19,7 +19,7 @@ int solve_linear_equations(vector<bs> A, bs &x, vector<int> b, int m){
 		for(auto j = i + 1; j < n; ++ j) if(A[j][i]) b[j] ^= b[i], A[j] ^= A[i];
 		++ rank;
 	}
-	x = bs();
+	x = {};
 	for(auto i = rank; i --; ){
 		if(!b[i]) continue;
 		x[col[i]] = 1;

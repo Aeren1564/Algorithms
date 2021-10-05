@@ -2,9 +2,9 @@
 	<content><![CDATA[
 // Returns det((xI - a) * (flip ? -1 : 1))
 // O(n^3)
-// Requires polynomial
 template<class T>
 vector<T> characteristic_polynomial(vector<vector<T>> a, bool flip = false){
+	if(a.empty()) return {1};
 	int n = (int)a.size();
 	assert(n && n == (int)a[0].size());
 	// transform the matrix into a similar upper Hessenberg matrix
@@ -23,8 +23,7 @@ vector<T> characteristic_polynomial(vector<vector<T>> a, bool flip = false){
 			for(auto k = 0; k < n; ++ k) a[k][j + 1] += a[k][i] * t;
 		}
 	}
-	// Interpolate
-	vector<T> X, Y;
+	vector<T> val(n + 1);
 	for(auto x = 0; x <= n; ++ x){
 		vector<vector<T>> b(n, vector<T>(n));
 		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < n; ++ j) b[i][j] = i == j ? x - a[i][j] : -a[i][j];
@@ -41,9 +40,24 @@ vector<T> characteristic_polynomial(vector<vector<T>> a, bool flip = false){
 		}
 		T y = sign;
 		for(auto i = 0; i < n; ++ i) y *= b[i][i];
-		X.push_back(x), Y.push_back(y);
+		val[x] = y;
 	}
-	return interpolate(X, Y) * (flip && n & 1 ? -1 : 1);
+	vector<T> fact(n + 1, 1), p(n + 2), res(n + 1);
+	p[0] = 1;
+	for(auto x = 1; x <= n; ++ x) fact[x] = fact[x - 1] * x;
+	for(auto x = 0; x <= n; ++ x){
+		for(auto y = n + 1; y > 0; -- y) p[y] = p[y - 1] - x * p[y];
+		p[0] *= -x;
+	}
+	for(auto x = 0; x <= n; ++ x){
+		auto q = p;
+		q[n + 1] = 0;
+		for(auto y = n; y >= 0; -- y) q[y] = p[y + 1] + x * q[y + 1];
+		T coef = val[x] / (fact[x] * fact[n - x] * (n - x & 1 ? -1 : 1));
+		for(auto y = 0; y <= n; ++ y) res[y] += q[y] * coef;
+	}
+	if(flip && n & 1) for(auto &x: res) x *= -1;
+	return res;
 }
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->

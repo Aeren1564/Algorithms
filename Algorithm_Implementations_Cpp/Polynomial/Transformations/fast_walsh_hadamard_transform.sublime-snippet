@@ -18,16 +18,6 @@ void fast_walsh_hadamard_transform(vector<T> &a, bool invert = false){
 		for(auto &x: a) x /= n;
 	}
 }
-template<class T, char Conv = '^'>
-vector<T> convolute_fwht(vector<T> p, vector<T> q){
-	int n = max({(int)p.size(), (int)q.size() - 1, 1});
-	if(__builtin_popcount(n) != 1) n = 1 << __lg(n) + 1;
-	p.resize(n), q.resize(n);
-	fast_walsh_hadamard_transform<T, Conv>(p), fast_walsh_hadamard_transform<T, Conv>(q);
-	for(auto i = 0; i < n; ++ i) p[i] *= q[i];
-	fast_walsh_hadamard_transform<T, Conv>(p, true);
-	return p;
-}
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
 	<tabTrigger>fast_walsh_hadamard_transform</tabTrigger> -->

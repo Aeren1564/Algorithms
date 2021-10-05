@@ -1,6 +1,6 @@
 <snippet>
 	<content><![CDATA[
-template<size_t SZ>
+template<int SZ>
 struct Z2_matrix_base: vector<bitset<SZ>>{
 	using C = vector<bitset<SZ>>;
 	using C::assign;
@@ -102,22 +102,22 @@ struct Z2_matrix_base: vector<bitset<SZ>>{
 		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) (*this)[i][j] = arr[i][j];
 	}
 };
-template<size_t SZ>
+template<int SZ>
 Z2_matrix_base<SZ> operator*(bool c, Z2_matrix_base<SZ> M){
 	if(!c) for(auto &v: M) v.reset();
 	return M;
 }
-template<size_t SZ>
+template<int SZ>
 vector<int> operator*(const vector<int> &v, const Z2_matrix_base<SZ> &M){
 	vector<int> res(M.m);
 	for(auto i = 0; i < M.n; ++ i) for(auto j = 0; j < M.m; ++ j) res[j] ^= v[i] & M[i][j];
 	return res;
 }
-template<size_t SZ>
+template<int SZ>
 vector<int> &operator*=(vector<int> &v, const Z2_matrix_base<SZ> &M){
 	return v = v * M;
 }
-const size_t SZ = 1000;
+const int SZ = 1000;
 using Z2_matrix = Z2_matrix_base<SZ>;
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->

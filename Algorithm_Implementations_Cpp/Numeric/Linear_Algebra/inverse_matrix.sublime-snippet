@@ -1,22 +1,24 @@
 <snippet>
 	<content><![CDATA[
-// Requires matrix
-template<class T, T (*zero)(), T (*one)()> // T must additionally support / and -=
-optional<matrix_base<T, zero, one>> inverse_matrix(matrix_base<T, zero, one> M){
-	assert(M.n == M.m);
-	int n = M.n;
-	matrix_base<T, zero, one> res(n, n, one());
+// O(n^3)
+template<class T>
+optional<vector<vector<T>>> inverse_matrix(vector<vector<T>> M){
+	if(M.empty()) return M;
+	int n = (int)M.size();
+	assert(n == (int)M[0].size());
+	vector<vector<T>> res(n, vector<T>(n));
+	for(auto i = 0; i < n; ++ i) res[i][i] = 1;
 	for(auto j = 0; j < n; ++ j){
 		int pivot = -1;
-		for(auto i = j; i < n; ++ i) if(M[i][j] != zero()){
+		for(auto i = j; i < n; ++ i) if(M[i][j]){
 			pivot = i;
 			break;
 		}
 		if(!~pivot) return {};
 		swap(M[j], M[pivot]), swap(res[j], res[pivot]);
-		T inv = one() / M[j][j];
+		T inv = 1 / M[j][j];
 		for(auto jj = 0; jj < n; ++ jj) M[j][jj] *= inv, res[j][jj] *= inv;
-		for(auto i = 0; i < n; ++ i) if(i != j && M[i][j] != zero()){
+		for(auto i = 0; i < n; ++ i) if(i != j && M[i][j]){
 			T d = M[i][j];
 			for(auto jj = 0; jj < n; ++ jj) M[i][jj] -= d * M[j][jj], res[i][jj] -= d * res[j][jj];
 		}
