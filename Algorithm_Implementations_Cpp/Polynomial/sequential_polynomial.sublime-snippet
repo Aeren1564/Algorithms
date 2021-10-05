@@ -1,7 +1,7 @@
 <snippet>
 	<content><![CDATA[
 // Returns (x + 1) * (x + 2) * ... * (x + n)
-// O((Complexity of product))
+// O((Complexity of product of n term polynomial))
 // Requires polynomial
 template<class T>
 vector<T> sequential_polynomial(int n){

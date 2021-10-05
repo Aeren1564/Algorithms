@@ -1,6 +1,6 @@
 <snippet>
 	<content><![CDATA[
-// O((Complexity of product) log n)
+// O((Complexity of product of n term polynomial) * log n)
 // Requires polynomial
 template<class T>
 vector<T> polynomial_sqrt(const vector<T> &a){
