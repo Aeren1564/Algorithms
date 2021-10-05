@@ -1,5 +1,6 @@
 <snippet>
 	<content><![CDATA[
+// (f*g)[mask] = sum{x and y = 0, x or y = mask}(f(x)g(y))
 // O(n log^2 n)
 // Requires fast_walsh_hadamard_transform
 template<class T>
