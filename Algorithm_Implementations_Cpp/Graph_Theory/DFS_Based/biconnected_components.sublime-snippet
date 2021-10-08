@@ -5,7 +5,7 @@ template<class T> // O(V + E)
 void biconnected_components(const graph<T> &g, auto act_comp, auto act_bridge){
 	int n = g.n, it = 0;
 	vector<int> pos(n), s;
-	auto dfs = [&](int u, int pe, auto dfs)->int{
+	auto dfs = [&](auto self, int u, int pe)->int{
 		int top = pos[u] = ++ it;
 		for(auto id: g.adj[u]){
 			if(g.ignore && g.ignore(id) || id == pe) continue;
@@ -15,7 +15,7 @@ void biconnected_components(const graph<T> &g, auto act_comp, auto act_bridge){
 				if(pos[v] < pos[u]) s.push_back(id);
 			}
 			else{
-				int sz = (int)s.size(), up = dfs(v, id, dfs);
+				int sz = (int)s.size(), up = self(self, v, id);
 				top = min(top, up);
 				if(up == pos[u]){
 					s.push_back(id);
@@ -28,7 +28,7 @@ void biconnected_components(const graph<T> &g, auto act_comp, auto act_bridge){
 		}
 		return top;
 	};
-	for(auto u = 0; u < n; ++ u) if(!pos[u]) dfs(u, -1, dfs);
+	for(auto u = 0; u < n; ++ u) if(!pos[u]) dfs(dfs, u, -1);
 }
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
