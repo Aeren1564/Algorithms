@@ -1,7 +1,7 @@
 <snippet>
 	<content><![CDATA[
 // Reads adjacency matrix represented with bitset
-// IDK THE COMPLEXITY
+// O(3^(n/3))
 template<int SZ>
 vector<int> maximum_clique_large(const vector<bitset<SZ>> &input_adjm){
 	int n = (int)input_adjm.size();

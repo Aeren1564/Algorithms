@@ -2,7 +2,8 @@
 	<content><![CDATA[
 // Reads adjacency matrix represented with bitmask
 // n must be equal or less than 64
-// IDK THE COMPLEXITY, but works under 100ms for n <= 64
+// Works under 100ms for n <= 64
+// O(3^(n/3))
 vector<int> maximum_clique(const vector<unsigned long long> &input_adjm){
 	int n = (int)input_adjm.size();
 	vector<int> deg(n), order(n), pos(n);
