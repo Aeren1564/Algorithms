@@ -6,7 +6,7 @@ struct two_sat_solver{
 	vector<int> value, val, comp, z;
 	two_sat_solver(int n = 0): n(n), adj(n << 1){ }
 	int time = 0;
-	int add_var(){
+	int add_variable(){
 		adj.emplace_back();
 		adj.emplace_back();
 		return n ++;
@@ -17,6 +17,13 @@ struct two_sat_solver{
 		adj[u].push_back(v ^ 1);
 		adj[v].push_back(u ^ 1);
 	}
+	void implies(int u, int v){
+		either(~u, v);
+	}
+	void one_of(int u, int v){
+		either(u, v);
+		either(~u, ~v);
+	}
 	void set_value(int u){
 		either(u, u);
 	}
@@ -24,7 +31,7 @@ struct two_sat_solver{
 		if((int)arr.size() <= 1) return;
 		int cur = ~arr[0];
 		for(auto u = 2; u < (int)arr.size(); ++ u){
-			int next = add_var();
+			int next = add_variable();
 			either(cur, ~arr[u]), either(cur, next), either(~arr[u], next);
 			cur = ~next;
 		}
