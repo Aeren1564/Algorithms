@@ -36,6 +36,8 @@ vector<vector<int>> count_rectangles_within_grid(const vector<vector<int>> &grid
 	for(auto x = 1; x <= n; ++ x) for(auto y = 1; y <= m; ++ y) cnt[x][y] += cnt[x - 1][y];
 	for(auto x = 1; x <= n; ++ x) for(auto y = 1; y <= m; ++ y) cnt[x][y] += cnt[x][y - 1];
 	for(auto x = 1; x <= n; ++ x) for(auto y = 1; y <= m; ++ y) cnt[x][y] += cnt[x - 1][y];
+	cnt.resize(n + 1);
+	for(auto x = 0; x <= n; ++ x) cnt[x].resize(m + 1);
 	return cnt;
 }
 ]]></content>

@@ -1,24 +1,39 @@
 <snippet>
 	<content><![CDATA[
 struct rollback_disjoint_set{
+	int n;
 	vector<int> p;
-	vector<pair<int, int>> log;
-	rollback_disjoint_set(int n): p(n, -1){ }
-	bool share(int a, int b){ return root(a) == root(b); }
-	int size(int u){ return -p[root(u)]; }
-	int root(int u){ return p[u] < 0 ? u : root(p[u]); } // O(log n)
+	vector<pair<int, int>> recover;
+	rollback_disjoint_set(int n): n(n), p(n, -1){ }
+	// O(log n)
+	int root(int u){
+		return p[u] < 0 ? u : root(p[u]);
+	}
+	// O(log n)
+	bool share(int a, int b){
+		return root(a) == root(b);
+	}
+	// O(log n)
+	int size(int u){
+		return -p[root(u)];
+	}
+	// O(log n)
 	bool merge(int u, int v){
 		u = root(u), v = root(v);
 		if(u == v) return false;
 		if(p[u] > p[v]) swap(u, v);
-		log.emplace_back(v, p[v]);
+		recover.emplace_back(v, p[v]);
 		p[u] += p[v], p[v] = u;
 		return true;
 	}
-	int time(){ return (int)log.size(); }
+	// O(1)
+	int time(){
+		return (int)log.size();
+	}
+	// O((size(recover) - t) * log n)
 	void reverse_to(int t = 0){
-		while((int)log.size() > t){
-			auto [v, pv] = log.back(); log.pop_back();
+		while((int)recover.size() > t){
+			auto [v, pv] = recover.back(); recover.pop_back();
 			p[p[v]] -= pv, p[v] = pv;
 		}
 	}

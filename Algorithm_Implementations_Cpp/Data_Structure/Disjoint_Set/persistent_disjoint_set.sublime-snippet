@@ -1,6 +1,6 @@
 <snippet>
 	<content><![CDATA[
-// from https://old.yosupo.jp/submission/38019
+// From https://old.yosupo.jp/submission/38019
 // Requires persistent_array
 struct persistent_disjoint_set{
 	explicit persistent_disjoint_set(persistent_array<int> par): p{move(par)}{ }
@@ -21,8 +21,12 @@ struct persistent_disjoint_set{
 		const optional<int> &par = p[x];
 		return !par || *par < 0 ? x : root(*par);
 	}
-	bool share(int x, int y) const { return root(x) == root(y); }
-	int size(int x) const{ return -(p[root(x)].value_or(-1)); }
+	bool share(int x, int y) const{
+		return root(x) == root(y);
+	}
+	int size(int x) const{
+		return -(p[root(x)].value_or(-1));
+	}
 private:
 	persistent_array<int> p;
 };

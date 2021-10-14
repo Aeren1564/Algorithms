@@ -1,11 +1,22 @@
 <snippet>
 	<content><![CDATA[
 struct disjoint_set{
+	int n;
 	vector<int> p;
-	disjoint_set(int n): p(n, -1){ }
-	bool share(int a, int b){ return root(a) == root(b); }
-	int size(int u){ return -p[root(u)]; }
-	int root(int u){ return p[u] < 0 ? u : p[u] = root(p[u]); } // O(alpha(n))
+	disjoint_set(int n): n(n), p(n, -1){ }
+	// Amortized O(alpha(n))
+	int root(int u){
+		return p[u] < 0 ? u : p[u] = root(p[u]);
+	}
+	// Amortized O(alpha(n))
+	bool share(int a, int b){
+		return root(a) == root(b);
+	}
+	// Amortized O(alpha(n))
+	int size(int u){
+		return -p[root(u)];
+	}
+	// Amortized O(alpha(n))
 	bool merge(int u, int v){
 		u = root(u), v = root(v);
 		if(u == v) return false;
@@ -13,12 +24,14 @@ struct disjoint_set{
 		p[u] += p[v], p[v] = u;
 		return true;
 	}
+	// O(n)
 	void clear(){
 		fill(p.begin(), p.end(), -1);
 	}
+	// O(n)
 	vector<vector<int>> group_up(){
-		vector<vector<int>> g((int)p.size());
-		for(auto i = 0; i < (int)p.size(); ++ i) g[root(i)].push_back(i);
+		vector<vector<int>> g(n);
+		for(auto i = 0; i < n; ++ i) g[root(i)].push_back(i);
 		g.erase(remove_if(g.begin(), g.end(), [&](auto &s){ return s.empty(); }), g.end());
 		return g;
 	}
