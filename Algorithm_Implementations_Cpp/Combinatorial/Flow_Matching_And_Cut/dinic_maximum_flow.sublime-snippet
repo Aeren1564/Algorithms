@@ -60,13 +60,12 @@ struct dinic_maximum_flow{
 		return F.flow;
 	}
 	// Find a minimum source-sink cut
-	// res[u] = [0 if u belongs to source-side, otherwise 1]
 	// O(V^2 E) ( O(E min(V^2/3, E^1/2)) for unit network )
-	pair<T, vector<bool>> minimum_cut(int source, int sink){
-		T cut = maximum_flow(source, sink);
-		vector<bool> res(F.n);
-		for(auto i = 0; i < F.n; ++ i) res[i] = !!~level[i];
-		return {cut, res};
+	auto minimum_cut(int source, int sink){
+		T cut_weight = maximum_flow(source, sink);
+		vector<int> left, right;
+		for(auto u = 0; u < F.n; ++ u) (!~level[u] ? left : right).push_back(u);
+		return tuple{cut_weight, left, right};
 	}
 };
 ]]></content>
