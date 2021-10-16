@@ -27,9 +27,33 @@ ostream &print_string(ostream &out, const Head &H, const Tail &...T){
 	for(auto i = 0; i < (int)H.size(); ++ i) temp[i] = inverse_character_converter<Type>(H[i]);
 	return print_string<Type>(out << temp << " ", T...);
 }
+template<class Char_Type>
+vector<Char_Type> &append(vector<Char_Type> &s){
+	return s;
+}
+template<class Char_Type, class Head, class... Tail>
+vector<Char_Type> &append(vector<Char_Type> &s, const Head &H, const Tail &... T){
+	if constexpr(is_same<Char_Type, Head>::value) s.push_back(H);
+	else s.insert(s.end(), H.begin(), H.end());
+	return append(s, T...);
+}
+template<class Char_Or_String_Type>
+Char_Or_String_Type concat(Char_Or_String_Type s){
+	return s;
+}
+template<class Char_Type, class... Tail>
+vector<Char_Type> concat(const vector<Char_Type> &s, const Tail &... T){
+	vector<Char_Type> res = s;
+	return append(res, T...);
+}
+template<class Char_Type, class... Tail>
+Char_Type concat(Char_Type s, const Tail &... T){
+	vector<Char_Type> res{s};
+	return append(res, T...);
+}
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
-	<tabTrigger>string_io</tabTrigger> -->
+	<tabTrigger>string_processor</tabTrigger> -->
 	<!-- Optional: Set a scope to limit where the snippet will trigger -->
 	<scope>source.c++</scope> -->
 </snippet>

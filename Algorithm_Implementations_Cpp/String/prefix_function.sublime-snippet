@@ -1,7 +1,7 @@
 <snippet>
 	<content><![CDATA[
-// p[i]: largest proper suffix(prefix if rev) ending(starting if rev) at i
-// that is also a prefix(suffix if rev)
+// p[i]: largest proper suffix(prefix if Reverse) ending(starting if Reverse) at i
+// that is also a prefix(suffix if Reverse)
 // O(n)
 template<class Char_Type, bool Reverse = false>
 vector<int> prefix_function(vector<Char_Type> s){

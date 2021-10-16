@@ -7,7 +7,7 @@
 template<class Char_Type, int Lim>
 pair<vector<int>, vector<array<int, Lim>>> prefix_automaton(const vector<Char_Type> &s){
 	int n = (int)s.size() + 1;
-	auto p = prefix_function<false, Char_Type>(s);
+	auto p = prefix_function<Char_Type, false>(s);
 	vector<array<int, Lim>> aut(n);
 	for(auto i = 0; i < n; ++ i) for(auto c = 0; c < Lim; ++ c){
 		if(i > 0 && (i == n - 1 || c != s[i])) aut[i][c] = aut[p[i - 1]][c];

@@ -1,11 +1,10 @@
 <snippet>
 	<content><![CDATA[
-// z[i]: largest prefix(suffix if rev) starting(ending if rev) at i
-// that is also a proper prefix(suffix if rev)
+// z[i]: largest prefix(suffix if Reverse) starting(ending if Reverse) at i that is also a proper prefix(suffix if Reverse)
 // O(n)
-template<class Char_Type>
-vector<int> z_function(vector<Char_Type> s, bool rev = false){
-	if(rev) reverse(s.begin(), s.end());
+template<class Char_Type, bool Reverse = false>
+vector<int> z_function(vector<Char_Type> s){
+	if(Reverse) reverse(s.begin(), s.end());
 	int n = (int)s.size();
 	vector<int> z(n);
 	for(auto i = 1, j = 0; i < n; ++ i){
@@ -13,7 +12,7 @@ vector<int> z_function(vector<Char_Type> s, bool rev = false){
 		while(i + z[i] < n && s[z[i]] == s[i + z[i]]) ++ z[i];
 		if(i + z[i] > j + z[j]) j = i;
 	}
-	if(rev) reverse(z.begin(), z.end());
+	if(Reverse) reverse(z.begin(), z.end());
 	return z;
 }
 ]]></content>
