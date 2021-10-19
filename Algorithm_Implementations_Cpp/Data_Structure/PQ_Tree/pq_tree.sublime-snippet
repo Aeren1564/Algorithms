@@ -249,6 +249,15 @@ struct pq_tree{
 		};
 		return dfs(dfs, 0);
 	}
+	vector<int> frontier() const{
+		vector<int> order;
+		auto dfs = [&](auto self, int u)->void{
+			if(adj[u].empty()) order.push_back(data[u]);
+			for(auto v: adj[u]) self(self, v);
+		};
+		dfs(dfs, 0);
+		return order;
+	}
 };
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
