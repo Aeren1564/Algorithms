@@ -1,0 +1,258 @@
+<snippet>
+	<content><![CDATA[
+// Implmemtation of https://www.sciencedirect.com/science/article/pii/S0022000076800451
+struct pq_tree{
+	int n;
+	bool is_null_tree = false;
+	vector<vector<int>> adj;
+	/*
+		For internal nodes, data indicates whether current node is P node(stores 0) or Q node(stores 1).
+		For leaf nodes, data represents the value
+	*/
+	vector<int> data;
+	pq_tree(int n): n(n), adj(n + 1), data(n + 1), label(n + 1), in_s(n){
+		adj[0].resize(n);
+		iota(adj[0].begin(), adj[0].end(), 1);
+		iota(data.begin() + 1, data.end(), 0);
+	}
+	operator bool(){
+		return !is_null_tree;
+	}
+	int new_node(int type, int state){
+		adj.emplace_back();
+		data.push_back(type);
+		label.push_back(state);
+		return (int)adj.size() - 1;
+	}
+	/*
+		Label
+		0: empty
+		1: full
+		2: singly partial
+		3: doubly partial
+	*/
+	vector<int> label, in_s;
+	// O(n^2)
+	bool reduce(const vector<int> &s){
+		if(is_null_tree) return false;
+		if((int)s.size() == 1) return true;
+		fill(in_s.begin(), in_s.end(), false);
+		for(auto x: s) in_s[x] = true;
+		bool done = false;
+		auto dfs = [&](auto self, int u)->int{
+			if(adj[u].empty()){
+				// Leaf node
+				return label[u] = in_s[data[u]];
+			}
+			int deg = (int)adj[u].size(), pertinence = 0;
+			array<int, 4> count{};
+			for(auto v: adj[u]){
+				pertinence += self(self, v);
+				if(is_null_tree || done) return 0;
+				++ count[label[v]];
+			}
+			bool is_root = pertinence == (int)s.size();
+			if(data[u] == 0){
+				// P node
+				if(count[0] == deg){
+					// Template P0
+					label[u] = 0;
+				}
+				else if(count[1] == deg){
+					// Template P1
+					label[u] = 1;
+				}
+				else if(count[0] + count[1] == deg){
+					if(is_root){
+						// Template P2
+						int u2 = new_node(0, 1);
+						auto it = partition(adj[u].begin(), adj[u].end(), [&](int v){ return label[v] == 0; });
+						adj[u2].insert(adj[u2].end(), it, adj[u].end());
+						adj[u].erase(it, adj[u].end());
+						adj[u].push_back(u2);
+					}
+					else{
+						// Template P3
+						array<int, 2> v;
+						for(auto t = 0; t < 2; ++ t){
+							if(count[t] == 1){
+								v[t] = *find_if(adj[u].begin(), adj[u].end(), [&](int v){ return label[v] == t; });
+							}
+							else{
+								v[t] = new_node(0, t);
+								auto it = partition(adj[u].begin(), adj[u].end(), [&](int v){ return label[v] != t; });
+								adj[v[t]].insert(adj[v[t]].end(), it, adj[u].end());
+							}
+						}
+						adj[u] = {v[0], v[1]};
+						data[u] = 1;
+						label[u] = 2;
+					}
+				}
+				else if(count[2] + 2 * count[3] == 1){
+					if(is_root){
+						// Template P4
+						if(auto it = partition(adj[u].begin(), adj[u].end(), [&](int v){ return label[v] != 1; }); adj[u].end() - it >= 2){
+							int u2 = new_node(0, 1);
+							adj[u2].insert(adj[u2].end(), it, adj[u].end());
+							adj[u].erase(it, adj[u].end());
+							for(auto v: adj[u]){
+								if(label[v] == 2){
+									if(label[adj[v].back()] != 1) reverse(adj[v].begin(), adj[v].end());
+									adj[v].push_back(u2);
+									break;
+								}
+							}
+						}
+						else if(adj[u].end() - it == 1){
+							int u2 = adj[u].back();
+							adj[u].pop_back();
+							for(auto v: adj[u]){
+								if(label[v] == 2){
+									if(label[adj[v].back()] != 1) reverse(adj[v].begin(), adj[v].end());
+									adj[v].push_back(u2);
+									break;
+								}
+							}
+						}
+						if(count[0] == 0){
+							int v = adj[u][0];
+							adj[u] = adj[v];
+							adj[v].clear();
+							data[u] = 1;
+							label[u] = 2;
+						}
+					}
+					else{
+						// Template P5
+						array<int, 2> v{-1, -1};
+						for(auto t = 0; t < 2; ++ t){
+							if(count[t] == 1) v[t] = *find_if(adj[u].begin(), adj[u].end(), [&](int v){ return label[v] == t; });
+							else if(count[t] >= 2){
+								v[t] = new_node(0, t);
+								for(auto w: adj[u]) if(label[w] == t) adj[v[t]].push_back(w);
+							}
+						}
+						int pu = *find_if(adj[u].begin(), adj[u].end(), [&](int v){ return label[v] == 2; });
+						if(label[adj[pu][0]]) reverse(adj[pu].begin(), adj[pu].end());
+						adj[u].clear();
+						if(~v[0]) adj[u].push_back(v[0]);
+						adj[u].insert(adj[u].end(), adj[pu].begin(), adj[pu].end());
+						if(~v[1]) adj[u].push_back(v[1]);
+						data[u] = 1;
+						label[u] = 2;
+					}
+				}
+				else if(count[2] + 2 * count[3] == 2 && is_root){
+					// Template P6
+					if(count[2] == 2){
+						int v = -1;
+						if(count[1] == 1){
+							auto it = find_if(adj[u].begin(), adj[u].end(), [&](int v){ return label[v] == 1; });
+							v = *it;
+							adj[u].erase(it);
+						}
+						else if(count[1] >= 2){
+							v = new_node(0, 1);
+							auto it = partition(adj[u].begin(), adj[u].end(), [&](int v){ return label[v] != 1; });
+							adj[v].insert(adj[v].end(), it, adj[u].end());
+							adj[u].erase(it, adj[u].end());
+						}
+						array<int, 2> w;
+						auto it = find_if(adj[u].begin(), adj[u].end(), [&](int v){ return label[v] == 2; });
+						w[0] = *it;
+						it = find_if(next(it), adj[u].end(), [&](int v){ return label[v] == 2; });
+						w[1] = *it;
+						if(label[adj[w[0]][0]] != 0) reverse(adj[w[0]].begin(), adj[w[0]].end());
+						if(~v) adj[w[0]].push_back(v);
+						if(label[adj[w[1]][0]] != 1) reverse(adj[w[1]].begin(), adj[w[1]].end());
+						adj[w[0]].insert(adj[w[0]].end(), adj[w[1]].begin(), adj[w[1]].end());
+						adj[w[1]].clear();
+						adj[u].erase(it);
+						count[1] = 0;
+					}
+					if(count[1]) is_null_tree = true;
+				}
+				else is_null_tree = true;
+			}
+			else{
+				// Q node
+				if(count[0] == deg){
+					// Template Q0
+					label[u] = 0;
+				}
+				else if(count[1] == deg){
+					// Template Q1
+					label[u] = 1;
+				}
+				else{
+					if(label[adj[u].back()] == 0) reverse(adj[u].begin(), adj[u].end());
+					if(label[adj[u].front()] != 0 && label[adj[u].back()] == 2) reverse(adj[u].begin(), adj[u].end());
+					int i = 0;
+					while(label[adj[u][i]] == 0) ++ i;
+					int j;
+					if(label[adj[u][i]] == 3) j = i;
+					else{
+						j = i + 1;
+						while(j < deg && label[adj[u][j]] == 1) ++ j;
+					}
+					if(j == deg){
+						// Template Q2
+						if(label[adj[u][i]] == 2){
+							int v = adj[u][i];
+							auto it = adj[u].erase(adj[u].begin() + i);
+							if(label[adj[v][0]] != 0) reverse(adj[v].begin(), adj[v].end());
+							adj[u].insert(it, adj[v].begin(), adj[v].end());
+							adj[v].clear();
+						}
+						label[u] = 2;
+					}
+					else{
+						int k = j + 1;
+						while(k < deg && label[adj[u][k]] == 0) ++ k;
+						if(k == deg && is_root){
+							// Template Q3
+							if(i < j && label[adj[u][j]] == 2){
+								int v = adj[u][j];
+								auto it = adj[u].erase(adj[u].begin() + j);
+								if(label[adj[v].front()] == 0) reverse(adj[v].begin(), adj[v].end());
+								adj[u].insert(it, adj[v].begin(), adj[v].end());
+								adj[v].clear();
+							}
+							if(label[adj[u][i]] >= 2){
+								int v = adj[u][i];
+								auto it = adj[u].erase(adj[u].begin() + i);
+								if(label[adj[v].back()] == 0) reverse(adj[v].begin(), adj[v].end());
+								adj[u].insert(it, adj[v].begin(), adj[v].end());
+								adj[v].clear();
+							}
+						}
+						else is_null_tree = true;
+					}
+				}
+			}
+			if(is_root) done = true;
+			return pertinence;
+		};
+		dfs(dfs, 0);
+		return !is_null_tree;
+	}
+	template<class T>
+	T count_permutation() const{
+		if(is_null_tree) return 0;
+		vector<T> fact(n + 1, 1);
+		for(auto x = 1; x <= n; ++ x) fact[x] = fact[x - 1] * x;
+		auto dfs = [&](auto self, int u)->T{
+			T res = adj[u].empty() ? 1 : data[u] ? 2 : fact[(int)adj[u].size()];
+			for(auto v: adj[u]) res *= self(self, v);
+			return res;
+		};
+		return dfs(dfs, 0);
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>pq_tree</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
