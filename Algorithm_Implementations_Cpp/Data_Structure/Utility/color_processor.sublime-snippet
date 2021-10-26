@@ -1,13 +1,17 @@
 <snippet>
 	<content><![CDATA[
-template<class B, class C> // coordinate type, color type
+// B: coordinate type, C: color type
+template<class B, class C>
 struct color_processor{
 	map<array<B, 2>, C> intervals;
 	color_processor(C initial_color = {}): intervals({{{numeric_limits<B>::min(), numeric_limits<B>::max()}, initial_color}}){ }
 	auto belongs(B p){
 		return prev(intervals.upper_bound({p, numeric_limits<B>::max()}));
 	}
-	void paint(B l, B r, C c, auto process){ // paint the range [l, r) with the color c, amortized O(1) process calls
+	// Cover the range [l, r) with the color c
+	// process(l, r, pc): color of range [l, r) is changed from pc to c
+	// Amortized O(1) process calls
+	void cover(B l, B r, C c, auto process){
 		array<B, 2> I{l, l};
 		auto it = intervals.lower_bound(I);
 		if(it != intervals.begin() && l < prev(it)->first[1]){
@@ -23,11 +27,34 @@ struct color_processor{
 				intervals.insert({{r, x.first[1]}, x.second});
 			}
 			process(max(l, it->first[0]), min(r, it->first[1]), it->second);
-			// process(l, r, pc): color of range [l, r) is changed from pc to c
 			I = {min(I[0], it->first[0]), max(I[1], it->first[1])};
 			it = intervals.erase(it);
 		}
 		intervals.insert({I, c});
+	}
+	void cover(B l, B r, C c){
+		cover(l, r, c, [&](B, B, C){  });
+	}
+	// new_color(l, r, c): returns the new color for the range [l, r), previously colored with c
+	// O(Number of color ranges affected)
+	void recolor(B l, B r, auto new_color){
+		auto left = intervals.lower_bound({l, l});
+		if(l < left->first[0]){
+			-- left;
+			auto [range, c] = *left;
+			left = intervals.erase(left);
+			left = intervals.insert(left, {{range[0], l}, c});
+			left = intervals.insert(left, {{l, range[1]}, c});
+		}
+		auto right = intervals.lower_bound({r, r});
+		if(r < right->first[0]){
+			-- right;
+			auto [range, c] = *right;
+			right = intervals.erase(right);
+			right = intervals.insert(right, {{range[0], r}, c});
+			right = intervals.insert(right, {{r, range[1]}, c});
+		}
+		for(auto it = left; it != right; ++ it) it->second = new_color(it->first[0], it->first[1], it->second);
 	}
 };
 ]]></content>
