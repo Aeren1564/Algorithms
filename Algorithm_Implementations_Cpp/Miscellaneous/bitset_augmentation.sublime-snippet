@@ -39,12 +39,8 @@ template<size_t _Nw> bool _Do_compare(const _Base_bitset<_Nw> &x, const _Base_bi
 	for(int i = _Nw - 1; i >= 0; -- i) if(x._M_w[i] != y._M_w[i]) return type < 2 ? x._M_w[i] < y._M_w[i] : x._M_w[i] > y._M_w[i];
 	return type & 1;
 }
-bool _Do_compare(const _Base_bitset<1> &x, const _Base_bitset<1> &y, int type){
-	return x._M_w != y._M_w ? type < 2 ? x._M_w < y._M_w : x._M_w > y._M_w : type & 1;
-}
-bool _Do_compare(const _Base_bitset<0> &x, const _Base_bitset<0> &y, int type){
-	return type & 1;
-}
+bool _Do_compare(const _Base_bitset<1> &x, const _Base_bitset<1> &y, int type){ return x._M_w != y._M_w ? type < 2 ? x._M_w < y._M_w : x._M_w > y._M_w : type & 1; }
+bool _Do_compare(const _Base_bitset<0> &x, const _Base_bitset<0> &y, int type){ return type & 1; }
 #define Compare_Op(op, type) \
 template<size_t _Nb> bool operator op(const bitset<_Nb> &x, const bitset<_Nb> &y){ \
 	return _Do_compare(x, y, type); \
@@ -61,12 +57,8 @@ template<size_t _Nw> int _M_do_find_last(const _Base_bitset<_Nw> &x, int __not_f
 	}
 	return __not_found;
 }
-int _M_do_find_last(const _Base_bitset<1> &x, int __not_found){
-	return x._M_w ? __lg(x._M_w) : __not_found;
-}
-int _M_do_find_last(const _Base_bitset<0> &x, int __not_found){
-	return __not_found;
-}
+int _M_do_find_last(const _Base_bitset<1> &x, int __not_found){ return x._M_w ? __lg(x._M_w) : __not_found; }
+int _M_do_find_last(const _Base_bitset<0> &x, int __not_found){ return __not_found; }
 template<size_t _Nw> int _M_do_find_prev(const _Base_bitset<_Nw> &x, int next, int __not_found){
 	-- next;
 	if(next < 0) return __not_found;
@@ -84,9 +76,7 @@ int _M_do_find_prev(const _Base_bitset<1> &x, int next, int __not_found){
 	auto __x = x._M_w << _GLIBCXX_BITSET_BITS_PER_WORD - 1 - next;
 	return __x ? __lg(__x) + next - _GLIBCXX_BITSET_BITS_PER_WORD + 1 : __not_found;
 }
-int _M_do_find_prev(const _Base_bitset<0> &x, int next, int __not_found){
-	return __not_found;
-}
+int _M_do_find_prev(const _Base_bitset<0> &x, int next, int __not_found){ return __not_found; }
 template<size_t _Nb> int _Find_last(const bitset<_Nb> &x){ return _M_do_find_last(x, -1); }
 template<size_t _Nb> int _Find_prev(const bitset<_Nb> &x, int next){ return _M_do_find_prev(x, next, -1); }
 #undef _GLIBCXX_BITSET_BITS_PER_WORD
