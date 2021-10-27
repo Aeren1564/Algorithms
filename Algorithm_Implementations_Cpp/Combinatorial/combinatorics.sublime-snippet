@@ -55,11 +55,12 @@ struct combinatorics{
 	bool parity_C(long long n, long long k) const{
 		return n < k ? 0 : (n & k) == k;
 	}
-	// \Sum_{i_0 + i_1 + \cdots + i_(k-1) = n} \Product_{j=0}^{k-1} C_{i_j}
+	// Number of ways to place n '('s and k ')'s starting with m copies of '(' such that in each prefix, number of '(' is equal or greater than ')'
+	// Catalan(n, n, 0): n-th catalan number
 	// O(1)
-	T Catalan(int n, int k = 1) const{
-		assert(0 <= n && 0 <= k);
-		return k ? C(2 * n + k - 1, n) * k * fact[n + k - 1] * invfact[n + k] : !n;
+	T Catalan(int n, int k, int m = 0) const{
+		assert(0 <= min({n, k, m}));
+		return k <= m ? C(n + k, n) : k <= n + m ? C(n + k, n) - C(n + k, k - m - 1) : 0;
 	}
 };
 ]]></content>
