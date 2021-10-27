@@ -40,7 +40,7 @@ ostream &operator<<(ostream &out, __uint128_t x){
 }
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
-	<tabTrigger>configure_int128</tabTrigger> -->
+	<tabTrigger>int128_augmentation</tabTrigger> -->
 	<!-- Optional: Set a scope to limit where the snippet will trigger -->
 	<scope>source.c++</scope> -->
 </snippet>
