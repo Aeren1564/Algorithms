@@ -16,6 +16,7 @@ struct counting_iterator{
 	counting_iterator &operator++(){ return ++ value, *this; }
 	counting_iterator &operator--(){ return -- value, *this; }
 	counting_iterator &operator+=(const T &x){ return value += x, *this; }
+	bool operator==(const counting_iterator &otr) const{ return value == otr.value; }
 };
 using iterint = counting_iterator<int>;
 using iterll = counting_iterator<long long>;
