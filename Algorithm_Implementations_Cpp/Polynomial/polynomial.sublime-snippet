@@ -1,8 +1,7 @@
 <snippet>
 	<content><![CDATA[
-
 // O(n log n)
-// Requires number_theoric_transform
+// Requires number_theoric_transform and convolute_ntt
 template<class T>
 vector<T> operator*(const vector<T> &p, const vector<T> &q){
 	return convolute_ntt(p, q);
@@ -10,7 +9,7 @@ vector<T> operator*(const vector<T> &p, const vector<T> &q){
 
 /*
 // O(n log n)
-// Requires fast_fourier_transform
+// Requires fast_fourier_transform and convolute_integral
 template<class T>
 vector<T> operator*(const vector<T> &p, const vector<T> &q){
 	return convolute_integral(p, q);
