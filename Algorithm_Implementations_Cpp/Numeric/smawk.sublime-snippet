@@ -1,12 +1,14 @@
 <snippet>
 	<content><![CDATA[
-template<class T, class Compare = less<>> // http://web.cs.unlv.edu/larmore/Courses/CSC477/monge.pdf
-vector<int> smawk(function<T(int, int)> C, int n, int m, Compare comp = less<>()){
-	// find the row minima in O(n + m)
-	// The matrix has to be monotonic (for all i<j and k<l, a[j][k] = a[j][l] -> a[i][k] <= a[i][l] && a[j][k] < a[j][l] -> a[i][k] < a[i][l])
+// http://web.cs.unlv.edu/larmore/Courses/CSC477/monge.pdf
+// Find the row minima in O(n + m)
+// The matrix has to be monotonic (for all i<j and k<l, a[j][k] = a[j][l] -> a[i][k] <= a[i][l] and a[j][k] < a[j][l] -> a[i][k] < a[i][l])
+// Returns the indices of minimum column for each row
+template<class M, class T, class Compare = less<>>
+vector<int> smawk(M matrix, int n, int m, Compare comp = less<>()){
 	if(!n) return {};
-	function<vector<int>(const vector<int> &, const vector<int> &)> solve = [&](const vector<int> &row, const vector<int> &col){
-		if((int)row.size() == 1) return vector<int>{*min_element(col.begin(), col.end(), [&](int j, int k){ return comp(C(row[0], j), C(row[0], k)); })};
+	auto solve = [&](auto self, const vector<int> &row, const vector<int> &col)->vector<int>{
+		if((int)row.size() == 1) return vector<int>{*min_element(col.begin(), col.end(), [&](int j, int k){ return comp(matrix(row[0], j), matrix(row[0], k)); })};
 		if(row.size() < col.size()){ // Reduce
 			vector<array<int, 2>> s; // its head(position in row arrow), active column
 			for(auto j: col){
@@ -16,7 +18,7 @@ vector<int> smawk(function<T(int, int)> C, int n, int m, Compare comp = less<>()
 						break;
 					}
 					auto [i, last] = s.back();
-					if(!comp(C(row[i], last), C(row[i], j))) s.pop_back();
+					if(!comp(matrix(row[i], last), matrix(row[i], j))) s.pop_back();
 					else{
 						++ i;
 						if(i < (int)row.size()) s.push_back({i, j});
@@ -26,18 +28,18 @@ vector<int> smawk(function<T(int, int)> C, int n, int m, Compare comp = less<>()
 			}
 			vector<int> reduced_col((int)s.size());
 			for(int i = 0; i < (int)s.size(); ++ i) reduced_col[i] = s[i][1];
-			return solve(row, reduced_col);
+			return self(self, row, reduced_col);
 		}
 		else{ // Interpolate
 			vector<int> reduced_row((int)row.size() / 2), res((int)row.size());
 			for(auto i = 1; i < (int)row.size(); i += 2) reduced_row[i >> 1] = row[i];
-			auto reduced_res = solve(reduced_row, col);
+			auto reduced_res = self(self, reduced_row, col);
 			for(auto i = 0, it = 0; i < (int)row.size(); ++ i){
 				if(~i & 1){
 					int last = i < (int)row.size() - 1 ? reduced_res[i >> 1] : col.back(), mincol = col[it];
 					while(col[it] < last){
 						++ it;
-						if(comp(C(row[i], col[it]), C(row[i], mincol))) mincol = col[it];
+						if(comp(matrix(row[i], col[it]), matrix(row[i], mincol))) mincol = col[it];
 					}
 					res[i] = mincol;
 				}
@@ -48,7 +50,7 @@ vector<int> smawk(function<T(int, int)> C, int n, int m, Compare comp = less<>()
 	};
 	vector<int> row(n), col(m);
 	iota(row.begin(), row.end(), 0), iota(col.begin(), col.end(), 0);
-	return solve(row, col); // returns indices of minimum column for each row
+	return solve(solve, row, col);
 }
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
