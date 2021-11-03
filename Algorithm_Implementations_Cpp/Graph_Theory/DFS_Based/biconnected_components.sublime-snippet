@@ -1,7 +1,8 @@
 <snippet>
 	<content><![CDATA[
 // Requires graph
-template<class T> // O(V + E)
+// O(|V| + |E|)
+template<class T>
 void biconnected_components(const graph<T> &g, auto act_comp, auto act_bridge){
 	int n = g.n, it = 0;
 	vector<int> pos(n), s;
