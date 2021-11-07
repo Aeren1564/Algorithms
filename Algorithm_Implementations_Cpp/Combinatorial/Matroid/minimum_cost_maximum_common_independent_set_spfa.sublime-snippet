@@ -17,16 +17,20 @@ template<class T, class M1, class M2>
 vector<int> minimum_cost_maximum_common_independent_set_spfa(const vector<T> &cost, M1 m1, M2 m2){
 	int n = (int)cost.size();
 	vector<bool> flag(n);
+	vector<pair<T, int>> dist(n + 1);
+	vector<vector<pair<int, T>>> adj(n + 1);
+	vector<int> pv(n + 1), in_queue(n + 1);
+	deque<int> dq;
 	auto augment = [&]()->bool{
-		vector<pair<T, int>> dist(n + 1, {numeric_limits<T>::max() / 2, 0});
-		vector<vector<pair<int, T>>> adj(n + 1);
-		vector<int> pv(n + 1, -1);
-		queue<int> q;
-		vector<bool> in_queue(n + 1, false);
+		fill(dist.begin(), dist.end(), pair{numeric_limits<T>::max() / 2, 0});
+		fill(adj.begin(), adj.end(), vector<pair<int, T>>{});
+		fill(pv.begin(), pv.end(), -1);
+		dq.clear();
+		fill(in_queue.begin(), in_queue.end(), false);
 		m1.clear(), m2.clear();
 		for(auto u = 0; u < n; ++ u) if(flag[u]) m1.insert(u), m2.insert(u);
 		for(auto u = 0; u < n; ++ u) if(!flag[u]){
-			if(m1.check(u)) dist[pv[u] = u] = {cost[u], 0}, q.push(u), in_queue[u] = true;
+			if(m1.check(u)) dist[pv[u] = u] = {cost[u], 0}, dq.push_back(u), in_queue[u] = true;
 			if(m2.check(u)) adj[u].push_back({n, 0});
 		}
 		for(auto u = 0; u < n; ++ u) if(flag[u]){
@@ -37,12 +41,13 @@ vector<int> minimum_cost_maximum_common_independent_set_spfa(const vector<T> &co
 				if(m2.check(v)) adj[v].push_back({u, -cost[u]});;
 			}
 		}
-		while(!q.empty()){
-			int u = q.front(); q.pop();
+		while(!dq.empty()){
+			int u = dq.front();
+			dq.pop_front();
 			in_queue[u] = false;
 			for(auto [v, w]: adj[u]) if(pair<T, int> dist_next{dist[u].first + w, dist[u].second + 1}; dist_next < dist[v]){
 				dist[v] = dist_next, pv[v] = u;
-				if(!in_queue[v]) q.push(v), in_queue[v] = true;
+				if(!in_queue[v]) dq.push_back(v), in_queue[v] = true;
 			}
 		}
 		if(!~pv[n]) return false;

@@ -18,7 +18,9 @@ struct colorful_matroid{
 struct graphic_matroid{
 	disjoint_set dsu;
 	vector<array<int, 2>> e;
-	graphic_matroid(int n, const vector<array<int, 2>> &e): dsu(n), e(e){ }
+	vector<int> init_state;
+	graphic_matroid(int n, const vector<array<int, 2>> &e): dsu(n), e(e), init_state(n, -1){ }
+	graphic_matroid(int n, const vector<array<int, 2>> &e, const vector<int> &init_state): dsu(n), e(e), init_state(init_state){ }
 	bool check(int i){
 		return !dsu.share(e[i][0], e[i][1]);
 	}
@@ -26,7 +28,7 @@ struct graphic_matroid{
 		dsu.merge(e[i][0], e[i][1]);
 	}
 	void clear(){
-		dsu = {(int)dsu.p.size()};
+		dsu.p = init_state;
 	}
 };
 struct Z2_linear_matroid{
@@ -49,16 +51,16 @@ struct Z2_linear_matroid{
 	}
 };
 struct partition_matroid{
-	vector<int> cnt, group, limit;
-	partition_matroid(const vector<int> &group, const vector<int> &limit): cnt((int)limit.size()), group(group), limit(limit){ }
+	vector<int> rem, group, limit;
+	partition_matroid(const vector<int> &group, const vector<int> &limit): rem(limit), group(group), limit(limit){ }
 	bool check(int i){
-		return cnt[group[i]] < limit[group[i]];
+		return rem[group[i]];
 	}
 	void insert(int i){
-		++ cnt[group[i]];
+		-- rem[group[i]];
 	}
 	void clear(){
-		fill(cnt.begin(), cnt.end(), 0);
+		rem = limit;
 	}
 };
 // Skeleton of oracle

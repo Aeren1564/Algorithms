@@ -1,0 +1,34 @@
+<snippet>
+	<content><![CDATA[
+// https://codeforces.com/blog/entry/90690
+// Returns min x s.t. l <= a * x % m <= r (or numeric_limits<T>::max() if no such solutions)
+// O(log min(m, a))
+template<class T>
+T find_first_residue(T m, T a, T l, T r){
+	l = clamp<T>(l, 0, m - 1), r = clamp<T>(r, 0, m - 1);
+	if(l == 0) return 0;
+	a %= m;
+	T res = 0, s1 = 1, s2 = 0;
+	while(a){
+		if(2 * a > m){
+			a = m - a, l = m - l, r = m - r;
+			swap(l, r);
+			res += s2, s1 -= s2, s2 *= -1;
+		}
+		T ff = (l + a - 1) / a;
+		if(a * ff <= r) return res + ff * s1;
+		res += (ff - 1) * s1, ff = (ff - 1) * a, l -= ff, r -= ff;
+		T z = (m + a - 1) / a;
+		s2 = s1 * z - s2;
+		swap(s1, s2);
+		m = z * a - m;
+		swap(a, m);
+	}
+	return numeric_limits<T>::max();
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>find_first_residue</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

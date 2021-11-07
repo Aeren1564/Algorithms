@@ -17,10 +17,13 @@ template<class T, class M1, class M2>
 vector<int> minimum_cost_maximum_common_independent_set_bellman_ford(const vector<T> &cost, M1 m1, M2 m2){
 	int n = (int)cost.size();
 	vector<bool> flag(n);
+	vector<pair<T, int>> dist(n + 1);
+	vector<tuple<int, int, T>> edge;
+	vector<int> pv(n + 1);
 	auto augment = [&]()->bool{
-		vector<pair<T, int>> dist(n + 1, {numeric_limits<T>::max() / 2, 0});
-		vector<tuple<int, int, T>> edge;
-		vector<int> pv(n + 1, -1);
+		fill(dist.begin(), dist.end(), pair{numeric_limits<T>::max() / 2, 0});
+		edge.clear();
+		fill(pv.begin(), pv.end(), -1);
 		m1.clear(), m2.clear();
 		for(auto u = 0; u < n; ++ u) if(flag[u]) m1.insert(u), m2.insert(u);
 		for(auto u = 0; u < n; ++ u) if(!flag[u]){
