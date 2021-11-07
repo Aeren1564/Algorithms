@@ -24,6 +24,15 @@ struct disjoint_set{
 		p[u] += p[v], p[v] = u;
 		return true;
 	}
+	// Amortized O(alpha(n))
+	bool merge(int u, int v, auto act){
+		u = root(u), v = root(v);
+		if(u == v) return false;
+		if(p[u] > p[v]) swap(u, v);
+		p[u] += p[v], p[v] = u;
+		act(u, v);
+		return true;
+	}
 	// O(n)
 	void clear(){
 		fill(p.begin(), p.end(), -1);
