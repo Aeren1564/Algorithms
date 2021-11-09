@@ -15,7 +15,7 @@
 // Requires matroid
 template<class M1, class M2>
 vector<int> maximum_common_independent_set(int n, M1 m1, M2 m2){
-	vector<bool> flag(n);
+	vector<int> flag(n);
 	for(auto u = 0; u < n; ++ u) if(m1.check(u) && m2.check(u)) flag[u] = true, m1.insert(u), m2.insert(u);
 	auto augment = [&]()->bool{
 		vector<int> pv(n, -1);
