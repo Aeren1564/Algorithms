@@ -28,8 +28,8 @@ struct modular_base{
 	template<typename U = T>
 	typename enable_if<is_same<typename modular_base<U>::Type, int>::value, modular_base>::type &operator*=(const modular_base& rhs){
 		#ifdef _WIN32
-		uint64_t x = static_cast<int64_t>(value) * static_cast<int64_t>(rhs.value);
-		uint32_t xh = static_cast<uint32_t>(x >> 32), xl = static_cast<uint32_t>(x), d, m;
+		unsigned long long x = static_cast<long long>(value) * static_cast<long long>(rhs.value);
+		unsigned int xh = static_cast<unsigned int>(x >> 32), xl = static_cast<unsigned int>(x), d, m;
 		asm(
 			"divl %4; \n\t"
 			: "=a" (d), "=d" (m)
@@ -37,13 +37,13 @@ struct modular_base{
 		);
 		value = m;
 		#else
-		value = normalize(static_cast<int64_t>(value) * static_cast<int64_t>(rhs.value));
+		value = normalize(static_cast<long long>(value) * static_cast<long long>(rhs.value));
 		#endif
 		return *this;
 	}
 	template<typename U = T>
-	typename enable_if<is_same<typename modular_base<U>::Type, int64_t>::value, modular_base>::type &operator*=(const modular_base &rhs){
-		int64_t q = static_cast<int64_t>(static_cast<long double>(value) * rhs.value / mod());
+	typename enable_if<is_same<typename modular_base<U>::Type, long long>::value, modular_base>::type &operator*=(const modular_base &rhs){
+		long long q = static_cast<long long>(static_cast<long double>(value) * rhs.value / mod());
 		value = normalize(value * rhs.value - q * mod());
 		return *this;
 	}
@@ -99,7 +99,7 @@ template<typename T> modular_base<T> operator/(const modular_base<T> &lhs, const
 template<typename T, typename U, typename enable_if<is_integral<U>::value>::type* = nullptr> modular_base<T> operator/(const modular_base<T>& lhs, U rhs) { return modular_base<T>(lhs) /= rhs; }
 template<typename T, typename U, typename enable_if<is_integral<U>::value>::type* = nullptr> modular_base<T> operator/(U lhs, const modular_base<T> &rhs) { return modular_base<T>(lhs) /= rhs; }
 template<typename T> istream &operator>>(istream &in, modular_base<T> &number){
-	typename common_type<typename modular_base<T>::Type, int64_t>::type x;
+	typename common_type<typename modular_base<T>::Type, long long>::type x;
 	in >> x;
 	number.value = modular_base<T>::normalize(x);
 	return in;
