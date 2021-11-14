@@ -6,7 +6,7 @@ struct suffix_tree{
 	int n = 0; // length of the underlying string
 	vector<Char_Type> s; // underlying string
 	// Begin States
-	// position in the string, temporary length of the parent edge, suffix link, parent vertex
+	// The position of the label of the parent edge in the string, temporary length of the parent edge, suffix link, parent vertex
 	vector<int> pos{0}, len{numeric_limits<int>::max()}, link{0}, pv{0};
 	vector<Adjacency_Type> next{{}};
 	// End States

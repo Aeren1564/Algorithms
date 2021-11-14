@@ -117,6 +117,14 @@ bool is_sorted(const point<T> &origin, IT begin, IT end){
 	for(auto i = 0; i < (int)(end - begin) - 2; ++ i) if(!is_sorted(origin, *(begin + i), *(begin + i + 1), *(begin + i + 2))) return false;
 	return true;
 } // check if begin->end is sorted with respect to the origin
+template<class T>
+bool counterclockwise(const point<T> &p, const point<T> &q, const point<T> &r){
+	return doubled_signed_area(p, q, r) > 0;
+}
+template<class T>
+bool clockwise(const point<T> &p, const point<T> &q, const point<T> &r){
+	return doubled_signed_area(p, q, r) < 0;
+}
 
 using pointint = point<int>;
 using pointll = point<long long>;

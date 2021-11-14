@@ -5,7 +5,7 @@ template<int h = 20>
 struct binary_lifting{
 	int n = 0;
 	vector<int> depth;
-	array<vector<int>, h> lift;
+	vector<array<int, h>> lift;
 	binary_lifting(){ }
 	// pv: parent vertex (-1 if root of an arborescence)
 	binary_lifting(const vector<int> &pv){
@@ -20,7 +20,7 @@ struct binary_lifting{
 		auto dfs = [&](auto self, int u, int pe)->void{
 			for(auto id: g.adj[u]){
 				if(id == pe || g.ignore && g.ignore(id)) continue;
-				auto &e = g.edges[id];
+				auto &e = g.edge[id];
 				int v = u ^ e.from ^ e.to;
 				depth[v] = depth[u] + 1;
 				pv[v] = u;
@@ -32,16 +32,17 @@ struct binary_lifting{
 	}
 	// pv: parent vertex (-1 if root of an arborescence)
 	binary_lifting(const vector<int> &pv, const vector<int> &depth): n((int)pv.size()), depth(depth){
-		lift.fill(pv);
-		for(auto u = 0; u < n; ++ u) if(!~pv[u]) lift[0][u] = u;
-		for(auto d = 1; d < h; ++ d) for(auto u = 0; u < n; ++ u) lift[d][u] = lift[d - 1][lift[d - 1][u]];
+		lift.resize(n);
+		for(auto u = 0; u < n; ++ u) lift[u][0] = ~pv[u] ? pv[u] : u;
+		for(auto d = 1; d < h; ++ d) for(auto u = 0; u < n; ++ u) lift[u][d] = lift[lift[u][d - 1]][d - 1];
 	}
 	// Index becomes the current number of nodes
 	// O(log n)
 	int add_root(){
 		int u = n ++;
 		depth.push_back(0);
-		for(auto d = 0; d < h; ++ d) lift[d].push_back(u);
+		lift.emplace_back();
+		fill(lift.back().begin(), lift.back().end(), u);
 		return u;
 	}
 	// Index becomes the current number of nodes
@@ -50,14 +51,15 @@ struct binary_lifting{
 		assert(0 <= p && p < n);
 		int u = n ++;
 		depth.push_back(depth[p] + 1);
-		lift[0][u] = p;
-		for(auto d = 1; d < h; ++ d) lift[d][u] = lift[d - 1][lift[d - 1][u]];
+		lift.emplace_back();
+		lift[u][0] = p;
+		for(auto d = 1; d < h; ++ d) lift[u][d] = lift[lift[u][d - 1]][d - 1];
 	}
 	// Get the k-th ancestor of u
 	// O(log n)
 	int ancestor(int u, int k) const{
 		assert(depth[u] >= k);
-		for(auto d = 0; d < h; ++ d) if(k & 1 << d) u = lift[d][u];
+		for(auto d = 0; d < h; ++ d) if(k & 1 << d) u = lift[u][d];
 		return u;
 	}
 	// Assumes u and v lies on the same arboresence
@@ -66,8 +68,8 @@ struct binary_lifting{
 		if(depth[u] < depth[v]) swap(u, v);
 		u = ancestor(u, depth[u] - depth[v]);
 		if(u == v) return u;
-		for(auto d = h - 1; d >= 0; -- d) if(lift[d][u] != lift[d][v]) u = lift[d][u], v = lift[d][v];
-		return lift[0][u];
+		for(auto d = h - 1; d >= 0; -- d) if(lift[u][d] != lift[v][d]) u = lift[u][d], v = lift[v][d];
+		return lift[u][0];
 	}
 	// Get # of edges between u and v
 	// Assumes u and v lies on the same arboresence
@@ -79,7 +81,7 @@ struct binary_lifting{
 	// O(log n)
 	int find_highest(int u, auto pred) const{
 		assert(pred(u));
-		for(auto d = h - 1; d >= 0; -- d) if(pred(lift[d][u])) u = lift[d][u];
+		for(auto d = h - 1; d >= 0; -- d) if(pred(lift[u][d])) u = lift[u][d];
 		return u;
 	}
 };

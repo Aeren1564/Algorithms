@@ -102,7 +102,7 @@ struct lazy_segment_tree{
 	int max_pref(int l, auto g){
 		assert(0 <= l && l <= n);
 		if(!g(T_id)) return l;
-		// if(l == n) return n + 1; // is this needed?
+		if(l == n) return n + 1;
 		l += size;
 		for(auto i = log; i >= 1; -- i) push(l >> i);
 		T sm = T_id;
@@ -126,7 +126,7 @@ struct lazy_segment_tree{
 	int min_suff(int r, auto g){
 		assert(0 <= r && r <= n);
 		if(!g(T_id)) return r;
-		// if(r == 0) return -1; // is this needed?
+		if(r == 0) return -1;
 		r += size;
 		for(auto i = log; i >= 1; -- i) push(r - 1 >> i);
 		T sm = T_id;
