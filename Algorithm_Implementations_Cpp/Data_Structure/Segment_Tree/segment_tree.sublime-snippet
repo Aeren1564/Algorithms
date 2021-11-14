@@ -51,7 +51,7 @@ struct segment_tree{
 	int max_pref(int l, auto f) const{
 		assert(0 <= l && l <= n);
 		if(!f(T_id)) return l;
-		// if(l == n) return n + 1; // is this needed?
+		if(l == n) return n + 1;
 		l += size;
 		T sm = T_id;
 		do{
@@ -72,7 +72,7 @@ struct segment_tree{
 	int min_suff(int r, auto f) const{
 		assert(0 <= r && r <= n);
 		if(!f(T_id)) return r;
-		// if(r == 0) return -1; // is this needed?
+		if(r == 0) return -1;
 		r += size;
 		T sm = T_id;
 		do{

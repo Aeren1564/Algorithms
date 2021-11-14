@@ -94,7 +94,7 @@ struct lazy_segment_tree_range_add_range_min_index{
 	int max_pref(int l, auto g){
 		assert(0 <= l && l <= n);
 		if(!g(pair<T, int>{inf, -1})) return l;
-		// if(l == n) return n + 1; // is this needed?
+		if(l == n) return n + 1;
 		l += size;
 		for(auto i = log; i >= 1; -- i) push(l >> i);
 		pair<T, int> sm{inf, -1};
@@ -118,7 +118,7 @@ struct lazy_segment_tree_range_add_range_min_index{
 	int min_suff(int r, auto g){
 		assert(0 <= r && r <= n);
 		if(!g(pair<T, int>{inf, -1})) return r;
-		// if(r == 0) return -1; // is this needed?
+		if(r == 0) return -1;
 		r += size;
 		for(auto i = log; i >= 1; -- i) push(r - 1 >> i);
 		pair<T, int> sm{inf, -1};
