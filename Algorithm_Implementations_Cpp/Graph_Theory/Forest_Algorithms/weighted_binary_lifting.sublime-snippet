@@ -1,0 +1,144 @@
+<snippet>
+	<content><![CDATA[
+// Requires graph
+template<class T, class F, int h = 20>
+struct weighted_binary_lifting{
+	int n = 0;
+	vector<int> depth;
+	vector<array<int, h>> lift;
+	vector<array<T, h>> liftval;
+	F TT;
+	T T_id;
+	weighted_binary_lifting(){ }
+	// pv: parent vertex (-1 if root of an arborescence)
+	weighted_binary_lifting(const vector<int> &pv, const vector<T> &weight, F TT, T T_id): TT(TT), T_id(T_id){
+		graph<int> g((int)pv.size());
+		vector<int> roots;
+		for(auto u = 0; u < (int)pv.size(); ++ u) if(~pv[u]) g.orient(pv[u], u); else roots.push_back(u);
+		*this = weighted_binary_lifting(g, roots, weight, TT, T_id);
+	}
+	template<class U>
+	weighted_binary_lifting(const graph<U> &g, const vector<int> &roots, const vector<T> &weight, F TT, T T_id): TT(TT), T_id(T_id){
+		vector<int> pv(g.n, -1), depth(g.n);
+		auto dfs = [&](auto self, int u, int pe)->void{
+			for(auto id: g.adj[u]){
+				if(id == pe || g.ignore && g.ignore(id)) continue;
+				auto &e = g.edge[id];
+				int v = u ^ e.from ^ e.to;
+				depth[v] = depth[u] + 1;
+				pv[v] = u;
+				self(self, v, id);
+			}
+		};
+		for(auto u: roots) assert(!depth[u]), pv[u] = u, dfs(dfs, u, -1);
+		*this = weighted_binary_lifting(pv, depth, weight, TT, T_id);
+	}
+	// pv: parent vertex (-1 if root of an arborescence)
+	weighted_binary_lifting(const vector<int> &pv, const vector<int> &depth, const vector<T> &weight, F TT, T T_id): n((int)pv.size()), depth(depth), TT(TT), T_id(T_id){
+		lift.resize(n);
+		liftval.resize(n);
+		for(auto u = 0; u < n; ++ u){
+			lift[u][0] = ~pv[u] ? pv[u] : u;
+			liftval[u][0] = weight[u];
+		}
+		for(auto d = 1; d < h; ++ d) for(auto u = 0; u < n; ++ u){
+			int p = lift[u][d - 1];
+			liftval[u][d] = TT(liftval[u][d - 1], liftval[p][d - 1]);
+			lift[u][d] = lift[p][d - 1];
+		}
+	}
+	weighted_binary_lifting &operator=(const weighted_binary_lifting &otr){
+		n = otr.n;
+		depth = otr.depth;
+		lift = otr.lift;
+		liftval = otr.liftval;
+		return *this;
+	}
+	// Index becomes the current number of nodes
+	// O(log n)
+	int add_root(T w){
+		int u = n ++;
+		depth.push_back(0);
+		lift.emplace_back();
+		fill(lift.back().begin(), lift.back().end(), u);
+		liftval.emplace_back();
+		fill(liftval.back().begin(), liftval.back().end(), w);
+		return u;
+	}
+	// Index becomes the current number of nodes
+	// O(log n)
+	int add_child(int p, T w){
+		assert(0 <= p && p < n);
+		int u = n ++;
+		depth.push_back(depth[p] + 1);
+		lift.emplace_back();
+		lift[u][0] = p;
+		liftval.emplace_back();
+		liftval[u][0] = w;
+		for(auto d = 1; d < h; ++ d){
+			int p = lift[u][d - 1];
+			liftval[u][d] = TT(liftval[u][d - 1], liftval[p][d - 1]);
+			lift[u][d] = lift[p][d - 1];
+		}
+	}
+	// Get the k-th ancestor of u, along with the exclusive sum of weight up to it.
+	// O(log n)
+	pair<int, T> ancestor(int u, int k) const{
+		assert(depth[u] >= k);
+		T res = T_id;
+		for(auto d = 0; d < h; ++ d) if(k & 1 << d){
+			res = TT(res, liftval[u][d]);
+			u = lift[u][d];
+		}
+		return {u, res};
+	}
+	// Assumes u and v lies on the same arboresence
+	// O(log n)
+	tuple<int, T, T> lca(int u, int v) const{
+		bool swapped = false;
+		if(depth[u] < depth[v]){
+			swapped = true;
+			swap(u, v);
+		}
+		T resl = T_id, resr = T_id;
+		tie(u, resl) = ancestor(u, depth[u] - depth[v]);
+		if(u != v){
+			for(auto d = h - 1; d >= 0; -- d) if(lift[u][d] != lift[v][d]){
+				resl = TT(resl, liftval[u][d]);
+				u = lift[u][d];
+				resr = TT(resr, liftval[v][d]);
+				v = lift[v][d];
+			}
+			resl = TT(resl, liftval[u][0]);
+			u = lift[u][0];
+			resr = TT(resr, liftval[v][0]);
+			v = lift[v][0];
+			assert(u == v);
+		}
+		if(swapped) swap(resl, resr);
+		return {u, resl, resr};
+	}
+	// Get # of edges between u and v
+	// Assumes u and v lies on the same arboresence
+	// O(log n)
+	int steps(int u, int v, int w = -1) const{
+		return depth[u] + depth[v] - 2 * depth[~w ? w : get<0>(lca(u, v))];
+	}
+	// For an ancestor p of u, pred(p, sum) is T, ..., T, F, ..., F in decreasing order of depth. Returns the highest p with T
+	// O(log n)
+	pair<int, T> find_highest(int u, auto pred) const{
+		T sum = T_id;
+		assert(pred(u, sum));
+		for(auto d = h - 1; d >= 0; -- d) if(pred(lift[u][d], TT(sum, liftval[u][d]))){
+			sum = TT(sum, liftval[u][d]);
+			u = lift[d][u];
+		}
+		return {u, sum};
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>weighted_binary_lifting</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

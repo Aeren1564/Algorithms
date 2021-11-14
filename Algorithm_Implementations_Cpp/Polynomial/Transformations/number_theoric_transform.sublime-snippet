@@ -1,10 +1,13 @@
 <snippet>
 	<content><![CDATA[
-// NTTmod: 998244353(2^23*7*17,3),754974721(2^24*3^2*5,11),469762049(2^26*7,3),167772161(2^25*5,3)
+// NTTmod: 998244353(2^23*7*17,3),754974721(2^24*3^2*5,11),469762049(2^26*7,3),167772161(2^25*5,3), 924844033(2^21*3^2*7^2, 5)
 // Requires modular
-template<class T, int root = 15311432, int root_pw = 1 << 23, int inv_root = 469870224>
+template<class T, int primitive_root = 3>
 void number_theoric_transform(vector<T> &a, const bool invert = false){
 	int n = (int)a.size();
+	assert(n && __builtin_popcount(n) == 1 && (T().mod() - 1) % n == 0);
+	static T root = T(primitive_root) ^ (T().mod() - 1) / n;
+	static T inv_root = T(1) / root;
 	for(auto i = 1, j = 0; i < n; ++ i){
 		int bit = n >> 1;
 		for(; j & bit; bit >>= 1) j ^= bit;
@@ -12,8 +15,7 @@ void number_theoric_transform(vector<T> &a, const bool invert = false){
 		if(i < j) swap(a[i], a[j]);
 	}
 	for(auto len = 1; len < n; len <<= 1){
-		T wlen = invert ? inv_root : root;
-		for(auto i = len << 1; i < root_pw; i <<= 1) wlen *= wlen;
+		T wlen = (invert ? inv_root : root) ^ n / len / 2;
 		for(auto i = 0; i < n; i += len << 1){
 			T w = 1;
 			for(auto j = 0; j < len; ++ j, w *= wlen){
