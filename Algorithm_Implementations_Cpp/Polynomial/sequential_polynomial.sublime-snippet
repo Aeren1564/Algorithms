@@ -1,25 +1,18 @@
 <snippet>
 	<content><![CDATA[
-// Returns (x + 1) * (x + 2) * ... * (x + n)
-// O((Complexity of product of n term polynomial))
-// Requires polynomial
+// Returns (x - a) * (x - (a + 1)) * ... * (x - (a + n - 1))
+// Requires taylor_shift
+// O(polymul(n-term polynomials))
 template<class T>
-vector<T> sequential_polynomial(int n){
+vector<T> sequential_polynomial(int n, T a, auto polymul){
+	assert(n >= 0);
 	if(n == 0) return {1};
-	if(n % 2 == 1) return sequential_polynomial<T>(n - 1) * vector<T>{n, 1};
-	vector<T> c = sequential_polynomial<T>(n / 2), a = c;
-	reverse(a.begin(), a.end());
-	T f = 1;
-	for(auto i = n / 2 - 1; i >= 0; -- i) f *= n / 2 - i, a[i] *= f;
-	vector<T> b(n / 2 + 1);
-	b[0] = 1;
-	for(auto i = 1; i <= n / 2; ++ i) b[i] = b[i - 1] * (n / 2) / i;
-	vector<T> h = a * b;
-	h.resize(n / 2 + 1);
-	reverse(h.begin(), h.end());
-	f = 1;
-	for(auto i = 1; i <= n / 2; ++ i) f /= i, h[i] *= f;
-	vector<T> res = c * h;
+	if(n == 1) return {-a, 1};
+	vector<T> res{1}, base{-a, 1};
+	for(auto bit = 0, lg = __lg(n); bit <= lg; ++ bit){
+		if(n & 1 << bit) res = polymul(base, taylor_shift<modular>(res, 1 << bit, polymul));
+		base = polymul(base, taylor_shift<modular>(base, 1 << bit, polymul));
+	}
 	return res;
 }
 ]]></content>

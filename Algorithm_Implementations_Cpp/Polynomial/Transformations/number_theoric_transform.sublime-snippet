@@ -6,7 +6,7 @@ template<class T, int primitive_root = 3>
 void number_theoric_transform(vector<T> &a, const bool invert = false){
 	int n = (int)a.size();
 	assert(n && __builtin_popcount(n) == 1 && (T().mod() - 1) % n == 0);
-	static T root = T(primitive_root) ^ (T().mod() - 1) / n;
+	static T root = T(primitive_root);
 	static T inv_root = T(1) / root;
 	for(auto i = 1, j = 0; i < n; ++ i){
 		int bit = n >> 1;
@@ -15,7 +15,7 @@ void number_theoric_transform(vector<T> &a, const bool invert = false){
 		if(i < j) swap(a[i], a[j]);
 	}
 	for(auto len = 1; len < n; len <<= 1){
-		T wlen = (invert ? inv_root : root) ^ n / len / 2;
+		T wlen = (invert ? inv_root : root) ^ (T().mod() - 1) / len / 2;
 		for(auto i = 0; i < n; i += len << 1){
 			T w = 1;
 			for(auto j = 0; j < len; ++ j, w *= wlen){
