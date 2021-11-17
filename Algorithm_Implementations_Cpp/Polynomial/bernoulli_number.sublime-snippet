@@ -1,0 +1,27 @@
+<snippet>
+	<content><![CDATA[
+// Satisfies \sum_{i=1~n}
+// O(polymul(n-term polynomial))
+// Requires polynomial
+template<class T>
+vector<T> bernoulli_number(int n){
+	if(n == 0) return {1};
+	static vector<T> fact{1}, invfact{1};
+	if(auto sz = (int)fact.size(); sz <= n + 1){
+		for(auto i = sz; i <= n + 1; ++ i) fact.push_back(fact.back() * i);
+		invfact.resize(n + 2), invfact[n + 1] = 1 / fact.back();
+		for(auto i = n; i >= sz; -- i) invfact[i] = invfact[i + 1] * (i + 1);
+	}
+	static vector<T> a;
+	a.resize(n + 1);
+	copy(invfact.begin() + 1, invfact.begin() + n + 2, a.begin());
+	inplace_inverse(a, n + 1);
+	for(auto i = 0; i <= n; ++ i) a[i] *= fact[i];
+	return a;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>bernoulli_number</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
