@@ -4,7 +4,7 @@
 // O(polymul(n-term polynomial))
 template<class T>
 vector<T> taylor_shift(const vector<T> &p, T d, auto polymul){
-	if((int)p.size() <= 1) return {};
+	if((int)p.size() <= 1) return p;
 	int n = (int)p.size();
 	static vector<T> fact{1}, invfact{1};
 	if(auto sz = (int)fact.size(); sz < n){

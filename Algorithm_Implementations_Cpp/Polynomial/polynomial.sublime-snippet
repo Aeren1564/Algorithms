@@ -81,29 +81,37 @@ vector<T> operator-(const vector<T> &a){
 	for(auto i = 0; i < (int)c.size(); ++ i) c[i] = -c[i];
 	return c;
 }
+// Returns the first length terms of the inverse of a
 template<class T>
-vector<T> inverse(const vector<T> &a){
-	assert(!a.empty());
-	int n = (int)a.size();
-	vector<T> b = {1 / a[0]};
-	while((int)b.size() < n){
-		vector<T> a_cut(a.begin(), a.begin() + min(a.size(), b.size() << 1)), x = b * b * a_cut;
+vector<T> inverse(const vector<T> &a, int length){
+	assert(!a.empty() && a[0]);
+	static vector<T> b;
+	b = {1 / a[0]};
+	while((int)b.size() < length){
+		static vector<T> x;
+		x.assign(min(a.size(), b.size() << 1), 0);
+		copy(a.begin(), a.begin() + x.size(), x.begin());
+		x *= b * b;
 		b.resize(b.size() << 1);
 		for(auto i = (int)b.size() >> 1; i < (int)min(x.size(), b.size()); ++ i) b[i] = -x[i];
 	}
-	b.resize(n);
+	b.resize(length);
 	return b;
+}
+template<class T>
+vector<T> &inplace_inverse(vector<T> &a, int length){
+	return a = inverse(a, length);
 }
 template<class T>
 vector<T> &operator/=(vector<T> &a, const vector<T> &b){
 	int n = (int)a.size(), m = (int)b.size();
 	if(n < m) a.clear();
 	else{
-		vector<T> d = b;
+		static vector<T> d;
+		d.assign(n - m + 1, 0);
+		copy(b.rbegin(), b.rbegin() + min(b.size(), d.size()), d.begin());
 		reverse(a.begin(), a.end());
-		reverse(d.begin(), d.end());
-		d.resize(n - m + 1);
-		a *= inverse(d);
+		a *= inverse(d, n - m + 1);
 		a.erase(a.begin() + n - m + 1, a.end());
 		reverse(a.begin(), a.end());
 	}
@@ -126,87 +134,101 @@ vector<T> operator/(const vector<T> &a, T x){
 	return b /= x;
 }
 template<class T>
-vector<T> &operator%=(vector<T> &a, const vector<T> &b){
-	int n = (int)a.size(), m = (int)b.size();
-	if(n >= m){
-		vector<T> c = (a / b) * b;
-		a.resize(m - 1);
-		for(auto i = 0; i < m - 1; ++ i) a[i] -= c[i];
-	}
-	return a;
+pair<vector<T>, vector<T>> divrem(const vector<T> &a, const vector<T> &b){
+	auto q = a / b, r = a - q * b;
+	while(!r.empty() && r.back() == 0) r.pop_back();
+	return {q, r};
 }
 template<class T>
 vector<T> operator%(const vector<T> &a, const vector<T> &b){
-	vector<T> c = a;
-	return c %= b;
+	return divrem(a, b).second;
+}
+template<class T>
+vector<T> &operator%=(vector<T> &a, const vector<T> &b){
+	return a = a % b;
+}
+template<class T>
+vector<T> &inplace_derivative(vector<T> &a){
+	for(auto i = 0; i < (int)a.size(); ++ i) a[i] *= i;
+	if(!a.empty()) a.erase(a.begin());
+	return a;
 }
 template<class T>
 vector<T> derivative(const vector<T> &a){
-	vector<T> c = a;
-	for(auto i = 0; i < (int)c.size(); ++ i) c[i] *= i;
-	if(!c.empty()) c.erase(c.begin());
-	return c;
+	auto c = a;
+	return inplace_derivative(c);
+}
+template<class T>
+vector<T> &inplace_antiderivative(vector<T> &a){
+	a.insert(a.begin(), 0);
+	precalc_inverse<T>((int)a.size());
+	for(auto i = 1; i < (int)a.size(); ++ i) a[i] /= i;
+	return a;
 }
 template<class T>
 vector<T> antiderivative(const vector<T> &a){
-	vector<T> c = a;
-	c.insert(c.begin(), 0);
-	for(auto i = 1; i < (int)c.size(); ++ i) c[i] /= i;
-	return c;
+	auto c = a;
+	return inplace_antiderivative(c);
 }
 template<class T>
-vector<T> logarithm(const vector<T> &a){
+vector<T> &inplace_logarithm(vector<T> &a, int length){
 	assert(!a.empty() && a[0] == 1);
-	vector<T> u = antiderivative(derivative(a) * inverse(a));
-	u.resize(a.size());
-	return u;
+	inplace_antiderivative(a = derivative(a) * inverse(a, length)).resize(length);
+	return a;
 }
 template<class T>
-vector<T> exponential(const vector<T> &a){
+vector<T> logarithm(const vector<T> &a, int length){
+	assert(!a.empty() && a[0] == 1);
+	auto b = a;
+	return inplace_logarithm(b, length);
+}
+template<class T>
+vector<T> exponential(const vector<T> &a, int length){
 	assert(!a.empty() && a[0] == 0);
-	int n = (int)a.size();
-	vector<T> b = {1};
-	while((int)b.size() < n){
-		vector<T> x(a.begin(), a.begin() + min(a.size(), b.size() << 1));
-		x[0] += 1;
-		vector<T> old_b = b;
+	static vector<T> b;
+	b = {1};
+	while((int)b.size() < length){
+		static vector<T> x;
 		b.resize(b.size() << 1);
-		x -= logarithm(b);
-		x *= old_b;
-		for(auto i = (int)b.size() >> 1; i < (int)min(x.size(), b.size()); ++ i) b[i] = x[i];
+		x.assign(min(a.size(), b.size()), 0);
+		copy(a.begin(), a.begin() + min(a.size(), b.size()), x.begin());
+		++ x[0];
+		(x -= logarithm(b, (int)b.size())) *= vector<T>(b.begin(), b.begin() + (int)b.size() / 2);
+		for(auto i = b.size() / 2; i < min(x.size(), b.size()); ++ i) b[i] = x[i];
 	}
-	b.resize(n);
+	b.resize(length);
 	return b;
 }
-template<class T, class U>
-vector<T> &operator^=(vector<T> &a, U e){
-	int n = (int)a.size();
-	if(!e){
-		fill(a.begin(), a.end(), 0);
-		a[0] = 1;
-		return a;
-	}
-	if(all_of(a.begin(), a.end(), [&](auto x){ return x == 0; })) return a = vector<T>(n, 0);
-	if(n < 60){
-		vector<T> res(n); res[0] = 1;
-		for(; e; e >>= 1, a *= a, a.resize(n)) if(e & 1) res *= a, res.resize(n);
-		swap(a, res);
-		return a;
-	}
-	int low = find_if(a.begin(), a.end(), [&](auto x){ return x; }) - a.begin();
-	if(1LL * low * e >= n) return a = vector<T>(n, 0);
-	a.erase(a.begin(), a.begin() + low);
-	T temp = a[0], low_c = 1;
-	for(auto f = e; f; f >>= 1, temp *= temp) if(f & 1) low_c *= temp;
-	a = exponential(T(e) * logarithm(a / a[0]));
-	a.insert(a.begin(), low * e, 0);
-	a.resize(n);
-	return a *= low_c;
+template<class T>
+vector<T> &inplace_exponential(vector<T> &a, int length){
+	return a = exponential(a, length);
 }
 template<class T, class U>
-vector<T> operator^(const vector<T> &a, U e){
-	vector<T> b = a;
-	return b ^= e;
+vector<T> &inplace_power(vector<T> &a, U e, int length){
+	a.resize(length);
+	if(e == 0 || length == 0){
+		if(length) a[0] = 1;
+		return a;
+	}
+	if(e < 0) return inplace_power(inplace_inverse(a, length), -e, length);
+	if(all_of(a.begin(), a.end(), [&](auto x){ return x == 0; })) return a;
+	int pivot = find_if(a.begin(), a.end(), [&](auto x){ return x; }) - a.begin();
+	if(pivot && e >= length / pivot){
+		fill(a.begin(), a.end(), 0);
+		return a;
+	}
+	a.erase(a.begin(), a.begin() + pivot);
+	length -= pivot * e;
+	T temp = a[0], pivot_c = 1;
+	for(auto f = e; f; f >>= 1, temp *= temp) if(f & 1) pivot_c *= temp;
+	inplace_exponential(inplace_logarithm(a /= a[0], length) *= e, length);
+	a.insert(a.begin(), pivot * e, 0);
+	return a *= pivot_c;
+}
+template<class T, class U>
+vector<T> power(const vector<T> &a, U e, int length){
+	auto b = a;
+	return inplace_power(b, e, length);
 }
 template<class T>
 vector<T> multiply_all(const vector<vector<T>> &a){

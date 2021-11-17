@@ -1,20 +1,32 @@
 <snippet>
 	<content><![CDATA[
 // O((Complexity of product of n term polynomial) * log n)
-// Requires polynomial
+// Requires mod_sqrt and polynomial
 template<class T>
-vector<T> polynomial_sqrt(const vector<T> &a){
-	assert(!a.empty() && a[0] == 1);
-	int n = (int)a.size();
-	vector<T> b = {1};
-	while((int)b.size() < n){
-		vector<T> x(a.begin(), a.begin() + min(a.size(), b.size() << 1));
+optional<vector<T>> polynomial_sqrt(vector<T> a, int length){
+	a.resize(length);
+	int i = find_if(a.begin(), a.end(), [&](auto x){ return x != 0; }) - a.begin();
+	if(i == length) return a;
+	if(i & 1) return {};
+	a.erase(a.begin(), a.begin() + i);
+	length -= i >>= 1;
+	T c;
+	if(auto p = mod_sqrt(a[0])) c = *p, a /= a[0];
+	else return {};
+	static vector<T> b;
+	b = {1};
+	while((int)b.size() < length){
+		static vector<T> x;
 		b.resize(b.size() << 1);
-		x *= inverse(b);
-		T inv2 = 1 / static_cast<T>(2);
-		for(auto i = (int)b.size() >> 1; i < (int)min(x.size(), b.size()); ++ i) b[i] = x[i] * inv2;
+		x.resize(min(a.size(), b.size()));
+		copy(a.begin(), a.begin() + x.size(), x.begin());
+		x *= inverse(b, (int)b.size());
+		T inv2 = 1 / T(2);
+		for(auto i = b.size() / 2; i < min(b.size(), x.size()); ++ i) b[i] = x[i] * inv2;
 	}
-	b.resize(n);
+	b.resize(length);
+	for(auto &x: b) x *= c;
+	b.insert(b.begin(), i, 0);
 	return b;
 }
 ]]></content>
