@@ -9,11 +9,8 @@ vector<T> logarithm_set_power_series(const vector<T> &p){
 	assert(__builtin_popcount(n) == 1 && p[0] == 1);
 	int w = __lg(n);
 	vector<vector<T>> res(w + 1, {0});
-	T invfact = 1;
-	for(auto bit = 1; bit <= w; ++ bit){
-		res[bit][0] = invfact;
-		invfact *= -bit;
-	}
+	T fact = 1;
+	for(auto bit = 1; bit <= w; ++ bit) res[bit][0] = fact, fact *= -bit;
 	for(auto bit = 0; bit < w; ++ bit){
 		for(auto i = 0; i < w - bit; ++ i){
 			auto shift = convolute_subset(res[i + 1], vector<T>(p.begin() + (1 << bit), p.begin() + (1 << bit + 1)));
