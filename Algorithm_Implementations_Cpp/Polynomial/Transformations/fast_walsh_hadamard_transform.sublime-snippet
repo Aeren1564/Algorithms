@@ -15,7 +15,8 @@ void fast_walsh_hadamard_transform(vector<T> &a, bool invert = false){
 		}
 	}
 	if(Conv == '^' && invert){
-		for(auto &x: a) x /= n;
+		auto inv_n = T(1) / n;
+		for(auto &x: a) x *= inv_n;
 	}
 }
 ]]></content>
