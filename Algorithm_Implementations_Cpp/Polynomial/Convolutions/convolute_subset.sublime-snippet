@@ -2,27 +2,25 @@
 	<content><![CDATA[
 // (f*g)[mask] = sum{x and y = 0, x or y = mask}(f(x)g(y))
 // O(n log^2 n)
-// Requires fast_walsh_hadamard_transform
-template<class T>
+template<class T, int SZ = 20>
 vector<T> convolute_subset(const vector<T> &p, const vector<T> &q){
 	int n = (int)p.size();
-	assert((int)q.size() == n && n && __builtin_popcount(n) == 1);
-	int w = __lg(n) + 1;
-	vector a(w, vector<modular>(n)), b(a);
-	for(auto i = 0; i < n; ++ i) a[__builtin_popcount(i)][i] = p[i];
-	for(auto i = 0; i < n; ++ i) b[__builtin_popcount(i)][i] = q[i];
-	for(auto bit = 0; bit < w; ++ bit){
-		fast_walsh_hadamard_transform<T>(a[bit]);
-		fast_walsh_hadamard_transform<T>(b[bit]);
+	assert((int)q.size() == n && __builtin_popcount(n) == 1);
+	int w = __lg(n);
+	assert(w <= SZ);
+	vector<array<T, SZ>> x(n), y(n);
+	for(auto i = 0; i < n - 1; ++ i) x[i][__builtin_popcount(i)] = p[i];
+	for(auto k = 0; k < w; ++ k) for(auto i = 0; i < n; ++ i) if(~i >> k & 1) for(auto j = 0; j < w; ++ j) x[i | 1 << k][j] += x[i][j];
+	for(auto i = 0; i < n - 1; ++ i) y[i][__builtin_popcount(i)] = q[i];
+	for(auto k = 0; k < w; ++ k) for(auto i = 0; i < n; ++ i) if(~i >> k & 1) for(auto j = 0; j < w; ++ j) y[i | 1 << k][j] += y[i][j];
+	for(auto i = 0; i < n; ++ i) for(auto j = w - 1; j >= 0; -- j){
+		for(auto k = 1; k < w - j; ++ k) x[i][j + k] += x[i][j] * y[i][k];
+		x[i][j] *= y[i][0];
 	}
+	for(auto k = 0; k < w; ++ k) for(auto i = 0; i < n; ++ i) if(~i >> k & 1) for(auto j = 0; j < w; ++ j) x[i | 1 << k][j] -= x[i][j];
 	vector<T> res(n);
-	for(auto bit = 0; bit < w; ++ bit){
-		static vector<T> c;
-		c.assign(n, 0);
-		for(auto lbit = 0; lbit <= bit; ++ lbit) for(auto i = 0; i < n; ++ i) c[i] += a[lbit][i] * b[bit - lbit][i];
-		fast_walsh_hadamard_transform<T>(c, true);
-		for(auto i = 0; i < n; ++ i) if(__builtin_popcount(i) == bit) res[i] = c[i];
-	}
+	for(auto i = 0; i < n - 1; ++ i) res[i] = x[i][__builtin_popcount(i)];
+	for(auto i = 0; i < n; ++ i) res[n - 1] += p[i] * q[n - 1 - i];
 	return res;
 }
 ]]></content>
