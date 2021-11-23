@@ -23,6 +23,18 @@ struct fenwick_tree_2d{
 		-- xl, -- xr, -- yl, -- yr;
 		return query(xr, yr) - query(xr, yl) - query(xl, yr) + query(xl, yl);
 	}
+	template<class output_stream>
+	friend output_stream &operator<<(output_stream &out, const fenwick_tree_2d<T> &fw){
+		for(auto i = 0; i < fw.n; ++ i){
+			out << "\n[";
+			for(auto j = 0; j < fw.m; ++ j){
+				out << fw.query(i, i + 1, j, j + 1);
+				if(j != fw.m - 1) out << ", ";
+			}
+			out << "]\n";
+		}
+		return out;
+	}
 };
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->

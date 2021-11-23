@@ -1,14 +1,14 @@
 <snippet>
 	<content><![CDATA[
-template<class T>
+template<class T, class F>
 struct segment_tree_2d{
 	int n, m;
 	vector<vector<T>> data;
-	function<T(T, T)> TT; // commutative monoid operation
+	F TT; // commutative monoid operation
 	T T_id; // commutative monoid identity
-	segment_tree_2d(int n, int m, function<T(T, T)> TT, T T_id): n(n), m(m), TT(TT), T_id(T_id), data(n << 1, vector<T>(m << 1, T_id)){ }
-	segment_tree_2d(int n, int m, T x, function<T(T, T)> TT, T T_id): segment_tree_2d(vector<vector<T>>(n, vector<T>(m, x)), TT, T_id){ }
-	segment_tree_2d(const vector<vector<T>> &a, function<T(T, T)> TT, T T_id): n((int)a.size()), m((int)a[0].size()), TT(TT), T_id(T_id), data(n << 1, vector<T>(m << 1, T_id)){
+	segment_tree_2d(int n, int m, F TT, T T_id): n(n), m(m), TT(TT), T_id(T_id), data(n << 1, vector<T>(m << 1, T_id)){ }
+	segment_tree_2d(int n, int m, T x, F TT, T T_id): segment_tree_2d(vector<vector<T>>(n, vector<T>(m, x)), TT, T_id){ }
+	segment_tree_2d(const vector<vector<T>> &a, F TT, T T_id): n((int)a.size()), m((int)a[0].size()), TT(TT), T_id(T_id), data(n << 1, vector<T>(m << 1, T_id)){
 		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) data[i + n][j + m] = a[i][j];
 		for(auto i = n - 1; i > 0; -- i) for(auto j = 0; j < m; ++ j) data[i][j + m] = TT(data[i << 1][j + m], data[i << 1 | 1][j + m]);
 		for(auto i = 1; i < n << 1; ++ i) for(auto j = m - 1; j > 0; -- j) data[i][j] = TT(data[i][j << 1], data[i][j << 1 | 1]);
@@ -45,6 +45,18 @@ struct segment_tree_2d{
 			}
 		}
 		return res;
+	}
+	template<class output_stream>
+	friend output_stream &operator<<(output_stream &out, const segment_tree_2d<T, F> &seg){
+		for(auto i = 0; i < seg.n; ++ i){
+			out << "\n[";
+			for(auto j = 0; j < seg.m; ++ j){
+				out << seg.query(i, j);
+				if(j != seg.m - 1) out << ", ";
+			}
+			out << "]\n";
+		}
+		return out;
 	}
 };
 ]]></content>

@@ -63,6 +63,15 @@ struct fenwick_tree{
 		}
 		return p + 1;
 	}
+	template<class output_stream>
+	friend output_stream &operator<<(output_stream &out, const fenwick_tree<T> &fw){
+		out << "[";
+		for(auto i = 0; i < fw.n; ++ i){
+			out << fw.query(i, i + 1);
+			if(i != fw.n - 1) out << ", ";
+		}
+		return out << ']';
+	}
 };
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->

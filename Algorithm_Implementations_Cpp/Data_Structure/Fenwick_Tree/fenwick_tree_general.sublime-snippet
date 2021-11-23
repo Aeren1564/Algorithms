@@ -13,19 +13,24 @@ struct fenwick_tree_general{
 	fenwick_tree_general(const vector<T> &v, F TT = plus<>(), T T_id = {}, I TinvT = minus<>()): n((int)v.size()), data(v), TT(TT), T_id(T_id), TinvT(TinvT){
 		for(auto i = 1; i <= n; ++ i) if(i + (i & -i) <= n) data[i + (i & -i) - 1] = TT(data[i + (i & -i) - 1], data[i - 1]);
 	}
+	// O(log n)
 	void update(int p, T x){
 		assert(0 <= p && p < n);
 		for(++ p; p <= n; p += p & -p) data[p - 1] = TT(data[p - 1], x);
 	}
+	// O(log n)
 	T query(int r) const{
 		T s = T_id;
 		for(; r > 0; r -= r & -r) s = TT(s, data[r - 1]);
 		return s;
 	}
+	// O(log n)
 	T query(int l, int r) const{
 		assert(0 <= l && l <= r && r <= n);
 		return TinvT(query(r), query(l));
 	}
+	// f(sum[0, r)) is T, T, ..., T, F, F, ..., F, returns max r with T
+	// O(log n)
 	int max_pref(auto f) const{
 		int p = 0;
 		T pref = T_id;
@@ -34,7 +39,16 @@ struct fenwick_tree_general{
 			p += 1 << i;
 		}
 		return p;
-	} // f(sum[0, r)) is T, T, ..., T, F, F, ..., F, returns max r with T
+	}
+	template<class output_stream>
+	friend output_stream &operator<<(output_stream &out, const fenwick_tree_general<T, F, I> &fw){
+		out << "[";
+		for(auto i = 0; i < fw.n; ++ i){
+			out << fw.query(i, i + 1);
+			if(i != fw.n - 1) out << ", ";
+		}
+		return out << ']';
+	}
 };
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->

@@ -1,14 +1,14 @@
 <snippet>
 	<content><![CDATA[
-template<class T>
+template<class T, class F>
 struct segment_tree_3d{
 	int n, m, l;
 	vector<vector<vector<T>>> data;
-	function<T(T, T)> TT; // commutative monoid operation
+	F TT; // commutative monoid operation
 	T T_id; // commutative monoid identity
-	segment_tree_3d(int n, int m, int l, function<T(T, T)> TT, T T_id): n(n), m(m), l(l), TT(TT), T_id(T_id), data(n << 1, vector<vector<T>>(m << 1, vector<T>(l << 1, T_id))){ }
-	segment_tree_3d(int n, int m, int l, T x, function<T(T, T)> TT, T T_id): segment_tree_3d(vector<vector<vector<T>>>(n, vector<vector<T>>(m, vector<T>(l, x)))){ }
-	segment_tree_3d(const vector<vector<vector<T>>> &a, function<T(T, T)> TT, T T_id): n((int)a.size()), m((int)a[0].size()), l((int)a[0][0].size()), TT(TT), T_id(T_id), data(n << 1, vector<vector<T>>(m << 1, vector<T>(l << 1, T_id))){
+	segment_tree_3d(int n, int m, int l, F TT, T T_id): n(n), m(m), l(l), TT(TT), T_id(T_id), data(n << 1, vector<vector<T>>(m << 1, vector<T>(l << 1, T_id))){ }
+	segment_tree_3d(int n, int m, int l, T x, F TT, T T_id): segment_tree_3d(vector<vector<vector<T>>>(n, vector<vector<T>>(m, vector<T>(l, x)))){ }
+	segment_tree_3d(const vector<vector<vector<T>>> &a, F TT, T T_id): n((int)a.size()), m((int)a[0].size()), l((int)a[0][0].size()), TT(TT), T_id(T_id), data(n << 1, vector<vector<T>>(m << 1, vector<T>(l << 1, T_id))){
 		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) for(auto k = 0; k < l; ++ k) data[i + n][j + m][k + l] = a[i][j][k];
 		for(auto i = n - 1; i > 0; -- i) for(auto j = 0; j < m; ++ j) for(auto k = 0; k < l; ++ k) data[i][j + m][k + l] = TT(data[i << 1][j + m][k + l], data[i << 1 | 1][j + m][k + l]);
 		for(auto i = 1; i < n << 1; ++ i) for(auto j = m - 1; j > 0; -- j) for(auto k = 0; k < l; ++ k) data[i][j][k + l] = TT(data[i][j << 1][k + l], data[i][j << 1 | 1][k + l]);
@@ -78,6 +78,20 @@ struct segment_tree_3d{
 			}
 		}
 		return res;
+	}
+	template<class output_stream>
+	friend output_stream &operator<<(output_stream &out, const segment_tree_3d<T, F> &seg){
+		for(auto i = 0; i < seg.n; ++ i){
+			out << "\n[";
+			for(auto j = 0; j < seg.m; ++ j){
+				for(auto k = 0; k < seg.l; ++ k){
+					out << seg.query(i, j, k);
+					if(k != seg.l - 1) out << ", ";
+				}
+			}
+			out << "]";
+		}
+		return out << "\n";
 	}
 };
 ]]></content>

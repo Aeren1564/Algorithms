@@ -137,6 +137,16 @@ struct lazy_segment_tree_range_add_range_min_index{
 		}while((r & -r) != r);
 		return -1;
 	}
+	template<class output_stream>
+	friend output_stream &operator<<(output_stream &out, lazy_segment_tree_range_add_range_min_index<T, U> seg){
+		out << "[";
+		for(auto i = 0; i < seg.n; ++ i){
+			auto x = seg.query(i);
+			out << "(" << x.first << ", " << x.second << ")";
+			if(i != seg.n - 1) out << ", ";
+		}
+		return out << ']';
+	}
 };
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->

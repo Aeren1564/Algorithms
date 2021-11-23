@@ -47,6 +47,15 @@ struct reverse_segment_tree{
 	void push_all(){
 		for(auto i = 1; i < n; ++ i) push(i);
 	}
+	template<class output_stream>
+	friend output_stream &operator<<(output_stream &out, const reverse_segment_tree<U, F1, F2> &seg){
+		out << "[";
+		for(auto i = 0; i < seg.n; ++ i){
+			out << seg.query(i);
+			if(i != seg.n - 1) out << ", ";
+		}
+		return out << ']';
+	}
 };
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->

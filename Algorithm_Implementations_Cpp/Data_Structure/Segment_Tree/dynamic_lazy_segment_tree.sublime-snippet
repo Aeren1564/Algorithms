@@ -22,7 +22,7 @@ struct dynamic_lazy_segment_tree{
 			right[u] = new_state(-1, -1, T_init(m, r), U_init(m, r)); // Separate this on C++14 or below to avoid UB
 		}
 	}
-	void push(int u, B l, B r){ // push the internal node u
+	void push(int u, B l, B r){
 		int m = l + (r - l >> 1), v = left[u], w = right[u];
 		data[v] = UT(updates[u], data[v]);
 		updates[v] = UU(updates[u], updates[v]);
@@ -40,7 +40,8 @@ struct dynamic_lazy_segment_tree{
 		left.push_back(v), right.push_back(w), data.push_back(x), updates.push_back(y);
 		return last_state();
 	}
-	void update(B ql, B qr, U x){ // Apply x to values at [ql, qr)
+	// O(log n)
+	void update(B ql, B qr, U x){
 		auto recurse = [&](auto recurse, int u, B l, B r)->void{
 			if(qr <= l || r <= ql) return;
 			if(ql <= l && r <= qr){
@@ -54,7 +55,8 @@ struct dynamic_lazy_segment_tree{
 		};
 		recurse(recurse, 0, 0, n);
 	}
-	T query(B ql, B qr){ // find sum{ql<=i<qr}(v[i]) at state u, O(log n)
+	// O(log n)
+	T query(B ql, B qr){
 		auto recurse = [&](auto recurse, int u, B l, B r)->T{
 			if(qr <= l || r <= ql) return T_id;
 			if(ql <= l && r <= qr) return data[u];
@@ -64,6 +66,8 @@ struct dynamic_lazy_segment_tree{
 		};
 		return recurse(recurse, 0, 0, n);
 	}
+	// f(sum[l, r)) is T, T, ..., T, F, F, ..., F, returns max r with T
+	// O(log n)
 	B max_pref(B ql, auto f){
 		T pref = T_id;
 		auto recurse = [&](auto recurse, int u, B l, B r)->B{
@@ -78,7 +82,16 @@ struct dynamic_lazy_segment_tree{
 			return ~p ? p : recurse(recurse, right[u], m, r);
 		};
 		return recurse(recurse, 0, 0, n);
-	} // f(sum[l, r)) is T, T, ..., T, F, F, ..., F, returns max r with T
+	}
+	template<class output_stream>
+	friend output_stream &operator<<(output_stream &out, dynamic_lazy_segment_tree<B, T, U, F1, F2, F3, F4, F5> seg){
+		out << "[";
+		for(auto i = 0; i < seg.n; ++ i){
+			out << seg.query(i);
+			if(i != seg.n - 1) out << ", ";
+		}
+		return out << ']';
+	}
 };
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->

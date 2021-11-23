@@ -24,6 +24,20 @@ struct fenwick_tree_3d{
 		-- xl, -- xr, -- yl, -- yr, -- zl, -- zr;
 		return query(xr, yr, zr) - query(xl, yr, zr) - query(xr, yl, zr) - query(xr, yr, zl) + query(xl, yl, zr) + query(xl, yr, zl) + query(xr, yl, zl) - query(xl, yl, zl);
 	}
+	template<class output_stream>
+	friend output_stream &operator<<(output_stream &out, const fenwick_tree_3d<T> &fw){
+		for(auto i = 0; i < fw.n; ++ i){
+			out << "\n[";
+			for(auto j = 0; j < fw.m; ++ j){
+				for(auto k = 0; k < fw.l; ++ k){
+					out << fw.query(i, i + 1, j, j + 1, k, k + 1);
+					if(k != fw.l - 1) out << ", ";
+				}
+			}
+			out << "]";
+		}
+		return out << "\n";
+	}
 };
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
