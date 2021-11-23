@@ -1,0 +1,74 @@
+<snippet>
+	<content><![CDATA[
+// Decompose the given loopless undirected graph into endpoint disjoint paths and cycles
+// O(|V| + |E|)
+template<class T>
+void euler_decomopsition(const graph<T> &g, auto process_path, auto process_cycle){
+	int n = g.n, m = (int)g.edge.size();
+	vector<array<int, 2>> edge;
+	vector<vector<int>> adj(m);
+	for(auto u = 0; u < n; ++ u){
+		int j = -1;
+		for(auto i: g.adj[u]){
+			if(g.ignore && g.ignore(i)) continue;
+			if(!~j) j = i;
+			else{
+				int id = (int)edge.size();
+				adj[i].push_back(id);
+				adj[j].push_back(id);
+				edge.push_back({i, j});
+				j = -1;
+			}
+		}
+	}
+	vector<int> vis(m);
+	for(auto id = 0; id < m; ++ id){
+		if(adj[id].size() == 2 || vis[id] || g.ignore && g.ignore(id)) continue;
+		vector<int> path;
+		for(auto i = id, pe = -1; ~i; ){
+			vis[i] = true;
+			path.push_back(i);
+			int ne = -1, ni = -1;
+			for(auto id: adj[i]) if(id != pe){
+				ne = id, ni = i ^ edge[id][0] ^ edge[id][1];
+				break;
+			}
+			pe = ne, i = ni;
+		}
+		int start = -1, end = -1;
+		if((int)path.size() == 1){
+			auto &e = g.edge[path[0]];
+			start = e.from;
+			end = e.to;
+		}
+		else{
+			auto &e0 = g.edge[path[0]], &e1 = g.edge[path[1]];
+			start = e0.from != e1.from && e0.from != e1.to ? e0.from : e0.to;
+			auto &f0 = g.edge[path[(int)path.size() - 1]], &f1 = g.edge[path[(int)path.size() - 2]];
+			end = f0.from != f1.from && f0.from != f1.to ? f0.from : f0.to;
+		}
+		process_path(start, end, path);
+	}
+	for(auto id = 0; id < m; ++ id){
+		if(adj[id].empty() || vis[id] || g.ignore && g.ignore(id)) continue;
+		vector<int> cycle;
+		for(auto i = id, pe = -1; !vis[i]; ){
+			vis[i] = true;
+			cycle.push_back(i);
+			int ne = -1, ni = -1;
+			for(auto id: adj[i]) if(id != pe){
+				ne = id, ni = i ^ edge[id][0] ^ edge[id][1];
+				break;
+			}
+			pe = ne, i = ni;
+		}
+		auto &e = g.edge[cycle.front()], &f = g.edge[cycle.back()];
+		process_cycle(e.from == f.from || e.from == f.to ? e.from : e.to, cycle);
+	}
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>euler_decomopsition</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
