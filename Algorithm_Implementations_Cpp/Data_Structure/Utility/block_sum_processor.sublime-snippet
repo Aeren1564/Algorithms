@@ -8,9 +8,9 @@ struct block_sum_processor{
 	Plus op;
 	Minus inv_op;
 	vector<U> sum;
-	vector<multiset<T>> data;
+	vector<multiset<T, Compare>> data;
 	vector<int> capacity;
-	block_sum_processor(int B = 2, U init = {}, Compare cmp = less<>(), Plus op = plus<>(), Minus inv_op = minus<>()): B(B), sum(B, init), data(B), capacity(B - 1), op(op), inv_op(inv_op){ }
+	block_sum_processor(int B = 2, U init = {}, Compare cmp = less<>(), Plus op = plus<>(), Minus inv_op = minus<>()): B(B), sum(B, init), data(B, multiset<T, Compare>{cmp}), capacity(B - 1), op(op), inv_op(inv_op){ }
 	// O(B log n)
 	void insert(T x){
 		sum[0] = op(sum[0], x);
