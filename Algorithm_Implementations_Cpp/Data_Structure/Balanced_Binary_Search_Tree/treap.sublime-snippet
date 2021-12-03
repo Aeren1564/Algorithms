@@ -160,7 +160,9 @@ struct treap{
 		priority.push_back(rng());
 		internal_size.push_back(1);
 		data.push_back(x);
-		return heapify(u), refresh(u), u;
+		heapify(u);
+		refresh(u);
+		return u;
 	}
 	int build(int n){
 		return build(vector<T>(n, T{}));
