@@ -2,7 +2,7 @@
 	<content><![CDATA[
 template<class T, class U, class F1, class F2, class F3, class F4>
 struct treap_update_query_flip{
-	vector<int> left, right, priority, internal_size, lazy_flip;
+	vector<int> pv, left, right, priority, internal_size, lazy_flip;
 	vector<T> data, subtr_data;
 	vector<U> lazy;
 	F1 TT; // monoid operation (always adjacent)
@@ -39,8 +39,20 @@ struct treap_update_query_flip{
 		}
 	}
 	void refresh(int u){
-		internal_size[u] = (~left[u] ? internal_size[left[u]] : 0) + 1 + (~right[u] ? internal_size[right[u]] : 0);
-		subtr_data[u] = TT(TT(~left[u] ? subtr_data[left[u]] : T_id, data[u]), ~right[u] ? subtr_data[right[u]] : T_id);
+		pv[u] = -1;
+		internal_size[u] = 1;
+		subtr_data[u] = T_id;
+		if(auto v = left[u]; ~v){
+			pv[v] = u;
+			internal_size[u] += internal_size[v];
+			subtr_data[u] = subtr_data[v];
+		}
+		subtr_data[u] = TT(subtr_data[u], data[u]);
+		if(auto w = right[u]; ~w){
+			pv[w] = u;
+			internal_size[u] += internal_size[w];
+			subtr_data[u] = TT(subtr_data[u], subtr_data[w]);
+		}
 	}
 	void heapify(int u){
 		if(~u){
@@ -52,6 +64,15 @@ struct treap_update_query_flip{
 	}
 	int size(int u){
 		return ~u ? internal_size[u] : 0;
+	}
+	// Assuming v lies in the subtree of u, find the position of v in the preorder traversal of subtree of u
+	// O(log n)
+	int position(int u, int v){
+		assert(u && v && u < (int)pv.size() && v < (int)pv.size());
+		int pos = 0;
+		for(; ~pv[v]; v = pv[v]) if(left[pv[v]] != v) pos += size(left[pv[v]]) + 1;
+		assert(u == v);
+		return pos;
 	}
 	// Split to [0, x), [x, inf)
 	// Data must be sorted
@@ -194,6 +215,7 @@ struct treap_update_query_flip{
 	int new_node(T x, int v = -1, int w = -1){
 		static mt19937 rng(1564);
 		int u = (int)data.size();
+		pv.push_back(-1);
 		left.push_back(v);
 		right.push_back(w);
 		priority.push_back(rng());

@@ -1,15 +1,37 @@
 <snippet>
 	<content><![CDATA[
 template<class T, class F>
-struct treap_query{
-	vector<int> left, right, priority, internal_size;
+struct treap_query_flip{
+	vector<int> pv, left, right, priority, internal_size, lazy_flip;
 	vector<T> data, subtr_data;
 	F TT; // monoid operation (always adjacent)
 	T T_id; // monoid identity
-	treap_query(F TT, T T_id): TT(TT), T_id(T_id){ }
+	treap_query_flip(F TT, T T_id): TT(TT), T_id(T_id){ }
+	void push(int u){
+		if(~u){
+			if(lazy_flip[u]){
+				swap(left[u], right[u]);
+				if(~left[u]) lazy_flip[left[u]] ^= 1;
+				if(~right[u]) lazy_flip[right[u]] ^= 1;
+				lazy_flip[u] = 0;
+			}
+		}
+	}
 	void refresh(int u){
-		internal_size[u] = (~left[u] ? internal_size[left[u]] : 0) + 1 + (~right[u] ? internal_size[right[u]] : 0);
-		subtr_data[u] = TT(TT(~left[u] ? subtr_data[left[u]] : T_id, data[u]), ~right[u] ? subtr_data[right[u]] : T_id);
+		pv[u] = -1;
+		internal_size[u] = 1;
+		subtr_data[u] = T_id;
+		if(auto v = left[u]; ~v){
+			pv[v] = u;
+			internal_size[u] += internal_size[v];
+			subtr_data[u] = subtr_data[v];
+		}
+		subtr_data[u] = TT(subtr_data[u], data[u]);
+		if(auto w = right[u]; ~w){
+			pv[w] = u;
+			internal_size[u] += internal_size[w];
+			subtr_data[u] = TT(subtr_data[u], subtr_data[w]);
+		}
 	}
 	void heapify(int u){
 		if(~u){
@@ -22,11 +44,22 @@ struct treap_query{
 	int size(int u){
 		return ~u ? internal_size[u] : 0;
 	}
-	// Split to [0, x), [x, inf), data must be sorted
+	// Assuming v lies in the subtree of u, find the position of v in the preorder traversal of subtree of u
+	// O(log n)
+	int position(int u, int v){
+		assert(u && v && u < (int)pv.size() && v < (int)pv.size());
+		int pos = 0;
+		for(; ~pv[v]; v = pv[v]) if(left[pv[v]] != v) pos += size(left[pv[v]]) + 1;
+		assert(u == v);
+		return pos;
+	}
+	// Split to [0, x), [x, inf)
+	// Data must be sorted
 	// O(log n)
 	template<class Compare = less<>>
 	pair<int, int> split_by_key(int u, T x, Compare cmp = less<>()){
 		if(!~u) return {-1, -1};
+		push(u);
 		if(cmp(data[u], x)){
 			auto [a, b] = split_by_key(right[u], x, cmp);
 			right[u] = a, refresh(u);
@@ -42,6 +75,7 @@ struct treap_query{
 	// O(log n)
 	pair<int, int> split_by_order(int u, int pos){
 		if(!~u) return {-1, -1};
+		push(u);
 		if(size(left[u]) < pos){
 			auto [a, b] = split_by_order(right[u], pos - size(left[u]) - 1);
 			right[u] = a, refresh(u);
@@ -53,11 +87,12 @@ struct treap_query{
 			return {a, u};
 		}
 	}
-	// Split to [True segment], [False segment]
+	// Split to [True Segment], [False Segment]
 	// Data must be sorted
 	// O(log n)
 	pair<int, int> split_by_pred(int u, auto pred){
 		if(!~u) return {-1, -1};
+		push(u);
 		if(pred(u)){
 			auto [a, b] = split_by_pred(right[u], pred);
 			right[u] = a, refresh(u);
@@ -83,6 +118,7 @@ struct treap_query{
 	// O(log n)
 	int append(int u, int v){
 		if(!~u || !~v) return ~u ? u : v;
+		push(u), push(v);
 		if(priority[v] < priority[u]){
 			right[u] = append(right[u], v), refresh(u);
 			return u;
@@ -123,7 +159,7 @@ struct treap_query{
 		return {append(a, c), b};
 	}
 	// O(log n)
-	pair<int, int> erase_by_order(int u, int pos){
+	pair<int, int> erase_by_order(int u, int pos){ // O(log n)
 		if(!~u) return {-1, -1};
 		auto [a, b, c] = split_to_three(u, pos, pos + 1);
 		return {append(a, c), b};
@@ -142,6 +178,7 @@ struct treap_query{
 	}
 	void traverse(int u, auto f){
 		if(~u){
+			push(u);
 			traverse(left[u], f);
 			f(u);
 			traverse(right[u], f);
@@ -157,12 +194,14 @@ struct treap_query{
 	int new_node(T x, int v = -1, int w = -1){
 		static mt19937 rng(1564);
 		int u = (int)data.size();
+		pv.push_back(-1);
 		left.push_back(v);
 		right.push_back(w);
 		priority.push_back(rng());
 		internal_size.push_back(1);
 		data.push_back(x);
 		subtr_data.push_back(x);
+		lazy_flip.push_back(0);
 		heapify(u);
 		refresh(u);
 		return u;
@@ -189,48 +228,19 @@ struct treap_query{
 		u = append(append(a, b), c);
 		return res;
 	}
-	// pred(sum[ql, r)) is T, T, ..., T, F, F, ..., F
-	// Returns max r with T
-	int max_pref(int u, int ql, auto pred){
-		assert(0 <= ql && ql <= size(u) && pred(T_id));
-		if(ql == size(u)) return size(u);
-		T sum = T_id;
-		auto recurse = [&](auto self, int u, int l)->int{
-			int r = l + size(u);
-			if(!~u || r <= ql) return -1;
-			if(ql <= l && pred(TT(sum, subtr_data[u]))){
-				sum = TT(sum, data[u]);
-				return -1;
-			}
-			if(auto p = self(self, left[u], l); ~p) return p;
-			l += size(left[u]);
-			return ql <= l && !pred(sum = TT(sum, data[u])) ? l + 1 : self(self, right[u], l + 1);
-		};
-		return recurse(recurse, u, 0);
-	}
-	// pred(sum[l, qr)) is F, F, ..., F, T, T, ..., T
-	// Returns min l with T
-	int min_suff(int u, int qr, auto pred){
-		assert(0 <= qr && qr <= size(u) && pred(T_id));
-		if(qr == 0) return 0;
-		T sum = T_id;
-		auto recurse = [&](auto self, int u, int r)->int{
-			int l = r - size(u);
-			if(!~u || qr <= l) return -1;
-			if(r <= qr && pred(TT(subtr_data[u], sum))){
-				sum = TT(data[u], sum);
-				return -1;
-			}
-			if(auto p = self(self, right[u], r); ~p) return p;
-			r -= size(right[u]);
-			return r <= qr && !pred(sum = TT(data[u], sum)) ? r - 1 : self(self, left[u], r - 1);
-		};
-		return recurse(recurse, u, size(u));
+	void flip(int u, int l, int r){
+		assert(0 <= l && l <= r && r <= size(u));
+		if(l == r) return;
+		auto [a, b, c] = split_to_three(u, l, r);
+		swap(left[b], right[b]);
+		lazy_flip[b] ^= 1;
+		refresh(b);
+		u = append(append(a, b), c);
 	}
 };
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
-	<tabTrigger>treap_query</tabTrigger> -->
+	<tabTrigger>treap_query_flip</tabTrigger> -->
 	<!-- Optional: Set a scope to limit where the snippet will trigger -->
 	<scope>source.c++</scope> -->
 </snippet>

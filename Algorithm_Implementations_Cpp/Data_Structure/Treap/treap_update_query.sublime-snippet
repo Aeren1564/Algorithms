@@ -1,12 +1,52 @@
 <snippet>
 	<content><![CDATA[
-template<class T>
-struct treap{
-	vector<int> left, right, priority, internal_size;
-	vector<T> data;
-	treap(){ }
+template<class T, class U, class F1, class F2, class F3, class F4>
+struct treap_update_query{
+	vector<int> pv, left, right, priority, internal_size;
+	vector<T> data, subtr_data;
+	vector<U> lazy;
+	F1 TT; // monoid operation (always adjacent)
+	T T_id; // monoid identity
+	F2 UU; // semigroup operation (superset, subset)
+	F3 U_init; // semigroup default element for the interval [l, r)
+	F4 UT; // action of U on T (superset, subset)
+	treap_update_query(
+		F1 TT, T T_id,
+		F2 UU, F3 U_init,
+		F4 UT
+	): TT(TT), T_id(T_id), UU(UU), U_init(U_init), UT(UT){ }
+	void push(int u){
+		if(~u){
+			if(lazy[u] != U_init()){
+				if(~left[u]){
+					lazy[left[u]]  = UU(lazy[u], lazy[left[u]]);
+					data[left[u]] = UT(lazy[u], data[left[u]]);
+					subtr_data[left[u]] = UT(lazy[u], subtr_data[left[u]]);
+				}
+				if(~right[u]){
+					lazy[right[u]]  = UU(lazy[u], lazy[right[u]]);
+					data[right[u]] = UT(lazy[u], data[right[u]]);
+					subtr_data[right[u]] = UT(lazy[u], subtr_data[right[u]]);
+				}
+				lazy[u] = U_init();
+			}
+		}
+	}
 	void refresh(int u){
-		internal_size[u] = (~left[u] ? internal_size[left[u]] : 0) + 1 + (~right[u] ? internal_size[right[u]] : 0);
+		pv[u] = -1;
+		internal_size[u] = 1;
+		subtr_data[u] = T_id;
+		if(auto v = left[u]; ~v){
+			pv[v] = u;
+			internal_size[u] += internal_size[v];
+			subtr_data[u] = subtr_data[v];
+		}
+		subtr_data[u] = TT(subtr_data[u], data[u]);
+		if(auto w = right[u]; ~w){
+			pv[w] = u;
+			internal_size[u] += internal_size[w];
+			subtr_data[u] = TT(subtr_data[u], subtr_data[w]);
+		}
 	}
 	void heapify(int u){
 		if(~u){
@@ -19,12 +59,22 @@ struct treap{
 	int size(int u){
 		return ~u ? internal_size[u] : 0;
 	}
-	// Split into [0, x), [x, inf)
+	// Assuming v lies in the subtree of u, find the position of v in the preorder traversal of subtree of u
+	// O(log n)
+	int position(int u, int v){
+		assert(u && v && u < (int)pv.size() && v < (int)pv.size());
+		int pos = 0;
+		for(; ~pv[v]; v = pv[v]) if(left[pv[v]] != v) pos += size(left[pv[v]]) + 1;
+		assert(u == v);
+		return pos;
+	}
+	// Split to [0, x), [x, inf)
 	// Data must be sorted
 	// O(log n)
 	template<class Compare = less<>>
 	pair<int, int> split_by_key(int u, T x, Compare cmp = less<>()){
 		if(!~u) return {-1, -1};
+		push(u);
 		if(cmp(data[u], x)){
 			auto [a, b] = split_by_key(right[u], x, cmp);
 			right[u] = a, refresh(u);
@@ -40,6 +90,7 @@ struct treap{
 	// O(log n)
 	pair<int, int> split_by_order(int u, int pos){
 		if(!~u) return {-1, -1};
+		push(u);
 		if(size(left[u]) < pos){
 			auto [a, b] = split_by_order(right[u], pos - size(left[u]) - 1);
 			right[u] = a, refresh(u);
@@ -56,6 +107,7 @@ struct treap{
 	// O(log n)
 	pair<int, int> split_by_pred(int u, auto pred){
 		if(!~u) return {-1, -1};
+		push(u);
 		if(pred(u)){
 			auto [a, b] = split_by_pred(right[u], pred);
 			right[u] = a, refresh(u);
@@ -81,6 +133,7 @@ struct treap{
 	// O(log n)
 	int append(int u, int v){
 		if(!~u || !~v) return ~u ? u : v;
+		push(u), push(v);
 		if(priority[v] < priority[u]){
 			right[u] = append(right[u], v), refresh(u);
 			return u;
@@ -121,7 +174,7 @@ struct treap{
 		return {append(a, c), b};
 	}
 	// O(log n)
-	pair<int, int> erase_by_order(int u, int pos){
+	pair<int, int> erase_by_order(int u, int pos){ // O(log n)
 		if(!~u) return {-1, -1};
 		auto [a, b, c] = split_to_three(u, pos, pos + 1);
 		return {append(a, c), b};
@@ -140,6 +193,7 @@ struct treap{
 	}
 	void traverse(int u, auto f){
 		if(~u){
+			push(u);
 			traverse(left[u], f);
 			f(u);
 			traverse(right[u], f);
@@ -155,17 +209,20 @@ struct treap{
 	int new_node(T x, int v = -1, int w = -1){
 		static mt19937 rng(1564);
 		int u = (int)data.size();
+		pv.push_back(-1);
 		left.push_back(v);
 		right.push_back(w);
 		priority.push_back(rng());
 		internal_size.push_back(1);
 		data.push_back(x);
+		subtr_data.push_back(x);
+		lazy.push_back(U_init());
 		heapify(u);
 		refresh(u);
 		return u;
 	}
 	int build(int n){
-		return build(vector<T>(n, T{}));
+		return build(vector<T>(n, T_id));
 	}
 	int build(int n, T init){
 		return build(vector<T>(n, init));
@@ -178,10 +235,27 @@ struct treap{
 		};
 		return recurse(recurse, 0, (int)a.size());
 	}
+	void update(int u, int l, int r, U f){
+		assert(0 <= l && l <= r && r <= size(u));
+		if(l == r) return;
+		auto [a, b, c] = split_to_three(u, l, r);
+		data[b] = UT(f, data[b]);
+		lazy[b] = UU(f, lazy[b]);
+		refresh(b);
+		u = append(append(a, b), c);
+	}
+	T query(int u, int l, int r){
+		assert(0 <= l && l <= r && r <= size(u));
+		if(l == r) return T_id;
+		auto [a, b, c] = split_to_three(u, l, r);
+		T res = subtr_data[b];
+		u = append(append(a, b), c);
+		return res;
+	}
 };
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
-	<tabTrigger>treap</tabTrigger> -->
+	<tabTrigger>treap_update_query</tabTrigger> -->
 	<!-- Optional: Set a scope to limit where the snippet will trigger -->
 	<scope>source.c++</scope> -->
 </snippet>
