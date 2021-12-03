@@ -1,10 +1,20 @@
 <snippet>
 	<content><![CDATA[
 template<class T>
-struct treap{
-	vector<int> left, right, priority, internal_size;
+struct treap_flip{
+	vector<int> left, right, priority, internal_size, lazy_flip;
 	vector<T> data;
-	treap(){ }
+	treap_flip(){ }
+	void push(int u){
+		if(~u){
+			if(lazy_flip[u]){
+				swap(left[u], right[u]);
+				if(~left[u]) lazy_flip[left[u]] ^= 1;
+				if(~right[u]) lazy_flip[right[u]] ^= 1;
+				lazy_flip[u] = 0;
+			}
+		}
+	}
 	void refresh(int u){
 		internal_size[u] = (~left[u] ? internal_size[left[u]] : 0) + 1 + (~right[u] ? internal_size[right[u]] : 0);
 	}
@@ -19,12 +29,13 @@ struct treap{
 	int size(int u){
 		return ~u ? internal_size[u] : 0;
 	}
-	// Split into [0, x), [x, inf)
+	// Split to [0, x), [x, inf)
 	// Data must be sorted
 	// O(log n)
 	template<class Compare = less<>>
 	pair<int, int> split_by_key(int u, T x, Compare cmp = less<>()){
 		if(!~u) return {-1, -1};
+		push(u);
 		if(cmp(data[u], x)){
 			auto [a, b] = split_by_key(right[u], x, cmp);
 			right[u] = a, refresh(u);
@@ -40,6 +51,7 @@ struct treap{
 	// O(log n)
 	pair<int, int> split_by_order(int u, int pos){
 		if(!~u) return {-1, -1};
+		push(u);
 		if(size(left[u]) < pos){
 			auto [a, b] = split_by_order(right[u], pos - size(left[u]) - 1);
 			right[u] = a, refresh(u);
@@ -56,6 +68,7 @@ struct treap{
 	// O(log n)
 	pair<int, int> split_by_pred(int u, auto pred){
 		if(!~u) return {-1, -1};
+		push(u);
 		if(pred(u)){
 			auto [a, b] = split_by_pred(right[u], pred);
 			right[u] = a, refresh(u);
@@ -81,6 +94,7 @@ struct treap{
 	// O(log n)
 	int append(int u, int v){
 		if(!~u || !~v) return ~u ? u : v;
+		push(u), push(v);
 		if(priority[v] < priority[u]){
 			right[u] = append(right[u], v), refresh(u);
 			return u;
@@ -121,7 +135,7 @@ struct treap{
 		return {append(a, c), b};
 	}
 	// O(log n)
-	pair<int, int> erase_by_order(int u, int pos){
+	pair<int, int> erase_by_order(int u, int pos){ // O(log n)
 		if(!~u) return {-1, -1};
 		auto [a, b, c] = split_to_three(u, pos, pos + 1);
 		return {append(a, c), b};
@@ -140,6 +154,7 @@ struct treap{
 	}
 	void traverse(int u, auto f){
 		if(~u){
+			push(u);
 			traverse(left[u], f);
 			f(u);
 			traverse(right[u], f);
@@ -160,7 +175,10 @@ struct treap{
 		priority.push_back(rng());
 		internal_size.push_back(1);
 		data.push_back(x);
-		return heapify(u), refresh(u), u;
+		lazy_flip.push_back(0);
+		heapify(u);
+		refresh(u);
+		return u;
 	}
 	int build(int n){
 		return build(vector<T>(n, T{}));
@@ -176,10 +194,19 @@ struct treap{
 		};
 		return recurse(recurse, 0, (int)a.size());
 	}
+	void flip(int u, int l, int r){
+		assert(0 <= l && l <= r && r <= size(u));
+		if(l == r) return;
+		auto [a, b, c] = split_to_three(u, l, r);
+		swap(left[b], right[b]);
+		lazy_flip[b] ^= 1;
+		refresh(b);
+		u = append(append(a, b), c);
+	}
 };
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
-	<tabTrigger>treap</tabTrigger> -->
+	<tabTrigger>treap_flip</tabTrigger> -->
 	<!-- Optional: Set a scope to limit where the snippet will trigger -->
 	<scope>source.c++</scope> -->
 </snippet>

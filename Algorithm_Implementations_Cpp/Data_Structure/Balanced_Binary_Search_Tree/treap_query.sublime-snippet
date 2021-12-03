@@ -53,6 +53,32 @@ struct treap_query{
 			return {a, u};
 		}
 	}
+	// Split to [True segment], [False segment]
+	// Data must be sorted
+	// O(log n)
+	pair<int, int> split_by_pred(int u, auto pred){
+		if(!~u) return {-1, -1};
+		if(pred(u)){
+			auto [a, b] = split_by_pred(right[u], pred);
+			right[u] = a, refresh(u);
+			return {u, b};
+		}
+		else{
+			auto [a, b] = split_by_pred(left[u], pred);
+			left[u] = b, refresh(u);
+			return {a, u};
+		}
+	}
+	// Split into [0, l), [l, r), [r, inf)
+	// O(log n)
+	tuple<int, int, int> split_to_three(int u, int l, int r){
+		assert(0 <= l && l <= r && r <= size(u));
+		if(!~u) return {-1, -1, -1};
+		int a, b, c;
+		tie(a, b) = split_by_order(u, l);
+		tie(b, c) = split_by_order(b, r - l);
+		return {a, b, c};
+	}
 	// Append u and v
 	// O(log n)
 	int append(int u, int v){
@@ -99,9 +125,7 @@ struct treap_query{
 	// O(log n)
 	pair<int, int> erase_by_order(int u, int pos){
 		if(!~u) return {-1, -1};
-		int a, b, c;
-		tie(a, b) = split_by_order(u, pos);
-		tie(b, c) = split_by_order(b, 1);
+		auto [a, b, c] = split_to_three(u, pos, pos + 1);
 		return {append(a, c), b};
 	}
 	// Data must be sorted
@@ -116,13 +140,18 @@ struct treap_query{
 		refresh(u);
 		return u;
 	}
-	void act_on_subtr(int u, function<void(int)> f){
-		if(~u) act_on_subtr(left[u], f), f(u), act_on_subtr(right[u], f), refresh(u);
+	void traverse(int u, auto f){
+		if(~u){
+			traverse(left[u], f);
+			f(u);
+			traverse(right[u], f);
+			refresh(u);
+		}
 	}
 	template<class output_stream>
 	output_stream &print(output_stream &out, int u){
 		out << "[";
-		act_on_subtr(u, [&](int u){ out << data[u] << ", "; });
+		traverse(u, [&](int u){ out << data[u] << ", "; });
 		return out << "\b\b]";
 	}
 	int new_node(T x, int v = -1, int w = -1){
@@ -154,12 +183,49 @@ struct treap_query{
 	}
 	T query(int u, int l, int r){
 		assert(0 <= l && l <= r && r <= size(u));
-		int a, b, c;
-		tie(a, b) = split_by_order(u, l);
-		tie(b, c) = split_by_order(b, r - l);
-		T res = ~b ? subtr_data[b] : T_id;
+		if(l == r) return T_id;
+		auto [a, b, c] = split_to_three(u, l, r);
+		T res = subtr_data[b];
 		u = append(append(a, b), c);
 		return res;
+	}
+	// pred(sum[ql, r)) is T, T, ..., T, F, F, ..., F
+	// Returns max r with T
+	int max_pref(int u, int ql, auto pred){
+		assert(0 <= ql && ql <= size(u) && pred(T_id));
+		if(ql == size(u)) return size(u);
+		T sum = T_id;
+		auto recurse = [&](auto self, int u, int l)->int{
+			int r = l + size(u);
+			if(!~u || r <= ql) return -1;
+			if(ql <= l && pred(TT(sum, subtr_data[u]))){
+				sum = TT(sum, data[u]);
+				return -1;
+			}
+			if(auto p = self(self, left[u], l); ~p) return p;
+			l += size(left[u]);
+			return ql <= l && !pred(sum = TT(sum, data[u])) ? l + 1 : self(self, right[u], l + 1);
+		};
+		return recurse(recurse, u, 0);
+	}
+	// pred(sum[l, qr)) is F, F, ..., F, T, T, ..., T
+	// Returns min l with T
+	int min_suff(int u, int qr, auto pred){
+		assert(0 <= qr && qr <= size(u) && pred(T_id));
+		if(qr == 0) return 0;
+		T sum = T_id;
+		auto recurse = [&](auto self, int u, int r)->int{
+			int l = r - size(u);
+			if(!~u || qr <= l) return -1;
+			if(r <= qr && pred(TT(subtr_data[u], sum))){
+				sum = TT(data[u], sum);
+				return -1;
+			}
+			if(auto p = self(self, right[u], r); ~p) return p;
+			r -= size(right[u]);
+			return r <= qr && !pred(sum = TT(data[u], sum)) ? r - 1 : self(self, left[u], r - 1);
+		};
+		return recurse(recurse, u, size(u));
 	}
 };
 ]]></content>

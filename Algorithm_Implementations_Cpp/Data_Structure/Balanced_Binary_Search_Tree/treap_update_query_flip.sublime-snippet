@@ -53,7 +53,8 @@ struct treap_update_query_flip{
 	int size(int u){
 		return ~u ? internal_size[u] : 0;
 	}
-	// Split to [0, x), [x, inf), data must be sorted
+	// Split to [0, x), [x, inf)
+	// Data must be sorted
 	// O(log n)
 	template<class Compare = less<>>
 	pair<int, int> split_by_key(int u, T x, Compare cmp = less<>()){
@@ -85,6 +86,33 @@ struct treap_update_query_flip{
 			left[u] = b, refresh(u);
 			return {a, u};
 		}
+	}
+	// Split to [True Segment], [False Segment]
+	// Data must be sorted
+	// O(log n)
+	pair<int, int> split_by_pred(int u, auto pred){
+		if(!~u) return {-1, -1};
+		push(u);
+		if(pred(u)){
+			auto [a, b] = split_by_pred(right[u], pred);
+			right[u] = a, refresh(u);
+			return {u, b};
+		}
+		else{
+			auto [a, b] = split_by_pred(left[u], pred);
+			left[u] = b, refresh(u);
+			return {a, u};
+		}
+	}
+	// Split into [0, l), [l, r), [r, inf)
+	// O(log n)
+	tuple<int, int, int> split_to_three(int u, int l, int r){
+		assert(0 <= l && l <= r && r <= size(u));
+		if(!~u) return {-1, -1, -1};
+		int a, b, c;
+		tie(a, b) = split_by_order(u, l);
+		tie(b, c) = split_by_order(b, r - l);
+		return {a, b, c};
 	}
 	// Append u and v
 	// O(log n)
@@ -133,9 +161,7 @@ struct treap_update_query_flip{
 	// O(log n)
 	pair<int, int> erase_by_order(int u, int pos){ // O(log n)
 		if(!~u) return {-1, -1};
-		int a, b, c;
-		tie(a, b) = split_by_order(u, pos);
-		tie(b, c) = split_by_order(b, 1);
+		auto [a, b, c] = split_to_three(u, pos, pos + 1);
 		return {append(a, c), b};
 	}
 	// Data must be sorted
@@ -150,13 +176,19 @@ struct treap_update_query_flip{
 		refresh(u);
 		return u;
 	}
-	void act_on_subtr(int u, function<void(int)> f){
-		if(~u) push(u), act_on_subtr(left[u], f), f(u), act_on_subtr(right[u], f), refresh(u);
+	void traverse(int u, auto f){
+		if(~u){
+			push(u);
+			traverse(left[u], f);
+			f(u);
+			traverse(right[u], f);
+			refresh(u);
+		}
 	}
 	template<class output_stream>
 	output_stream &print(output_stream &out, int u){
 		out << "[";
-		act_on_subtr(u, [&](int u){ out << data[u] << ", "; });
+		traverse(u, [&](int u){ out << data[u] << ", "; });
 		return out << "\b\b]";
 	}
 	int new_node(T x, int v = -1, int w = -1){
@@ -191,9 +223,7 @@ struct treap_update_query_flip{
 	void update(int u, int l, int r, U f){
 		assert(0 <= l && l <= r && r <= size(u));
 		if(l == r) return;
-		int a, b, c;
-		tie(a, b) = split_by_order(u, l);
-		tie(b, c) = split_by_order(b, r - l);
+		auto [a, b, c] = split_to_three(u, l, r);
 		data[b] = UT(f, data[b]);
 		lazy[b] = UU(f, lazy[b]);
 		refresh(b);
@@ -202,9 +232,7 @@ struct treap_update_query_flip{
 	T query(int u, int l, int r){
 		assert(0 <= l && l <= r && r <= size(u));
 		if(l == r) return T_id;
-		int a, b, c;
-		tie(a, b) = split_by_order(u, l);
-		tie(b, c) = split_by_order(b, r - l);
+		auto [a, b, c] = split_to_three(u, l, r);
 		T res = subtr_data[b];
 		u = append(append(a, b), c);
 		return res;
@@ -212,9 +240,7 @@ struct treap_update_query_flip{
 	void flip(int u, int l, int r){
 		assert(0 <= l && l <= r && r <= size(u));
 		if(l == r) return;
-		int a, b, c;
-		tie(a, b) = split_by_order(u, l);
-		tie(b, c) = split_by_order(b, r - l);
+		auto [a, b, c] = split_to_three(u, l, r);
 		swap(left[b], right[b]);
 		lazy_flip[b] ^= 1;
 		refresh(b);

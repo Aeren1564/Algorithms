@@ -35,7 +35,7 @@ struct recursive_segment_tree{
 		data[u] = UT(updates[u], TT(data[u + 1], data[u + (r - l >> 1 << 1)]));
 	}
 	void update(int ql, int qr, U x){ // Apply x to values at [ql, qr)
-		auto recurse = [&](auto recurse, int u, int l, int r)->void{
+		auto recurse = [&](auto self, int u, int l, int r)->void{
 			if(qr <= l || r <= ql) return;
 			if(ql <= l && r <= qr){
 				data[u] = UT(x, data[u]), updates[u] = UU(x, updates[u]);
@@ -43,36 +43,59 @@ struct recursive_segment_tree{
 			}
 			push(u, l, r);
 			int m = l + (r - l >> 1);
-			recurse(recurse, u + 1, l, m), recurse(recurse, u + (m - l << 1), m, r);
+			self(self, u + 1, l, m), self(self, u + (m - l << 1), m, r);
 			refresh(u, l, r);
 		};
 		recurse(recurse, 0, 0, n);
 	}
 	T query(int ql, int qr){ // Get the query result for [ql, qr)
-		auto recurse = [&](auto recurse, int u, int l, int r)->T{
+		auto recurse = [&](auto self, int u, int l, int r)->T{
 			if(qr <= l || r <= ql) return T_id;
 			if(ql <= l && r <= qr) return data[u];
 			push(u, l, r);
 			int m = l + (r - l >> 1);
-			return TT(recurse(recurse, u + 1, l, m), recurse(recurse, u + (m - l << 1), m, r));
+			return TT(self(self, u + 1, l, m), self(self, u + (m - l << 1), m, r));
 		};
 		return recurse(recurse, 0, 0, n);
 	}
-	int max_pref(int ql, auto f){
-		T pref = T_id;
-		auto recurse = [&](auto recurse, int u, int l, int r)->int{
+	// pred(sum[ql, r)) is T, T, ..., T, F, F, ..., F
+	// Returns max r with T
+	int max_pref(int ql, auto pred){
+		assert(0 <= ql && ql <= n && pred(T_id));
+		if(ql == n) return n;
+		T sum = T_id;
+		auto recurse = [&](auto self, int u, int l, int r)->int{
 			if(r <= ql) return -1;
-			if(ql <= l && f(TT(pref, data[u]))){
-				pref = TT(pref, data[u]);
+			if(ql <= l && pred(TT(sum, data[u]))){
+				sum = TT(sum, data[u]);
 				return -1;
 			}
 			if(r - l == 1) return r;
 			push(u, l, r);
-			int m = l + (r - l >> 1), p = recurse(u + 1, l, m);
-			return ~p ? p : recurse(u + (m - l << 1), m, r);
+			int m = l + (r - l >> 1), p = self(self, u + 1, l, m);
+			return ~p ? p : self(self, u + (m - l << 1), m, r);
 		};
 		return recurse(recurse, 0, 0, n);
-	} // f(sum[l, r)) is T, T, ..., T, F, F, ..., F, returns max r with T
+	}
+	// pred(sum[l, qr)) is F, F, ..., F, T, T, ..., T
+	// Returns min l with T
+	int min_suff(int qr, auto pred){
+		assert(0 <= qr && qr <= n && pred(T_id));
+		if(qr == 0) return 0;
+		T sum = T_id;
+		auto recurse = [&](auto self, int u, int l, int r)->int{
+			if(qr <= l) return -1;
+			if(r <= qr && pred(TT(data[u], sum))){
+				sum = TT(data[u], sum);
+				return -1;
+			}
+			if(r - l == 1) return l;
+			push(u, l, r);
+			int m = l + (r - l >> 1), p = self(self, u + (m - l << 1), m, r);
+			return ~p ? p : self(self, u + 1, l, m);
+		};
+		return recurse(recurse, 0, 0, n);
+	}
 };
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->

@@ -46,48 +46,48 @@ struct segment_tree{
 	T query_all() const{
 		return data[1];
 	}
-	// f(sum[l, r)) is T, T, ..., T, F, F, ..., F, returns min r with F (n + 1 if no such r)
+	// pred(sum[l, r)) is T, T, ..., T, F, F, ..., F
+	// Returns max r with T
 	// O(log n)
-	int max_pref(int l, auto f) const{
-		assert(0 <= l && l <= n);
-		if(!f(T_id)) return l;
-		if(l == n) return n + 1;
+	int max_pref(int l, auto pred) const{
+		assert(0 <= l && l <= n && pred(T_id));
+		if(l == n) return n;
 		l += size;
 		T sm = T_id;
 		do{
 			while(~l & 1) l >>= 1;
-			if(!f(TT(sm, data[l]))){
+			if(!pred(TT(sm, data[l]))){
 				while(l < size){
 					l = l << 1;
-					if(f(TT(sm, data[l]))) sm = TT(sm, data[l ++]);
+					if(pred(TT(sm, data[l]))) sm = TT(sm, data[l ++]);
 				}
-				return l - size + 1;
+				return l - size;
 			}
 			sm = TT(sm, data[l ++]);
 		}while((l & -l) != l);
-		return n + 1;
+		return n;
 	}
-	// f(sum[l, r)) is F, F, ..., F, T, T, ..., T, returns max l with F (-1 if no such l)
+	// pred(sum[l, r)) is F, F, ..., F, T, T, ..., T
+	// Returns min l with T
 	// O(log n)
-	int min_suff(int r, auto f) const{
-		assert(0 <= r && r <= n);
-		if(!f(T_id)) return r;
-		if(r == 0) return -1;
+	int min_suff(int r, auto pred) const{
+		assert(0 <= r && r <= n && pred(T_id));
+		if(r == 0) return 0;
 		r += size;
 		T sm = T_id;
 		do{
 			-- r;
 			while(r > 1 && r & 1) r >>= 1;
-			if(!f(TT(data[r], sm))){
+			if(!pred(TT(data[r], sm))){
 				while(r < size){
 					r = r << 1 | 1;
-					if(f(TT(data[r], sm))) sm = TT(data[r --], sm);
+					if(pred(TT(data[r], sm))) sm = TT(data[r --], sm);
 				}
-				return r - size;
+				return r + 1 - size;
 			}
 			sm = TT(data[r], sm);
 		}while((r & -r) != r);
-		return -1;
+		return 0;
 	}
 	template<class output_stream>
 	friend output_stream &operator<<(output_stream &out, const segment_tree<T, F> &seg){

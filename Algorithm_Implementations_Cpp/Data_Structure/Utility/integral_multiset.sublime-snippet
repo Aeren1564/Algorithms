@@ -43,7 +43,7 @@ struct integral_multiset{
 	}
 	T find_by_order(int k) const{ // O(log len)
 		assert(k < sz);
-		return data.max_pref([k](int pref){ return pref <= k; }) - 1 + offset;
+		return data.max_pref([k](int pref){ return pref <= k; }) + offset;
 	}
 	int order_of_key(T x) const{ // O(log len)
 		assert(offset <= x && x < maxval);
@@ -60,12 +60,12 @@ struct integral_multiset{
 	int lower_bound(T x) const{ // O(log len), returns maxval if no such element
 		assert(offset <= x && x < maxval);
 		int k = data.query(x - offset) + 1;
-		return data.max_pref([k](int pref){ return pref <= k; }) - 1 + offset;
+		return data.max_pref([k](int pref){ return pref <= k; }) + offset;
 	}
 	int upper_bound(T x) const{ // O(log len), returns maxval if no such element
 		assert(offset <= x && x < maxval);
 		int k = data.query(x - offset + 1) + 1;
-		return data.max_pref([k](int pref){ return pref <= k; }) - 1 + offset;
+		return data.max_pref([k](int pref){ return pref <= k; }) + offset;
 	}
 };
 ]]></content>

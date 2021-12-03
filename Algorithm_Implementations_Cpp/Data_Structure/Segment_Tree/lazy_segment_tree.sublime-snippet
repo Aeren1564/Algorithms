@@ -97,53 +97,54 @@ struct lazy_segment_tree{
 			if(r >> i << i != r) refresh(r - 1 >> i);
 		}
 	}
-	// f(sum[l, r)) is T, T, ..., T, F, F, ..., F, returns min r with F (n + 1 if no such r)
+	// pred(sum[l, r)) is T, T, ..., T, F, F, ..., F
+	// Returns max r with T
 	// O(log n)
-	int max_pref(int l, auto g){
+	int max_pref(int l, auto pred){
 		assert(0 <= l && l <= n);
-		if(!g(T_id)) return l;
-		if(l == n) return n + 1;
+		assert(pred(T_id));
+		if(l == n) return n;
 		l += size;
 		for(auto i = log; i >= 1; -- i) push(l >> i);
-		T sm = T_id;
+		T sum = T_id;
 		do{
 			while(~l & 1) l >>= 1;
-			if(!g(TT(sm, data[l]))){
+			if(!pred(TT(sum, data[l]))){
 				while(l < size){
 					push(l);
 					l = l << 1;
-					if(g(TT(sm, data[l]))) sm = TT(sm, data[l ++]);
+					if(pred(TT(sum, data[l]))) sum = TT(sum, data[l ++]);
 				}
-				return l - size + 1;
+				return l - size;
 			}
-			sm = TT(sm, data[l]);
+			sum = TT(sum, data[l]);
 			++ l;
 		}while((l & -l) != l);
-		return n + 1;
+		return n;
 	}
-	// f(sum[l, r)) is F, F, ..., F, T, T, ..., T, returns max l with F (-1 if no such l)
+	// pred(sum[l, r)) is F, F, ..., F, T, T, ..., T
+	// Returns min l with T
 	// O(log n)
-	int min_suff(int r, auto g){
-		assert(0 <= r && r <= n);
-		if(!g(T_id)) return r;
-		if(r == 0) return -1;
+	int min_suff(int r, auto pred){
+		assert(0 <= r && r <= n && pred(T_id));
+		if(r == 0) return 0;
 		r += size;
 		for(auto i = log; i >= 1; -- i) push(r - 1 >> i);
-		T sm = T_id;
+		T sum = T_id;
 		do{
 			-- r;
 			while(r > 1 && r & 1) r >>= 1;
-			if(!g(TT(data[r], sm))){
+			if(!pred(TT(data[r], sum))){
 				while(r < size){
 					push(r);
 					r = r << 1 | 1;
-					if(g(TT(data[r], sm))) sm = TT(data[r --], sm);
+					if(pred(TT(data[r], sum))) sum = TT(data[r --], sum);
 				}
-				return r - size;
+				return r + 1 - size;
 			}
-			sm = TT(data[r], sm);
+			sum = TT(data[r], sum);
 		}while((r & -r) != r);
-		return -1;
+		return 0;
 	}
 	template<class output_stream>
 	friend output_stream &operator<<(output_stream &out, lazy_segment_tree<T, U, F1, F2, F3, F4> seg){

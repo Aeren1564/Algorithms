@@ -31,37 +31,18 @@ struct fenwick_tree{
 		assert(0 <= l && l <= r && r <= n);
 		return query(r) - query(l);
 	}
-	// f(sum[0, r)) is T, T, ..., T, F, F, ..., F, returns min r with F (n + 1 if no such r)
+	// pred(sum[0, r)) is T, T, ..., T, F, F, ..., F
+	// Returns max r with T
 	// O(log n)
-	int max_pref(auto f) const{
-		if(!f({})) return 0;
+	int max_pref(auto pred) const{
+		assert(pred({}));
 		int p = 0;
-		T pref{};
-		for(auto pw = 1 << __lg(n + 1); pw; pw >>= 1) if(p + pw <= n && f(pref + data[p + pw - 1])){
-			pref += data[p + pw - 1];
+		T sum{};
+		for(auto pw = 1 << __lg(n + 1); pw; pw >>= 1) if(p + pw <= n && f(sum + data[p + pw - 1])){
+			sum += data[p + pw - 1];
 			p += pw;
 		}
-		return p + 1;
-	}
-	int lower_bound(T x) const{
-		if(x <= T{}) return 0;
-		int p = 0;
-		T pref{};
-		for(auto pw = 1 << __lg(n + 1); pw; pw >>= 1) if(p + pw <= n && pref + data[p + pw - 1] < x){
-			pref += data[p + pw - 1];
-			p += pw;
-		}
-		return p + 1;
-	}
-	int upper_bound(T x) const{
-		if(x < T{}) return 0;
-		int p = 0;
-		T pref{};
-		for(auto pw = 1 << __lg(n + 1); pw; pw >>= 1) if(p + pw <= n && pref + data[p + pw - 1] <= x){
-			pref += data[p + pw - 1];
-			p += pw;
-		}
-		return p + 1;
+		return p;
 	}
 	template<class output_stream>
 	friend output_stream &operator<<(output_stream &out, const fenwick_tree<T> &fw){
