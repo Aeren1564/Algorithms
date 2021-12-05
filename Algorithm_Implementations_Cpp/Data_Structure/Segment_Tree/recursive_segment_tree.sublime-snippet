@@ -65,15 +65,15 @@ struct recursive_segment_tree{
 		if(ql == n) return n;
 		T sum = T_id;
 		auto recurse = [&](auto self, int u, int l, int r)->int{
-			if(r <= ql) return -1;
+			if(r <= ql) return n;
 			if(ql <= l && pred(TT(sum, data[u]))){
 				sum = TT(sum, data[u]);
-				return -1;
+				return n;
 			}
 			if(r - l == 1) return r;
 			push(u, l, r);
 			int m = l + (r - l >> 1), p = self(self, u + 1, l, m);
-			return ~p ? p : self(self, u + (m - l << 1), m, r);
+			return p < n ? p : self(self, u + (m - l << 1), m, r);
 		};
 		return recurse(recurse, 0, 0, n);
 	}
@@ -84,15 +84,15 @@ struct recursive_segment_tree{
 		if(qr == 0) return 0;
 		T sum = T_id;
 		auto recurse = [&](auto self, int u, int l, int r)->int{
-			if(qr <= l) return -1;
+			if(qr <= l) return 0;
 			if(r <= qr && pred(TT(data[u], sum))){
 				sum = TT(data[u], sum);
-				return -1;
+				return 0;
 			}
 			if(r - l == 1) return l;
 			push(u, l, r);
 			int m = l + (r - l >> 1), p = self(self, u + (m - l << 1), m, r);
-			return ~p ? p : self(self, u + 1, l, m);
+			return p > 0 ? p : self(self, u + 1, l, m);
 		};
 		return recurse(recurse, 0, 0, n);
 	}
