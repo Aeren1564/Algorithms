@@ -4,15 +4,35 @@ template<class T>
 struct floyd_warshall{
 	int n;
 	vector<vector<T>> dist;
-	floyd_warshall(int n): dist(n, vector<T>(n)){ }
-	// assumes the graph has no negative cycle
+	floyd_warshall(int n): n(n), dist(n, vector<T>(n)){ }
+	// Assumes the graph has no negative cycle
 	// O(|V|^3)
 	template<class U>
 	void run(const vector<vector<U>> &adjm){
-		assert(!n && adjm.empty() || n == (int)adjm.size() && n == (int)adjm[0].size());
+		assert(!n && empty(adjm) || n == size(adjm) && n == size(adjm[0]));
 		for(auto u = 0; u < n; ++ u) for(auto v = 0; v < n; ++ v) dist[u][v] = adjm[u][v];
-		for(auto u = 0; u < n; ++ u) dist[u][u] = 0;
 		for(auto w = 0; w < n; ++ w) for(auto u = 0; u < n; ++ u) for(auto v = 0; v < n; ++ v) dist[u][v] = min(dist[u][v], dist[u][w] + dist[w][v]);
+	}
+	template<class U>
+	void run(const vector<tuple<int, int, U>> &edge, bool directed = false){
+		vector<vector<T>> adjm(n, vector<T>(n, numeric_limits<T>::max() / 2));
+		for(auto u = 0; u < n; ++ u) adjm[u][u] = 0;
+		for(auto [u, v, w]: edge){
+			adjm[u][v] = min<T>(adjm[u][v], w);
+			if(!directed) adjm[v][u] = adjm[u][v];
+		}
+		run(adjm);
+	}
+	// Requires graph
+	template<class G>
+	void run(const G &g, bool directed = false){
+		vector<vector<T>> adjm(n, vector<T>(n, numeric_limits<T>::max() / 2));
+		for(auto u = 0; u < n; ++ u) adjm[u][u] = 0;
+		for(auto [u, v, w]: g.edge){
+			adjm[u][v] = min<T>(adjm[u][v], w);
+			if(!directed) adjm[v][u] = adjm[u][v];
+		}
+		run(adjm);
 	}
 };
 ]]></content>
