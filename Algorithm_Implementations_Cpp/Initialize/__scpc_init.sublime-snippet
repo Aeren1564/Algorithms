@@ -2,6 +2,10 @@
 	<content><![CDATA[
 #include <bits/stdc++.h>
 using namespace std;
+#if __cplusplus > 201703L
+#include <ranges>
+using namespace numbers;
+#endif
 
 
 

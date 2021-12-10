@@ -17,6 +17,10 @@
 #include <unordered_set>
 #include <vector>
 using namespace std;
+#if __cplusplus > 201703L
+#include <ranges>
+using namespace numbers;
+#endif
 
 
 
