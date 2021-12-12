@@ -71,9 +71,12 @@
         { "trigger": "copy_if", "contents": "copy_if(${1:begin($2), end($2)}, $3, $4)"},
         { "trigger": "generate", "contents": "generate(${1:begin($2), end($2)}, rng)"},
 
+        { "trigger": "midpoint", "contents": "midpoint($1, $2)"},
+        { "trigger": "lerp", "contents": "lerp($1, $2, $3)"},
+
         { "trigger": "bind_front", "contents": "bind_front($1, $2)"},
 
-        { "trigger": "subrange", "contents": "ranges::subrange($1, $2)"},
+        { "trigger": "rsubrange", "contents": "ranges::subrange($1, $2)"},
 
         { "trigger": "vempty", "contents": "ranges::empty_view()"},
         { "trigger": "vsingle", "contents": "ranges::single_view($1)"},
@@ -95,6 +98,8 @@
         { "trigger": "velements", "contents": "ranges::views::elements<$1>($2)"},
         { "trigger": "vkeys", "contents": "ranges::views::keys($1)"},
         { "trigger": "vvalues", "contents": "ranges::views::values($1)"},
+
+        { "trigger": "output", "contents": "ranges::copy($1, ostream_iterator<${2:int}>(${3:cout}, ${4:\" \"}))"},
 
         { "trigger": "inserter", "contents": "inserter($1, $2)"},
         { "trigger": "back_inserter", "contents": "back_inserter($1)"},
