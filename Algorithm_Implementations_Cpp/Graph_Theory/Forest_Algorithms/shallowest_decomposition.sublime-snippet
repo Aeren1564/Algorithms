@@ -1,5 +1,6 @@
 <snippet>
 	<content><![CDATA[
+// pajenegod orz
 // Requires graph
 struct shallowest_decomposition{
 	int n, root = 0; // the root of the arborescence
@@ -9,7 +10,7 @@ struct shallowest_decomposition{
 	template<class T>
 	shallowest_decomposition(const graph<T> &g): n(g.n), abr(n){
 		assert(n);
-		const int log = __lg(n);
+		const int log = __lg(n) + 1;
 		vector<int> dp(n);
 		vector<vector<int>> stacks(log);
 		auto create_chain = [&](int labels, int u)->void{
@@ -44,6 +45,10 @@ struct shallowest_decomposition{
 				create_chain(dp[v] & label - 1, u);
 			}
 		};
+		dfs(dfs, 0, -1);
+		root = stacks[__lg(dp[0])].back();
+		stacks[__lg(dp[0])].pop_back();
+		create_chain(dp[0] ^ dp[root], root);
 	}
 };
 ]]></content>
