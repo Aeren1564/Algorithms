@@ -3,7 +3,7 @@
 // pajenegod orz
 // Requires graph
 struct shallowest_decomposition{
-	int n, root = 0; // the root of the arborescence
+	int n, root; // the root of the arborescence
 	graph<int> abr; // stores the arborescence
 	// g must be a tree
 	// O(|V|)
