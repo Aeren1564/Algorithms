@@ -1,17 +1,18 @@
 <snippet>
 	<content><![CDATA[
 // Requires graph
-// O(|V| log |V|)
 template<class T>
 struct centroid_decomposition{
 	int n, root; // the root of the arborescence
 	graph<int> abr; // stores the arborescence
-	vector<int> sz;
+	vector<int> size;
 	vector<vector<T>> dist; // dist[u][i]: sum of weights from u to its i-th centroid parent
 	T T_id;
+	// g must be a tree
+	// O(|V| log |V|)
 	template<class U, class F = plus<>>
-	centroid_decomposition(const graph<U> &g, T T_id = {}, F UT = plus<>()): n(g.n), abr(g.n), T_id(T_id), dist(g.n), sz(g.n){
-		vector<int> dead(n), sz(n);
+	centroid_decomposition(const graph<U> &g, T T_id = {}, F UT = plus<>()): n(g.n), abr(g.n), T_id(T_id), dist(g.n), size(g.n){
+		vector<int> dead(n), size(n);
 		auto centroid = [&](int s){
 			int u = s, pe = -1;
 			while(true){
@@ -20,7 +21,7 @@ struct centroid_decomposition{
 					auto &e = g.edge[id];
 					int v = u ^ e.from ^ e.to;
 					if(dead[v]) continue;
-					if(sz[v] > sz[s] >> 1){
+					if(size[v] > size[s] >> 1){
 						u = v, pe = id;
 						goto NEXT;
 					}
@@ -30,15 +31,15 @@ struct centroid_decomposition{
 			}
 			return u;
 		};
-		auto dfs_sz = [&](auto self, int u, int p)->void{
-			sz[u] = 1;
+		auto dfs_size = [&](auto self, int u, int p)->void{
+			size[u] = 1;
 			for(auto id: g.adj[u]){
 				if(g.ignore && g.ignore(id)) continue;
 				auto &e = g.edge[id];
 				int v = u ^ e.from ^ e.to;
 				if(p == v || dead[v]) continue;
 				self(self, v, u);
-				sz[u] += sz[v];
+				size[u] += size[v];
 			}
 		};
 		auto set_distance = [&](auto self, int u, int pe)->void{
@@ -53,9 +54,9 @@ struct centroid_decomposition{
 			}
 		};
 		auto construct = [&](auto self, int u, int p)->void{
-			dfs_sz(dfs_sz, u, p);
+			dfs_size(dfs_size, u, p);
 			dead[u = centroid(u)] = true;
-			this->sz[u] = sz[u];
+			this->size[u] = size[u];
 			if(~p) abr.orient(p, u);
 			else root = u;
 			dist[u].push_back(T_id);

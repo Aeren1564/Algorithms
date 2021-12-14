@@ -1,0 +1,54 @@
+<snippet>
+	<content><![CDATA[
+// Requires graph
+struct shallowest_decomposition{
+	int n, root = 0; // the root of the arborescence
+	graph<int> abr; // stores the arborescence
+	// g must be a tree
+	// O(|V|)
+	template<class T>
+	shallowest_decomposition(const graph<T> &g): n(g.n), abr(n){
+		assert(n);
+		const int log = __lg(n);
+		vector<int> dp(n);
+		vector<vector<int>> stacks(log);
+		auto create_chain = [&](int labels, int u)->void{
+			while(labels){
+				int label = __lg(labels);
+				labels ^= 1 << label;
+				int v = stacks[label].back();
+				stacks[label].pop_back();
+				abr.orient(u, v);
+				u = v;
+			}
+		};
+		auto dfs = [&](auto self, int u, int pe)->void{
+			int seen = 0, seen_twice = 0;
+			for(auto id: g.adj[u]){
+				if(id == pe || g.ignore && g.ignore(id)) continue;
+				auto &e = g.edge[id];
+				int v = u ^ e.from ^ e.to;
+				self(self, v, id);
+				seen_twice |= seen & dp[v];
+				seen |= dp[v];
+			}
+			int temp = ~seen & -(1 << (seen_twice ? __lg(seen_twice) + 1: 0));
+			int label = temp & -temp;
+			dp[u] = (label | seen) & -label;
+			stacks[__lg(label)].push_back(u);
+			for(auto t = (int)size(g.adj[u]) - 1; t >= 0; -- t){
+				int id = g.adj[u][t];
+				if(g.ignore && g.ignore(id)) continue;
+				auto &e = g.edge[id];
+				int v = u ^ e.from ^ e.to;
+				create_chain(dp[v] & label - 1, u);
+			}
+		};
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>shallowest_decomposition</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
