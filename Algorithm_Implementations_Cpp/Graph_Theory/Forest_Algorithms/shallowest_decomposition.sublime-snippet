@@ -10,9 +10,8 @@ struct shallowest_decomposition{
 	template<class T>
 	shallowest_decomposition(const graph<T> &g): n(g.n), abr(n){
 		assert(n);
-		const int log = __lg(n) + 1;
 		vector<int> dp(n);
-		vector<vector<int>> stacks(log);
+		vector<vector<int>> stacks(__lg(n) + 1);
 		auto create_chain = [&](int labels, int u)->void{
 			while(labels){
 				int label = __lg(labels);
