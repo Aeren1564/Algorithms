@@ -16,11 +16,14 @@ struct persistent_segment_tree{
 		return (int)data.size() - 1;
 	}
 	int new_state(int l, int r, T x){
-		left.push_back(l), right.push_back(r), data.push_back(x);
+		left.push_back(l);
+		right.push_back(r);
+		data.push_back(x);
 		return last_state();
 	}
 	// O(n)
 	int build(const vector<T> &a){
+		if(a.empty()) return new_state(-1, -1, T_id);
 		auto recurse = [&](auto self, int l, int r){
 			if(r - l == 1) return new_state(-1, -1, a[l]);
 			int m = l + (r - l >> 1);

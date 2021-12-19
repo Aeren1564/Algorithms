@@ -10,7 +10,7 @@ struct static_sparse_rectangle_counter_online{
 		sort(points.begin(), points.end());
 		vector<T> Y(n);
 		for(auto i = 0; i < n; ++ i) cmpr[i] = points[i][0], Y[i] = points[i][1];
-		sort(cmpr.begin(), cmpr.end()), cmpr.erase(unique(cmpr.begin(), cmpr.end()), cmpr.end());
+		sort(cmpr.begin(), cmpr.end());
 		ltk = {Y};
 	}
 	// O(log(n))
