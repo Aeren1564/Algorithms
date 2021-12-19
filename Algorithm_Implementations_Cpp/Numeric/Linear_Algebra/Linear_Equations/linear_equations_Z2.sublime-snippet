@@ -1,31 +1,31 @@
 <snippet>
 	<content><![CDATA[
 template<size_t B>
-int linear_equations_Z2(vector<bitset<B>> A, bitset<B> &x, vector<int> b, int m){
-	int n = (int)A.size(), rank = 0, br;
-	vector<int> col(m);
-	iota(col.begin(), col.end(), 0);
-	for(auto i = 0; i < n; ++ i){
-		for(br = i; br < n; ++ br) if(A[br].any()) break;
-		if(br == n){
-			for(auto j = i; j < n; ++ j) if(b[j]) return -1;
-			break;
+optional<bitset<B>> linear_equations_Z2(vector<bitset<B>> A, vector<int> b, int m){
+	int n = (int)size(A), rank = 0;
+	assert((int)size(b) == n);
+	vector<int> pivot(n);
+	for(auto id = 0; id < n; ++ id){
+		auto &u = A[id];
+		for(auto i = 0; i < rank; ++ i) if(u[pivot[i]]) u ^= A[i], b[id] ^= b[i];
+		if(auto p = u._Find_first(); p < B){
+			A[rank] = u;
+			b[rank] = b[id];
+			pivot[rank] = p;
+			auto pos = lower_bound(begin(pivot), begin(pivot) + rank, p) - begin(pivot);
+			rotate(begin(A) + pos, begin(A) + rank, begin(A) + rank + 1);
+			rotate(begin(b) + pos, begin(b) + rank, begin(b) + rank + 1);
+			rotate(begin(pivot) + pos, begin(pivot) + rank, begin(pivot) + rank + 1);
+			++ rank;
 		}
-		int bc = (int)A[br]._Find_next(i - 1);
-		swap(A[i], A[br]);
-		swap(b[i], b[br]);
-		swap(col[i], col[bc]);
-		for(auto j = 0; j < n; ++ j) if(A[j][i] != A[j][bc]) A[j].flip(i), A[j].flip(bc);
-		for(auto j = i + 1; j < n; ++ j) if(A[j][i]) b[j] ^= b[i], A[j] ^= A[i];
-		++ rank;
+		else if(b[id]) return {};
 	}
-	x = {};
-	for(auto i = rank; i --; ){
-		if(!b[i]) continue;
-		x[col[i]] = 1;
-		for(auto j = 0; j < i; ++ j) b[j] ^= A[j][i];
+	bitset<B> res;
+	for(auto i = rank - 1; i >= 0; -- i) if(b[i]){
+		res.set(pivot[i]);
+		for(auto j = 0; j < i; ++ j) if(A[j][pivot[i]]) b[j] ^= 1;
 	}
-	return rank;
+	return res;
 }
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->

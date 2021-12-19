@@ -13,7 +13,8 @@ struct static_sparse_rectangle_counter_online{
 		sort(cmpr.begin(), cmpr.end()), cmpr.erase(unique(cmpr.begin(), cmpr.end()), cmpr.end());
 		ltk = {Y};
 	}
-	int count(T xlow, T xhigh, T ylow, T yhigh){ // Count # of points in [xl, xh) X [yl, yh), O(log(MAX))
+	// O(log(n))
+	int count(T xlow, T xhigh, T ylow, T yhigh){
 		xlow = lower_bound(cmpr.begin(), cmpr.end(), xlow) - cmpr.begin();
 		xhigh = lower_bound(cmpr.begin(), cmpr.end(), xhigh) - cmpr.begin();
 		return ltk.count_less(xlow, xhigh, yhigh) - ltk.count_less(xlow, xhigh, ylow);

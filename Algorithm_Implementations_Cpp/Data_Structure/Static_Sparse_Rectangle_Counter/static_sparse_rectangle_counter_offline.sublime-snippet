@@ -13,13 +13,15 @@ struct static_sparse_rectangle_counter_offline{
 		sort(cmpr.begin(), cmpr.end()), cmpr.erase(unique(cmpr.begin(), cmpr.end()), cmpr.end());
 		ltk = {Y};
 	}
-	void count(int i, T xlow, T xhigh, T ylow, T yhigh){ // Count # of points in [xl, xh) X [yl, yh), O(log(n))
+	// O(log(n))
+	void count(int i, T xlow, T xhigh, T ylow, T yhigh){
 		xlow = lower_bound(cmpr.begin(), cmpr.end(), xlow) - cmpr.begin();
 		xhigh = lower_bound(cmpr.begin(), cmpr.end(), xhigh) - cmpr.begin();
 		ltk.count_less(i << 1, xlow, xhigh, yhigh);
 		ltk.count_less(i << 1 | 1, xlow, xhigh, ylow);
 	}
-	void solve(function<void(int, T)> f){ // f(index, answer)
+	// f(index, answer)
+	void solve(auto f){
 		vector<pair<int, T>> temp;
 		ltk.solve([&](int i, T x){ temp.push_back({i, x}); });
 		sort(temp.begin(), temp.end());

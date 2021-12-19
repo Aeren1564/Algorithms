@@ -1,8 +1,9 @@
 <snippet>
 	<content><![CDATA[
+// TYPE: {0: distinct value query, 1: less-than-k query}
 // Requires persistent_segment_tree
 template<int TYPE, class T, class Compare = less<>>
-struct relative_query_solver_online{ // TYPE: {0: distinct value query, 1: less-than-k query}
+struct relative_query_solver_online{
 	int n;
 	Compare cmp;
 	vector<int> pos;
@@ -33,10 +34,12 @@ struct relative_query_solver_online{ // TYPE: {0: distinct value query, 1: less-
 		}
 	}
 	// Rescalling function for less-than-k query
-	int lower_bound(T k){ // exclusive
+	// Exclusive
+	int lower_bound(T k){
 		return std::lower_bound(cmpr.begin(), cmpr.end(), k, cmp) - cmpr.begin();
 	}
-	int upper_bound(T k){ // inclusive
+	// inclusive
+	int upper_bound(T k){
 		return std::upper_bound(cmpr.begin(), cmpr.end(), k, cmp) - cmpr.begin();
 	}
 	// For distinct value query
@@ -56,7 +59,8 @@ struct relative_query_solver_online{ // TYPE: {0: distinct value query, 1: less-
 	int count_equal_or_greater(int ql, int qr, T k){
 		return assert(TYPE), qr - ql - ds.query(pos[lower_bound(k)], ql, qr); 
 	}
-	int count_within(int ql, int qr, T kl, T kr){ // Count # of elements within [kl, kr)
+	// Count # of elements within [kl, kr)
+	int count_within(int ql, int qr, T kl, T kr){
 		return assert(TYPE), ds.query(pos[lower_bound(kr)], ql, qr) - ds.query(pos[lower_bound(kl)], ql, qr);
 	}
 	// TODO: Finish binary search with petro camp problem
