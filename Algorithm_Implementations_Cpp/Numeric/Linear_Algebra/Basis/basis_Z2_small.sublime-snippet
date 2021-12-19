@@ -1,7 +1,8 @@
 <snippet>
 	<content><![CDATA[
-template<class V> // V must be an integral type where its bitmask represents a vector
-struct Z2_basis_small{ // Keep track of a set of basis of the subspace spanned by the inserted vectors
+// Keep track of a set of basis of the subspace spanned by the inserted vectors
+template<class V>
+struct basis_Z2_small{
 	int count = 0;
 	vector<V> elements;
 	vector<int> trail; // trailing coordinates of each elements
@@ -21,7 +22,7 @@ struct Z2_basis_small{ // Keep track of a set of basis of the subspace spanned b
 		}
 		return v;
 	}
-	// insert a vector while maintaining the lower triangular form
+	// Insert a row vector while maintaining the lower triangular form
 	// O(rank * dim / w)
 	bool insert(V v){
 		v = reduce(v);
@@ -37,7 +38,7 @@ struct Z2_basis_small{ // Keep track of a set of basis of the subspace spanned b
 		log.push_back({2, count, t});
 		return ++ count, true;
 	}
-	// returns {lexicographically_smallest_sol, sol_basis_vector_1, ..., sol_basis_vector_k}
+	// Returns {lexicographically_smallest_sol, sol_basis_vector_1, ..., sol_basis_vector_k}
 	// O(rank * dim / w)
 	template<bool find_solutions = true>
 	optional<vector<V>> solve(vector<bool> b){
@@ -60,7 +61,7 @@ struct Z2_basis_small{ // Keep track of a set of basis of the subspace spanned b
 };
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
-	<tabTrigger>Z2_basis_small</tabTrigger> -->
+	<tabTrigger>basis_Z2_small</tabTrigger> -->
 	<!-- Optional: Set a scope to limit where the snippet will trigger -->
 	<scope>source.c++</scope> -->
 </snippet>

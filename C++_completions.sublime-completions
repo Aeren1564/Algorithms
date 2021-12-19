@@ -272,7 +272,7 @@
         { "trigger": "raw_dfs", "contents": "y_combinator([&](auto self, ${1:int u, int p})->${2:void}{\n\tfor(auto v: adj[u]){\n\t\tif(v == p) continue;\n\t\t$0self(v, u);\n\t}\n})(${3:0, -1});"},
         { "trigger": "iterate_adj", "contents": "for(auto id: g.adj[u] | ranges::views::filter([&](int id){ return !g.ignore || !g.ignore(id);})){\n\tauto &e = g.edge[id];\n\tint v = u ^ e.from ^ e.to;\n\t$0\n}"},
         { "trigger": "lambda", "contents": "[&]($1){ $2 }"},
-        { "trigger": "unique", "contents": "$1.erase(unique(begin($2), end($2)), end($2))"},
+        { "trigger": "unique", "contents": "$1.erase(unique(begin($1), end($1)), end($1))"},
 		
 		{ "trigger": "push_back", "contents": "push_back($1)" },
     	{ "trigger": "pop_back", "contents": "pop_back()"},

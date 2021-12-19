@@ -1,7 +1,7 @@
 <snippet>
 	<content><![CDATA[
-template<int B>
-int solve_linear_equations(vector<bitset<B>> A, bitset<B> &x, vector<int> b, int m){
+template<size_t B>
+int linear_equations_Z2(vector<bitset<B>> A, bitset<B> &x, vector<int> b, int m){
 	int n = (int)A.size(), rank = 0, br;
 	vector<int> col(m);
 	iota(col.begin(), col.end(), 0);
@@ -11,7 +11,7 @@ int solve_linear_equations(vector<bitset<B>> A, bitset<B> &x, vector<int> b, int
 			for(auto j = i; j < n; ++ j) if(b[j]) return -1;
 			break;
 		}
-		int bc = (int)A[br]._Find_next(i-1);
+		int bc = (int)A[br]._Find_next(i - 1);
 		swap(A[i], A[br]);
 		swap(b[i], b[br]);
 		swap(col[i], col[bc]);
@@ -29,7 +29,7 @@ int solve_linear_equations(vector<bitset<B>> A, bitset<B> &x, vector<int> b, int
 }
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
-	<tabTrigger>Z2_linear_equations</tabTrigger> -->
+	<tabTrigger>linear_equations_Z2</tabTrigger> -->
 	<!-- Optional: Set a scope to limit where the snippet will trigger -->
 	<scope>source.c++</scope> -->
 </snippet>

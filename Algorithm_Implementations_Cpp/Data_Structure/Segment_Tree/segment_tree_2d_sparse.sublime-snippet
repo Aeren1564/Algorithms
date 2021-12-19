@@ -1,0 +1,112 @@
+<snippet>
+	<content><![CDATA[
+template<class B, class T, class F>
+struct segment_tree_2d_sparse{
+	int n;
+	vector<B> X;
+	vector<vector<array<B, 2>>> Y;
+	vector<vector<T>> data;
+	F TT; // Commutative monoid operation (always adjacent)
+	T T_id; // Commutative monoid identity
+	// Every point holds T_id except for base points
+	// O(n log^2 n)
+	segment_tree_2d_sparse(vector<pair<array<B, 2>, T>> init, F TT, T T_id): n((int)size(init)), X(n), TT(TT), T_id(T_id){
+		sort(begin(init), end(init));
+		for(auto i = 0; i < n; ++ i) X[i] = init[i].first[0];
+		X.erase(unique(begin(X), end(X)), end(X));
+		Y.resize(size(X) << 1);
+		data.resize(size(X) << 1);
+		vector<vector<pair<array<B, 2>, T>>> hold(size(X) << 1);
+		for(auto i = 0, x = 0; i < n; ++ i){
+			auto [pos, val] = init[i];
+			while(X[x] < pos[0]) ++ x;
+			hold[x + (int)size(X)].push_back({{pos[1], pos[0]}, val});
+		}
+		for(auto x = 2 * (int)size(X) - 1; x; -- x){
+			if(x < (int)size(X)) merge(begin(hold[x << 1]), end(hold[x << 1]), begin(hold[x << 1 | 1]), end(hold[x << 1 | 1]), back_inserter(hold[x]));
+			auto &Y0 = Y[x];
+			auto &hold0 = hold[x];
+			sort(begin(hold0), end(hold0));
+			Y0.resize(size(hold0));
+			for(auto j = 0; j < (int)size(hold0); ++ j) Y0[j] = hold0[j].first;
+			Y0.erase(unique(begin(Y0), end(Y0)), end(Y0));
+			data[x].resize(size(Y0) << 1, T_id);
+			for(auto j = 0, y = 0; j < (int)size(hold0); ++ j){
+				while(Y0[y] < hold0[j].first) ++ y;
+				data[x][y + (int)size(Y0)] = TT(data[x][y + (int)size(Y0)], hold0[j].second);
+			}
+			for(auto y = (int)size(Y0) - 1; y; -- y) data[x][y] = TT(data[x][y << 1], data[x][y << 1 | 1]);
+		}
+	}
+	// O(n log^2 n)
+	segment_tree_2d_sparse(vector<array<B, 2>> base, F TT, T T_id){
+		vector<pair<array<B, 2>, T>> init((int)size(base));
+		for(auto i = 0; i < (int)size(base); ++ i) init[i] = {base[i], T_id};
+		*this = segment_tree_2d_sparse(init, TT, T_id);
+	}
+	segment_tree_2d_sparse &operator=(const segment_tree_2d_sparse &otr){
+		n = otr.n;
+		X = otr.X;
+		Y = otr.Y;
+		data = otr.data;
+		return *this;
+	}
+	// O(log^2 n)
+	void set(B _p, B _q, T x){
+		int p = lower_bound(begin(X), end(X), _p) - begin(X);
+		assert(p < (int)size(X) && X[p] == _p);
+		for(p += (int)size(X); p; p >>= 1){
+			auto &Y0 = Y[p];
+			auto &data0 = data[p];
+			int q = lower_bound(begin(Y0), end(Y0), array{_q, _p}) - begin(Y0);
+			assert(q < (int)size(Y0) && Y0[q][0] == _q && Y0[q][1] == _p);
+			for(data0[q += (int)size(Y0)] = x; q >>= 1; ) data0[q] = TT(data0[q << 1], data0[q << 1 | 1]);
+		}
+	}
+	// O(log n)
+	T query(B _p, B _q){
+		int p = lower_bound(begin(X), end(X), _p) - begin(X);
+		if(p == (int)size(X) || X[p] != _p) return T_id;
+		auto &Y0 = Y[p + (int)size(X)];
+		int q = lower_bound(begin(Y0), end(Y0), array{_q, _p}) - begin(Y0);
+		if(q == (int)size(Y0) || Y0[q] != array{_q, _p}) return T_id;
+		return data[p + (int)size(X)][q + (int)size(Y0)];
+	}
+	// O(log^2 n)
+	T query(B _xl, B _xr, B _yl, B _yr){
+		int xl = lower_bound(begin(X), end(X), _xl) - begin(X);
+		int xr = lower_bound(begin(X), end(X), _xr) - begin(X);
+		T res = T_id;
+		for(xl += (int)size(X), xr += (int)size(X); xl < xr; xl >>= 1, xr >>= 1){
+			if(xl & 1){
+				auto &Y0 = Y[xl];
+				auto &data0 = data[xl];
+				int yl = lower_bound(begin(Y0), end(Y0), array{_yl, numeric_limits<B>::min()}) - begin(Y0);
+				int yr = lower_bound(begin(Y0), end(Y0), array{_yr, numeric_limits<B>::min()}) - begin(Y0);
+				for(yl += (int)size(Y0), yr += (int)size(Y0); yl < yr; yl >>= 1, yr >>= 1){
+					if(yl & 1) res = TT(res, data0[yl ++]);
+					if(yr & 1) res = TT(res, data0[-- yr]);
+				}
+				++ xl;
+			}
+			if(xr & 1){
+				-- xr;
+				auto &Y0 = Y[xr];
+				auto &data0 = data[xr];
+				int yl = lower_bound(begin(Y0), end(Y0), array{_yl, numeric_limits<B>::min()}) - begin(Y0);
+				int yr = lower_bound(begin(Y0), end(Y0), array{_yr, numeric_limits<B>::min()}) - begin(Y0);
+				for(yl += (int)size(Y0), yr += (int)size(Y0); yl < yr; yl >>= 1, yr >>= 1){
+					if(yl & 1) res = TT(res, data0[yl ++]);
+					if(yr & 1) res = TT(res, data0[-- yr]);
+				}
+			}
+		}
+		return res;
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>segment_tree_2d_sparse</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

@@ -1,6 +1,6 @@
 <snippet>
 	<content><![CDATA[
-template<class T, class F = plus<>, class I = minus<>>
+template<class T, class F, class I>
 struct fenwick_tree_general{
 	int n;
 	vector<T> data;
@@ -8,9 +8,9 @@ struct fenwick_tree_general{
 	T T_id;
 	I TinvT;
 	fenwick_tree_general(){ }
-	fenwick_tree_general(int n, F TT = plus<>(), T T_id = {}, I TinvT = minus<>()): fenwick_tree_general(vector<T>(n, T_id), TT, T_id, TinvT){ }
-	fenwick_tree_general(int n, T init, F TT = plus<>(), T T_id = {}, I TinvT = minus<>()): fenwick_tree_general(vector<T>(n, init), TT, T_id, TinvT){ }
-	fenwick_tree_general(const vector<T> &v, F TT = plus<>(), T T_id = {}, I TinvT = minus<>()): n((int)v.size()), data(v), TT(TT), T_id(T_id), TinvT(TinvT){
+	fenwick_tree_general(int n, F TT, T T_id, I TinvT): fenwick_tree_general(vector<T>(n, T_id), TT, T_id, TinvT){ }
+	fenwick_tree_general(int n, T init, F TT, T T_id, I TinvT): fenwick_tree_general(vector<T>(n, init), TT, T_id, TinvT){ }
+	fenwick_tree_general(const vector<T> &v, F TT, T T_id, I TinvT): n((int)v.size()), data(v), TT(TT), T_id(T_id), TinvT(TinvT){
 		for(auto i = 1; i <= n; ++ i) if(i + (i & -i) <= n) data[i + (i & -i) - 1] = TT(data[i + (i & -i) - 1], data[i - 1]);
 	}
 	// O(log n)
