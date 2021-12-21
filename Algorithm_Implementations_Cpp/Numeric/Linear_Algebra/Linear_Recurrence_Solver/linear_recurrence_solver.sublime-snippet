@@ -1,0 +1,67 @@
+<snippet>
+	<content><![CDATA[
+// Store the linear recurrence relation of form \sum{t<=i<t+n}( coef[i] * init[i] ) = init[t+n]
+// T must be of modular type
+// Requires modular
+template<class T>
+struct linear_recurrence_solver{
+	int n;
+	vector<T> init, coef;
+	linear_recurrence_solver(const vector<T> &init, const vector<T> &coef): n((int)coef.size()), init(init), coef(coef){
+		assert((int)coef.size() == (int)init.size());
+	}
+	// Berlekamp Massey Algorithm
+	// Find a minimum linear recurrence relation
+	// O(size(s) * (n + log mod))
+	linear_recurrence_solver(const vector<T> &s){
+		int sz = (int)size(s);
+		vector<T> b = {-1};
+		coef = {-1};
+		T y = 1;
+		for(auto t = 1; t <= sz; ++ t){
+			int l = (int)size(coef), m = (int)size(b);
+			T x = 0;
+			for(auto i = 0; i < l; ++ i) x += coef[i] * s[t - l + i];
+			b.push_back(0);
+			++ m;
+			if(x == 0) continue;
+			T freq = x / y;
+			if(l < m){
+				auto tmp = coef;
+				coef.insert(begin(coef), m - l, 0);
+				for(auto i = 0; i < m; ++ i) coef[m - 1 - i] -= freq * b[m - 1 - i];
+				b = tmp;
+				y = x;
+			}
+			else for(auto i = 0; i < m; ++ i) coef[l - 1 - i] -= freq * b[m - 1 - i];
+		}
+		coef.pop_back();
+		n = (int)size(coef);
+		init = vector<T>(begin(s), begin(s) + n);
+	}
+	// O(n^2 * log i)
+	template<class U>
+	T operator[](U i) const{
+		assert(0 <= i);
+		if(n == 0) return 0;
+		auto merge = [&](const vector<T> &a, const vector<T> &b){
+			vector<T> res(2 * n + 1);
+			for(auto i = 0; i <= n; ++ i) for(auto j = 0; j <= n; ++ j) res[i + j] += a[i] * b[j];
+			for(auto i = n << 1; i >= n; -- i) for(auto j = 0; j < n; ++ j) res[i - 1 - j] += res[i] * coef[n - 1 - j];
+			res.resize(n + 1);
+			res[n] = 0;
+			return res;
+		};
+		vector<T> power(n + 1), base(n + 1);
+		for(power[0] = base[1] = 1; i; i >>= 1, base = merge(base, base)) if(i & 1) power = merge(power, base);
+		T res = 0;
+		for(auto i = 0; i < n; ++ i) res += power[i] * init[i];
+		return res;
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>linear_recurrence_solver</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

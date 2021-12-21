@@ -1,0 +1,55 @@
+<snippet>
+	<content><![CDATA[
+// Store the linear recurrence relation of form \sum{t<=i<t+n}( coef[i] * init[i] ) = init[t+n]
+// T must be of modular type
+// Requires modular, number_theoric_transform, convolute_ntt, double_up_ntt, and rational_polynomial_single_term_extraction
+template<class T, int primitive_root = 3>
+struct linear_recurrence_solver_ntt{
+	int n;
+	vector<T> p, q;
+	linear_recurrence_solver_ntt(const vector<T> &init, const vector<T> &coef): n((int)coef.size()), p(n), q(n + 1, 1){
+		assert((int)coef.size() == (int)init.size());
+		for(auto i = 0; i < n; ++ i) q[n - i] = -coef[i];
+		p = convolute_ntt<T, primitive_root>(init, q);
+		p.resize(n);
+	}
+	// Berlekamp Massey Algorithm
+	// Find a minimum linear recurrence relation
+	// O(size(s) * (n + log mod))
+	linear_recurrence_solver_ntt(const vector<T> &s){
+		int sz = (int)size(s);
+		vector<T> b = {-1}, coef = {-1};
+		T y = 1;
+		for(auto t = 1; t <= sz; ++ t){
+			int l = (int)size(coef), m = (int)size(b);
+			T x = 0;
+			for(auto i = 0; i < l; ++ i) x += coef[i] * s[t - l + i];
+			b.push_back(0);
+			++ m;
+			if(x == 0) continue;
+			T freq = x / y;
+			if(l < m){
+				auto tmp = coef;
+				coef.insert(begin(coef), m - l, 0);
+				for(auto i = 0; i < m; ++ i) coef[m - 1 - i] -= freq * b[m - 1 - i];
+				b = tmp;
+				y = x;
+			}
+			else for(auto i = 0; i < m; ++ i) coef[l - 1 - i] -= freq * b[m - 1 - i];
+		}
+		coef.pop_back();
+		*this = linear_recurrence_solver_ntt(vector<T>{begin(s), begin(s) + (int)size(coef)}, coef);
+	}
+	// O(n log n log i)
+	template<class U>
+	T operator[](U i) const{
+		assert(0 <= i);
+		return rational_polynomial_single_term_extraction<T, U, primitive_root>(p, q, i);
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>linear_recurrence_solver_ntt</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

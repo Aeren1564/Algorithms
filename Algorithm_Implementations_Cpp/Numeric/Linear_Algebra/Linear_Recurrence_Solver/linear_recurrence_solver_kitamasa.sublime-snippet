@@ -1,0 +1,69 @@
+<snippet>
+	<content><![CDATA[
+// Store the linear recurrence relation of form \sum{t<=i<t+n}( coef[i] * init[i] ) = init[t+n]
+// T must be of modular type
+// Requires modular, number_theoric_transform, convolute_ntt, and polynomial
+template<class T, int primitive_root = 3>
+struct linear_recurrence_solver_kitamasa{
+	int n;
+	vector<T> init, coef, q, inv;
+	linear_recurrence_solver_kitamasa(const vector<T> &init, const vector<T> &coef): n((int)coef.size()), init(init), coef(coef){
+		assert((int)coef.size() == (int)init.size());
+		for(auto &x: coef) q.push_back(-x);
+		q.push_back(1);
+		inv = inverse(vector<T>(rbegin(q), rend(q)), n + 1);
+	}
+	// Berlekamp Massey Algorithm
+	// Find a minimum linear recurrence relation
+	// O(size(s) * (n + log mod))
+	linear_recurrence_solver_kitamasa(const vector<T> &s){
+		int sz = (int)size(s);
+		vector<T> b = {-1}, c = {-1};
+		T y = 1;
+		for(auto t = 1; t <= sz; ++ t){
+			int l = (int)size(c), m = (int)size(b);
+			T x = 0;
+			for(auto i = 0; i < l; ++ i) x += c[i] * s[t - l + i];
+			b.push_back(0);
+			++ m;
+			if(x == 0) continue;
+			T freq = x / y;
+			if(l < m){
+				auto tmp = c;
+				c.insert(begin(c), m - l, 0);
+				for(auto i = 0; i < m; ++ i) c[m - 1 - i] -= freq * b[m - 1 - i];
+				b = tmp;
+				y = x;
+			}
+			else for(auto i = 0; i < m; ++ i) c[l - 1 - i] -= freq * b[m - 1 - i];
+		}
+		n = (int)size(c) - 1;
+		*this = linear_recurrence_solver_kitamasa<T, primitive_root>(vector<T>(begin(s), begin(s) + n), vector<T>(begin(c), begin(c) + n));
+	}
+	// O(n * log n * log i)
+	template<class U>
+	T operator[](U i) const{
+		assert(0 <= i);
+		if(n == 0) return 0;
+		auto merge = [&](const vector<T> &a, const vector<T> &b){
+			auto res = convolute_ntt<T, primitive_root>(a, b);
+			auto t = convolute_ntt<T, primitive_root>(vector<T>(rbegin(res), rbegin(res) + n + 1), inv);
+			t.resize(n + 1);
+			reverse(begin(t), end(t));
+			res -= t * q;
+			res.resize(n + 1);
+			return res;
+		};
+		vector<T> power(n + 1), base(n + 1);
+		for(power[0] = base[1] = 1; i; i >>= 1, base = merge(base, base)) if(i & 1) power = merge(power, base);
+		T res = 0;
+		for(auto i = 0; i < n; ++ i) res += power[i] * init[i];
+		return res;
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>linear_recurrence_solver_kitamasa</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

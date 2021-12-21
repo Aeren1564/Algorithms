@@ -11,7 +11,8 @@ vector<T> convolute_ntt(vector<T> p, vector<T> q){
 	}
 	int m = (int)p.size() + (int)q.size() - 1, n = 1 << __lg(m) + 1;
 	p.resize(n), q.resize(n);
-	number_theoric_transform<T, primitive_root>(p), number_theoric_transform<T, primitive_root>(q);
+	number_theoric_transform<T, primitive_root>(p);
+	number_theoric_transform<T, primitive_root>(q);
 	for(auto i = 0; i < n; ++ i) p[i] *= q[i];
 	number_theoric_transform<T, primitive_root>(p, true);
 	p.resize(m);

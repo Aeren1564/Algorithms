@@ -5,7 +5,8 @@ template<class T, char Conv = '^'>
 vector<T> convolute_fwht(vector<T> p, vector<T> q){
 	int n = (int)p.size();
 	assert(p.size() == q.size() && __builtin_popcount(n) == 1);
-	fast_walsh_hadamard_transform<T, Conv>(p), fast_walsh_hadamard_transform<T, Conv>(q);
+	fast_walsh_hadamard_transform<T, Conv>(p);
+	fast_walsh_hadamard_transform<T, Conv>(q);
 	for(auto i = 0; i < n; ++ i) p[i] *= q[i];
 	fast_walsh_hadamard_transform<T, Conv>(p, true);
 	return p;
