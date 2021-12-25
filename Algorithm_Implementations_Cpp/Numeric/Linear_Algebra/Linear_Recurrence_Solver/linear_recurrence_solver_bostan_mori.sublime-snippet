@@ -4,10 +4,10 @@
 // T must be of modular type
 // Requires modular, number_theoric_transform, convolute_ntt, double_up_ntt, and rational_polynomial_single_term_extraction
 template<class T, int primitive_root = 3>
-struct linear_recurrence_solver_ntt{
+struct linear_recurrence_solver_bostan_mori{
 	int n;
 	vector<T> p, q;
-	linear_recurrence_solver_ntt(const vector<T> &init, const vector<T> &coef): n((int)coef.size()), p(n), q(n + 1, 1){
+	linear_recurrence_solver_bostan_mori(const vector<T> &init, const vector<T> &coef): n((int)coef.size()), p(n), q(n + 1, 1){
 		assert((int)coef.size() == (int)init.size());
 		for(auto i = 0; i < n; ++ i) q[n - i] = -coef[i];
 		p = convolute_ntt<T, primitive_root>(init, q);
@@ -16,7 +16,7 @@ struct linear_recurrence_solver_ntt{
 	// Berlekamp Massey Algorithm
 	// Find a minimum linear recurrence relation
 	// O(size(s) * (n + log mod))
-	linear_recurrence_solver_ntt(const vector<T> &s){
+	linear_recurrence_solver_bostan_mori(const vector<T> &s){
 		int sz = (int)size(s);
 		vector<T> b = {-1}, coef = {-1};
 		T y = 1;
@@ -38,7 +38,7 @@ struct linear_recurrence_solver_ntt{
 			else for(auto i = 0; i < m; ++ i) coef[l - 1 - i] -= freq * b[m - 1 - i];
 		}
 		coef.pop_back();
-		*this = linear_recurrence_solver_ntt(vector<T>{begin(s), begin(s) + (int)size(coef)}, coef);
+		*this = linear_recurrence_solver_bostan_mori(vector<T>{begin(s), begin(s) + (int)size(coef)}, coef);
 	}
 	// O(n log n log i)
 	template<class U>
@@ -49,7 +49,7 @@ struct linear_recurrence_solver_ntt{
 };
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
-	<tabTrigger>linear_recurrence_solver_ntt</tabTrigger> -->
+	<tabTrigger>linear_recurrence_solver_bostan_mori</tabTrigger> -->
 	<!-- Optional: Set a scope to limit where the snippet will trigger -->
 	<scope>source.c++</scope> -->
 </snippet>

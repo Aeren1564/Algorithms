@@ -170,7 +170,8 @@ struct treap_update_query_flip{
 	}
 	// Append treaps in order
 	// O((list length) * log n)
-	int append(initializer_list<int> list){
+	template<size_t k>
+	int append(array<int, k> list){
 		return accumulate(list.begin(), list.end(), -1, [&](int u, int v){ return append(u, v); });
 	}
 	// Data must be sorted
@@ -291,33 +292,31 @@ struct treap_update_query_flip{
 		return res;
 	}
 	// O(log n)
-	void update(int u, int l, int r, U f){
+	int update(int u, int l, int r, U f){
 		assert(0 <= l && l <= r && r <= size(u));
 		if(l == r) return;
 		auto [a, b, c] = split_to_three(u, l, r);
 		data[b] = UT(f, data[b]);
 		lazy[b] = UU(f, lazy[b]);
 		refresh(b);
-		append(append(a, b), c);
+		return append(append(a, b), c);
 	}
 	// O(log n)
-	T query(int u, int l, int r){
+	pair<int, T> query(int u, int l, int r){
 		assert(0 <= l && l <= r && r <= size(u));
-		if(l == r) return T_id;
+		if(l == r) return {u, T_id};
 		auto [a, b, c] = split_to_three(u, l, r);
 		T res = subtr_data[b];
-		append(append(a, b), c);
-		return res;
+		return {append(append(a, b), c), res};
 	}
 	// O(log n)
-	void flip(int u, int l, int r){
+	int flip(int u, int l, int r){
 		assert(0 <= l && l <= r && r <= size(u));
 		if(l == r) return;
 		auto [a, b, c] = split_to_three(u, l, r);
-		swap(left[b], right[b]);
 		lazy_flip[b] ^= 1;
 		refresh(b);
-		append(append(a, b), c);
+		return append(append(a, b), c);
 	}
 	// pred(sum[ql, r)) is T, T, ..., T, F, F, ..., F
 	// Returns max r with T

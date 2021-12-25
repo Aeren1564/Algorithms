@@ -14,18 +14,18 @@ T rational_polynomial_single_term_extraction(vector<T> p, vector<T> q, U i){
 	number_theoric_transform<T, primitive_root>(q);
 	T inv2 = (T().mod() + 1) / 2;
 	for(T w = 1 / T(primitive_root) ^ (T().mod() - 1) / n; i; i >>= 1){
-		for(auto i = 0; i < n; ++ i) p[i] *= q[i < n / 2 ? i + n / 2 : i - n / 2];
+		for(auto i = 0; i < n; ++ i) p[i] *= q[i ^ n / 2];
 		if(~i & 1){
-			for(auto i = 0; i < n / 2; ++ i) p[i] = inv2 * (p[i] + p[i + n / 2]);
+			for(auto i = 0; i < n / 2; ++ i) p[i] = inv2 * (p[i] + p[i ^ n / 2]);
 		}
 		else{
 			T pw = inv2;
-			for(auto i = 0; i < n / 2; ++ i, pw *= w) p[i] = pw * (p[i] - p[i + n / 2]);
+			for(auto i = 0; i < n / 2; ++ i, pw *= w) p[i] = pw * (p[i] - p[i ^ n / 2]);
 		}
 		p.resize(n / 2);
 		double_up_ntt<T, primitive_root>(p);
 		q.resize(n / 2);
-		for(auto i = 0; i < n / 2; ++ i) q[i] *= q[i + n / 2];
+		for(auto i = 0; i < n / 2; ++ i) q[i] *= q[i ^ n / 2];
 		double_up_ntt<T, primitive_root>(q);
 	}
 	return accumulate(begin(p), end(p), T(0)) / accumulate(begin(q), end(q), T(0));

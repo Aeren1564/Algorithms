@@ -6,8 +6,7 @@
 template<class Char_Type, int sigma>
 struct aho_corasic_automaton_fixed{
 	// Begin States
-	vector<int> len{0}, link{-1}, exit_link{-1};
-	vector<bool> is_terminal{false};
+	vector<int> len{0}, link{-1}, exit_link{-1}, is_terminal{false};
 	vector<array<int, sigma>> next{{}};
 	// End States
 	int new_state(){

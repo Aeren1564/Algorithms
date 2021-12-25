@@ -143,7 +143,8 @@ struct treap_flip{
 	}
 	// Append treaps in order
 	// O((list length) * log n)
-	int append(initializer_list<int> list){
+	template<size_t k>
+	int append(array<int, k> list){
 		return accumulate(list.begin(), list.end(), -1, [&](int u, int v){ return append(u, v); });
 	}
 	// Data must be sorted
@@ -262,14 +263,13 @@ struct treap_flip{
 		return res;
 	}
 	// O(log n)
-	void flip(int u, int l, int r){
+	int flip(int u, int l, int r){
 		assert(0 <= l && l <= r && r <= size(u));
 		if(l == r) return;
 		auto [a, b, c] = split_to_three(u, l, r);
-		swap(left[b], right[b]);
 		lazy_flip[b] ^= 1;
 		refresh(b);
-		append(append(a, b), c);
+		return append(append(a, b), c);
 	}
 };
 ]]></content>

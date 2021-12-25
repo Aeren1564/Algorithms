@@ -1,12 +1,19 @@
 <snippet>
 	<content><![CDATA[
 template<int SZ>
-struct matrix_Z2_base: vector<bitset<SZ>>{
-	using C = vector<bitset<SZ>>;
-	using C::assign;
+struct matrix_Z2_base{
+	vector<bitset<SZ>> data;
+	bitset<SZ> &operator[](int i){
+		assert(0 <= i && i < n);
+		return data[i];
+	}
+	const bitset<SZ> &operator[](int i) const{
+		assert(0 <= i && i < n);
+		return data[i];
+	}
 	matrix_Z2_base &operator+=(const matrix_Z2_base &M){
 		assert(n == M.n && m == M.m);
-		for(auto i = 0; i < n; ++ i) (*this)[i] ^= M[i];
+		for(auto i = 0; i < n; ++ i) data[i] ^= M[i];
 		return *this;
 	}
 	matrix_Z2_base operator+(const matrix_Z2_base &M) const{
@@ -20,7 +27,7 @@ struct matrix_Z2_base: vector<bitset<SZ>>{
 		matrix_Z2_base res(n, l);
 		vector<bitset<SZ>> temp(l);
 		for(auto i = 0; i < l; ++ i) for(auto j = 0; j < m; ++ j) temp[i][j] = otr[j][i];
-		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < l; ++ j) res[i][j] = ((*this)[i] & temp[j]).count() & 1;
+		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < l; ++ j) res[i][j] = (data[i] & temp[j]).count() & 1;
 		return res;
 	}
 	matrix_Z2_base &operator*=(const matrix_Z2_base &otr){
@@ -31,9 +38,8 @@ struct matrix_Z2_base: vector<bitset<SZ>>{
 		return *this;
 	}
 	matrix_Z2_base operator*(bool c) const{
-		matrix_Z2_base res(*this);
-		res *= c;
-		return res;
+		matrix_Z2_base res(data);
+		return res *= c;
 	}
 	matrix_Z2_base &operator^=(long long e){
 		matrix_Z2_base res(n, n, true);
@@ -42,12 +48,12 @@ struct matrix_Z2_base: vector<bitset<SZ>>{
 	}
 	matrix_Z2_base operator^(long long e) const{
 		assert(n == m);
-		matrix_Z2_base res(*this); res ^= e;
+		matrix_Z2_base res(data); res ^= e;
 		return res;
 	}
 	matrix_Z2_base transposed() const{
 		matrix_Z2_base res(m, n);
-		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) res[j][i] = (*this)[i][j];
+		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) res[j][i] = data[i][j];
 		return res;
 	}
 	matrix_Z2_base &transpose(){
@@ -55,7 +61,7 @@ struct matrix_Z2_base: vector<bitset<SZ>>{
 	}
 	bool det() const{
 		assert(n == m);
-		matrix_Z2_base temp(*this);
+		matrix_Z2_base temp(data);
 		for(auto i = 0; i < n; ++ i){
 			for(auto j = i + 1; j < n; ++ j) if(temp[j][i]){
 				if(temp[i][i]) temp[j] ^= temp[i];
@@ -67,7 +73,7 @@ struct matrix_Z2_base: vector<bitset<SZ>>{
 	}
 	bool inverse(){
 		assert(n == m);
-		C temp(*this), res(n);
+		vector<bitset<SZ>> temp(data), res(n);
 		for(auto i = 0; i < n; ++ i) res[i].set(i);
 		for(auto j = 0; j < n; ++ j){
 			int pivot = -1;
@@ -83,24 +89,20 @@ struct matrix_Z2_base: vector<bitset<SZ>>{
 		return true;
 	}
 	matrix_Z2_base inversed() const{
-		matrix_Z2_base res(*this);
+		matrix_Z2_base res(data);
 		res.inverse();
 		return res;
 	}
 	vector<int> operator*(const bitset<SZ> &v) const{
 		vector<int> res(n);
-		for(auto i = 0; i < n; ++ i) res[i] = ((*this)[i] & v).count() & 1;
+		for(auto i = 0; i < n; ++ i) res[i] = (data[i] & v).count() & 1;
 		return res;
 	}
 	int n, m;
-	matrix_Z2_base(int n, int m, bool init_diagonal = false, bool init_off_diagonal = false): n(n), m(m){
-		assign(n, {});
-		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) (*this)[i][j] = i == j ? init_diagonal : init_off_diagonal;
+	matrix_Z2_base(int n, int m, bool init_diagonal = false, bool init_off_diagonal = false): n(n), m(m), data(n){
+		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) data[i][j] = i == j ? init_diagonal : init_off_diagonal;
 	}
-	matrix_Z2_base(const C &arr): n((int)arr.size()), m((int)arr[0].size()){
-		assign(n, {});
-		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) (*this)[i][j] = arr[i][j];
-	}
+	matrix_Z2_base(const vector<bitset<SZ>> &arr): n((int)arr.size()), m((int)arr[0].size()), data(arr){ }
 };
 template<int SZ>
 matrix_Z2_base<SZ> operator*(bool c, matrix_Z2_base<SZ> M){
@@ -117,8 +119,7 @@ template<int SZ>
 vector<int> &operator*=(vector<int> &v, const matrix_Z2_base<SZ> &M){
 	return v = v * M;
 }
-const int SZ = 1000;
-using matrix_Z2 = matrix_Z2_base<SZ>;
+using matrix_Z2 = matrix_Z2_base<1000>;
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
 	<tabTrigger>matrix_Z2</tabTrigger> -->
