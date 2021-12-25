@@ -5,10 +5,13 @@
 struct shallowest_decomposition{
 	int n, root; // the root of the arborescence
 	graph<int> abr; // stores the arborescence
+	vector<int> pv; // Parent vertex in the decomposition
+	vector<int> pe; // Parent eedge in the decomposition
+	vector<int> pos_as_child; // u is the pos_as_child[u]-th child
 	// g must be a tree
 	// O(|V|)
 	template<class T>
-	shallowest_decomposition(const graph<T> &g): n(g.n), abr(n){
+	shallowest_decomposition(const graph<T> &g): n(g.n), abr(n), pv(n, -1), pe(n, -1), pos_as_child(n, -1){
 		assert(n);
 		vector<int> dp(n);
 		vector<vector<int>> stacks(__lg(n) + 1);
@@ -18,7 +21,9 @@ struct shallowest_decomposition{
 				labels ^= 1 << label;
 				int v = stacks[label].back();
 				stacks[label].pop_back();
-				abr.orient(u, v);
+				pv[v] = u;
+				pos_as_child[v] = (int)abr.adj.size();
+				pe[v] = abr.orient(u, v);
 				u = v;
 			}
 		};

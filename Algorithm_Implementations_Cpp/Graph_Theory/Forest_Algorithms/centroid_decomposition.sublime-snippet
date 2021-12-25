@@ -5,13 +5,17 @@ template<class T>
 struct centroid_decomposition{
 	int n, root; // the root of the arborescence
 	graph<int> abr; // stores the arborescence
-	vector<int> size;
-	vector<vector<T>> dist; // dist[u][i]: sum of weights from u to its i-th centroid parent
+	vector<int> pv; // Parent vertex in the decomposition
+	vector<int> pe; // Parent eedge in the decomposition
+	vector<int> size; // Size of the subtree in the decomposition
+	vector<int> pos_as_child; // u is the pos_as_child[u]-th child
+	vector<vector<int>> step; // step[u][i]: # of edges from u to its i-th decomposition parent
+	vector<vector<T>> dist; // dist[u][i]: sum of weights from u to its i-th decomposition parent
 	T T_id;
 	// g must be a tree
 	// O(|V| log |V|)
 	template<class U, class F = plus<>>
-	centroid_decomposition(const graph<U> &g, T T_id = {}, F UT = plus<>()): n(g.n), abr(g.n), T_id(T_id), dist(g.n), size(g.n){
+	centroid_decomposition(const graph<U> &g, T T_id = {}, F UT = plus<>()): n(g.n), abr(g.n), T_id(T_id), pv(g.n, -1), pe(g.n, -1), size(g.n), pos_as_child(g.n, -1), step(g.n), dist(g.n){
 		vector<int> dead(n), size(n);
 		auto centroid = [&](int s){
 			int u = s, pe = -1;
@@ -44,6 +48,7 @@ struct centroid_decomposition{
 		};
 		auto set_distance = [&](auto self, int u, int pe)->void{
 			int p = u ^ g.edge[pe].from ^ g.edge[pe].to;
+			step[u].push_back(step[p].back() + 1);
 			dist[u].push_back(UT(g.edge[pe].cost, dist[p].back()));
 			for(auto id: g.adj[u]){
 				if(id == pe || g.ignore && g.ignore(id)) continue;
@@ -57,8 +62,13 @@ struct centroid_decomposition{
 			dfs_size(dfs_size, u, p);
 			dead[u = centroid(u)] = true;
 			this->size[u] = size[u];
-			if(~p) abr.orient(p, u);
+			if(~p){
+				pv[u] = p;
+				pos_as_child[u] = (int)abr.adj[p].size();
+				pe[u] = abr.orient(p, u);
+			}
 			else root = u;
+			step[u].push_back(0);
 			dist[u].push_back(T_id);
 			for(auto id: g.adj[u]){
 				auto &e = g.edge[id];
@@ -72,7 +82,10 @@ struct centroid_decomposition{
 			}
 		};
 		construct(construct, 0, -1);
-		for(auto u = 0; u < n; ++ u) reverse(dist[u].begin(), dist[u].end());
+		for(auto u = 0; u < n; ++ u){
+			reverse(begin(step[u]), end(step[u]));
+			reverse(begin(dist[u]), end(dist[u]));
+		}
 	}
 };
 ]]></content>
