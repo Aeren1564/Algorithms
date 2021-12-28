@@ -3,7 +3,7 @@
 // Maintain the inverse determinant and the inverse of a matrix up to addition updates of another matrix of small rank
 // M must be a matrix type
 // Assumes T is a field
-// Requires matrix or matrix_fixed or matrix_Z2
+// Requires matrix, matrix_fixed, or matrix_Z2
 template<class M, class I>
 struct matrix_inverse_tracker{
 	using T = M::ring_t;
@@ -32,7 +32,7 @@ struct matrix_inverse_tracker{
 		if(c == M::get_zero()) return false;
 		auto invcp = find_inverse(c);
 		assert(invcp);
-		determinant *= c = *invcp;
+		determinant *= *invcp;
 		auto va = v * inverse;
 		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < n; ++ j) inverse[i][j] -= au[i] * va[j];
 		return true;
