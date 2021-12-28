@@ -1,21 +1,21 @@
 <snippet>
 	<content><![CDATA[
 // Requires graph
-template<class T>
 struct centroid_decomposition{
 	int n, root; // the root of the arborescence
 	graph<int> abr; // stores the arborescence
 	vector<int> pv; // Parent vertex in the decomposition
 	vector<int> pe; // Parent eedge in the decomposition
+	vector<int> order; // DFS order of the decomposition tree
+	vector<int> pos; // Starting position in the DFS order
+	vector<int> end; // Ending position in the DFS order
 	vector<int> size; // Size of the subtree in the decomposition
+	vector<int> depth; // Depth in the decomposition
 	vector<int> pos_as_child; // u is the pos_as_child[u]-th child
-	vector<vector<int>> step; // step[u][i]: # of edges from u to its i-th decomposition parent
-	vector<vector<T>> dist; // dist[u][i]: sum of weights from u to its i-th decomposition parent
-	T T_id;
 	// g must be a tree
 	// O(|V| log |V|)
-	template<class U, class F = plus<>>
-	centroid_decomposition(const graph<U> &g, T T_id = {}, F UT = plus<>()): n(g.n), abr(g.n), T_id(T_id), pv(g.n, -1), pe(g.n, -1), size(g.n), pos_as_child(g.n, -1), step(g.n), dist(g.n){
+	template<class T>
+	centroid_decomposition(const graph<T> &g): n(g.n), abr(n), pv(n, -1), pe(n, -1), pos(n, -1), end(n, -1), size(n), depth(n), pos_as_child(n, -1){
 		vector<int> dead(n), size(n);
 		auto centroid = [&](int s){
 			int u = s, pe = -1;
@@ -46,18 +46,6 @@ struct centroid_decomposition{
 				size[u] += size[v];
 			}
 		};
-		auto set_distance = [&](auto self, int u, int pe)->void{
-			int p = u ^ g.edge[pe].from ^ g.edge[pe].to;
-			step[u].push_back(step[p].back() + 1);
-			dist[u].push_back(UT(g.edge[pe].cost, dist[p].back()));
-			for(auto id: g.adj[u]){
-				if(id == pe || g.ignore && g.ignore(id)) continue;
-				auto &e = g.edge[id];
-				int v = u ^ e.from ^ e.to;
-				if(dead[v]) continue;
-				self(self, v, id);
-			}
-		};
 		auto construct = [&](auto self, int u, int p)->void{
 			dfs_size(dfs_size, u, p);
 			dead[u = centroid(u)] = true;
@@ -68,23 +56,43 @@ struct centroid_decomposition{
 				pe[u] = abr.orient(p, u);
 			}
 			else root = u;
-			step[u].push_back(0);
-			dist[u].push_back(T_id);
 			for(auto id: g.adj[u]){
-				auto &e = g.edge[id];
-				int v = u ^ e.from ^ e.to;
-				if(!dead[v]) set_distance(set_distance, v, id);
-			}
-			for(auto id: g.adj[u]){
+				if(g.ignore && g.ignore(id)) continue;
 				auto &e = g.edge[id];
 				int v = u ^ e.from ^ e.to;
 				if(!dead[v]) self(self, v, u);
 			}
 		};
 		construct(construct, 0, -1);
-		for(auto u = 0; u < n; ++ u){
-			reverse(begin(step[u]), end(step[u]));
-			reverse(begin(dist[u]), end(dist[u]));
+		auto dfs = [&](auto self, int u)->void{
+			pos[u] = (int)order.size();
+			order.push_back(u);
+			for(auto id: abr.adj[u]){
+				int v = abr.edge[id].to;
+				depth[v] = depth[u] + 1;
+				self(self, v);
+			}
+			end[u] = (int)order.size();
+		};
+		dfs(dfs, root);
+	}
+	vector<vector<int>> step; // step[u][i]: # of edges from u to its i-th decomposition parent
+	template<class T>
+	void init_step(const graph<T> &g){
+		auto set_step = [&](auto self, int u, int pe, int d)->void{
+			for(auto id: g.adj[u]){
+				if(id == pe || g.ignore && g.ignore(id)) continue;
+				auto &e = g.edge[id];
+				int v = u ^ e.from ^ e.to;
+				if(depth[v] <= d) continue;
+				step[v].push_back(step[u].back() + 1);
+				self(self, v, id, d);
+			}
+		};
+		for(auto t = n - 1; t >= 0; -- t){
+			int u = order[t];
+			step[u].push_back(0);
+			set_step(set_step, u, -1, depth[u]);
 		}
 	}
 };
