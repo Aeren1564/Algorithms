@@ -1,0 +1,194 @@
+<snippet>
+	<content><![CDATA[
+// T must support +=, -=, *, *=, ==, and !=
+template<class T, T (*zero)(), T (*one)()>
+struct matrix_base{
+	using ring_t = T;
+	using domain_t = vector<T>;
+	using range_t = vector<T>;
+	static T get_zero(){
+		return zero();
+	}
+	static T get_one(){
+		return one();
+	}
+	int n, m;
+	vector<vector<T>> data;
+	vector<T> &operator[](int i){
+		assert(0 <= i && i < n);
+		return data[i];
+	}
+	const vector<T> &operator[](int i) const{
+		assert(0 <= i && i < n);
+		return data[i];
+	}
+	bool operator==(const matrix_base &a) const{
+		assert(n == a.n && m == a.m);
+		return data == a.data;
+	}
+	bool operator!=(const matrix_base &a) const{
+		assert(n == a.n && m == a.m);
+		return data != a.data;
+	}
+	matrix_base &operator+=(const matrix_base &a){
+		assert(n == a.n && m == a.m);
+		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) data[i][j] += a[i][j];
+		return *this;
+	}
+	matrix_base operator+(const matrix_base &a) const{
+		matrix_base res(data);
+		return res += a;
+	}
+	matrix_base &operator-=(const matrix_base &a){
+		assert(n == a.n && m == a.m);
+		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) data[i][j] -= a[i][j];
+		return *this;
+	}
+	matrix_base operator-(const matrix_base &a) const{
+		matrix_base res(data);
+		return res -= a;
+	}
+	matrix_base operator*(const matrix_base &a) const{
+		assert(m == a.n);
+		int l = a.m;
+		matrix_base res(n, l);
+		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) for(auto k = 0; k < l; ++ k) res[i][k] += data[i][j] * a[j][k];
+		return res;
+	}
+	matrix_base &operator*=(const matrix_base &a){
+		return *this = *this * a;
+	}
+	matrix_base &operator*=(T c){
+		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) data[i][j] *= c;
+		return *this;
+	}
+	matrix_base operator*(T c) const{
+		matrix_base res(data);
+		return res *= c;;
+	}
+	template<class U>
+	matrix_base &operator^=(U e){
+		assert(e >= 0);
+		matrix_base res(n, n, one());
+		for(; e; *this *= *this, e >>= 1) if(e & 1) res *= *this;
+		return *this = res;
+	}
+	template<class U>
+	matrix_base operator^(U e) const{
+		assert(n == m);
+		matrix_base res(*this);
+		return res ^= e;
+	}
+	matrix_base transposed() const{
+		matrix_base res(m, n);
+		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) res[j][i] = data[i][j];
+		return res;
+	}
+	matrix_base &transpose(){
+		return *this = transposed();
+	}
+	range_t operator*(const domain_t &v) const{
+		assert(m == (int)v.size());
+		vector<T> res(n, zero());
+		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) res[i] += data[i][j] * v[j];
+		return res;
+	}
+	// Assumes T is a field
+	// find_inverse() must return optional<T>
+	// O(n) find_inverse() calls along with O(n^3) operations on T
+	T determinant(auto find_inverse) const{
+		assert(n == m);
+		if(n == 0) return one();
+		auto a = data;
+		T res = one();
+		for(auto j = 0; j < n; ++ j){
+			int pivot = -1;
+			for(auto i = j; i < n; ++ i) if(a[i][j] != zero()){
+				pivot = i;
+				break;
+			}
+			if(!~pivot) return zero();
+			swap(a[j], a[pivot]);
+			res *= a[j][j];
+			auto invp = find_inverse(a[j][j]);
+			assert(invp);
+			T inv = *invp;
+			for(auto i = j + 1; i < n; ++ i) if(i != j && a[i][j] != zero()){
+				T d = a[i][j] * inv;
+				for(auto jj = j; jj < n; ++ jj) a[i][jj] -= d * a[j][jj];
+			}
+		}
+		return res;
+	}
+	// Assumes T is a field
+	// find_inverse() must return optional<T>
+	// O(n) find_inverse() calls along with O(n^3) operations on T
+	optional<matrix_base> inverse(auto find_inverse) const{
+		assert(n == m);
+		if(n == 0) return *this;
+		auto a = data;
+		vector<vector<T>> res(n, vector<T>(n, zero()));
+		for(auto i = 0; i < n; ++ i) res[i][i] = one();
+		for(auto j = 0; j < n; ++ j){
+			int pivot = -1;
+			for(auto i = j; i < n; ++ i) if(a[i][j] != zero()){
+				pivot = i;
+				break;
+			}
+			if(!~pivot) return {};
+			swap(a[j], a[pivot]), swap(res[j], res[pivot]);
+			auto invp = find_inverse(a[j][j]);
+			assert(invp);
+			T inv = *invp;
+			for(auto jj = 0; jj < n; ++ jj) a[j][jj] *= inv, res[j][jj] *= inv;
+			for(auto i = 0; i < n; ++ i) if(i != j && a[i][j] != zero()){
+				T d = a[i][j];
+				for(auto jj = 0; jj < n; ++ jj) a[i][jj] -= d * a[j][jj], res[i][jj] -= d * res[j][jj];
+			}
+		}
+		return res;
+	}
+	template<class output_stream>
+	friend output_stream &operator<<(output_stream &out, const matrix_base &a){
+		out << "\n";
+		for(auto i = 0; i < a.n; ++ i){
+			for(auto j = 0; j < a.m; ++ j){
+				out << a[i][j] << " ";
+			}
+			out << "\n";
+		}
+		return out;
+	}
+	matrix_base(int n, int m, T init_diagonal = zero(), T init_off_diagonal = zero()): n(n), m(m){
+		data.assign(n, vector<T>(m, zero()));
+		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) data[i][j] = i == j ? init_diagonal : init_off_diagonal;
+	}
+	matrix_base(const vector<vector<T>> &arr, int _n = -1, int _m = -1): n(~_n ? _n : (int)arr.size()), m(~_m ? _m : (int)arr[0].size()), data(arr){ }
+};
+template<class T, T (*zero)(), T (*one)()>
+matrix_base<T, zero, one> operator*(T c, matrix_base<T, zero, one> a){
+	for(auto i = 0; i < a.n; ++ i) for(auto j = 0; j < a.m; ++ j) a[i][j] = c * a[i][j];
+	return a;
+}
+// Multiply a row vector v on the left
+template<class T, T (*zero)(), T (*one)()>
+matrix_base<T, zero, one>::domain_t operator*(const typename matrix_base<T, zero, one>::range_t &v, const matrix_base<T, zero, one> &a){
+	assert(a.n == (int)size(v));
+	typename matrix_base<T, zero, one>::domain_t res(a.m, zero());
+	for(auto i = 0; i < a.n; ++ i) for(auto j = 0; j < a.m; ++ j) res[j] += v[i] * a[i][j];
+	return res;
+}
+
+template<class T> T ZERO(){
+	return 0;
+}
+template<class T> T ONE(){
+	return 1;
+}
+template<class T> using matrix = matrix_base<T, ZERO<T>, ONE<T>>;
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>matrix</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

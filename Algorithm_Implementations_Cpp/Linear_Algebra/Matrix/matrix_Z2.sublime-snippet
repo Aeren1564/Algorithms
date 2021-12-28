@@ -1,0 +1,161 @@
+<snippet>
+	<content><![CDATA[
+template<size_t SZ>
+struct matrix_Z2_base{
+	using ring_t = bool;
+	using domain_t = bitset<SZ>;
+	using range_t = bitset<SZ>;
+	static bool get_zero(){
+		return false;
+	}
+	static bool get_one(){
+		return true;
+	}
+	int n, m;
+	vector<bitset<SZ>> data;
+	bitset<SZ> &operator[](int i){
+		assert(0 <= i && i < n);
+		return data[i];
+	}
+	const bitset<SZ> &operator[](int i) const{
+		assert(0 <= i && i < n);
+		return data[i];
+	}
+	bool operator==(const matrix_base &a) const{
+		assert(n == a.n && m == a.m);
+		return data == a.data;
+	}
+	bool operator!=(const matrix_base &a) const{
+		assert(n == a.n && m == a.m);
+		return data != a.data;
+	}
+	matrix_Z2_base &operator+=(const matrix_Z2_base &M){
+		assert(n == M.n && m == M.m);
+		for(auto i = 0; i < n; ++ i) data[i] ^= M[i];
+		return *this;
+	}
+	matrix_Z2_base operator+(const matrix_Z2_base &M) const{
+		matrix_Z2_base res(n, m);
+		res += M;
+		return res;
+	}
+	matrix_Z2_base &operator-=(const matrix_Z2_base &M){
+		assert(n == M.n && m == M.m);
+		for(auto i = 0; i < n; ++ i) data[i] ^= M[i];
+		return *this;
+	}
+	matrix_Z2_base operator-(const matrix_Z2_base &M) const{
+		matrix_Z2_base res(n, m);
+		res += M;
+		return res;
+	}
+	matrix_Z2_base operator*(const matrix_Z2_base &a) const{
+		assert(m == a.n);
+		int l = a.m;
+		matrix_Z2_base res(n, l);
+		vector<bitset<SZ>> temp(l);
+		for(auto i = 0; i < l; ++ i) for(auto j = 0; j < m; ++ j) temp[i][j] = a[j][i];
+		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < l; ++ j) res[i][j] = (data[i] & temp[j]).count() & 1;
+		return res;
+	}
+	matrix_Z2_base &operator*=(const matrix_Z2_base &a){
+		return *this = *this * a;
+	}
+	matrix_Z2_base &operator*=(bool c){
+		if(!c) for(auto &v: *this) v.reset();
+		return *this;
+	}
+	matrix_Z2_base operator*(bool c) const{
+		matrix_Z2_base res(data);
+		return res *= c;
+	}
+	matrix_Z2_base &operator^=(long long e){
+		matrix_Z2_base res(n, n, true);
+		for(; e; *this *= *this, e >>= 1) if(e & 1) res *= *this;
+		return *this = res;
+	}
+	matrix_Z2_base operator^(long long e) const{
+		assert(n == m);
+		matrix_Z2_base res(data); res ^= e;
+		return res;
+	}
+	matrix_Z2_base transposed() const{
+		matrix_Z2_base res(m, n);
+		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) res[j][i] = data[i][j];
+		return res;
+	}
+	matrix_Z2_base &transpose(){
+		return *this = transposed();
+	}
+	// Multiply a row vector v on the left
+	range_t operator*(const domain_t &v) const{
+		range_t res(n);
+		for(auto i = 0; i < n; ++ i) res[i] = (data[i] & v).count() & 1;
+		return res;
+	}
+	bool determinant(auto) const{
+		assert(n == m);
+		matrix_Z2_base a(data);
+		for(auto i = 0; i < n; ++ i){
+			for(auto j = i + 1; j < n; ++ j) if(a[j][i]){
+				if(a[i][i]) a[j] ^= a[i];
+				else swap(a[i], a[j]);
+			}
+			if(!a[i][i]) return false;
+		}
+		return true;
+	}
+	optional<matrix_Z2_base> inverse(auto) const{
+		assert(n == m);
+		vector<bitset<SZ>> a(data), res(n);
+		for(auto i = 0; i < n; ++ i) res[i].set(i);
+		for(auto j = 0; j < n; ++ j){
+			int pivot = -1;
+			for(auto i = j; i < n; ++ i) if(a[i][j]){
+				pivot = i;
+				break;
+			}
+			if(!~pivot) return {};
+			swap(a[j], a[pivot]), swap(res[j], res[pivot]);
+			for(auto i = 0; i < n; ++ i) if(i != j && a[i][j]) a[i] ^= a[j], res[i] ^= res[j];
+		}
+		swap(*this, res);
+		return true;
+	}
+	template<class output_stream>
+	friend output_stream &operator<<(output_stream &out, const matrix_base &a){
+		out << "\n";
+		for(auto i = 0; i < a.n; ++ i){
+			for(auto j = 0; j < a.m; ++ j){
+				out << bool(a[i][j]);
+			}
+			out << "\n";
+		}
+		return out;
+	}
+	matrix_Z2_base(int n, int m, bool init_diagonal = false, bool init_off_diagonal = false): n(n), m(m), data(n){
+		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) data[i][j] = i == j ? init_diagonal : init_off_diagonal;
+	}
+	matrix_Z2_base(const vector<bitset<SZ>> &arr, int _n = -1, int _m = -1): n(~n ? _n : (int)arr.size()), m(~_m ? _m : SZ), data(arr){ }
+};
+template<size_t SZ>
+matrix_Z2_base<SZ> operator*(bool c, matrix_Z2_base<SZ> M){
+	if(!c) for(auto &v: M) v.reset();
+	return M;
+}
+// Multiply a row vector v on the left
+template<size_t SZ>
+matrix_Z2_base<SZ>::domain_t operator*(const typename matrix_Z2_base<SZ>::range_t &v, const matrix_Z2_base<SZ> &a){
+	assert(a.n == (int)v.size());
+	typename matrix_Z2_base<SZ>::domain_t res;
+	for(auto i = 0; i < a.n; ++ i) if(v[i]) res ^= a[i];
+	return res;
+}
+
+using matrix_Z2 = matrix_Z2_base<1000>;
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>matrix_Z2</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

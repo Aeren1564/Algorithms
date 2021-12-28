@@ -1,0 +1,193 @@
+<snippet>
+	<content><![CDATA[
+// T must support +=, -=, *, *=, ==, and !=
+template<class T, size_t N, size_t M, T (*zero)(), T (*one)()>
+struct matrix_fixed_base{
+	using ring_t = T;
+	using domain_t = array<T, M>;
+	using range_t = array<T, N>;
+	static T get_zero(){
+		return zero();
+	}
+	static T get_one(){
+		return one();
+	}
+	int n, m;
+	array<array<T, M>, N> data;
+	array<T, M> &operator[](int i){
+		assert(0 <= i && i < n);
+		return data[i];
+	}
+	const array<T, M> &operator[](int i) const{
+		assert(0 <= i && i < n);
+		return data[i];
+	}
+	bool operator==(const matrix_fixed_base &a) const{
+		assert(n == a.n && m == a.m);
+		return data == a.data;
+	}
+	bool operator!=(const matrix_fixed_base &a) const{
+		assert(n == a.n && m == a.m);
+		return data != a.data;
+	}
+	matrix_fixed_base &operator+=(const matrix_fixed_base &a){
+		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) data[i][j] += a[i][j];
+		return *this;
+	}
+	matrix_fixed_base operator+(const matrix_fixed_base &a) const{
+		matrix_fixed_base res(*this);
+		return res += a;
+	}
+	matrix_fixed_base &operator-=(const matrix_fixed_base &a){
+		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) data[i][j] += a[i][j];
+		return *this;
+	}
+	matrix_fixed_base operator-(const matrix_fixed_base &a) const{
+		matrix_fixed_base res(*this);
+		return res += a;
+	}
+	template<size_t N2, size_t M2>
+	matrix_fixed_base<T, N, M2, zero, one> operator*(const matrix_fixed_base<T, N2, M2, zero, one> &a) const{
+		assert(m == a.n);
+		int l = M2;
+		matrix_fixed_base<T, N, M2, zero, one> res;
+		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) for(auto k = 0; k < l; ++ k) res[i][k] += data[i][j] * a[j][k];
+		return res;
+	}
+	template<size_t N2, size_t M2>
+	matrix_fixed_base &operator*=(const matrix_fixed_base<T, N2, M2, zero, one> &a){
+		return *this = *this * a;
+	}
+	matrix_fixed_base &operator*=(T c){
+		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) data[i][j] *= c;
+		return *this;
+	}
+	matrix_fixed_base operator*(T c) const{
+		matrix_fixed_base res(data);
+		return res *= c;
+	}
+	matrix_fixed_base &operator^=(long long e){
+		assert(n == m && e >= 0);
+		matrix_fixed_base res(one());
+		for(; e; *this *= *this, e >>= 1) if(e & 1) res *= *this;
+		return *this = res;
+	}
+	matrix_fixed_base operator^(long long e) const{
+		assert(n == m);
+		matrix_fixed_base res(data);
+		return res ^= e;
+	}
+	matrix_fixed_base<T, M, N, zero, one> transposed() const{
+		matrix_fixed_base<T, M, N, zero, one> res;
+		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) res[j][i] = data[i][j];
+		return res;
+	}
+	matrix_fixed_base &transpose(){
+		return *this = transposed();
+	}
+	// Multiply a column vector v on the right
+	range_t operator*(const domain_t &v) const{
+		range_t res;
+		res.fill(zero());
+		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) res[i] += data[i][j] * v[j];
+		return res;
+	}
+	// Assumes T is a field
+	// find_inverse() must return optional<T>
+	// O(n) find_inverse() calls along with O(n^3) operations on T
+	T determinant(auto find_inverse) const{
+		assert(n == m);
+		if(n == 0) return one();
+		auto a = data;
+		T res = one();
+		for(auto j = 0; j < n; ++ j){
+			int pivot = -1;
+			for(auto i = j; i < n; ++ i) if(a[i][j] != zero()){
+				pivot = i;
+				break;
+			}
+			if(!~pivot) return zero();
+			swap(a[j], a[pivot]);
+			res *= a[j][j];
+			auto invp = find_inverse(a[j][j]);
+			assert(invp);
+			T inv = *invp;
+			for(auto i = j + 1; i < n; ++ i) if(i != j && a[i][j] != zero()){
+				T d = a[i][j] * inv;
+				for(auto jj = j; jj < n; ++ jj) a[i][jj] -= d * a[j][jj];
+			}
+		}
+		return res;
+	}
+	// Assumes T is a field
+	// find_inverse() must return optional<T>
+	// O(n) find_inverse() calls along with O(n^3) operations on T
+	optional<matrix_fixed_base> inverse(auto find_inverse) const{
+		assert(n == m);
+		if(n == 0) return *this;
+		auto a = data;
+		array<array<T, M>, N> res;
+		for(auto i = 0; i < n; ++ i) res[i].fill(zero()), res[i][i] = one();
+		for(auto j = 0; j < n; ++ j){
+			int pivot = -1;
+			for(auto i = j; i < n; ++ i) if(a[i][j] != zero()){
+				pivot = i;
+				break;
+			}
+			if(!~pivot) return {};
+			swap(a[j], a[pivot]), swap(res[j], res[pivot]);
+			auto invp = find_inverse(a[j][j]);
+			assert(invp);
+			T inv = *invp;
+			for(auto jj = 0; jj < n; ++ jj) a[j][jj] *= inv, res[j][jj] *= inv;
+			for(auto i = 0; i < n; ++ i) if(i != j && a[i][j] != zero()){
+				T d = a[i][j];
+				for(auto jj = 0; jj < n; ++ jj) a[i][jj] -= d * a[j][jj], res[i][jj] -= d * res[j][jj];
+			}
+		}
+		return res;
+	}
+	template<class output_stream>
+	friend output_stream &operator<<(output_stream &out, const matrix_fixed_base &a){
+		out << "\n";
+		for(auto i = 0; i < a.n; ++ i){
+			for(auto j = 0; j < a.m; ++ j){
+				out << a[i][j] << " ";
+			}
+			out << "\n";
+		}
+		return out;
+	}
+	matrix_fixed_base(int n, int m, T init_diagonal = zero(), T init_off_diagonal = zero()): n(n), m(m){
+		assert(0 <= min(n, m) && n <= N && m <= M);
+		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) data[i][j] = i == j ? init_diagonal : init_off_diagonal;
+	}
+	matrix_fixed_base(const array<array<T, M>, N> &arr): n(N), m(M), data(arr){ }
+};
+template<class T, size_t N, size_t M, T (*zero)(), T (*one)()>
+matrix_fixed_base<T, N, M, zero, one> operator*(T c, matrix_fixed_base<T, N, M, zero, one> a){
+	for(auto i = 0; i < a.n; ++ i) for(auto j = 0; j < a.m; ++ j) a[i][j] = c * a[i][j];
+	return a;
+}
+// Multiply a row vector v on the left
+template<class T, size_t N, size_t M, T (*zero)(), T (*one)()>
+matrix_fixed_base<T, N, M, zero, one>::domain_t operator*(const typename matrix_fixed_base<T, N, M, zero, one>::range_t &v, const matrix_fixed_base<T, N, M, zero, one> &a){
+	typename matrix_fixed_base<T, N, M, zero, one>::domain_t res;
+	res.fill(zero());
+	for(auto i = 0; i < a.n; ++ i) for(auto j = 0; j < a.m; ++ j) res[j] += v[i] * a[i][j];
+	return res;
+}
+
+template<class T> T ZERO(){
+	return 0;
+}
+template<class T> T ONE(){
+	return 1;
+}
+template<class T, size_t N, size_t M> using matrix_fixed = matrix_fixed_base<T, N, M, ZERO<T>, ONE<T>>;
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>matrix_fixed</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
