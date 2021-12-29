@@ -1,6 +1,6 @@
 <snippet>
 	<content><![CDATA[
-// Maintain the inverse determinant and the inverse of a matrix up to addition updates of another matrix of small rank
+// Maintain the determinant, inverse determinant, and the inverse of a matrix up to addition updates of another matrix of small rank
 // M must be a matrix type
 // Assumes T is a field
 // Requires matrix, matrix_fixed, or matrix_Z2
@@ -8,51 +8,58 @@ template<class M, class I>
 struct matrix_inverse_tracker{
 	using T = M::ring_t;
 	int n;
+	M matrix;
 	T determinant;
-	M inverse;
+	M inverse_matrix;
+	T inverse_determinant;
 	I find_inverse;
-	matrix_inverse_tracker(const M &a, I find_inverse): n(a.n), determinant([&a, &find_inverse]{
-		auto invdp = find_inverse(a.determinant(find_inverse));
-		assert(invdp);
-		return *invdp;
-	}()), inverse([&a, &find_inverse]{
-		auto invp = a.inverse(find_inverse);
-		assert(invp);
-		return *invp;
-	}()), find_inverse(find_inverse){
+	// Assumes a is invertible
+	matrix_inverse_tracker(const M &a, I find_inverse):
+		n(a.n),
+		matrix(a),
+		determinant(a.determinant(find_inverse)),
+		inverse_matrix(*a.inverse(find_inverse)),
+		inverse_determinant(*find_inverse(determinant)),
+		find_inverse(find_inverse){
 		assert(a.m == n);
 	}
 	// Sherman–Morrison formula and matrix determinant lemma
 	// Apply a += u * v^T if the resulting matrix is invertible
 	// One find_inverse() call along with O(n^2) operations on T
 	bool update(const M::domain_t &u, const M::range_t &v){
-		auto au = inverse * u;
+		auto au = inverse_matrix * u;
 		T c = M::get_one();
 		for(auto i = 0; i < n; ++ i) c += v[i] * au[i];
 		if(c == M::get_zero()) return false;
-		auto invcp = find_inverse(c);
-		assert(invcp);
-		determinant *= c = *invcp;
-		auto va = v * inverse;
-		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < n; ++ j) inverse[i][j] -= au[i] * c * va[j];
+		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < n; ++ j) matrix[i][j] += u[i] * v[j];
+		determinant *= c;
+		inverse_determinant *= c = *find_inverse(c);
+		auto va = v * inverse_matrix;
+		for(auto &x: va) x *= c;
+		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < n; ++ j) inverse_matrix[i][j] -= au[i] * va[j];
 		return true;
 	}
 	// Woodbury matrix identity and generalized matrix determinant lemma
 	// Assumes that C is invertible
 	// Apply a += U * C * V if the resulting matrix is invertible
-	// O(k) find_inverse() calls along with O(k * n^2) operations on T
+	// O(k) find_inverse() calls along with O(k * n^2 + k^3) operations on T
 	template<class M1, class M2, class M3>
-	bool update(const M1 &U, M2 C, const M3 &V){
+	bool update(const M1 &U, const M2 &C, const M3 &V){
 		int k = C.n;
-		assert(U.n == n && U.v == k && C.n == n && C.n == n && V.n == k && V.m == n);
-		T det_C_inv = *find_inverse(C.determinant(find_inverse));
-		auto au = inverse * U;
-		auto invCp = (C = *C.inverse(find_inverse) + V * au).inverse(find_inverse);
-		if(!invCp) return false;
-		C = *invCp;
-		determinant *= C.determinant(find_inverse) * det_C_inv;
-		auto va = V * inverse;
-		inverse -= au * C * va;
+		assert(U.n == n && U.m == k);
+		assert(C.n == k && C.m == k);
+		assert(V.n == k && V.m == n);
+		T det_C = C.determinant(find_inverse);
+		T det_C_inv = *find_inverse(det_C);
+		auto au = inverse_matrix * U;
+		auto D = *C.inverse(find_inverse) + V * au;
+		auto invDp = D.inverse(find_inverse);
+		if(!invDp) return false;
+		matrix += U * C * V;
+		determinant *= D.determinant(find_inverse) * det_C;
+		inverse_determinant *= (D = *invDp).determinant(find_inverse) * det_C_inv;
+		auto va = V * inverse_matrix;
+		inverse_matrix -= au * D * va;
 		return true;
 	}
 };

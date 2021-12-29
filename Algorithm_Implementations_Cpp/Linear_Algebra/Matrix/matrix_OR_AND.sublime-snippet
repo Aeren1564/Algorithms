@@ -55,7 +55,7 @@ struct matrix_OR_AND_base: vector<bitset<SZ>>{
 		return *this;
 	}
 	matrix_OR_AND_base operator*(bool c) const{
-		matrix_OR_AND_base res(data);
+		matrix_OR_AND_base res(data, n, m);
 		return res *= c;
 	}
 	template<class U>
@@ -67,7 +67,7 @@ struct matrix_OR_AND_base: vector<bitset<SZ>>{
 	template<class U>
 	matrix_OR_AND_base operator^(U e) const{
 		assert(n == m);
-		matrix_OR_AND_base res(data);
+		matrix_OR_AND_base res(data, n, m);
 		return res ^= e;
 	}
 	matrix_OR_AND_base transposed() const{

@@ -63,7 +63,7 @@ struct matrix_fixed_base{
 		return *this;
 	}
 	matrix_fixed_base operator*(T c) const{
-		matrix_fixed_base res(data);
+		matrix_fixed_base res(data, n, m);
 		return res *= c;
 	}
 	matrix_fixed_base &operator^=(long long e){
@@ -74,7 +74,7 @@ struct matrix_fixed_base{
 	}
 	matrix_fixed_base operator^(long long e) const{
 		assert(n == m);
-		matrix_fixed_base res(data);
+		matrix_fixed_base res(data, n, m);
 		return res ^= e;
 	}
 	matrix_fixed_base<T, M, N, zero, one> transposed() const{

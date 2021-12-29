@@ -36,7 +36,7 @@ struct matrix_base{
 		return *this;
 	}
 	matrix_base operator+(const matrix_base &a) const{
-		matrix_base res(data);
+		matrix_base res(data, n, m);
 		return res += a;
 	}
 	matrix_base &operator-=(const matrix_base &a){
@@ -45,7 +45,7 @@ struct matrix_base{
 		return *this;
 	}
 	matrix_base operator-(const matrix_base &a) const{
-		matrix_base res(data);
+		matrix_base res(data, n, m);
 		return res -= a;
 	}
 	matrix_base operator*(const matrix_base &a) const{
@@ -63,7 +63,7 @@ struct matrix_base{
 		return *this;
 	}
 	matrix_base operator*(T c) const{
-		matrix_base res(data);
+		matrix_base res(data, n, m);
 		return res *= c;;
 	}
 	template<class U>

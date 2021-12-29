@@ -66,7 +66,7 @@ struct matrix_Z2_base{
 		return *this;
 	}
 	matrix_Z2_base operator*(bool c) const{
-		matrix_Z2_base res(data);
+		matrix_Z2_base res(data, n, m);
 		return res *= c;
 	}
 	matrix_Z2_base &operator^=(long long e){
@@ -76,8 +76,8 @@ struct matrix_Z2_base{
 	}
 	matrix_Z2_base operator^(long long e) const{
 		assert(n == m);
-		matrix_Z2_base res(data); res ^= e;
-		return res;
+		matrix_Z2_base res(data, n, m);
+		return res ^= e;
 	}
 	matrix_Z2_base transposed() const{
 		matrix_Z2_base res(m, n);
