@@ -40,7 +40,7 @@ struct matrix_inverse_tracker{
 	// Woodbury matrix identity and generalized matrix determinant lemma
 	// Assumes that C is invertible
 	// Apply a += U * C * V if the resulting matrix is invertible
-	// O(k) find_inverse calls along with O(k * n^2) operations on T
+	// O(k) find_inverse() calls along with O(k * n^2) operations on T
 	template<class M1, class M2, class M3>
 	bool update(const M1 &U, M2 C, const M3 &V){
 		int k = C.n;
