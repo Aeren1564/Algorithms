@@ -34,7 +34,7 @@ struct matrix_inverse_tracker{
 		assert(invcp);
 		determinant *= c = *invcp;
 		auto va = v * inverse;
-		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < n; ++ j) inverse[i][j] -= c * au[i] * va[j];
+		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < n; ++ j) inverse[i][j] -= au[i] * c * va[j];
 		return true;
 	}
 	// Woodbury matrix identity and generalized matrix determinant lemma
