@@ -140,8 +140,41 @@ struct splay_tree{
 		refresh();
 	}
 };
-// lazy should be I'm ok my childs are not ok (only affect childs)
-// use reverse when the order of the childs matters (fix the node here)
+
+struct node: splay_tree<node *>{
+	using splay_tree::ch;
+	int val = 0, id = -1;
+	long long aux_sum = 0;
+	array<int, 2> aux_max{0, -1};
+	node(): splay_tree(){ }
+	void refresh() override{
+		splay_tree::refresh();
+		aux_sum = val;
+		aux_max = {val, id};
+		if(ch[0]){
+			aux_sum += ch[0]->aux_sum;
+			ctmax(aux_max, ch[0]->aux_max);
+		}
+		if(ch[1]){
+			aux_sum += ch[1]->aux_sum;
+			ctmax(aux_max, ch[1]->aux_max);
+		}
+	}
+	void apply(long long lazy){
+
+	}
+	template<bool add>
+	void refresh_virtual(node* v){
+
+	}
+	void reverse() override{
+		splay_tree::reverse();
+
+	}
+	void push() override{ // make sure push fix the node (don't call splay_tree::refresh)
+		splay_tree::push();
+	}
+};
 struct node: splay_tree<node *>{
 	int size = 1; // includes itself, auxiliary subtrees, and virtual subtrees
 	int virtual_size = 0; // includes virtual subtrees

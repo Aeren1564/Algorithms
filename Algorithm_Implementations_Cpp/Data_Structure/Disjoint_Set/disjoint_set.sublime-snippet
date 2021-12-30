@@ -1,43 +1,37 @@
 <snippet>
 	<content><![CDATA[
+template<bool Enable_small_to_large = true>
 struct disjoint_set{
 	int n;
 	vector<int> p;
 	disjoint_set(int n): n(n), p(n, -1){ }
-	// Amortized O(alpha(n))
 	int root(int u){
 		return p[u] < 0 ? u : p[u] = root(p[u]);
 	}
-	// Amortized O(alpha(n))
 	bool share(int a, int b){
 		return root(a) == root(b);
 	}
-	// Amortized O(alpha(n))
 	int size(int u){
 		return -p[root(u)];
 	}
-	// Amortized O(alpha(n))
 	bool merge(int u, int v){
 		u = root(u), v = root(v);
 		if(u == v) return false;
-		if(p[u] > p[v]) swap(u, v);
+		if constexpr(Enable_small_to_large) if(p[u] > p[v]) swap(u, v);
 		p[u] += p[v], p[v] = u;
 		return true;
 	}
-	// Amortized O(alpha(n))
 	bool merge(int u, int v, auto act){
 		u = root(u), v = root(v);
 		if(u == v) return false;
-		if(p[u] > p[v]) swap(u, v);
+		if constexpr(Enable_small_to_large) if(p[u] > p[v]) swap(u, v);
 		p[u] += p[v], p[v] = u;
 		act(u, v);
 		return true;
 	}
-	// O(n)
 	void clear(){
 		fill(p.begin(), p.end(), -1);
 	}
-	// O(n)
 	vector<vector<int>> group_up(){
 		vector<vector<int>> g(n);
 		for(auto i = 0; i < n; ++ i) g[root(i)].push_back(i);

@@ -101,13 +101,13 @@
 
         { "trigger": "output", "contents": "ranges::copy($1, ostream_iterator<${2:int}>(${3:cout}, ${4:\" \"}))"},
 
-        { "trigger": "rall_of", "contents": "ranges::all_of($1, ${2:identity})"},
-        { "trigger": "rany_of", "contents": "ranges::any_of($1, ${2:identity})"},
-        { "trigger": "rnone_of", "contents": "ranges::none_of($1, ${2:identity})"},
+        { "trigger": "rall_of", "contents": "ranges::all_of($1, ${2:identity()})"},
+        { "trigger": "rany_of", "contents": "ranges::any_of($1, ${2:identity()})"},
+        { "trigger": "rnone_of", "contents": "ranges::none_of($1, ${2:identity()})"},
         { "trigger": "rfor_each", "contents": "ranges::for_each($1)"},
         { "trigger": "rfor_each_n", "contents": "ranges::for_each_n($1)"},
         { "trigger": "rcount", "contents": "ranges::count($1)"},
-        { "trigger": "rcount_if", "contents": "ranges::count_if($1, ${2:identity})"},
+        { "trigger": "rcount_if", "contents": "ranges::count_if($1, ${2:identity()})"},
         { "trigger": "rmismatch", "contents": "ranges::mismatch($1)"},
         { "trigger": "rlexicographical_compare", "contents": "ranges::lexicographical_compare($1)"},
         { "trigger": "rfind", "contents": "ranges::find($1)"},
