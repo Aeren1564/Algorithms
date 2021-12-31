@@ -94,7 +94,7 @@
         { "trigger": "vlazysplit", "contents": "ranges::views::lazy_split($1)"},
         { "trigger": "vsplit", "contents": "ranges::views::split($1)"},
         { "trigger": "vcounted", "contents": "ranges::views::counted($1)"},
-        { "trigger": "vreverse", "contents": "ranges::views::reverse($1)"},
+        { "trigger": "vreverse", "contents": "ranges::views::reverse"},
         { "trigger": "velements", "contents": "ranges::views::elements<$1>($2)"},
         { "trigger": "vkeys", "contents": "ranges::views::keys($1)"},
         { "trigger": "vvalues", "contents": "ranges::views::values($1)"},

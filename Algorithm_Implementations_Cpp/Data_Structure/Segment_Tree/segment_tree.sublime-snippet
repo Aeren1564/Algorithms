@@ -27,6 +27,13 @@ struct segment_tree{
 		data[p += size] = x;
 		for(auto i = 1; i <= log; ++ i) refresh(p >> i);
 	}
+	// O(log n)
+	void update(int p, T x){
+		assert(0 <= p && p < n);
+		p += size;
+		data[p] = TT(data[p], x);
+		for(auto i = 1; i <= log; ++ i) refresh(p >> i);
+	}
 	// O(1)
 	T query(int p) const{
 		assert(0 <= p && p < n);

@@ -74,6 +74,7 @@ struct shallowest_decomposition{
 	vector<vector<int>> step; // step[u][i]: # of edges from u to its i-th decomposition parent
 	template<class T>
 	void init_step(const graph<T> &g){
+		step.assign(n, vector<int>());
 		auto set_step = [&](auto self, int u, int pe, int d)->void{
 			for(auto id: g.adj[u]){
 				if(id == pe || g.ignore && g.ignore(id)) continue;
