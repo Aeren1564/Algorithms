@@ -14,7 +14,7 @@ struct shallowest_decomposition{
 	vector<int> depth; // Depth in the decomposition
 	vector<int> pos_as_child; // u is the pos_as_child[u]-th child
 	// g must be a tree
-	// O(|V|)
+	// O(n)
 	template<class T>
 	shallowest_decomposition(const graph<T> &g): n(g.n), abr(n), pv(n, -1), pe(n, -1), pos(n, -1), end(n, -1), size(n), depth(n), pos_as_child(n, -1){
 		assert(n);
@@ -27,7 +27,7 @@ struct shallowest_decomposition{
 				int v = stacks[label].back();
 				stacks[label].pop_back();
 				pv[v] = u;
-				pos_as_child[v] = (int)abr.adj.size();
+				pos_as_child[v] = (int)abr.adj[u].size();
 				pe[v] = abr.orient(u, v);
 				u = v;
 			}
@@ -46,7 +46,7 @@ struct shallowest_decomposition{
 			int label = temp & -temp;
 			dp[u] = (label | seen) & -label;
 			stacks[__lg(label)].push_back(u);
-			for(auto t = (int)size(g.adj[u]) - 1; t >= 0; -- t){
+			for(auto t = (int)g.adj[u].size() - 1; t >= 0; -- t){
 				int id = g.adj[u][t];
 				if(g.ignore && g.ignore(id)) continue;
 				auto &e = g.edge[id];
@@ -74,7 +74,7 @@ struct shallowest_decomposition{
 	vector<vector<int>> step; // step[u][i]: # of edges from u to its i-th decomposition parent
 	template<class T>
 	void init_step(const graph<T> &g){
-		step.assign(n, vector<int>());
+		step.assign(n, {});
 		auto set_step = [&](auto self, int u, int pe, int d)->void{
 			for(auto id: g.adj[u]){
 				if(id == pe || g.ignore && g.ignore(id)) continue;

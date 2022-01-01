@@ -90,7 +90,7 @@
         { "trigger": "vtakewhile", "contents": "ranges::views::take_while($1)"},
         { "trigger": "vdrop", "contents": "ranges::views::drop($1)"},
         { "trigger": "vdropwhile", "contents": "ranges::views::drop_while($1)"},
-        { "trigger": "vjoin", "contents": "ranges::views::join($1)"},
+        { "trigger": "vjoin", "contents": "ranges::views::join"},
         { "trigger": "vlazysplit", "contents": "ranges::views::lazy_split($1)"},
         { "trigger": "vsplit", "contents": "ranges::views::split($1)"},
         { "trigger": "vcounted", "contents": "ranges::views::counted($1)"},

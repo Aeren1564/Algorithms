@@ -13,7 +13,7 @@ struct centroid_decomposition{
 	vector<int> depth; // Depth in the decomposition
 	vector<int> pos_as_child; // u is the pos_as_child[u]-th child
 	// g must be a tree
-	// O(|V| log |V|)
+	// O(n log n)
 	template<class T>
 	centroid_decomposition(const graph<T> &g): n(g.n), abr(n), pv(n, -1), pe(n, -1), pos(n, -1), end(n, -1), size(n), depth(n), pos_as_child(n, -1){
 		vector<int> dead(n), size(n);
@@ -79,7 +79,7 @@ struct centroid_decomposition{
 	vector<vector<int>> step; // step[u][i]: # of edges from u to its i-th decomposition parent
 	template<class T>
 	void init_step(const graph<T> &g){
-		step.assign(n, vector<int>());
+		step.assign(n, {});
 		auto set_step = [&](auto self, int u, int pe, int d)->void{
 			for(auto id: g.adj[u]){
 				if(id == pe || g.ignore && g.ignore(id)) continue;
