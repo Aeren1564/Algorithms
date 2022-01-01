@@ -2,14 +2,14 @@
 	<content><![CDATA[
 mt19937 rng(chrono::high_resolution_clock::now().time_since_epoch().count());
 mt19937_64 rngll(chrono::high_resolution_clock::now().time_since_epoch().count());
-using randint = uniform_int_distribution<int>;
-using randll = uniform_int_distribution<long long>;
-using randd = uniform_real_distribution<double>;
+using randint_t = uniform_int_distribution<int>;
+using randll_t = uniform_int_distribution<long long>;
+using randd_t = uniform_real_distribution<double>;
 // return x with probability p, y with probability 1-p
 template<class T>
 T pick(T x, T y, double p = 0.5){
 	assert(-0.0001 <= p && p <= 1.0001);
-	return randd(0, 1)(rng) <= p ? x : y;
+	return randd_t(0, 1)(rng) <= p ? x : y;
 }
 
 ]]></content>
