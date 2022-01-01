@@ -38,7 +38,7 @@ struct tree_disk_query_solver{
 	}
 	// Find the sum of values of v with l <= dist(u, v) < r
 	// O(log n)
-	T query(int u, int l, int r){
+	T query(int u, int l, int r) const{
 		assert(l <= r);
 		int s = u;
 		T res = TinvT(data[u][clamp(r, 0, (int)data[u].size() - 1)], data[u][clamp(l, 0, (int)data[u].size() - 1)]);
@@ -56,7 +56,7 @@ struct tree_disk_query_solver{
 	}
 	// Find the sum of values of v with dist(u, v) = d
 	// O(log n)
-	T query(int u, int d){
+	T query(int u, int d) const{
 		return query(u, d, d + 1);
 	}
 };
