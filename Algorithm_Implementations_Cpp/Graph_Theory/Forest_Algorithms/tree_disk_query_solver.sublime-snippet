@@ -5,15 +5,15 @@
 template<class T, class D, class F = plus<>, class I = minus<>>
 struct tree_disk_query_solver{
 	int n;
-	D &decomp;
+	const D &decomp;
 	vector<vector<T>> data;
 	vector<vector<vector<T>>> child_data;
 	F TT; // Commutative group operation
 	T T_id; // Commutative group identity
 	I TinvT; // Commutative group inverse operation
-	tree_disk_query_solver(D &decomp, F TT = plus<>(), T T_id = {}, I TinvT = minus<>()): tree_disk_query_solver(decomp, vector<T>(decomp.n, 1), TT, T_id, TinvT){ }
+	tree_disk_query_solver(T type_deducer, const D &decomp, F TT = plus<>(), T T_id = {}, I TinvT = minus<>()): tree_disk_query_solver(type_deducer, decomp, vector<T>(decomp.n, 1), TT, T_id, TinvT){ }
 	// O(n log n) time and memory
-	tree_disk_query_solver(D &decomp, const vector<T> &vertex_data, F TT = plus<>(), T T_id = {}, I TinvT = minus<>()): n(decomp.n), decomp(decomp), data(n), child_data(n), TT(TT), T_id(T_id), TinvT(TinvT){
+	tree_disk_query_solver(T, const D &decomp, const vector<T> &vertex_data, F TT = plus<>(), T T_id = {}, I TinvT = minus<>()): n(decomp.n), decomp(decomp), data(n), child_data(n), TT(TT), T_id(T_id), TinvT(TinvT){
 		assert(!decomp.step.empty());
 		assert((int)vertex_data.size() == n);
 		for(auto s = 0; s < n; ++ s){
@@ -36,28 +36,31 @@ struct tree_disk_query_solver{
 			for(auto d = 1; d < (int)data[s].size(); ++ d) data[s][d] = TT(data[s][d], data[s][d - 1]);
 		}
 	}
-	// Find the sum of values of v with l <= dist(u, v) < r
+	// Find the sum of values of v with dist(u, v) < r
 	// O(log n)
-	T query(int u, int l, int r) const{
-		assert(l <= r);
+	T query_open_disk(int u, int r) const{
 		int s = u;
-		T res = TinvT(data[u][clamp(r, 0, (int)data[u].size() - 1)], data[u][clamp(l, 0, (int)data[u].size() - 1)]);
+		T res = data[u][clamp(r, 0, (int)data[u].size() - 1)];
 		for(auto level = 1; ~decomp.pv[u]; ++ level){
 			int p = decomp.pv[u], len = decomp.step[s][level];
 			if(r < 0) break;
 			auto &cur_data = child_data[p][decomp.pos_as_child[u]];
 			res = TT(res, TinvT(
-				TinvT(data[p][clamp(r - len, 0, (int)data[p].size() - 1)], data[p][clamp(l - len, 0, (int)data[p].size() - 1)]),
-				TinvT(cur_data[clamp(r - len, 0, (int)cur_data.size() - 1)], cur_data[clamp(l - len, 0, (int)cur_data.size() - 1)])
+				data[p][clamp(r - len, 0, (int)data[p].size() - 1)], cur_data[clamp(r - len, 0, (int)cur_data.size() - 1)]
 			));
 			u = p;
 		}
 		return res;
 	}
+	// Find the sum of values of v with dist(u, v) <= r
+	// O(log n)
+	T query_closed_disk(int u, int r) const{
+		return query_open_disk(u, r + 1);
+	}
 	// Find the sum of values of v with dist(u, v) = d
 	// O(log n)
-	T query(int u, int d) const{
-		return query(u, d, d + 1);
+	T query_ring(int u, int d) const{
+		return TinvT(query_closed_disk(u, d), query_open_disk(u, d));
 	}
 };
 ]]></content>

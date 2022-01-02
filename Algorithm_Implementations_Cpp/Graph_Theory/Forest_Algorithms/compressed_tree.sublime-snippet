@@ -1,15 +1,15 @@
 <snippet>
 	<content><![CDATA[
 // Requires graph, range_minmax_query_solver, and lca_solver
-vector<array<int, 2>> compressed_tree(const lca_solver &lca, const vector<int> &subset){ // build the minimal tree containing all the nodes in O(|subset| log |subset|)
+vector<array<int, 2>> compressed_tree(const lca_solver &ls, const vector<int> &subset){ // build the minimal tree containing all the nodes in O(|subset| log |subset|)
 	auto order = subset;
-	const auto &p = lca.pos;
+	const auto &p = ls.pos;
 	auto cmp = [&](int u, int v){ return p[u] < p[v]; };
 	sort(order.begin(), order.end(), cmp);
-	for(auto i = 1, sz = (int)order.size(); i < sz; ++ i) order.push_back(lca.lca(order[i - 1], order[i]));
+	for(auto i = 1, sz = (int)order.size(); i < sz; ++ i) order.push_back(ls.lca(order[i - 1], order[i]));
 	sort(order.begin(), order.end(), cmp), order.erase(unique(order.begin(), order.end()), order.end());
 	vector<array<int, 2>> edge;
-	for(auto i = 1; i < (int)order.size(); ++ i) edge.push_back({lca.lca(order[i - 1], order[i]), order[i]});
+	for(auto i = 1; i < (int)order.size(); ++ i) edge.push_back({ls.lca(order[i - 1], order[i]), order[i]});
 	return edge;
 }
 ]]></content>

@@ -1,0 +1,62 @@
+<snippet>
+	<content><![CDATA[
+// Given a set of disjoint circles and points, determine the inclusion relation
+// n-th circle is the auxiliary circle of infinite radius
+// circle_inclusion(i, j): circle i directly contains circle j
+// point_inclusion(i, j): circle i directly contains point j
+// B must be able to hold up to square of coordinates
+// O((n + m) * log(n + m))
+template<class B, class C = double>
+void find_circle_point_inclusion_relations(const vector<array<B, 3>> &circle, const vector<array<B, 2>> &point, auto circle_inclusion, auto point_inclusion){
+	int n = (int)circle.size(), m = (int)point.size();
+	vector<int> pv(n, -1);
+	vector<tuple<B, int, int>> event;
+	for(auto i = 0; i < n; ++ i){
+		auto [x, y, r] = circle[i];
+		event.push_back({x - r, 0, i});
+		event.push_back({x + r, 1, i});
+	}
+	for(auto i = 0; i < m; ++ i){
+		auto [x, y] = point[i];
+		event.push_back({x, 2, i});
+	}
+	sort(event.begin(), event.end());
+	B X, aux_x, aux_y;
+	using T = array<int, 2>; // ind, type(lower, upper)
+	auto cmp = [&](const T &a, const T &b)->bool{
+		auto [i, ti] = a;
+		auto [j, tj] = b;
+		if(i == j) return ti < tj;
+		auto [ix, iy, ir] = ~i ? circle[i] : array<B, 3>{aux_x, aux_y, 0};
+		auto [jx, jy, jr] = ~j ? circle[j] : array<B, 3>{aux_x, aux_y, 0};
+		return iy + (ti ? 1 : -1) * sqrt(max(C(ir) * ir - C(X - ix) * (X - ix), C(0))) < jy + (tj ? 1 : -1) * sqrt(max(C(jr) * jr - C(X - jx) * (X - jx), C(0)));
+	};
+	set<T, decltype(cmp)> sweepline(cmp);
+	for(auto [pos, type, i]: event){
+		X = pos;
+		if(type == 0){
+			aux_x = pos, aux_y = circle[i][1];
+			auto it = sweepline.lower_bound({-1, -1});
+			int pi = it == sweepline.end() ? n : (*it)[1] ? (*it)[0] : pv[(*it)[0]];
+			circle_inclusion(pv[i] = pi, i);
+			sweepline.insert({i, 0});
+			sweepline.insert({i, 1});
+		}
+		else if(type == 1){
+			sweepline.erase({i, 0});
+			sweepline.erase({i, 1});
+		}
+		else{
+			aux_x = pos, aux_y = point[i][1];
+			auto it = sweepline.lower_bound({-1, -1});
+			int pi = it == sweepline.end() ? n : (*it)[1] ? (*it)[0] : pv[(*it)[0]];
+			point_inclusion(pi, i);
+		}
+	}
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>find_circle_point_inclusion_relations</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
