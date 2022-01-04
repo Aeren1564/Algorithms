@@ -53,8 +53,8 @@ struct tree_even_disk_union_query_solver{
 				if(done[v]){
 					int s = optimal[v];
 					if(optimal_ind[u] != optimal_ind[v] && r + s >= d){
-						int l = r - s + d >> 1, w = bl.lca(u, v);
-						if(bl.steps(u, w, w) >= l) res = TinvT(res, dqs.query_closed_disk(bl.ancestor(u, l), r - l));
+						int l = r - s + d >> 1, w = ls.lca(u, v);
+						if(ls.steps(u, w, w) >= l) res = TinvT(res, dqs.query_closed_disk(bl.ancestor(u, l), r - l));
 						else res = TinvT(res, dqs.query_closed_disk(bl.ancestor(v, d - l), s - (d - l)));
 					}
 				}

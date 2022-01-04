@@ -8,11 +8,9 @@ struct binary_lifting{
 	vector<array<int, h>> lift;
 	binary_lifting(){ }
 	// pv: parent vertex (-1 if root of an arborescence)
-	binary_lifting(const vector<int> &pv){
-		graph<int> g((int)pv.size());
-		vector<int> roots;
-		for(auto u = 0; u < (int)pv.size(); ++ u) if(~pv[u]) g.orient(pv[u], u); else roots.push_back(u);
-		*this = binary_lifting(g, roots);
+	binary_lifting(const vector<int> &pv): n((int)pv.size()), depth(n, numeric_limits<int>::max()), lift(n){
+		for(auto u = 0; u < n; ++ u) lift[u][0] = ~pv[u] ? pv[u] : u;
+		for(auto bit = 1; bit < h; ++ bit) for(auto u = 0; u < n; ++ u) lift[u][bit] = lift[lift[u][bit - 1]][bit - 1];
 	}
 	template<class T>
 	binary_lifting(const graph<T> &g, const vector<int> &roots){
@@ -58,7 +56,6 @@ struct binary_lifting{
 	// Get the k-th ancestor of u
 	// O(log n)
 	int ancestor(int u, int k) const{
-		assert(depth[u] >= k);
 		for(auto d = 0; d < h; ++ d) if(k & 1 << d) u = lift[u][d];
 		return u;
 	}

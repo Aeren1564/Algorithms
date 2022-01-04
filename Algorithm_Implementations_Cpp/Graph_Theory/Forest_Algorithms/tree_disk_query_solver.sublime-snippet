@@ -1,20 +1,19 @@
 <snippet>
 	<content><![CDATA[
-// init_step() must be called beforehand
-// Requires graph and (centroid_decomposition or shallowest_decomposition)
-template<class T, class D, class F = plus<>, class I = minus<>>
+// Requires graph, range_minmax_query_solver, lca_solver, and (shallowest_decomposition or centroid_decomposition)
+template<class T, class LS, class D, class F = plus<>, class I = minus<>>
 struct tree_disk_query_solver{
 	int n;
+	const LS &ls;
 	const D &decomp;
 	vector<vector<T>> data;
 	vector<vector<vector<T>>> child_data;
 	F TT; // Commutative group operation
 	T T_id; // Commutative group identity
 	I TinvT; // Commutative group inverse operation
-	tree_disk_query_solver(T type_deducer, const D &decomp, F TT = plus<>(), T T_id = {}, I TinvT = minus<>()): tree_disk_query_solver(type_deducer, decomp, vector<T>(decomp.n, 1), TT, T_id, TinvT){ }
+	tree_disk_query_solver(T type_deducer, const LS &ls, const D &decomp, F TT = plus<>(), T T_id = {}, I TinvT = minus<>()): tree_disk_query_solver(type_deducer, ls, decomp, vector<T>(decomp.n, 1), TT, T_id, TinvT){ }
 	// O(n log n) time and memory
-	tree_disk_query_solver(T, const D &decomp, const vector<T> &vertex_data, F TT = plus<>(), T T_id = {}, I TinvT = minus<>()): n(decomp.n), decomp(decomp), data(n), child_data(n), TT(TT), T_id(T_id), TinvT(TinvT){
-		assert(!decomp.step.empty());
+	tree_disk_query_solver(T, const LS &ls, const D &decomp, const vector<T> &vertex_data, F TT = plus<>(), T T_id = {}, I TinvT = minus<>()): n(decomp.n), ls(ls), decomp(decomp), data(n), child_data(n), TT(TT), T_id(T_id), TinvT(TinvT){
 		assert((int)vertex_data.size() == n);
 		for(auto s = 0; s < n; ++ s){
 			data[s].push_back(T_id);
@@ -24,8 +23,7 @@ struct tree_disk_query_solver{
 				child_data[s][t].push_back(T_id);
 				int u = decomp.abr.edge[decomp.abr.adj[s][t]].to;
 				for(auto i = decomp.pos[u]; i < decomp.end[u]; ++ i){
-					int v = decomp.order[i];
-					int d = decomp.step[v][decomp.depth[v] - decomp.depth[s]] + 1;
+					int v = decomp.order[i], d = ls.steps(s, v) + 1;
 					if(d >= (int)data[s].size()) data[s].resize(d + 1, T_id);
 					data[s][d] = TT(data[s][d], vertex_data[v]);
 					if(d >= (int)child_data[s][t].size()) child_data[s][t].resize(d + 1, T_id);
@@ -41,13 +39,10 @@ struct tree_disk_query_solver{
 	T query_open_disk(int u, int r) const{
 		int s = u;
 		T res = data[u][clamp(r, 0, (int)data[u].size() - 1)];
-		for(auto level = 1; ~decomp.pv[u]; ++ level){
-			int p = decomp.pv[u], len = decomp.step[s][level];
-			if(r < 0) break;
+		while(~decomp.pv[u]){
+			int p = decomp.pv[u], len = ls.steps(p, s);
 			auto &cur_data = child_data[p][decomp.pos_as_child[u]];
-			res = TT(res, TinvT(
-				data[p][clamp(r - len, 0, (int)data[p].size() - 1)], cur_data[clamp(r - len, 0, (int)cur_data.size() - 1)]
-			));
+			res = TT(res, TinvT(data[p][clamp(r - len, 0, (int)data[p].size() - 1)], cur_data[clamp(r - len, 0, (int)cur_data.size() - 1)]));
 			u = p;
 		}
 		return res;

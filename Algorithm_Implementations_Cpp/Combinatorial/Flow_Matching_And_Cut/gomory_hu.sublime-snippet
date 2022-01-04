@@ -8,14 +8,16 @@ template<class T>
 vector<tuple<int, int, T>> gomory_hu_tree(int n, const vector<tuple<int, int, T>> &edge){
 	flow_network<T> F(n);
 	for(auto &[u, v, w]: edge) F.insert(u, v, w, w);
-	vector<tuple<int, int, T>> res(n - 1);
-	vector<int> pr(n);
+	vector<tuple<int, int, T>> res(max(n - 1, 0));
+	vector<int> pv(n), cut(n);
 	for(auto i = 1; i < n; ++ i){
 		F.clear_flow();
-		auto [flow, cut] = dinic_maximum_flow<T>(F).minimum_cut(pr[i], i);
-		for(auto j = i + 1; j < n; ++ j) if(cut[j] == cut[i] && pr[j] == pr[i]) pr[j] = i;
-		res[i - 1] = {pr[i], i, flow};
-	} // can be optimized by compressing components
+		auto [flow, left, right] = dinic_maximum_flow<T>(F).minimum_cut(pv[i], i);
+		fill(cut.begin(), cut.end(), 0);
+		for(auto u: right) cut[u] = 1;
+		for(auto j = i + 1; j < n; ++ j) if(cut[j] == cut[i] && pv[j] == pv[i]) pv[j] = i;
+		res[i - 1] = {pv[i], i, flow};
+	}
 	return res;
 }
 ]]></content>

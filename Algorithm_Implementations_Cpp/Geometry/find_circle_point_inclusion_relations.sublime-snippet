@@ -10,15 +10,15 @@ template<class B, class C = double>
 void find_circle_point_inclusion_relations(const vector<array<B, 3>> &circle, const vector<array<B, 2>> &point, auto circle_inclusion, auto point_inclusion){
 	int n = (int)circle.size(), m = (int)point.size();
 	vector<int> pv(n, -1);
-	vector<tuple<B, int, int>> event;
+	vector<tuple<B, int, int>> event(n * 2 + m);
 	for(auto i = 0; i < n; ++ i){
 		auto [x, y, r] = circle[i];
-		event.push_back({x - r, 0, i});
-		event.push_back({x + r, 1, i});
+		event[i << 1] = {x - r, 0, i};
+		event[i << 1 | 1] = {x + r, 1, i};
 	}
 	for(auto i = 0; i < m; ++ i){
 		auto [x, y] = point[i];
-		event.push_back({x, 2, i});
+		event[n * 2 + i] = {x, 2, i};
 	}
 	sort(event.begin(), event.end());
 	B X, aux_x, aux_y;
@@ -29,7 +29,7 @@ void find_circle_point_inclusion_relations(const vector<array<B, 3>> &circle, co
 		if(i == j) return ti < tj;
 		auto [ix, iy, ir] = ~i ? circle[i] : array<B, 3>{aux_x, aux_y, 0};
 		auto [jx, jy, jr] = ~j ? circle[j] : array<B, 3>{aux_x, aux_y, 0};
-		return iy + (ti ? 1 : -1) * sqrt(max(C(ir) * ir - C(X - ix) * (X - ix), C(0))) < jy + (tj ? 1 : -1) * sqrt(max(C(jr) * jr - C(X - jx) * (X - jx), C(0)));
+		return iy + (ti ? 1 : -1) * sqrt(max(ir * ir - (X - ix) * (X - ix), B(0))) < jy + (tj ? 1 : -1) * sqrt(max(jr * jr - (X - jx) * (X - jx), B(0)));
 	};
 	set<T, decltype(cmp)> sweepline(cmp);
 	for(auto [pos, type, i]: event){

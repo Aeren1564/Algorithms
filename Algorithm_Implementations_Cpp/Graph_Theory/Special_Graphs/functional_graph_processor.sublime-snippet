@@ -1,5 +1,6 @@
 <snippet>
 	<content><![CDATA[
+// Requires graph
 struct functional_graph_processor{
 	int n;
 	vector<vector<int>> cycle; // main cycles
@@ -9,8 +10,8 @@ struct functional_graph_processor{
 	vector<int> size; // size of the weakly connected component of the i-th main cycle
 	vector<int> root; // first reachable node in the main cycle
 	vector<int> depth; // # of edges from the main cycle
-	vector<vector<int>> adj; // forest of arborescences of reversed edges not on the main cycle
-	functional_graph_processor(const vector<int> &next): n((int)next.size()), cycle_id(n, -1), cycle_pos(n, -1), root(n, -1), depth(n, -1), adj(n){
+	graph<int> abr; // forest of arborescences of reversed edges not on the main cycle
+	functional_graph_processor(const vector<int> &next): n((int)next.size()), cycle_id(n, -1), cycle_pos(n, -1), root(n, -1), depth(n, -1), abr(n){
 		vector<bool> was(n);
 		for(auto u = 0; u < n; ++ u){
 			if(was[u]) continue;
@@ -40,7 +41,7 @@ struct functional_graph_processor{
 				root[u] = root[v];
 				++ size[cycle_id[root[u]]];
 				depth[u] = depth[v] + 1;
-				adj[v].push_back(u);
+				abr.orient(v, u, 1);
 			};
 			dfs(dfs, u);
 		}
