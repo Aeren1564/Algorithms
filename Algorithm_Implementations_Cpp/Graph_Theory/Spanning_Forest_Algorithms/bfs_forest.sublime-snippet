@@ -5,7 +5,13 @@ template<class T>
 struct bfs_forest{
 	int n;
 	vector<T> dist;
-	vector<int> pv, pe, order, pos, root, depth, was;
+	vector<int> pv;
+	vector<int> pe
+	vector<int> order
+	vector<int> pos
+	vector<int> root
+	vector<int> depth
+	vector<int> was;
 	T T_id;
 	bfs_forest(int n, T T_id = 0): T_id(T_id){
 		init(n);
