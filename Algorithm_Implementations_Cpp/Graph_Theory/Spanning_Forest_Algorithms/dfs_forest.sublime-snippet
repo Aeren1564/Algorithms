@@ -15,6 +15,7 @@ struct dfs_forest{
 	vector<int> depth;
 	vector<int> min_depth;
 	vector<int> min_depth_origin;
+	vector<int> min_depth_spanning_edge;
 	vector<int> was;
 	T T_id;
 	dfs_forest(int n, T T_id = 0): T_id(T_id){ init(n); }
@@ -30,6 +31,7 @@ struct dfs_forest{
 		depth.assign(n, -1);
 		min_depth.assign(n, -1);
 		min_depth_origin.assign(n, -1);
+		min_depth_spanning_edge.assign(n, -1);
 		dist.assign(n, T_id);
 		was.assign(n, -1);
 		attempt = 0;
@@ -51,12 +53,16 @@ struct dfs_forest{
 			size[u] = 1;
 			min_depth[u] = depth[u];
 			min_depth_origin[u] = u;
+			min_depth_spanning_edge[u] = -1;
 			for(auto id: g.adj[u]){
 				if(id == pe[u] || g.ignore && g.ignore(id)) continue;
 				auto &e = g.edge[id];
 				int v = e.from ^ e.to ^ u;
 				if(was[v] == attempt){
-					min_depth[u] = min(min_depth[u], depth[v]);
+					if(min_depth[u] > depth[v]){
+						min_depth[u] = depth[v];
+						min_depth_spanning_edge[u] = id;
+					}
 					continue;
 				}
 				depth[v] = depth[u] + 1;
@@ -69,6 +75,7 @@ struct dfs_forest{
 				if(min_depth[u] > min_depth[v]){
 					min_depth[u] = min_depth[v];
 					min_depth_origin[u] = min_depth_origin[v];
+					min_depth_spanning_edge[u] = min_depth_spanning_edge[v];
 				}
 			}
 			end[u] = (int)order.size();
