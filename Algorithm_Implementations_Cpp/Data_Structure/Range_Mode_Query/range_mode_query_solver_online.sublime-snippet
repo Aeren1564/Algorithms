@@ -1,14 +1,14 @@
 <snippet>
 	<content><![CDATA[
 template<int B, class T>
-struct range_mode_query_solver{
+struct range_mode_query_solver_online{
 	int n;
 	vector<T> cmpr;
 	vector<int> a, pos;
 	vector<vector<int>> indices, block_mode, block_mode_freq;
 	// O(n * B) time
 	// O(n + (n/B)^2) space
-	range_mode_query_solver(const vector<T> &_a): n((int)_a.size()), cmpr(_a), a(n), pos(n){
+	range_mode_query_solver_online(const vector<T> &_a): n((int)_a.size()), cmpr(_a), a(n), pos(n){
 		sort(cmpr.begin(), cmpr.end());
 		cmpr.erase(unique(cmpr.begin(), cmpr.end()), cmpr.end());
 		indices.resize((int)cmpr.size());
@@ -68,7 +68,7 @@ struct range_mode_query_solver{
 };
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
-	<tabTrigger>range_mode_query_solver</tabTrigger> -->
+	<tabTrigger>range_mode_query_solver_online</tabTrigger> -->
 	<!-- Optional: Set a scope to limit where the snippet will trigger -->
 	<scope>source.c++</scope> -->
 </snippet>
