@@ -3,32 +3,29 @@
 // Returns [X^i]p(X)/q(X)
 // T must be of modular type
 // deg(p) < deg(q) must hold
-// Requires modular, number_theoric_transform, and double_up_ntt
-template<class T, class U, int primitive_root = 3>
-T rational_polynomial_single_term_extraction(vector<T> p, vector<T> q, U i){
-	assert(!q.empty() && q[0] != 0);
-	int n = 1 << __lg((int)size(q) << 1 | 1) + 1;
-	assert(i >= 0 && size(p) < size(q) && (T().mod() - 1) % n == 0);
-	p.resize(n), q.resize(n);
-	number_theoric_transform<T, primitive_root>(p);
-	number_theoric_transform<T, primitive_root>(q);
-	T inv2 = (T().mod() + 1) / 2;
-	for(T w = 1 / T(primitive_root) ^ (T().mod() - 1) / n; i; i >>= 1){
-		for(auto i = 0; i < n; ++ i) p[i] *= q[i ^ n / 2];
-		if(~i & 1){
-			for(auto i = 0; i < n / 2; ++ i) p[i] = inv2 * (p[i] + p[i ^ n / 2]);
-		}
-		else{
-			T pw = inv2;
-			for(auto i = 0; i < n / 2; ++ i, pw *= w) p[i] = pw * (p[i] - p[i ^ n / 2]);
-		}
-		p.resize(n / 2);
-		double_up_ntt<T, primitive_root>(p);
-		q.resize(n / 2);
-		for(auto i = 0; i < n / 2; ++ i) q[i] *= q[i ^ n / 2];
-		double_up_ntt<T, primitive_root>(q);
+// O(n * log(n) * log(i))
+// Requires modular and number_theoric_transform
+template<class T, class U>
+T rational_polynomial_single_term_extraction(vector<T> p, vector<T> q, U i, auto &NTT){
+	assert(!q.empty() && q[0]);
+	int n = 1 << __lg((int)q.size() << 1 | 1) + 1;
+	assert(i >= 0 && p.size() < q.size() && (T::mod() - 1) % n == 0);
+	p.resize(n);
+	NTT.transform(p);
+	q.resize(n);
+	NTT.transform(q);
+	T inv2 = T::mod() + 1 >> 1;
+	for(; i; i >>= 1){
+		for(auto i = 0; i < n; ++ i) p[i] *= q[n >> 1 ^ i];
+		if(~i & 1) for(auto i = 0; i < n >> 1; ++ i) p[i] = inv2 * (p[i] + p[n >> 1 ^ i]);
+		else for(auto i = 0; i < n >> 1; ++ i) p[i] = inv2 * (i ? -NTT.power[n - i] : 1) * (p[i] - p[n >> 1 ^ i]);
+		p.resize(n >> 1);
+		NTT.double_up(p);
+		for(auto i = 0; i < n >> 1; ++ i) q[i] *= q[n >> 1 ^ i];
+		q.resize(n >> 1);
+		NTT.double_up(q);
 	}
-	return accumulate(begin(p), end(p), T(0)) / accumulate(begin(q), end(q), T(0));
+	return accumulate(p.begin(), p.end(), T(0)) / accumulate(q.begin(), q.end(), T(0));
 }
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->

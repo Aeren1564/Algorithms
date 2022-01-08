@@ -1,27 +1,30 @@
 <snippet>
 	<content><![CDATA[
-// Store the linear recurrence relation of form \sum{t<=i<t+n}( coef[i] * init[i] ) = init[t+n]
+// Store the linear recurrence relation of form \sum_{t<=i<t+n} coef[i-t] * init[i] = init[t+n]
 // T must be of modular type
-// Requires modular, number_theoric_transform, convolute_ntt, double_up_ntt, and rational_polynomial_single_term_extraction
-template<class T, int primitive_root = 3>
+// Requires modular, number_theoric_transform, and rational_polynomial_single_term_extraction
+template<class T, class Wrapper>
 struct linear_recurrence_solver_bostan_mori{
 	int n;
-	vector<T> p, q;
-	linear_recurrence_solver_bostan_mori(const vector<T> &init, const vector<T> &coef): n((int)coef.size()), p(n), q(n + 1, 1){
-		assert((int)coef.size() == (int)init.size());
+	vector<T> init, coef, p, q;
+	Wrapper &NTT;
+	linear_recurrence_solver_bostan_mori(const vector<T> &init, const vector<T> &coef, Wrapper &NTT): n((int)coef.size()), init(init), coef(coef), p(n), q(n + 1, 1), NTT(NTT){
+		assert(coef.size() == init.size());
 		for(auto i = 0; i < n; ++ i) q[n - i] = -coef[i];
-		p = convolute_ntt<T, primitive_root>(init, q);
+		p = NTT.convolute(init, q);
 		p.resize(n);
 	}
 	// Berlekamp Massey Algorithm
 	// Find a minimum linear recurrence relation
+	// T must ba a field
 	// O(size(s) * (n + log mod))
-	linear_recurrence_solver_bostan_mori(const vector<T> &s){
+	linear_recurrence_solver_bostan_mori(const vector<T> &s, Wrapper &NTT): NTT(NTT){
 		int sz = (int)size(s);
-		vector<T> b = {-1}, coef = {-1};
+		vector<T> b = {-1};
+		coef = {-1};
 		T y = 1;
 		for(auto t = 1; t <= sz; ++ t){
-			int l = (int)size(coef), m = (int)size(b);
+			int l = (int)coef.size(), m = (int)b.size();
 			T x = 0;
 			for(auto i = 0; i < l; ++ i) x += coef[i] * s[t - l + i];
 			b.push_back(0);
@@ -30,7 +33,7 @@ struct linear_recurrence_solver_bostan_mori{
 			T freq = x / y;
 			if(l < m){
 				auto tmp = coef;
-				coef.insert(begin(coef), m - l, 0);
+				coef.insert(coef.begin(), m - l, 0);
 				for(auto i = 0; i < m; ++ i) coef[m - 1 - i] -= freq * b[m - 1 - i];
 				b = tmp;
 				y = x;
@@ -38,13 +41,19 @@ struct linear_recurrence_solver_bostan_mori{
 			else for(auto i = 0; i < m; ++ i) coef[l - 1 - i] -= freq * b[m - 1 - i];
 		}
 		coef.pop_back();
-		*this = linear_recurrence_solver_bostan_mori(vector<T>{begin(s), begin(s) + (int)size(coef)}, coef);
+		n = (int)coef.size();
+		init = vector<T>(s.begin(), s.begin() + n);
+		p.resize(n);
+		q.resize(n + 1, 1);
+		for(auto i = 0; i < n; ++ i) q[n - i] = -coef[i];
+		p = NTT.convolute(init, q);
+		p.resize(n);
 	}
-	// O(n log n log i)
+	// O(n * log(n) * log(i))
 	template<class U>
 	T operator[](U i) const{
 		assert(0 <= i);
-		return rational_polynomial_single_term_extraction<T, U, primitive_root>(p, q, i);
+		return rational_polynomial_single_term_extraction<T, U>(p, q, i, NTT);
 	}
 };
 ]]></content>

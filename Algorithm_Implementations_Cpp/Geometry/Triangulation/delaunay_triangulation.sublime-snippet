@@ -2,7 +2,6 @@
 	<content><![CDATA[
 // T_large must be able to hold O(T^4), can be long long if coord <= 2e4
 // Assumes no duplicate points
-// Returns an empty vector if all of them lies in a line
 // O(n log n)
 // Requires point and quad_edge
 template<class T, class F1, class F2, class T_large = __int128_t>

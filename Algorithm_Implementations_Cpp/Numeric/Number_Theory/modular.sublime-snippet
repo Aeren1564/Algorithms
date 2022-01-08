@@ -3,8 +3,20 @@
 template<typename T>
 struct modular_base{
 	using Type = typename decay<decltype(T::value)>::type;
-	static vector<Type> _MOD_INV;
+	template<class U>
+	static vector<modular_base<T>> precalc_power(U base, size_t SZ){
+		vector<modular_base<T>> res(SZ + 1, 1);
+		for(auto i = 1; i <= SZ; ++ i) res[i] = res[i - 1] * base;
+		return res;
+	}
+	static vector<Type> _INV;
+	static void precalc_inverse(size_t SZ){
+		if(_INV.empty()) _INV.assign(2, 1);
+		for(auto x = (int)_INV.size(); x <= SZ; ++ x) _INV.push_back((mod() - 1LL * mod() / x * _INV[mod() % x]) % mod());
+	}
 	constexpr modular_base(): value(){ }
+	modular_base(const double &x){ value = normalize(llround(x)); }
+	modular_base(const long double &x){ value = normalize(llround(x)); }
 	template<typename U> modular_base(const U &x){ value = normalize(x); }
 	template<typename U> static Type normalize(const U &x){
 		Type v;
@@ -14,7 +26,7 @@ struct modular_base{
 		return v;
 	}
 	const Type& operator()() const{ return value; }
-	template<typename U> explicit operator U() const{ return static_cast<U>(value); }
+	template<typename U> explicit operator U() const{ return value; }
 	constexpr static Type mod(){ return T::value; }
 	modular_base &operator+=(const modular_base &otr){ if((value += otr.value) >= mod()) value -= mod(); return *this; }
 	modular_base &operator-=(const modular_base &otr){ if((value -= otr.value) < 0) value += mod(); return *this; }
@@ -65,7 +77,7 @@ struct modular_base{
 	}
 	modular_base &operator/=(const modular_base &otr){
 		Type a = otr.value, m = mod(), u = 0, v = 1;
-		if(a < (int)_MOD_INV.size()) return *this *= _MOD_INV[a];
+		if(a < (int)_INV.size()) return *this *= _INV[a];
 		while(a){
 			Type t = m / a;
 			m -= t * a; swap(a, m);
@@ -76,6 +88,8 @@ struct modular_base{
 	}
 	Type value;
 };
+template<typename T>
+vector<typename std::decay<decltype (T::value)>::type> modular_base<T>::_INV;
 template<typename T> bool operator==(const modular_base<T> &lhs, const modular_base<T> &rhs){ return lhs.value == rhs.value; }
 template<typename T, typename U, typename enable_if<is_integral<U>::value>::type* = nullptr> bool operator==(const modular_base<T>& lhs, U rhs){ return lhs == modular_base<T>(rhs); }
 template<typename T, typename U, typename enable_if<is_integral<U>::value>::type* = nullptr> bool operator==(U lhs, const modular_base<T> &rhs){ return modular_base<T>(lhs) == rhs; }
@@ -105,19 +119,6 @@ template<typename T> istream &operator>>(istream &in, modular_base<T> &number){
 	return in;
 }
 template<typename T> ostream &operator<<(ostream &out, const modular_base<T> &number){ return out << number(); }
-template<typename T> vector<typename modular_base<T>::Type> modular_base<T>::_MOD_INV;
-template<typename T>
-void precalc_inverse(int SZ){
-	auto &inv = T::_MOD_INV;
-	if(inv.empty()) inv.assign(2, 1);
-	for(; inv.size() <= SZ; ) inv.push_back((T::mod() - 1LL * T::mod() / (int)inv.size() * inv[T::mod() % (int)inv.size()]) % T::mod());
-}
-template<typename T>
-vector<T> precalc_power(T base, int SZ){
-	vector<T> res(SZ + 1, 1);
-	for(auto i = 1; i <= SZ; ++ i) res[i] = res[i - 1] * base;
-	return res;
-}
 
 /*
 using ModType = int;

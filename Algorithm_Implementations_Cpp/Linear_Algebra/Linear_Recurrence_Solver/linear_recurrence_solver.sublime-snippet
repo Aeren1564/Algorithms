@@ -1,6 +1,6 @@
 <snippet>
 	<content><![CDATA[
-// Store the linear recurrence relation of form \sum{t<=i<t+n}( coef[i] * init[i] ) = init[t+n]
+// Store the linear recurrence relation of form \sum_{t<=i<t+n} coef[i]*init[i] = init[t+n]
 // T must be of modular type
 // Requires modular
 template<class T>
@@ -8,18 +8,18 @@ struct linear_recurrence_solver{
 	int n;
 	vector<T> init, coef;
 	linear_recurrence_solver(const vector<T> &init, const vector<T> &coef): n((int)coef.size()), init(init), coef(coef){
-		assert((int)coef.size() == (int)init.size());
+		assert(coef.size() == init.size());
 	}
 	// Berlekamp Massey Algorithm
 	// Find a minimum linear recurrence relation
 	// O(size(s) * (n + log mod))
 	linear_recurrence_solver(const vector<T> &s){
-		int sz = (int)size(s);
+		int sz = (int)s.size();
 		vector<T> b = {-1};
 		coef = {-1};
 		T y = 1;
 		for(auto t = 1; t <= sz; ++ t){
-			int l = (int)size(coef), m = (int)size(b);
+			int l = (int)coef.size(), m = (int)b.size();
 			T x = 0;
 			for(auto i = 0; i < l; ++ i) x += coef[i] * s[t - l + i];
 			b.push_back(0);
@@ -28,7 +28,7 @@ struct linear_recurrence_solver{
 			T freq = x / y;
 			if(l < m){
 				auto tmp = coef;
-				coef.insert(begin(coef), m - l, 0);
+				coef.insert(coef.begin(), m - l, 0);
 				for(auto i = 0; i < m; ++ i) coef[m - 1 - i] -= freq * b[m - 1 - i];
 				b = tmp;
 				y = x;
@@ -36,10 +36,10 @@ struct linear_recurrence_solver{
 			else for(auto i = 0; i < m; ++ i) coef[l - 1 - i] -= freq * b[m - 1 - i];
 		}
 		coef.pop_back();
-		n = (int)size(coef);
-		init = vector<T>(begin(s), begin(s) + n);
+		n = (int)coef.size();
+		init = vector<T>(s.begin(), s.begin() + n);
 	}
-	// O(n^2 * log i)
+	// O(n^2 * log(i))
 	template<class U>
 	T operator[](U i) const{
 		assert(0 <= i);

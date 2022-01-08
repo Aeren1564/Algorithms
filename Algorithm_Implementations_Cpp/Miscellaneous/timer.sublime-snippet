@@ -2,6 +2,11 @@
 	<content><![CDATA[
 struct timer{
 	chrono::time_point<chrono::high_resolution_clock> init = chrono::high_resolution_clock::now(), current = chrono::high_resolution_clock::now();
+	void refresh(){
+		#ifdef LOCAL
+		current = chrono::high_resolution_clock::now();
+		#endif
+	}
 	// Measures time from last measure() call(construction if no such call)
 	void measure(){
 		#ifdef LOCAL
