@@ -38,7 +38,7 @@ struct fenwick_tree{
 		assert(pred({}));
 		int p = 0;
 		T sum{};
-		for(auto pw = 1 << __lg(n + 1); pw; pw >>= 1) if(p + pw <= n && f(sum + data[p + pw - 1])){
+		for(auto pw = 1 << __lg(n + 1); pw; pw >>= 1) if(p + pw <= n && pred(sum + data[p + pw - 1])){
 			sum += data[p + pw - 1];
 			p += pw;
 		}
