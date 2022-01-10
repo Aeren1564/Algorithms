@@ -38,7 +38,7 @@ vector<int> maximum_common_independent_set(int n, M1 m1, M2 m2){
 		while(!q.empty()){
 			int u = q.front(), v; q.pop();
 			for(auto w: forward_edge(u)) while((v = backward_edge(w)) >= 0) if(v == n){
-				while(w != n) flag[w].flip(), w = pv[w];
+				while(w != n) flag[w] ^= 1, w = pv[w];
 				return true;
 			}
 		}

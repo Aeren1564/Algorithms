@@ -15,6 +15,11 @@ struct basis_Z2_small{
 		return (int)elements.size();
 	}
 	// O(dim / w)
+	bool spans(V v) const{
+		for(auto u: elements) v = min(v, u ^ v);
+		return !v;
+	}
+	// O(dim / w)
 	V reduce(V v){
 		for(auto i = 0; i < rank(); ++ i) if((v ^ elements[i]) < v){
 			v ^= elements[i];
@@ -41,7 +46,7 @@ struct basis_Z2_small{
 	// Returns {lexicographically_smallest_sol, sol_basis_vector_1, ..., sol_basis_vector_k}
 	// O(rank * dim / w)
 	template<bool find_solutions = true>
-	optional<vector<V>> solve(vector<bool> b){
+	optional<vector<V>> solve(vector<int> b){
 		assert(count == (int)b.size());
 		for(auto &m: log){
 			if(m.type == 0) b[m.to] ^= b[m.from];

@@ -75,6 +75,7 @@ struct basis_base{ // Keep track of a set of basis of the subspace spanned by th
 		return res;
 	}
 };
+
 template<class T> T ZERO(){
 	return 0;
 }
