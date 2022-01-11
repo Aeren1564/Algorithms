@@ -3,22 +3,21 @@
 // Store the linear recurrence relation of form \sum_{t<=i<t+n} coef[i-t] * init[i] = init[t+n]
 // T must be of modular type
 // Requires modular, number_theoric_transform, and rational_polynomial_single_term_extraction
-template<class T, class Wrapper>
+template<class T, class ntt>
 struct linear_recurrence_solver_bostan_mori{
 	int n;
 	vector<T> init, coef, p, q;
-	Wrapper &NTT;
-	linear_recurrence_solver_bostan_mori(const vector<T> &init, const vector<T> &coef, Wrapper &NTT): n((int)coef.size()), init(init), coef(coef), p(n), q(n + 1, 1), NTT(NTT){
+	linear_recurrence_solver_bostan_mori(const vector<T> &init, const vector<T> &coef): n((int)coef.size()), init(init), coef(coef), p(n), q(n + 1, 1){
 		assert(coef.size() == init.size());
 		for(auto i = 0; i < n; ++ i) q[n - i] = -coef[i];
-		p = NTT.convolute(init, q);
+		p = ntt::convolute(init, q);
 		p.resize(n);
 	}
 	// Berlekamp Massey Algorithm
 	// Find a minimum linear recurrence relation
 	// T must ba a field
 	// O(size(s) * (n + log mod))
-	linear_recurrence_solver_bostan_mori(const vector<T> &s, Wrapper &NTT): NTT(NTT){
+	linear_recurrence_solver_bostan_mori(const vector<T> &s){
 		int sz = (int)size(s);
 		vector<T> b = {-1};
 		coef = {-1};
@@ -46,14 +45,14 @@ struct linear_recurrence_solver_bostan_mori{
 		p.resize(n);
 		q.resize(n + 1, 1);
 		for(auto i = 0; i < n; ++ i) q[n - i] = -coef[i];
-		p = NTT.convolute(init, q);
+		p = ntt::convolute(init, q);
 		p.resize(n);
 	}
 	// O(n * log(n) * log(i))
 	template<class U>
 	T operator[](U i) const{
 		assert(0 <= i);
-		return rational_polynomial_single_term_extraction<T, U>(p, q, i, NTT);
+		return rational_polynomial_single_term_extraction<T, U, ntt>(p, q, i);
 	}
 };
 ]]></content>

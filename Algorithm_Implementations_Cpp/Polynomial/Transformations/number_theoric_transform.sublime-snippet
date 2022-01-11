@@ -5,61 +5,18 @@
 // Requires modular
 template<class T>
 struct number_theoric_transform_wrapper{
-	T primitive_root = {};
-	vector<T> power = {1, 1};
-	number_theoric_transform_wrapper(){
-		if(primitive_root) return;
-		typename T::Type mod = T::mod();
-		if(mod == 2){
-			primitive_root = 1;
-			return;
-		}
-		if(mod == 998244353){
-			primitive_root = 3;
-			return;
-		}
-		typename T::Type divs[20] = {};
-		divs[0] = 2;
-		typename T::Type x = (mod - 1) / 2;
-		while(~x & 1) x >>= 1;
-		int cnt = 1;
-		for(auto i = 3; 1LL * i * i <= x; i += 2) if(x % i == 0){
-			divs[cnt ++] = i;
-			while(x % i == 0) x /= i;
-		}
-		if(x > 1) divs[cnt ++] = x;
-		for(auto g = 2; ; ++ g){
-			bool ok = true;
-			for(auto i = 0; i < cnt; ++ i){
-				unsigned long long r = 1;
-				if(mod == 1) r = 0;
-				else{
-					unsigned long long y = (mod - 1) / divs[i] % mod;
-					if(y < 0) y += mod;
-					for(; g; y = y * y % mod, g >>= 1) if(g & 1) r = (r * y) % mod;
-				}
-				if(r == 1){
-					ok = false;
-					break;
-				}
-			}
-			if(ok){
-				primitive_root = g;
-				return;
-			}
-		}
-		assert(false);
-	}
-	void adjust_power(int n){
-		for(auto k = (int)power.size(); k < n; k <<= 1){
-			power.resize(n, 1);
-			T w = primitive_root ^ (T::mod() - 1) / (k << 1);
-			for(auto i = k; i < k << 1; ++ i) power[i] = i & 1 ? power[i >> 1] * w : power[i >> 1];
+	// i \in [2^k, 2^{k+1}) holds w_{2^k+1}^{i-2^k}
+	static vector<T> root;
+	static void adjust_root(int n){
+		for(auto k = (int)root.size(); k < n; k <<= 1){
+			root.resize(n, 1);
+			T w = T::primitive_root() ^ (T::mod() - 1) / (k << 1);
+			for(auto i = k; i < k << 1; ++ i) root[i] = i & 1 ? root[i >> 1] * w : root[i >> 1];
 		}
 	}
 	// n must be a power of two
 	// O(n log n)
-	void transform(vector<T> &p, bool invert = false){
+	static void transform(vector<T> &p, bool invert = false){
 		int n = (int)p.size();
 		assert(n && __builtin_popcount(n) == 1 && (T::mod() - 1) % n == 0);
 		for(auto i = 1, j = 0; i < n; ++ i){
@@ -68,9 +25,9 @@ struct number_theoric_transform_wrapper{
 			j ^= bit;
 			if(i < j) swap(p[i], p[j]);
 		}
-		adjust_power(n);
+		adjust_root(n);
 		for(auto len = 1; len < n; len <<= 1) for(auto i = 0; i < n; i += len << 1) for(auto j = 0; j < len; ++ j){
-			T x = p[i + j], y = p[len + i + j] * power[len + j];
+			T x = p[i + j], y = p[len + i + j] * root[len + j];
 			p[i + j] = x + y, p[len + i + j] = x - y;
 		}
 		if(invert){
@@ -79,29 +36,30 @@ struct number_theoric_transform_wrapper{
 			for(auto &x: p) x *= inv_n;
 		}
 	}
-	vector<T> buffer1, buffer2;
-	// Double the length of the NTT array
+	static vector<T> buffer1, buffer2;
+	// Double the length of the ntt array
 	// n must be a power of two
 	// O(n log n)
-	void double_up(vector<T> &p){
+	static void double_up(vector<T> &p){
 		int n = (int)p.size();
 		assert(n && __builtin_popcount(n) == 1 && (T().mod() - 1) % (n << 1) == 0);
 		buffer1.resize(n << 1);
 		for(auto i = 0; i < n; ++ i) buffer1[i << 1] = p[i];
 		transform(p, true);
-		adjust_power(n << 1);
-		for(auto i = 0; i < n; ++ i) p[i] *= power[n | i];
+		adjust_root(n << 1);
+		for(auto i = 0; i < n; ++ i) p[i] *= root[n | i];
 		transform(p);
 		for(auto i = 0; i < n; ++ i) buffer1[i << 1 | 1] = p[i];
 		p = buffer1;
 	}
-	vector<T> convolute_naive(const vector<T> &p, const vector<T> &q){
+	// O(n * m)
+	static vector<T> convolute_naive(const vector<T> &p, const vector<T> &q){
 		vector<T> res(max((int)p.size() + (int)q.size() - 1, 0));
 		for(auto i = 0; i < (int)p.size(); ++ i) for(auto j = 0; j < (int)q.size(); ++ j) res[i + j] += p[i] * q[j];
 		return res;
 	}
 	// O((n + m) * log(n + m))
-	vector<T> convolute(const vector<T> &p, const vector<T> &q){
+	static vector<T> convolute(const vector<T> &p, const vector<T> &q){
 		if(min(p.size(), q.size()) < 55) return convolute_naive(p, q);
 		int m = (int)p.size() + (int)q.size() - 1, n = 1 << __lg(m) + 1;
 		buffer1.assign(n, 0);
@@ -115,7 +73,7 @@ struct number_theoric_transform_wrapper{
 		return vector<T>(buffer1.begin(), buffer1.begin() + m);
 	}
 	// O(n log n)
-	vector<T> square(const vector<T> &p){
+	static vector<T> square(const vector<T> &p){
 		if(p.size() < 40) return convolute_naive(p, p);
 		int m = (int)p.size() * 2 - 1, n = 1 << __lg(m) + 1;
 		buffer1.assign(n, 0);
@@ -126,8 +84,14 @@ struct number_theoric_transform_wrapper{
 		return vector<T>(buffer1.begin(), buffer1.begin() + m);
 	}
 };
+template<class T>
+vector<T> number_theoric_transform_wrapper<T>::root = {1, 1};
+template<class T>
+vector<T> number_theoric_transform_wrapper<T>::buffer1;
+template<class T>
+vector<T> number_theoric_transform_wrapper<T>::buffer2;
 
-number_theoric_transform_wrapper<modular> NTT;
+using ntt = number_theoric_transform_wrapper<modular>;
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
 	<tabTrigger>number_theoric_transform</tabTrigger> -->

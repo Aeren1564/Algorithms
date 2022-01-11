@@ -3,17 +3,18 @@
 struct fast_fourier_transform_wrapper{
 	using CD = complex<double>;
 	using CLD = complex<long double>;
-	vector<CD> power{1, 1};
-	vector<CLD> power_ld{1, 1};
-	void adjust_power(int n){
-		for(auto k = (int)power.size(); k < n; k <<= 1){
-			power.resize(n), power_ld.resize(n);
+	// i \in [2^k, 2^{k+1}) holds w_{2^k+1}^{i-2^k}
+	static vector<CD> root;
+	static vector<CLD> root_ld;
+	static void adjust_root(int n){
+		for(auto k = (int)root.size(); k < n; k <<= 1){
+			root.resize(n), root_ld.resize(n);
 			auto theta = polar(1.0L, acos(-1.0L) / k);
-			for(auto i = k; i < k << 1; ++ i) power[i] = power_ld[i] = i & 1 ? power_ld[i >> 1] * theta : power_ld[i >> 1];
+			for(auto i = k; i < k << 1; ++ i) root[i] = root_ld[i] = i & 1 ? root_ld[i >> 1] * theta : root_ld[i >> 1];
 		}
 	}
 	// O(n log n)
-	void transform(vector<CD> &p, bool invert = false){
+	static void transform(vector<CD> &p, bool invert = false){
 		int n = (int)p.size();
 		assert(n && __builtin_popcount(n) == 1);
 		for(auto i = 1, j = 0; i < n; ++ i){
@@ -22,9 +23,9 @@ struct fast_fourier_transform_wrapper{
 			j ^= bit;
 			if(i < j) swap(p[i], p[j]);
 		}
-		adjust_power(n);
+		adjust_root(n);
 		for(auto len = 1; len < n; len <<= 1) for(auto i = 0; i < n; i += len << 1) for(auto j = 0; j < len; ++ j){
-			auto x = (double *)&power[j + len], y = (double *)&p[i + j + len];
+			auto x = (double *)&root[j + len], y = (double *)&p[i + j + len];
 			CD z(x[0] * y[0] - x[1] * y[1], x[0] * y[1] + x[1] * y[0]);
 			p[len + i + j] = p[i + j] - z, p[i + j] += z;
 		}
@@ -34,9 +35,10 @@ struct fast_fourier_transform_wrapper{
 			for(auto &x: p) x *= inv_n;
 		}
 	}
-	vector<CD> buffer1, buffer2;
+	static vector<CD> buffer1, buffer2;
+	// O(n * m)
 	template<class T>
-	vector<T> convolute_naive(const vector<T> &p, const vector<T> &q){
+	static vector<T> convolute_naive(const vector<T> &p, const vector<T> &q){
 		vector<T> res(max((int)p.size() + (int)q.size() - 1, 0));
 		for(auto i = 0; i < (int)p.size(); ++ i) for(auto j = 0; j < (int)q.size(); ++ j) res[i + j] += p[i] * q[j];
 		return res;
@@ -44,7 +46,7 @@ struct fast_fourier_transform_wrapper{
 	// Safe for sum(p[i]^2 + q[i]^2) lg2(n) < 9e14
 	// O(n log n)
 	template<class T>
-	vector<T> convolute(const vector<T> &p, const vector<T> &q){
+	static vector<T> convolute(const vector<T> &p, const vector<T> &q){
 		if(min(p.size(), q.size()) < 60) return convolute_naive(p, q);
 		int n = 1 << __lg((int)p.size() + (int)q.size() - 1) + 1;
 		buffer1.assign(n, 0);
@@ -62,15 +64,15 @@ struct fast_fourier_transform_wrapper{
 	// Safe for 64-bit integer range
 	// O(n log n)
 	template<class T>
-	vector<T> convolute_splitting(const vector<T> &p, const vector<T> &q){
+	static vector<T> convolute_splitting(const vector<T> &p, const vector<T> &q){
 		if(min(p.size(), q.size()) < 80) return convolute_naive(p, q);
 		int n = 1 << __lg((int)p.size() + (int)q.size() - 1) + 1;
 		const int cut = 32000;
 		buffer1.assign(n, 0);
-		for(auto i = 0; i < (int)p.size(); ++ i) buffer1[i] = {(long long)p[i] / cut, (long long)p[i] % cut};
+		for(auto i = 0; i < (int)p.size(); ++ i) buffer1[i] = {(int)p[i] / cut, (int)p[i] % cut};
 		transform(buffer1);
 		buffer2.assign(n, 0);
-		for(auto i = 0; i < (int)q.size(); ++ i) buffer2[i] = {(long long)q[i] / cut, (long long)q[i] % cut};
+		for(auto i = 0; i < (int)q.size(); ++ i) buffer2[i] = {(int)q[i] / cut, (int)q[i] % cut};
 		transform(buffer2);
 		for(auto i = 0; i <= n >> 1; ++ i){
 			int j = -i & n - 1;
@@ -96,8 +98,12 @@ struct fast_fourier_transform_wrapper{
 		return res;
 	}
 };
+vector<complex<double>> fast_fourier_transform_wrapper::root = {1, 1};
+vector<complex<long double>> fast_fourier_transform_wrapper::root_ld = {1, 1};
+vector<complex<double>> fast_fourier_transform_wrapper::buffer1;
+vector<complex<double>> fast_fourier_transform_wrapper::buffer2;
 
-fast_fourier_transform_wrapper FFT;
+using fft = fast_fourier_transform_wrapper;
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
 	<tabTrigger>fast_fourier_transform</tabTrigger> -->

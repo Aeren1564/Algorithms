@@ -14,6 +14,35 @@ struct modular_base{
 		if(_INV.empty()) _INV.assign(2, 1);
 		for(auto x = (int)_INV.size(); x <= SZ; ++ x) _INV.push_back((mod() - 1LL * mod() / x * _INV[mod() % x]) % mod());
 	}
+	// mod must be a prime
+	static Type _primitive_root;
+	static modular_base<T> primitive_root(){
+		if(_primitive_root) return _primitive_root;
+		if(mod() == 2) return _primitive_root = 1;
+		if(mod() == 998244353) return _primitive_root = 3;
+		Type divs[20] = {};
+		divs[0] = 2;
+		int cnt = 1;
+		Type x = (mod() - 1) / 2;
+		while(x % 2 == 0) x /= 2;
+		for(auto i = 3; 1LL * i * i <= x; i += 2){
+			if(x % i == 0){
+				divs[cnt ++] = i;
+				while(x % i == 0) x /= i;
+			}
+		}
+		if(x > 1) divs[cnt ++] = x;
+		for(auto g = 2; ; ++ g){
+			bool ok = true;
+			for(auto i = 0; i < cnt; ++ i){
+				if((modular_base<T>(g) ^ (mod() - 1) / divs[i]) == 1){
+					ok = false;
+					break;
+				}
+			}
+			if(ok) return _primitive_root = g;
+		}
+	}
 	constexpr modular_base(): value(){ }
 	modular_base(const double &x){ value = normalize(llround(x)); }
 	modular_base(const long double &x){ value = normalize(llround(x)); }
@@ -90,6 +119,8 @@ struct modular_base{
 };
 template<typename T>
 vector<typename std::decay<decltype (T::value)>::type> modular_base<T>::_INV;
+template<typename T>
+typename std::decay<decltype (T::value)>::type modular_base<T>::_primitive_root;
 template<typename T> bool operator==(const modular_base<T> &lhs, const modular_base<T> &rhs){ return lhs.value == rhs.value; }
 template<typename T, typename U, typename enable_if<is_integral<U>::value>::type* = nullptr> bool operator==(const modular_base<T>& lhs, U rhs){ return lhs == modular_base<T>(rhs); }
 template<typename T, typename U, typename enable_if<is_integral<U>::value>::type* = nullptr> bool operator==(U lhs, const modular_base<T> &rhs){ return modular_base<T>(lhs) == rhs; }
