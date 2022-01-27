@@ -1,0 +1,4 @@
+[
+	{ "keys": ["ctrl+alt+n"], "command": "new_snippet"},
+	{ "keys": ["ctrl+alt+b"], "command": "cancel_build"}
+]
