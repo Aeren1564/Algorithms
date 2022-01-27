@@ -1,5 +1,5 @@
 {
-    "cmd": ["dot", "-Tpng", "${file_name}", "-o", "${file_base_name}.png"],
+    "cmd": ["wsl.exe", "dot", "-Tpng", "${file_name}", "-o", "${file_base_name}.png"],
     "working_dir":"$file_path",
     "selector":"source.gv, source.dot"
 }

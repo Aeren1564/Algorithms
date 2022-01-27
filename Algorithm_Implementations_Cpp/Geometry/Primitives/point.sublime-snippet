@@ -96,7 +96,9 @@ T doubled_signed_area(const point<T> &p, const point<U> &q, const point<V> &r){
 }
 template<class T>
 T doubled_signed_area(const vector<point<T>> &a){
-	assert(!a.empty());
+	if(a.empty()){
+		return 0;
+	}
 	int n = (int)a.size();
 	T res = a.back() ^ a.front();
 	for(auto i = 1; i < n; ++ i) res += a[i - 1] ^ a[i];

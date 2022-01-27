@@ -40,18 +40,13 @@ struct linear_recurrence_solver_bostan_mori{
 			else for(auto i = 0; i < m; ++ i) coef[l - 1 - i] -= freq * b[m - 1 - i];
 		}
 		coef.pop_back();
-		n = (int)coef.size();
-		init = vector<T>(s.begin(), s.begin() + n);
-		p.resize(n);
-		q.resize(n + 1, 1);
-		for(auto i = 0; i < n; ++ i) q[n - i] = -coef[i];
-		p = ntt::convolute(init, q);
-		p.resize(n);
+		*this = linear_recurrence_solver_bostan_mori(coef, vector<T>(s.begin(), s.begin() + coef.size()));
 	}
 	// O(n * log(n) * log(i))
 	template<class U>
 	T operator[](U i) const{
 		assert(0 <= i);
+		if(i < n) return init[i];
 		return rational_polynomial_single_term_extraction<T, U, ntt>(p, q, i);
 	}
 };

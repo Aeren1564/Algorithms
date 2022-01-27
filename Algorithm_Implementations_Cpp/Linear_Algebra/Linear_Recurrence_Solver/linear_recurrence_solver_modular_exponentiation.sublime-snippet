@@ -1,0 +1,79 @@
+<snippet>
+	<content><![CDATA[
+// Store the linear recurrence relation of form \sum_{t<=i<t+n} coef[i-t] * init[i] = init[t+n]
+// T must be of modular type
+// Requires modular, number_theoric_transform, and polynomial
+template<class T, class ntt>
+struct linear_recurrence_solver_modular_exponentiation{
+	int n, power;
+	vector<T> init, coef, gamma_hat, qinv_hat;
+	linear_recurrence_solver_modular_exponentiation(const vector<T> &init, const vector<T> &coef): n((int)coef.size()), power(1 << __lg(max(2 * n, 1)) + 1), init(init), coef(coef), gamma_hat(n + 1, 1), qinv_hat(n + 1, 1){
+		assert(coef.size() == init.size());
+		for(auto i = 0; i < n; ++ i) gamma_hat[i] = qinv_hat[n - i] = -coef[i];
+		gamma_hat.resize(power);
+		ntt::transform(gamma_hat);
+		(qinv_hat = polynomial_base<T, ntt>(qinv_hat).inverse(power)).resize(power << 1);
+		ntt::transform(qinv_hat);
+	}
+	// Berlekamp Massey Algorithm
+	// Find a minimum linear recurrence relation
+	// T must ba a field
+	// O(size(s) * (n + log mod))
+	linear_recurrence_solver_modular_exponentiation(const vector<T> &s){
+		int sz = (int)size(s);
+		vector<T> b = {-1};
+		coef = {-1};
+		T y = 1;
+		for(auto t = 1; t <= sz; ++ t){
+			int l = (int)coef.size(), m = (int)b.size();
+			T x = 0;
+			for(auto i = 0; i < l; ++ i) x += coef[i] * s[t - l + i];
+			b.push_back(0);
+			++ m;
+			if(x == 0) continue;
+			T freq = x / y;
+			if(l < m){
+				auto tmp = coef;
+				coef.insert(coef.begin(), m - l, 0);
+				for(auto i = 0; i < m; ++ i) coef[m - 1 - i] -= freq * b[m - 1 - i];
+				b = tmp;
+				y = x;
+			}
+			else for(auto i = 0; i < m; ++ i) coef[l - 1 - i] -= freq * b[m - 1 - i];
+		}
+		coef.pop_back();
+		*this = {coef, vector<T>(s.begin(), s.begin() + coef.size())};
+	}
+	// O(n * log(n) * log(i))
+	template<class U>
+	T operator[](U i){
+		assert(0 <= i);
+		if(i < n) return init[i];
+		vector<T> p(power, 1), q;
+		for(auto bit = __lg(i); bit >= 0; -- bit){
+			for(auto &x: p) x *= x;
+			if(i & U(1) << bit) for(auto t = 0; t < power; ++ t) p[t] *= t < power >> 1 ? ntt::root[(power >> 1) + t] : -ntt::root[t];
+			q = p;
+			for(auto t = 0; t < power; ++ t) q[t] *= t < power >> 1 ? ntt::root[(power >> 1) + t] : -ntt::root[t];
+			reverse(q.begin() + 1, q.end());
+			ntt::double_up(q);
+			for(auto t = 0; t < power << 1; ++ t) q[t] *= qinv_hat[t];
+			ntt::transform(q, true);
+			q.resize(power - n);
+			reverse(q.begin(), q.end());
+			q.resize(power);
+			ntt::transform(q);
+			for(auto t = 0; t < power; ++ t) p[t] -= q[t] * gamma_hat[t];
+		}
+		ntt::transform(p, true);
+		T res = 0;
+		for(auto t = 0; t < n; ++ t) res += init[t] * p[t];
+		return res;
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>linear_recurrence_solver_modular_exponentiation</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
