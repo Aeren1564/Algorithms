@@ -2,9 +2,12 @@
 	<content><![CDATA[
 template<bool Enable_small_to_large = true>
 struct disjoint_set{
-	int n;
+	int n, _classes;
 	vector<int> p;
-	disjoint_set(int n): n(n), p(n, -1){ }
+	disjoint_set(int n): n(n), _classes(n), p(n, -1){ }
+	int classes() const{
+		return _classes;
+	}
 	int root(int u){
 		return p[u] < 0 ? u : p[u] = root(p[u]);
 	}
@@ -17,6 +20,7 @@ struct disjoint_set{
 	bool merge(int u, int v){
 		u = root(u), v = root(v);
 		if(u == v) return false;
+		-- _classes;
 		if constexpr(Enable_small_to_large) if(p[u] > p[v]) swap(u, v);
 		p[u] += p[v], p[v] = u;
 		return true;
@@ -24,12 +28,14 @@ struct disjoint_set{
 	bool merge(int u, int v, auto act){
 		u = root(u), v = root(v);
 		if(u == v) return false;
+		-- _classes;
 		if constexpr(Enable_small_to_large) if(p[u] > p[v]) swap(u, v);
 		p[u] += p[v], p[v] = u;
 		act(u, v);
 		return true;
 	}
 	void clear(){
+		_classes = n;
 		fill(p.begin(), p.end(), -1);
 	}
 	vector<vector<int>> group_up(){

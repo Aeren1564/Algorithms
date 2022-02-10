@@ -10,9 +10,9 @@ struct recursive_segment_tree{
 	F2 UU; // semigroup operation (superset, subset)
 	F3 U_init; // semigroup default element for the interval [l, r)
 	F4 UT; // action of U on T (superset, subset)
-	recursive_segment_tree(int n, F1 TT, T T_id, F2 UU, F3 U_init, F4 UT): recursive_segment_tree(vector<T>(n, T_id), TT, T_id, UU, U_init, UT){ }
-	recursive_segment_tree(int n, T init, F1 TT, T T_id, F2 UU, F3 U_init, F4 UT): recursive_segment_tree(vector<T>(n, init), TT, T_id, UU, U_init, UT){ }
-	recursive_segment_tree(const vector<T> &a, F1 TT, T T_id, F2 UU, F3 U_init, F4 UT): n((int)a.size()), data(n << 1, T_id), updates(n << 1), TT(TT), T_id(T_id), UU(UU), U_init(U_init), UT(UT){
+	recursive_segment_tree(int n, F1 TT, T T_id, F2 UU, F3 U_init, F4 UT, U _type_deducer): recursive_segment_tree(vector<T>(n, T_id), TT, T_id, UU, U_init, UT, _type_deducer){ }
+	recursive_segment_tree(int n, T init, F1 TT, T T_id, F2 UU, F3 U_init, F4 UT, U _type_deducer): recursive_segment_tree(vector<T>(n, init), TT, T_id, UU, U_init, UT, _type_deducer){ }
+	recursive_segment_tree(const vector<T> &a, F1 TT, T T_id, F2 UU, F3 U_init, F4 UT, U): n((int)a.size()), data(n << 1, T_id), updates(n << 1), TT(TT), T_id(T_id), UU(UU), U_init(U_init), UT(UT){
 		build(a, 0, 0, n);
 	}
 	void build(const vector<T> &a, int u, int l, int r){
@@ -34,11 +34,13 @@ struct recursive_segment_tree{
 	void refresh(int u, int l, int r){
 		data[u] = UT(updates[u], TT(data[u + 1], data[u + (r - l >> 1 << 1)]));
 	}
-	void update(int ql, int qr, U x){ // Apply x to values at [ql, qr)
+	// Apply f to values at [ql, qr)
+	void update(int ql, int qr, U f){
 		auto recurse = [&](auto self, int u, int l, int r)->void{
 			if(qr <= l || r <= ql) return;
 			if(ql <= l && r <= qr){
-				data[u] = UT(x, data[u]), updates[u] = UU(x, updates[u]);
+				data[u] = UT(f, data[u]);
+				updates[u] = UU(f, updates[u]);
 				return;
 			}
 			push(u, l, r);
@@ -48,7 +50,23 @@ struct recursive_segment_tree{
 		};
 		recurse(recurse, 0, 0, n);
 	}
-	T query(int ql, int qr){ // Get the query result for [ql, qr)
+	void update_beats(int ql, int qr, auto exit_rule, auto enter_rule, auto update_rule){
+		auto recurse = [&](auto self, int u, int l, int r)->void{
+			if(qr <= l || r <= ql || exit_rule(data[u])) return;
+			if(ql <= l && r <= qr && enter_rule(data[u])){
+				data[u] = UT(update_rule(data[u]), data[u]);
+				updates[u] = UU(update_rule(data[u]), updates[u]);
+				return;
+			}
+			push(u, l, r);
+			int m = l + (r - l >> 1);
+			self(self, u + 1, l, m), self(self, u + (m - l << 1), m, r);
+			refresh(u, l, r);
+		};
+		recurse(recurse, 0, 0, n);
+	}
+	// Get the query result for [ql, qr)
+	T query(int ql, int qr){
 		auto recurse = [&](auto self, int u, int l, int r)->T{
 			if(qr <= l || r <= ql) return T_id;
 			if(ql <= l && r <= qr) return data[u];

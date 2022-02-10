@@ -23,49 +23,77 @@ struct integral_multiset{
 		for(auto x = ms.offset; x < ms.maxval; ++ x) for(auto rep = 0; rep < ms.freq[x]; ++ rep) out << x << ", ";
 		return ms.empty() ? out << "}" : out << "\b\b}";
 	}
-	int size() const{ // O(1)
+	// O(1)
+	int size() const{
 		return sz;
 	}
+	// O(1)
 	bool empty() const{
 		return !sz;
 	}
-	int count(T x) const{ // O(1)
+	// O(1)
+	bool contains(T x) const{
 		assert(offset <= x && x < maxval);
 		return freq[x - offset];
 	}
-	void insert(T x){ // O(log len)
+	// O(1)
+	int count(T x) const{
+		assert(offset <= x && x < maxval);
+		return freq[x - offset];
+	}
+	// O(log len)
+	void insert(T x){
 		assert(offset <= x && x < maxval);
 		data.update(x - offset, 1), ++ freq[x - offset], ++ sz;
 	}
-	bool erase(T x){ // O(log len) if true, O(1) otherwise
+	// O(log len) if true, O(1) otherwise
+	bool erase(T x){
 		assert(offset <= x && x < maxval);
 		return freq[x - offset] ? (data.update(x - offset, -1), -- freq[x], -- sz, true) : false;
 	}
-	T find_by_order(int k) const{ // O(log len)
-		assert(k < sz);
+	// O(log len)
+	T find_by_order(int k) const{
+		if(k < 0) return offset - 1;
+		if(k >= sz) return maxval;
 		return data.max_pref([k](int pref){ return pref <= k; }) + offset;
 	}
-	int order_of_key(T x) const{ // O(log len)
+	// O(log len)
+	int order_of_key(T x) const{
 		assert(offset <= x && x < maxval);
 		return data.query(x - offset);
 	}
-	T front() const{ // O(log len)
+	// O(log len)
+	T front() const{
 		assert(sz);
 		return find_by_order(0) + offset;
 	}
-	T back() const{ // O(log len)
+	// O(log len)
+	T back() const{
 		assert(sz);
 		return find_by_order(sz - 1) + offset;
 	}
-	int lower_bound(T x) const{ // O(log len), returns maxval if no such element
+	// Returns maxval if no such element
+	// O(log len)
+	T lower_bound(T x) const{
 		assert(offset <= x && x < maxval);
-		int k = data.query(x - offset) + 1;
-		return data.max_pref([k](int pref){ return pref <= k; }) + offset;
+		return find_by_order(data.query(x - offset));
 	}
-	int upper_bound(T x) const{ // O(log len), returns maxval if no such element
+	// O(log len), returns maxval if no such element
+	T upper_bound(T x) const{
 		assert(offset <= x && x < maxval);
-		int k = data.query(x - offset + 1) + 1;
-		return data.max_pref([k](int pref){ return pref <= k; }) + offset;
+		return find_by_order(data.query(x - offset + 1));
+	}
+	// Returns minval if no such element
+	// O(log len)
+	T reverse_lower_bound(T x) const{
+		assert(offset <= x && x < maxval);
+		return find_by_order(data.query(x - offset + 1) - 1);
+	}
+	// Returns minval if no such element
+	// O(log len)
+	T reverse_upper_bound(T x) const{
+		assert(offset <= x && x < maxval);
+		return find_by_order(data.query(x - offset) - 1);
 	}
 };
 ]]></content>

@@ -5,7 +5,6 @@
 	],
 	"installed_packages":
 	[
-		"Package Control",
-		"Simple Print Function"
+		"Package Control"
 	]
 }
