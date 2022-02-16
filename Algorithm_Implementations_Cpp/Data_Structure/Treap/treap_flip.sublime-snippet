@@ -222,6 +222,10 @@ struct treap_flip{
 		refresh(u);
 		return u;
 	}
+	void renew_node(int u, T x){
+		assert(~u);
+		data[u] = x;
+	}
 	int build(int n){
 		return build(vector<T>(n, T{}));
 	}

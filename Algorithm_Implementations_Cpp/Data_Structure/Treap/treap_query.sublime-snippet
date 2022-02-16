@@ -212,6 +212,10 @@ struct treap_query{
 		refresh(u);
 		return u;
 	}
+	void renew_node(int u, T x){
+		assert(~u);
+		data[u] = subtr_data[u] = x;
+	}
 	int build(int n){
 		return build(vector<T>(n, T_id));
 	}
