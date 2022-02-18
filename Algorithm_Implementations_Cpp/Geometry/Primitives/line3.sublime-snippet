@@ -1,0 +1,85 @@
+<snippet>
+	<content><![CDATA[
+// Requires point3
+template<class T>
+struct line3{
+	point3<T> p{}, d{}; // p + d*t
+	line3(){ }
+	line3(point3<T> p, point3<T> q, bool Two_point3s = true): p(p), d(Two_point3s ? q - p : q){ }
+	line3(point3<T> d): p(), d(static_cast<point3<T>>(d)){ }
+	template<class U> explicit operator line3<U>() const{
+		return line3<U>(point3<U>(p), point3<U>(d), false);
+	}
+	point3<T> q() const{
+		return p + d;
+	}
+	operator bool() const{
+		return abs(d.x) > 1e-9 || abs(d.y) > 1e-9 || abs(d.z) > 1e-9;
+	}
+	bool operator||(const line3<T> &L) const{
+		return d || L.d;
+	}
+};
+template<class T> istream &operator>>(istream &in, line3<T> &l){
+	in >> l.p >> l.d, l.d -= l.p;
+	return in;
+}
+template<class T> ostream &operator<<(ostream &out, const line3<T> &l){
+	return out << "{" << l.p << " -> " << l.q() << "}";
+}
+template<class T>
+bool coplanar(const line3<T> &L, const line3<T> &M){
+	return (L.d || M.d) || abs((L.p - M.p) * (L.d ^ M.d)) <= 1e-9;
+}
+template<class T>
+bool on_line3(const point3<T> &p, const line3<T> &L){
+	return L ? p - L.p || L.d : p == L.p;
+}
+template<class T>
+bool on_ray(const point3<T> &p, const line3<T> &L){
+	return L ? (L.p - p || L.q() - p) && (L.p - p) * L.d <= 0 : p == L.p;
+}
+template<class T>
+bool on_segment(const point3<T> &p, const line3<T> &L){
+	return L ? (L.p - p || L.q() - p) && (L.p - p) * (L.q() - p) <= 0 : p == L.p;
+}
+template<class T>
+bool on_open_segment(const point3<T> &p, const line3<T> &L){
+	return L ? (L.p - p || L.q() - p) && (L.p - p) * (L.q() - p) < 0 : p == L.p;
+}
+template<class T>
+double distance_to_line(const point3<T> &p, const line3<T> &L){
+	return L ? (p - L.p ^ L.d).norm() / L.d.norm() : distance(p, L.p);
+}
+template<class T>
+double distance_to_ray(const point3<T> &p, const line3<T> &L){
+	return (p - L.p) * L.d <= 0 ? distance(p, L.p) : distance_to_line(p, L);
+}
+template<class T>
+double distance_to_segment(const point3<T> &p, const line3<T> &L){
+	return (p - L.p) * L.d <= 0 ? distance(p, L.p) : (p - L.q()) * L.d >= 0 ? distance(p, L.q()) : distance_to_line3(p, L);
+}
+template<class T>
+point3<double> projection(const point3<T> &p, const line3<T> &L){
+	return static_cast<point3<double>>(L.p) + (L ? (p - L.p) * L.d / L.d.squared_norm() * static_cast<point3<double>>(L.d) : point3<double>());
+}
+template<class T>
+point3<double> reflection(const point3<T> &p, const line3<T> &L){
+	return 2.0 * projection(p, L) - static_cast<point3<double>>(p);
+}
+template<class T>
+point3<double> closest_point_on_segment(const point3<T> &p, const line3<T> &L){
+	return (p - L.p) * L.d <= 0 ? static_cast<point3<double>>(L.p) : ((p - L.q()) * L.d >= 0 ? static_cast<point3<double>>(L.q()) : projection(p, L));
+}
+
+using line3int = line3<int>;
+using line3ll = line3<long long>;
+using line3lll = line3<__int128_t>;
+using line3d = line3<double>;
+using line3ld = line3<long double>;
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>line3</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

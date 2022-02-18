@@ -15,7 +15,7 @@ struct line{
 		return p + d;
 	}
 	operator bool() const{
-		return d.x != 0 || d.y != 0;
+		return abs(d.x) > 1e-9 || abs(d.y) > 1e-9;
 	}
 	tuple<T, T, T> coef() const{
 		return {d.y, -d.x, d.perp() * p};
