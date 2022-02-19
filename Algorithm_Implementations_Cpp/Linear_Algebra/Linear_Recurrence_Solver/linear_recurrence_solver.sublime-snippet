@@ -41,9 +41,9 @@ struct linear_recurrence_solver{
 	}
 	// O(n^2 * log(i))
 	template<class U>
-	T operator[](U i) const{
+	vector<T> get_coef(U i) const{
 		assert(0 <= i);
-		if(n == 0) return 0;
+		if(n == 0) return vector<T>(n + 1);
 		auto merge = [&](const vector<T> &a, const vector<T> &b){
 			vector<T> res(2 * n + 1);
 			for(auto i = 0; i <= n; ++ i) for(auto j = 0; j <= n; ++ j) res[i + j] += a[i] * b[j];
@@ -54,6 +54,15 @@ struct linear_recurrence_solver{
 		};
 		vector<T> power(n + 1), base(n + 1);
 		for(power[0] = base[1] = 1; i; i >>= 1, base = merge(base, base)) if(i & 1) power = merge(power, base);
+		T res = 0;
+		return power;
+	}
+	// O(n^2 * log(i))
+	template<class U>
+	T operator[](U i) const{
+		assert(0 <= i);
+		if(n == 0) return 0;
+		auto power = get_coef(i);
 		T res = 0;
 		for(auto i = 0; i < n; ++ i) res += power[i] * init[i];
 		return res;
