@@ -8,7 +8,7 @@ struct heavy_light_decomposition{
 	vector<int> roots; // root of the component
 	vector<int> pv;
 	vector<int> pe;
-	vector<int> sz;
+	vector<int> size;
 	vector<int> depth;
 	vector<int> next; // highest point of the heavy path
 	vector<int> prev; // lowest point of the heavy path
@@ -16,7 +16,7 @@ struct heavy_light_decomposition{
 	vector<int> end;
 	vector<int> order;
 	template<class T>
-	heavy_light_decomposition(const graph<T> &g, const vector<int> &roots): n(g.n), roots(roots), adj(n), pv(n, -1), pe(n, -1), sz(n, 1), depth(n), next(n), prev(n), pos(n), end(n){
+	heavy_light_decomposition(const graph<T> &g, const vector<int> &roots): n(g.n), roots(roots), adj(n), pv(n, -1), pe(n, -1), size(n, 1), depth(n), next(n), prev(n), pos(n), end(n){
 		iota(prev.begin(), prev.end(), 0);
 		for(auto id = 0; id < (int)g.edge.size(); ++ id){
 			if(g.ignore && g.ignore(id)) continue;
@@ -31,9 +31,9 @@ struct heavy_light_decomposition{
 				int v = u ^ e.from ^ e.to;
 				pv[v] = u, pe[v] = id, depth[v] = depth[u] + 1;
 				self(self, v, u);
-				sz[u] += sz[v];
+				size[u] += size[v];
 				auto &f = g.edge[adj[u][0]];
-				if(sz[v] > sz[u ^ f.from ^ f.to]) swap(id, adj[u][0]);
+				if(size[v] > size[u ^ f.from ^ f.to]) swap(id, adj[u][0]);
 			}
 			if(!adj[u].empty()){
 				auto &e = g.edge[adj[u][0]];
@@ -67,16 +67,16 @@ struct heavy_light_decomposition{
 	}
 	// f reads the position in the data structure
 	// One application of f
-	void querynode(int u, auto f) const{
+	void access_node(int u, auto f) const{
 		f(pos[u]);
 	}
 	// One application of f
-	void querysubtree(int u, auto f) const{
+	void access_subtree(int u, auto f) const{
 		f(pos[u] + VALS_IN_EDGES, end[u]);
 	}
 	// f(left, right, (left->right ?))
 	// O(log n) applications of f
-	void querypath(int u, int v, auto f) const{
+	void access_path(int u, int v, auto f) const{
 		bool dir = true;
 		for(; next[u] != next[v]; v = pv[next[v]]){
 			if(depth[next[u]] > depth[next[v]]) swap(u, v), dir = !dir;
@@ -87,29 +87,10 @@ struct heavy_light_decomposition{
 	}
 	// Pair of indices {l, r} in the data structure. resr is reversed(v->next[v], pv[next[v]]-> ...)
 	// O(log n)
-	auto getpath(int u, int v) const{
+	auto get_path(int u, int v) const{
 		vector<pair<int, int>> resl, resr;
-		querypath(u, v, [&](int l, int r, bool dir){ (dir ? resl : resr).push_back({l, r}); });
+		access_path(u, v, [&](int l, int r, bool dir){ (dir ? resl : resr).push_back({l, r}); });
 		return pair{resl, resr};
-	}
-	vector<int> partition, weights;
-	template<class T>
-	void process_weight(const graph<T> &g){
-		weights.assign(n, 1);
-		vector<bool> is_head(n, true);
-		for(auto u = 0; u < n; ++ u){
-			if(g.degree(u)){
-				auto &e = g.edge[adj[u][0]];
-				int v = u ^ e.from ^ e.to;
-				is_head[pos[v]] = false;
-				weights[pos[u]] = sz[u] - sz[v];
-			}
-		}
-		for(auto l = 0; l < n; ){
-			int r = find(is_head.begin() + l + 1, is_head.end(), true) - is_head.begin();
-			partition.push_back(r - l);
-			l = r;
-		}
 	}
 };
 ]]></content>

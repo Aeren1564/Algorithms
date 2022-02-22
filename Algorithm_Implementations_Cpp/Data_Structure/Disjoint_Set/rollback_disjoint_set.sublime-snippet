@@ -1,10 +1,14 @@
 <snippet>
 	<content><![CDATA[
 struct rollback_disjoint_set{
-	int n;
+	int n, _classes;
 	vector<int> p;
 	vector<pair<int, int>> recover;
-	rollback_disjoint_set(int n): n(n), p(n, -1){ }
+	rollback_disjoint_set(int n): n(n), _classes(n), p(n, -1){ }
+	// O(1)
+	int classes() const{
+		return _classes;
+	}
 	// O(log n)
 	int root(int u){
 		return p[u] < 0 ? u : root(p[u]);
@@ -21,21 +25,57 @@ struct rollback_disjoint_set{
 	bool merge(int u, int v){
 		u = root(u), v = root(v);
 		if(u == v) return false;
+		-- _classes;
 		if(p[u] > p[v]) swap(u, v);
 		recover.emplace_back(v, p[v]);
 		p[u] += p[v], p[v] = u;
 		return true;
 	}
+	// O(log n)
+	bool merge(int u, int v, auto act){
+		u = root(u), v = root(v);
+		if(u == v) return false;
+		-- _classes;
+		if(p[u] > p[v]) swap(u, v);
+		recover.emplace_back(v, p[v]);
+		p[u] += p[v], p[v] = u;
+		act(u, v);
+		return true;
+	}
 	// O(1)
 	int time(){
-		return (int)log.size();
+		return (int)recover.size();
 	}
 	// O((size(recover) - t) * log n)
-	void reverse_to(int t = 0){
+	void reverse_to(int t){
 		while((int)recover.size() > t){
-			auto [v, pv] = recover.back(); recover.pop_back();
-			p[p[v]] -= pv, p[v] = pv;
+			++ _classes;
+			auto [v, s] = recover.back();
+			recover.pop_back();
+			p[p[v]] -= s, p[v] = s;
 		}
+	}
+	// O((size(recover) - t) * log n)
+	void reverse_to(int t, auto act){
+		while((int)recover.size() > t){
+			++ _classes;
+			auto [v, s] = recover.back();
+			recover.pop_back();
+			int u = p[v];
+			p[p[v]] -= s, p[v] = s;
+			act(u, v);
+		}
+	}
+	void clear(){
+		_classes = n;
+		fill(p.begin(), p.end(), -1);
+		recover.clear();
+	}
+	vector<vector<int>> group_up(){
+		vector<vector<int>> g(n);
+		for(auto i = 0; i < n; ++ i) g[root(i)].push_back(i);
+		g.erase(remove_if(g.begin(), g.end(), [&](auto &s){ return s.empty(); }), g.end());
+		return g;
 	}
 };
 ]]></content>
