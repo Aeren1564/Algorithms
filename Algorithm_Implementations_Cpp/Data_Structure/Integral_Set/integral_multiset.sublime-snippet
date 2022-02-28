@@ -1,10 +1,10 @@
 <snippet>
 	<content><![CDATA[
-// efficient multiset when only dealing with small integers in [offset, offset + len)
+// Efficient multiset when the keys are integers in range [offset, offset + len)
 // Requires fenwick_tree
 template<class T>
 struct integral_multiset{
-	int sz = 0;
+	int _size = 0;
 	T offset, maxval;
 	vector<int> freq;
 	fenwick_tree<int> data;
@@ -12,11 +12,11 @@ struct integral_multiset{
 	integral_multiset(const vector<T> &init, int len, T offset = 0): offset(offset), maxval(offset + len), freq(len){
 		for(auto x: init){
 			assert(offset <= x && x < maxval);
-			++ freq[x - offset], ++ sz;
+			++ freq[x - offset], ++ _size;
 		}
 		data = {freq};
 	}
-	integral_multiset(const integral_multiset &otr): sz(otr.sz), offset(otr.offset), maxval(otr.maxval), freq(otr.freq), data(otr.data){
+	integral_multiset(const integral_multiset &otr): _size(otr._size), offset(otr.offset), maxval(otr.maxval), freq(otr.freq), data(otr.data){
 	}
 	friend ostream &operator<<(ostream &out, integral_multiset ms){
 		out << "{";
@@ -25,11 +25,11 @@ struct integral_multiset{
 	}
 	// O(1)
 	int size() const{
-		return sz;
+		return _size;
 	}
 	// O(1)
 	bool empty() const{
-		return !sz;
+		return !_size;
 	}
 	// O(1)
 	bool contains(T x) const{
@@ -44,55 +44,60 @@ struct integral_multiset{
 	// O(log len)
 	void insert(T x){
 		assert(offset <= x && x < maxval);
-		data.update(x - offset, 1), ++ freq[x - offset], ++ sz;
+		++ _size;
+		++ freq[x - offset];
+		data.update(x - offset, 1);
 	}
 	// O(log len) if true, O(1) otherwise
 	bool erase(T x){
 		assert(offset <= x && x < maxval);
-		return freq[x - offset] ? (data.update(x - offset, -1), -- freq[x], -- sz, true) : false;
+		if(freq[x - offset]){
+			-- _size;
+			-- freq[x - offset];
+			data.update(x - offset, -1);
+			return true;
+		}
+		return false;
 	}
 	// O(log len)
 	T find_by_order(int k) const{
 		if(k < 0) return offset - 1;
-		if(k >= sz) return maxval;
+		if(k >= _size) return maxval;
 		return data.max_pref([k](int pref){ return pref <= k; }) + offset;
 	}
 	// O(log len)
 	int order_of_key(T x) const{
-		assert(offset <= x && x < maxval);
+		if(x < offset) return 0;
+		if(maxval <= x) return _size;
 		return data.query(x - offset);
 	}
 	// O(log len)
 	T front() const{
-		assert(sz);
+		assert(_size);
 		return find_by_order(0) + offset;
 	}
 	// O(log len)
 	T back() const{
-		assert(sz);
-		return find_by_order(sz - 1) + offset;
+		assert(_size);
+		return find_by_order(_size - 1) + offset;
 	}
 	// Returns maxval if no such element
 	// O(log len)
 	T lower_bound(T x) const{
-		assert(offset <= x && x < maxval);
 		return find_by_order(data.query(x - offset));
 	}
 	// O(log len), returns maxval if no such element
 	T upper_bound(T x) const{
-		assert(offset <= x && x < maxval);
 		return find_by_order(data.query(x - offset + 1));
 	}
 	// Returns minval if no such element
 	// O(log len)
 	T reverse_lower_bound(T x) const{
-		assert(offset <= x && x < maxval);
 		return find_by_order(data.query(x - offset + 1) - 1);
 	}
 	// Returns minval if no such element
 	// O(log len)
 	T reverse_upper_bound(T x) const{
-		assert(offset <= x && x < maxval);
 		return find_by_order(data.query(x - offset) - 1);
 	}
 };

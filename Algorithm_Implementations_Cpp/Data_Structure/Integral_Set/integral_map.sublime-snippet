@@ -1,0 +1,113 @@
+<snippet>
+	<content><![CDATA[
+// Efficient map when only the keys are integers in range [offset, offset + len)
+// Requires fenwick_tree
+template<class T, class U>
+struct integral_map{
+	int _size = 0;
+	T offset, maxval;
+	vector<int> freq;
+	fenwick_tree<int> data_key;
+	vector<U> data_value;
+	integral_map(int len, T offset = {}): offset(offset), maxval(offset + len), freq(len), data_key(len), data_value(len){ }
+	integral_map(const vector<pair<T, U>> &init, int len, T offset = 0): offset(offset), maxval(offset + len), freq(len), data_value(len), _size((int)init.size()){
+		for(auto [x, y]: init){
+			assert(offset <= x && x < maxval);
+			data_value[x - offset] = y;
+			assert(!freq[x - offset]);
+			++ freq[x - offset];
+		}
+		data_key = {freq};
+	}
+	integral_map(const integral_map &otr): _size(otr._size), offset(otr.offset), maxval(otr.maxval), freq(otr.freq), data_key(otr.data_key), data_value(otr.data_value){
+	}
+	friend ostream &operator<<(ostream &out, integral_map ms){
+		out << "{";
+		for(auto x = ms.offset; x < ms.maxval; ++ x) if(ms.freq[x - ms.offset]) out << "{" << x << ", " << ms.data_value[x - ms.offset] << "}, ";
+		return ms.empty() ? out << "}" : out << "\b\b}";
+	}
+	// O(1)
+	int size() const{
+		return _size;
+	}
+	// O(1)
+	bool empty() const{
+		return !_size;
+	}
+	// O(1)
+	bool contains(T x) const{
+		assert(offset <= x && x < maxval);
+		return freq[x - offset];
+	}
+	// O(log len)
+	bool insert(T x, U y){
+		assert(offset <= x && x < maxval);
+		if(!freq[x - offset]){
+			++ _size;
+			++ freq[x - offset];
+			data_key.update(x - offset, 1);
+			data_value[x - offset] = y;
+			return true;
+		}
+		return false;
+	}
+	// O(log len) if true, O(1) otherwise
+	bool erase(T x){
+		assert(offset <= x && x < maxval);
+		if(freq[x - offset]){
+			-- _size;
+			-- freq[x - offset];
+			data_key.update(x - offset, -1);
+			return true;
+		}
+		return false;
+	}
+	// O(log len)
+	pair<T, U> find_by_order(int k) const{
+		if(k < 0) return {offset - 1, {}};
+		if(k >= _size) return {maxval, {}};
+		int i = data_key.max_pref([k](int pref){ return pref <= k; });
+		return {i + offset, data_value[i]};
+	}
+	// O(log len)
+	int order_of_key(T x) const{
+		if(x < offset) return 0;
+		if(maxval <= x) return _size;
+		return data_key.query(x - offset);
+	}
+	// O(log len)
+	T front() const{
+		assert(_size);
+		return find_by_order(0) + offset;
+	}
+	// O(log len)
+	T back() const{
+		assert(_size);
+		return find_by_order(_size - 1) + offset;
+	}
+	// Returns {maxval, {}} if no such element
+	// O(log len)
+	pair<T, U> lower_bound(T x) const{
+		return find_by_order(data_key.query(x - offset));
+	}
+	// O(log len), returns {maxval, {}} if no such element
+	pair<T, U> upper_bound(T x) const{
+		return find_by_order(data_key.query(x - offset + 1));
+	}
+	// Returns {minval, {}} if no such element
+	// O(log len)
+	T reverse_lower_bound(T x) const{
+		return find_by_order(data_key.query(x - offset + 1) - 1);
+	}
+	// Returns {minval, {}} if no such element
+	// O(log len)
+	T reverse_upper_bound(T x) const{
+		return find_by_order(data_key.query(x - offset) - 1);
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>integral_map</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

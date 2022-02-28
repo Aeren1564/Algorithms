@@ -47,10 +47,10 @@ struct reverse_segment_tree{
 		updates[i] = U_init((i << h) - size, (i + 1 << h) - size);
 	}
 	void push_all(){
-		for(auto i = 1; i < n; ++ i) push(i);
+		for(auto i = 1; i < size; ++ i) push(i);
 	}
 	template<class output_stream>
-	friend output_stream &operator<<(output_stream &out, const reverse_segment_tree<U, F1, F2> &seg){
+	friend output_stream &operator<<(output_stream &out, reverse_segment_tree<U, F1, F2> &seg){
 		out << "[";
 		for(auto i = 0; i < seg.n; ++ i){
 			out << seg.query(i);

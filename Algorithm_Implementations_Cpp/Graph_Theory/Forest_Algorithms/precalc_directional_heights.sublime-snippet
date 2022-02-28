@@ -6,7 +6,7 @@ template<class T>
 array<vector<int>, 2> precalc_directional_heights(const graph<T> &g, const vector<int> &roots){
 	int n = g.n;
 	vector<int> vis(n);
-	vector<T> height_up(n), height_down(n, -1);
+	vector<T> height_up(n), height_down(n);
 	auto dfs_up = [&](auto self, int u)->void{
 		vis[u] = true;
 		for(auto id: g.adj[u]){
@@ -22,7 +22,7 @@ array<vector<int>, 2> precalc_directional_heights(const graph<T> &g, const vecto
 	fill(vis.begin(), vis.end(), false);
 	auto dfs_down = [&](auto self, int u)->void{
 		vis[u] = true;
-		array<int, 2> mx{};
+		array<int, 2> mx{height_down[u], 0};
 		for(auto id: g.adj[u]){
 			if(g.ignore && g.ignore(id)) continue;
 			auto &e = g.edge[id];
@@ -36,7 +36,7 @@ array<vector<int>, 2> precalc_directional_heights(const graph<T> &g, const vecto
 			auto &e = g.edge[id];
 			int v = u ^ e.from ^ e.to;
 			if(vis[v]) continue;
-			height_down[v] = height_up[v] + e.cost != mx[0] ? mx[0] : mx[1];
+			height_down[v] = height_up[v] + e.cost != mx[0] ? mx[0] + e.cost : mx[1] + e.cost;
 			self(self, v);
 		}
 	};
