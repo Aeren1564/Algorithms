@@ -11,24 +11,55 @@ struct mo_3d{
 	void insert(int x, int y, int z, int id){
 		points.push_back({x, y, z, id});
 	}
-	// starting from (0, 0, 0), access each points and execute queries
-	void solve(auto inc_x, auto dec_x, auto inc_y, auto dec_y, auto inc_z, auto dec_z, auto process){
+	// Access each points starting from (0, 0, 0)
+	// Each functions acts as if [x, y) is an interval at time z
+	void solve(auto dec_x, auto inc_y, auto inc_x, auto dec_y, auto inc_z, auto dec_z, auto process){
 		auto cmp = [&](const auto &p, const auto &q)->bool{
 			return p[0] / BX != q[0] / BX ? p[0] < q[0] : p[1] / BY != q[1] / BY ? p[1] < q[1] : p[2] < q[2];
 		};
 		sort(points.begin(), points.end(), cmp);
 		int x = 0, y = 0, z = 0;
 		for(auto &[qx, qy, qz, id]: points){
-			while(qx < x) dec_x(), -- x;
-			while(y < qy) inc_y(), ++ y;
-			while(x < qx) inc_x(), ++ x;
-			while(qy < y) dec_y(), -- y;
-			while(qz < z) dec_z(), -- z;
-			while(z < qz) inc_z(), ++ z;
+			while(qx < x) dec_x(-- x); // Insertion
+			while(y < qy) inc_y(y ++); // Insertion
+			while(x < qx) inc_x(x ++); // Deletion
+			while(qy < y) dec_y(-- y); // Deletion
+			while(z < qz) inc_z(z ++); // Wind forward
+			while(qz < z) dec_z(z --); // Wind backward
 			process(id);
 		}
 	}
 };
+/*
+// Insert a[i] from left
+	auto dec_x = [&](int i)->void{
+		
+	};
+	// Insert a[i] from right
+	auto inc_y = [&](int i)->void{
+		
+	};
+	// Erase a[i] from left
+	auto inc_x = [&](int i)->void{
+
+	};
+	// Erase a[i] from right
+	auto dec_y = [&](int i)->void{
+
+	};
+	// Wind forward (from t to t+1)
+	auto inc_z = [&](int t)->void{
+
+	};
+	// Wind backward (from t to t-1)
+	auto dec_z = [&](int t)->void{
+
+	};
+	auto process = [&](int qi)->void{
+
+	};
+	mo_3d.solve(dec_x, inc_y, inc_x, dec_y, inc_z, dec_z, process);
+*/
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
 	<tabTrigger>mo_3d</tabTrigger> -->

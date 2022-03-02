@@ -11,49 +11,44 @@ struct mo_2d{
 	void insert(int x, int y, int id){
 		points.push_back({x, y, id});
 	}
-	// starting from (0, 0), access each points and execute queries
-	void solve(auto inc_x, auto dec_x, auto inc_y, auto dec_y, auto process){
+	// Access each points starting from (0, 0)
+	// Each functions acts as if [x, y) is an interval
+	void solve(auto dec_x, auto inc_y, auto inc_x, auto dec_y, auto process){
 		auto cmp = [&](const auto &p, const auto &q)->bool{
 			return p[0] / BX != q[0] / BX ? p < q : p[0] / BX & 1 ? p[1] < q[1] : p[1] > q[1];
 		};
 		sort(points.begin(), points.end(), cmp);
 		int x = 0, y = 0;
 		for(auto &[qx, qy, id]: points){
-			while(qx < x) dec_x(), -- x;
-			while(y < qy) inc_y(), ++ y;
-			while(x < qx) inc_x(), ++ x;
-			while(qy < y) dec_y(), -- y;
+			while(qx < x) dec_x(-- x); // Insertion
+			while(y < qy) inc_y(y ++); // Insertion
+			while(x < qx) inc_x(x ++); // Deletion
+			while(qy < y) dec_y(-- y); // Deletion
 			process(id);
 		}
 	}
 };
 /*
-int l = 0, r = 0;
-	auto inc_x = [&]()->void{
-		// erase a[l]
-
-		++ l;
-	};
-	auto dec_x = [&]()->void{
-		-- l;
-		// insert a[l]
-
-	};
-	auto inc_y = [&]()->void{
-		// insert a[r]
-
-		++ r;
-	};
-	auto dec_y = [&]()->void{
-		-- r;
-		// erase a[r]
-
-	};
-	vector<int> res(qn);
-	auto process = [&](int qi)->void{
+// Insert a[i] from left
+	auto dec_x = [&](int i)->void{
 		
 	};
-	mo.solve(inc_x, dec_x, inc_y, dec_y, process);
+	// Insert a[i] from right
+	auto inc_y = [&](int i)->void{
+
+	};
+	// Erase a[i] from left
+	auto inc_x = [&](int i)->void{
+
+	};
+	// Erase a[i] from right
+	auto dec_y = [&](int i)->void{
+
+	};
+	auto process = [&](int qi)->void{
+
+	};
+	mo.solve(dec_x, inc_y, inc_x, dec_y, process);
 */
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
