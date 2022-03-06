@@ -1,20 +1,23 @@
 <snippet>
 	<content><![CDATA[
-template<class T>
-vector<T> monotone_queue_dp(int n, T init, auto cost){
-	vector<T> dp(n + 1, init);
+template<class T, bool GET_MAX = false>
+vector<T> monotone_queue_dp(int n, const vector<T> &init, auto cost){
+	assert((int)init.size() == n + 1);
+	vector<T> dp = init;
 	auto cross = [&](int i, int j){
 		int l = j, r = n + 1;
 		while(r - l > 1){
 			int mid = l + r >> 1;
-			dp[i] + cost(i, mid) <= dp[j] + cost(j, mid) ? l = mid : r = mid;
+			if constexpr(GET_MAX) dp[i] + cost(i, mid) >= dp[j] + cost(j, mid) ? l = mid : r = mid;
+			else dp[i] + cost(i, mid) <= dp[j] + cost(j, mid) ? l = mid : r = mid;
 		}
 		return l;
 	};
 	deque<int> q{0};
 	for(auto i = 1; i <= n; ++ i){
 		while(int(q.size()) > 1 && cross(*q.begin(), *next(q.begin())) < i) q.pop_front();
-		dp[i] = dp[q.front()] + cost(q.front(), i);
+		if constexpr(GET_MAX) dp[i] = max(dp[i], dp[q.front()] + cost(q.front(), i));
+		else dp[i] = min(dp[i], dp[q.front()] + cost(q.front(), i));
 		while(int(q.size()) > 1 && cross(*next(q.rbegin()), *q.rbegin()) >= cross(*q.rbegin(), i)) q.pop_back();
 		q.push_back(i);
 	}
