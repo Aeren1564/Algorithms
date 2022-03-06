@@ -4,24 +4,31 @@ template<class T>
 struct fenwick_tree_3d{
 	int n, m, l;
 	vector<vector<vector<T>>> data;
+	// O(n * m * l)
 	fenwick_tree_3d(const vector<vector<vector<T>>> &a): n((int)a.size()), m((int)a[0].size()), l((int)a[0][0].size()), data(a){
 		for(auto i = 1; i <= n; ++ i) if(i + (i & -i) <= n) for(auto j = 1; j <= m; ++ j) for(auto k = 1; k <= l; ++ k) data[i + (i & -i) - 1][j - 1][k - 1] += data[i - 1][j - 1][k - 1];
 		for(auto i = 1; i <= n; ++ i) for(auto j = 1; j <= m; ++ j) if(j + (j & -j) <= m) for(auto k = 1; k <= l; ++ k) data[i - 1][j + (j & -j) - 1][k - 1] += data[i - 1][j - 1][k - 1];
 		for(auto i = 1; i <= n; ++ i) for(auto j = 1; j <= m; ++ j) for(auto k = 1; k <= l; ++ k) if(k + (k & -k) <= l) data[i - 1][j - 1][k + (k & -k) - 1] += data[i - 1][j - 1][k - 1];
-	} // O(nml)
-	void update(int p, int q, int r, T x){ // a[p][q][r] += x, O(log n log m log l)
+	}
+	fenwick_tree_3d(int n, int m, int l): n(n), m(m), l(l), data(n, vector<vector<T>>(m, vector<T>(l))){ }
+	// a[p][q][r] += x
+	// O(log n * log m * log l)
+	void update(int p, int q, int r, T x){
 		++ p, ++ q, ++ r;
 		for(auto i = p; i <= n; i += i & -i) for(auto j = q; j <= m; j += j & -j) for(auto k = r; k <= l; k += k & -k) data[i - 1][j - 1][k - 1] += x;
 	}
-	T query(int xr, int yr, int zr){ // sum of a[i][j][k] on [0, xr) X [0, yr) X [0, zr) O(log n log m log l)
+	// Returns the sum of a[i][j][k] on [0, xr) X [0, yr) X [0, zr)
+	// O(log n * log m * log l)
+	T query(int xr, int yr, int zr){
+		assert(0 <= xr && xr <= n && 0 <= yr && yr <= m && 0 <= zr && zr <= l);
 		T res{};
-		++ xr, ++ yr, ++ zr;
 		for(auto i = xr; i > 0; i -= i & -i) for(auto j = yr; j > 0; j -= j & -j) for(auto k = zr; k > 0; k -= k & -k) res += data[i - 1][j - 1][k - 1];
 		return res;
 	}
-	T query(int xl, int xr, int yl, int yr, int zl, int zr){ // sum of a[i][j][k] on [xl, xr) X [yl, yr) X [zl, zr), O(log n log m log r)
+	// Returns the sum of a[i][j][k] on [xl, xr) X [yl, yr) X [zl, zr)
+	// O(log n * log m * log r)
+	T query(int xl, int xr, int yl, int yr, int zl, int zr){
 		assert(xl <= xr && yl <= yr);
-		-- xl, -- xr, -- yl, -- yr, -- zl, -- zr;
 		return query(xr, yr, zr) - query(xl, yr, zr) - query(xr, yl, zr) - query(xr, yr, zl) + query(xl, yl, zr) + query(xl, yr, zl) + query(xr, yl, zl) - query(xl, yl, zl);
 	}
 	template<class output_stream>

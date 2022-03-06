@@ -6,15 +6,20 @@ struct segment_tree_3d{
 	vector<vector<vector<T>>> data;
 	F TT; // commutative monoid operation
 	T T_id; // commutative monoid identity
+	// O(n * m * l)
 	segment_tree_3d(int n, int m, int l, F TT, T T_id): n(n), m(m), l(l), TT(TT), T_id(T_id), data(n << 1, vector<vector<T>>(m << 1, vector<T>(l << 1, T_id))){ }
+	// O(n * m * l)
 	segment_tree_3d(int n, int m, int l, T x, F TT, T T_id): segment_tree_3d(vector<vector<vector<T>>>(n, vector<vector<T>>(m, vector<T>(l, x)))){ }
+	// O(n * m * l)
 	segment_tree_3d(const vector<vector<vector<T>>> &a, F TT, T T_id): n((int)a.size()), m((int)a[0].size()), l((int)a[0][0].size()), TT(TT), T_id(T_id), data(n << 1, vector<vector<T>>(m << 1, vector<T>(l << 1, T_id))){
 		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) for(auto k = 0; k < l; ++ k) data[i + n][j + m][k + l] = a[i][j][k];
 		for(auto i = n - 1; i > 0; -- i) for(auto j = 0; j < m; ++ j) for(auto k = 0; k < l; ++ k) data[i][j + m][k + l] = TT(data[i << 1][j + m][k + l], data[i << 1 | 1][j + m][k + l]);
 		for(auto i = 1; i < n << 1; ++ i) for(auto j = m - 1; j > 0; -- j) for(auto k = 0; k < l; ++ k) data[i][j][k + l] = TT(data[i][j << 1][k + l], data[i][j << 1 | 1][k + l]);
 		for(auto i = 1; i < n << 1; ++ i) for(auto j = 1; j < m << 1; ++ j) for(auto k = l - 1; k > 0; -- k) data[i][j][k] = TT(data[i][j][k << 1], data[i][j][k << 1 | 1]);
-	} // O(nml)
-	void set(int p, int q, int r, T x){ // v[p][q][r] = x, O(log n log m log l)
+	}
+	// a[p][q][r] := x
+	// O(log n * log m * log l)
+	void set(int p, int q, int r, T x){
 		data[p += n][q += m][r += l] = x;
 		for(auto k = r; k >>= 1; ) data[p][q][k] = TT(data[p][q][k << 1], data[p][q][k << 1 | 1]);
 		for(auto j = q; j >>= 1; ){
@@ -30,10 +35,14 @@ struct segment_tree_3d{
 			}
 		}
 	}
-	T query(int p, int q, int r){ // a[p][q][r], O(1)
+	// Returns a[p][q][r]
+	// O(1)
+	T query(int p, int q, int r){
 		return data[p + n][q + m][r + l];
 	}
-	T query(int xl, int xr, int yl, int yr, int zl, int zr){ // sum of a[i][j][k] on [xl, xr) X [yl, yr) X [zl, zr), O(log n log m log l)
+	// Returns the sum of a[i][j][k] on [xl, xr) X [yl, yr) X [zl, zr)
+	// O(log n * log m * log l)
+	T query(int xl, int xr, int yl, int yr, int zl, int zr){
 		if(xl >= xr || yl >= yr || zl >= zr) return T_id;
 		T res = T_id;
 		xl += n, xr += n, yl += m, yr += m, zl += l, zr += l;

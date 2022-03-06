@@ -4,23 +4,31 @@ template<class T>
 struct fenwick_tree_2d{
 	int n, m;
 	vector<vector<T>> data;
+	// O(n * m)
 	fenwick_tree_2d(const vector<vector<T>> &a): n((int)a.size()), m((int)a[0].size()), data(a){
 		for(auto i = 1; i <= n; ++ i) if(i + (i & -i) <= n) for(auto j = 1; j <= m; ++ j) data[i + (i & -i) - 1][j - 1] += data[i - 1][j - 1];
 		for(auto i = 1; i <= n; ++ i) for(auto j = 1; j <= m; ++ j) if(j + (j & -j) <= n) data[i - 1][j + (j & -j) - 1] += data[i - 1][j - 1];
-	} // O(nm)
-	void update(int p, int q, T x){ // a[p][q] += x, O(log n log m)
+	}
+	// O(n * m)
+	fenwick_tree_2d(int n, int m): n(n), m(m), data(n, vector<T>(m)){}
+	// a[p][q] += x
+	// O(log n * log m)
+	void update(int p, int q, T x){
 		++ p, ++ q;
 		for(auto i = p; i <= n; i += i & -i) for(auto j = q; j <= m; j += j & -j) data[i - 1][j - 1] += x;
 	}
-	T query(int xr, int yr){ // sum of a[i][j] on [0, xr) X [0, yr), O(log n log m)
+	// Returns the sum of a[i][j] on [0, xr) X [0, yr)
+	// O(log n * log m)
+	T query(int xr, int yr){
+		assert(0 <= xr && xr <= n && 0 <= yr && yr <= m);
 		T res{};
-		++ xr, ++ yr;
 		for(auto i = xr; i > 0; i -= i & -i) for(auto j = yr; j > 0; j -= j & -j) res += data[i - 1][j - 1];
 		return res;
 	}
-	T query(int xl, int xr, int yl, int yr){ // sum of a[i][j] on [xl, xr) X [yl, yr), O(log n log m)
+	// Returns the sum of a[i][j] on [xl, xr) X [yl, yr)
+	// O(log n * log m)
+	T query(int xl, int xr, int yl, int yr){
 		assert(xl <= xr && yl <= yr);
-		-- xl, -- xr, -- yl, -- yr;
 		return query(xr, yr) - query(xr, yl) - query(xl, yr) + query(xl, yl);
 	}
 	template<class output_stream>
