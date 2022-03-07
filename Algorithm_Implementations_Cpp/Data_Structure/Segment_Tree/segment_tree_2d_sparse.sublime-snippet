@@ -20,7 +20,7 @@ struct segment_tree_2d_sparse{
 		for(auto i = 0, x = 0; i < n; ++ i){
 			auto [pos, val] = init[i];
 			while(X[x] < pos[0]) ++ x;
-			hold[x + (int)size(X)].push_back({{pos[1], pos[0]}, val});
+			hold[x + (int)X.size()].push_back({{pos[1], pos[0]}, val});
 		}
 		for(auto x = 2 * (int)X.size() - 1; x; -- x){
 			if(x < (int)X.size()) merge(hold[x << 1].begin(), hold[x << 1].end(), hold[x << 1 | 1].begin(), hold[x << 1 | 1].end(), back_inserter(hold[x]));
@@ -35,7 +35,7 @@ struct segment_tree_2d_sparse{
 				while(Y0[y] < hold0[j].first) ++ y;
 				data[x][y + (int)Y0.size()] = TT(data[x][y + (int)Y0.size()], hold0[j].second);
 			}
-			for(auto y = (int)size(Y0) - 1; y; -- y) data[x][y] = TT(data[x][y << 1], data[x][y << 1 | 1]);
+			for(auto y = (int)Y0.size() - 1; y; -- y) data[x][y] = TT(data[x][y << 1], data[x][y << 1 | 1]);
 		}
 	}
 	// O(n log^2 n)
