@@ -2,7 +2,6 @@
 	<content><![CDATA[
 template<class B, class T, class F>
 struct segment_tree_2d_sparse{
-	int n;
 	vector<B> X;
 	vector<vector<array<B, 2>>> Y;
 	vector<vector<T>> data;
@@ -10,7 +9,8 @@ struct segment_tree_2d_sparse{
 	T T_id; // Commutative monoid identity
 	// Every point holds T_id except for base points
 	// O(n log^2 n)
-	segment_tree_2d_sparse(vector<pair<array<B, 2>, T>> init, F TT, T T_id): n((int)size(init)), X(n), TT(TT), T_id(T_id){
+	segment_tree_2d_sparse(vector<pair<array<B, 2>, T>> init, F TT, T T_id): X(init.size()), TT(TT), T_id(T_id){
+		int n = (int)init.size();
 		sort(init.begin(), init.end());
 		for(auto i = 0; i < n; ++ i) X[i] = init[i].first[0];
 		X.erase(unique(X.begin(), X.end()), X.end());
@@ -45,7 +45,6 @@ struct segment_tree_2d_sparse{
 		*this = segment_tree_2d_sparse(init, TT, T_id);
 	}
 	segment_tree_2d_sparse &operator=(const segment_tree_2d_sparse &otr){
-		n = otr.n;
 		X = otr.X;
 		Y = otr.Y;
 		data = otr.data;
