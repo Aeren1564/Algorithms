@@ -31,7 +31,7 @@ struct segment_tree_2d_sparse{
 			for(auto j = 0; j < (int)hold0.size(); ++ j) Y0[j] = hold0[j].first;
 			Y0.erase(unique(Y0.begin(), Y0.end()), Y0.end());
 			data[x].resize(Y0.size() << 1, T_id);
-			for(auto j = 0, y = 0; j < (int)size(hold0); ++ j){
+			for(auto j = 0, y = 0; j < (int)hold0.size(); ++ j){
 				while(Y0[y] < hold0[j].first) ++ y;
 				data[x][y + (int)Y0.size()] = TT(data[x][y + (int)Y0.size()], hold0[j].second);
 			}

@@ -1,0 +1,95 @@
+<snippet>
+	<content><![CDATA[
+template<class Compare>
+struct priority_queue_with_update{
+	vector<int> pos; // pos[id]: position of id in the heap
+	vector<int> heap; // heap[i]: id of the heap data
+	Compare cmp;
+	priority_queue_with_update(Compare cmp): cmp(cmp){ }
+	// O(size(init))
+	priority_queue_with_update(int n, Compare cmp = less<>()): pos(n), heap(n), cmp(cmp){
+		iota(pos.begin(), pos.end(), 0);
+		iota(heap.begin(), heap.end(), 0);
+		for(auto i = n - 1; i > 0; -- i){
+			int j = i - 1 >> 1;
+			if(cmp(heap[j], heap[i])){
+				swap(pos[heap[i]], pos[heap[j]]);
+				swap(heap[i], heap[j]);
+			}
+		}
+	}
+	// Clear all info
+	void clear(){
+		pos.clear();
+		heap.clear();
+	}
+	// Clear the heap
+	void clear_heap(){
+		heap.clear();
+	}
+	// O(log n)
+	int push(){
+		int id = (int)pos.size();
+		pos.push_back((int)heap.size());
+		heap.push_back(id);
+		for(auto i = (int)heap.size() - 1; i; ){
+			int j = i - 1 >> 1;
+			if(!cmp(heap[j], heap[i])) break;
+			swap(pos[heap[i]], pos[heap[j]]);
+			swap(heap[i], heap[j]);
+			i = j;
+		}
+		return id;
+	}
+	// Returns the id of the max element
+	// O(1)
+	int top(){
+		assert(!heap.empty());
+		return heap.front();
+	}
+	// Returns the id of the max element and erase it from heap
+	// O(log n)
+	int pop(){
+		assert(!heap.empty());
+		int id = heap.front();
+		heap.front() = heap.back();
+		pos[heap.front()] = 0;
+		heap.pop_back();
+		for(auto i = 0; ; ){
+			int l = i << 1 | 1, r = l + 1, opt = i;
+			if(l < (int)heap.size() && cmp(heap[opt], heap[l])) opt = l;
+			if(r < (int)heap.size() && cmp(heap[opt], heap[r])) opt = r;
+			if(opt == i) break;
+			swap(pos[heap[i]], pos[heap[opt]]);
+			swap(heap[i], heap[opt]);
+			i = opt;
+		}
+		return id;
+	}
+	// Modify the priority of id and update the heap
+	// O(log n)
+	void update(int id){
+		for(auto i = pos[id]; i; ){
+			int j = i - 1 >> 1;
+			if(!cmp(heap[j], heap[i])) break;
+			swap(pos[heap[i]], pos[heap[j]]);
+			swap(heap[i], heap[j]);
+			i = j;
+		}
+		for(auto i = pos[id]; ; ){
+			int l = i << 1 | 1, r = l + 1, opt = i;
+			if(l < (int)heap.size() && cmp(heap[opt], heap[l])) opt = l;
+			if(r < (int)heap.size() && cmp(heap[opt], heap[r])) opt = r;
+			if(opt == i) break;
+			swap(pos[heap[i]], pos[heap[opt]]);
+			swap(heap[i], heap[opt]);
+			i = opt;
+		}
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>priority_queue_with_update</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
