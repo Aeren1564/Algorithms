@@ -2,10 +2,10 @@
 	<content><![CDATA[
 // Requires weighted_flow_network
 template<class T, class C>
-struct spfa_minimum_cost_maximum_flow{
+struct minimum_cost_maximum_flow_spfa{
 	static constexpr T eps = (T) 1e-9;
 	weighted_flow_network<T, C> &F;
-	spfa_minimum_cost_maximum_flow(weighted_flow_network<T, C> &F): F(F), d(F.n), in_queue(F.n), pe(F.n), state(F.n){ }
+	minimum_cost_maximum_flow_spfa(weighted_flow_network<T, C> &F): F(F), d(F.n), in_queue(F.n), pe(F.n), state(F.n){ }
 	// type 0: augment as long as a path exists
 	// type 1: augment as long as a negative cost path exists
 	vector<C> d;
@@ -123,7 +123,7 @@ struct spfa_minimum_cost_maximum_flow{
 };
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
-	<tabTrigger>spfa_minimum_cost_maximum_flow</tabTrigger> -->
+	<tabTrigger>minimum_cost_maximum_flow_spfa</tabTrigger> -->
 	<!-- Optional: Set a scope to limit where the snippet will trigger -->
 	<scope>source.c++</scope> -->
 </snippet>

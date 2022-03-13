@@ -12,7 +12,7 @@ struct functional_graph_processor{
 	vector<int> depth; // # of edges from the main cycle
 	graph<int> abr; // forest of arborescences of reversed edges not on the main cycle
 	functional_graph_processor(const vector<int> &next): n((int)next.size()), cycle_id(n, -1), cycle_pos(n, -1), root(n, -1), depth(n, -1), abr(n){
-		vector<bool> was(n);
+		vector<int> was(n);
 		for(auto u = 0; u < n; ++ u){
 			if(was[u]) continue;
 			int v = u;
@@ -25,7 +25,7 @@ struct functional_graph_processor{
 				vector<int> c;
 				while(!~depth[w]){
 					cycle_id[w] = (int)cycle.size();
-					cycle_pos[w] = (int)cycle.size();
+					cycle_pos[w] = (int)c.size();
 					c.push_back(w);
 					root[w] = w;
 					depth[w] = 0;
