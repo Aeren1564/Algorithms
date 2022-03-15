@@ -31,7 +31,10 @@ struct dijkstra{
 		}
 		order.clear();
 		while(!pq.empty()){
-			auto [d, u] = pq.top(); pq.pop();
+			T d;
+			int u;
+			tie(d, u) = pq.top();
+			pq.pop();
 			if(d != dist[u]) continue;
 			order.push_back(u);
 			for(auto id: g.adj[u]){

@@ -128,7 +128,7 @@ struct suffix_array{
 	}
 	// O(n log n) time, O(n) space
 	template<class T>
-	suffix_array(const vector<T> &s, bool prepare_lcp): n((int)s.size()), rank(n + 1), lcp(n){
+	suffix_array(const vector<T> &s): n((int)s.size()), rank(n + 1), lcp(n){
 		vector<int> idx(n);
 		iota(idx.begin(), idx.end(), 0);
 		sort(idx.begin(), idx.end(), [&](int l, int r){ return s[l] < s[r]; });

@@ -20,7 +20,7 @@ pair<T, pair<int, int>> find_a_closest_pair(const vector<point<T>> &a, F1 distan
 		while(a[order[t]].y <= a[i].y - d) s.erase(a[order[t]]), ++ t;
 		auto low = s.lower_bound({a[i].x - d, a[i].y});
 		auto high = s.upper_bound({a[i].x + d, a[i].y});
-		for(; low != high; ++ low) res = min(res, pair{distance_powered(low->first, a[i]), pair{low->second, i}});
+		for(; low != high; ++ low) res = min(res, pair<T, pair<int, int>>{distance_powered(low->first, a[i]), pair<int, int>{low->second, i}});
 		s.insert({a[i], i});
 	}
 	return res;
