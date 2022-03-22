@@ -1,0 +1,28 @@
+<snippet>
+	<content><![CDATA[
+// Source: https://codeforces.com/blog/entry/98167
+// Returns the Robinson-Schensted-Knuth mapping of p
+// O(n^2)
+array<vector<vector<int>>, 2> RSK_mapping(const vector<int> &p){
+	vector<vector<int>> s, t;
+	for(auto ind = 0; ind < (int)p.size(); ++ ind){
+		int cur = p[ind];
+		bool found = false;
+		for(auto i = 0; i < (int)s.size() && !found; ++ i){
+			int j = upper_bound(s[i].begin(), s[i].end(), cur) - s[i].begin();
+			if(j == s[i].size()){
+				s[i].push_back(cur), t[i].push_back(ind);
+				found = true;
+			}
+			else swap(s[i][j], cur);
+		}
+		if(!found) s.emplace_back(vector<int>{cur}), t.emplace_back(vector<int>{ind});
+	}
+	return {s, t};
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>RSK_mapping</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

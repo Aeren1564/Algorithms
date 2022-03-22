@@ -1,0 +1,29 @@
+<snippet>
+	<content><![CDATA[
+// Source: https://codeforces.com/blog/entry/98167
+// Returns the inverse Robinson-Schensted-Knuth mapping of (s, t)
+// O(n^2)
+vector<int> RSK_inverse_mapping(int n, vector<vector<int>> s, vector<vector<int>> t){
+	vector<int> p(n);
+	for(auto ind = n - 1; ind >= 0; -- ind){
+		int i = 0, j = 0;
+		for(; i < (int)t.size(); ++ i){
+			for(j = 0; j < (int)t[i].size() && t[i][j] != ind; ++ j){}
+			if(j < (int)t[i].size()) break;
+		}
+		int cur = s[i][j];
+		s[i].pop_back(), t[i].pop_back();
+		for(-- i; i >= 0; -- i){
+			j = upper_bound(s[i].begin(), s[i].end(), cur) - s[i].begin();
+			swap(s[i][j - 1], cur);
+		}
+		p[ind] = cur;
+	}
+	return p;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>RSK_inverse_mapping</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

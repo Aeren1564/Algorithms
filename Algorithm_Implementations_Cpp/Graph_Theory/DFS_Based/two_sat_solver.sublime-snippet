@@ -1,9 +1,12 @@
 <snippet>
 	<content><![CDATA[
 struct two_sat_solver{
+private:
 	int n;
 	vector<vector<int>> adj;
-	vector<int> value, val, comp, z;
+	vector<int> val, comp, z;
+public:
+	vector<int> value;
 	two_sat_solver(int n = 0): n(n), adj(n << 1){ }
 	int time = 0;
 	int add_variable(){
@@ -20,12 +23,14 @@ struct two_sat_solver{
 	void implies(int u, int v){
 		either(~u, v);
 	}
-	void one_of(int u, int v){
-		either(u, v);
-		either(~u, ~v);
+	void equals(int u, int v){
+		either(~u, v), either(u, ~v);
 	}
-	void set_value(int u){
-		either(u, u);
+	void differs(int u, int v){
+		either(u, v), either(~u, ~v);
+	}
+	void set_value(int u, bool x = true){
+		x ? either(u, u) : either(~u, ~u);
 	}
 	void at_most_one(const vector<int> &arr){
 		if((int)arr.size() <= 1) return;

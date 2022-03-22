@@ -1,0 +1,40 @@
+<snippet>
+	<content><![CDATA[
+// Source: https://codeforces.com/blog/entry/98167
+// Returns the Robinson-Schensted-Knuth mapping of p
+// O(n * sqrt(n) * log(n))
+array<vector<vector<int>>, 2> RSK_mapping_fast(vector<int> p){
+	int n = (int)p.size(), k = 1;
+	while(k * k < n) ++ k;
+	vector<int> inv_p(n);
+	for(auto i = 0; i < n; ++ i) inv_p[p[i]] = i;
+	auto partial = [&](const vector<int> &p, int k)->vector<vector<int>>{
+		vector<vector<int>> s(k);
+		for(auto ind = 0; ind < (int)p.size(); ++ ind){
+			int cur = p[ind];
+			for(auto i = 0; i < k; ++ i){
+				int j = upper_bound(s[i].begin(), s[i].end(), cur) - s[i].begin();
+				if(j >= (int)s[i].size()){
+					s[i].push_back(cur);
+					break;
+				}
+				swap(s[i][j], cur);
+			}
+		}
+		while(s.back().empty()) s.pop_back();
+		return s;
+	};
+	auto s = partial(p, k), t = partial(inv_p, k);
+	reverse(p.begin(), p.end());
+	reverse(inv_p.begin(), inv_p.end());
+	auto s_cols = partial(p, k), t_cols = partial(inv_p, k);
+	s.resize(s_cols[0].size()); t.resize(t_cols[0].size());
+	for(auto i = k; i < (int)s.size(); ++ i) for(auto j = 0; j < s_cols.size() && s_cols[j].size() > i; ++ j) s[i].emplace_back(s_cols[j][i]), t[i].emplace_back(t_cols[j][i]);
+	return {s, t};
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>RSK_mapping_fast</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
