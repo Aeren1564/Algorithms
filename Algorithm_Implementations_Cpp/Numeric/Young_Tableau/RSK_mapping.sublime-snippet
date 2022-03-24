@@ -10,7 +10,7 @@ array<vector<vector<int>>, 2> RSK_mapping(const vector<int> &p){
 		bool found = false;
 		for(auto i = 0; i < (int)s.size() && !found; ++ i){
 			int j = upper_bound(s[i].begin(), s[i].end(), cur) - s[i].begin();
-			if(j == s[i].size()){
+			if(j == (int)s[i].size()){
 				s[i].push_back(cur), t[i].push_back(ind);
 				found = true;
 			}
