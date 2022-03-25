@@ -3,7 +3,13 @@
 // Source: https://codeforces.com/blog/entry/98167
 // Returns the inverse Robinson-Schensted-Knuth mapping of (s, t)
 // O(n^2)
-vector<int> RSK_inverse_mapping(int n, vector<vector<int>> s, vector<vector<int>> t){
+vector<int> RSK_inverse_mapping(vector<vector<int>> s, vector<vector<int>> t){
+	assert((int)s.size() == (int)t.size());
+	int n = 0;
+	for(auto i = 0; i < (int)s.size(); ++ i){
+		assert((int)s[i].size() == (int)t[i].size());
+		n += (int)s[i].size();
+	}
 	vector<int> p(n);
 	for(auto ind = n - 1; ind >= 0; -- ind){
 		int i = 0, j = 0;
@@ -11,13 +17,13 @@ vector<int> RSK_inverse_mapping(int n, vector<vector<int>> s, vector<vector<int>
 			for(j = 0; j < (int)t[i].size() && t[i][j] != ind; ++ j){}
 			if(j < (int)t[i].size()) break;
 		}
-		int cur = s[i][j];
+		int x = s[i][j];
 		s[i].pop_back(), t[i].pop_back();
 		for(-- i; i >= 0; -- i){
-			j = upper_bound(s[i].begin(), s[i].end(), cur) - s[i].begin();
-			swap(s[i][j - 1], cur);
+			j = upper_bound(s[i].begin(), s[i].end(), x) - s[i].begin();
+			swap(s[i][j - 1], x);
 		}
-		p[ind] = cur;
+		p[ind] = x;
 	}
 	return p;
 }

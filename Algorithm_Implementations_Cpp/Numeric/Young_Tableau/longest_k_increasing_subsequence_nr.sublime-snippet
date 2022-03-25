@@ -1,0 +1,68 @@
+<snippet>
+	<content><![CDATA[
+// k-increasing subsequence is a subsequence that is a union of k increasing subsequences
+// Source: An Extension of Schensted's Theorem (Curtis Greene)
+// Returns a 2d array representing a partition of k-increasing subsequence of maximum length into k increasing subsequences in the given array
+// p must be a permutation
+// O(n * (k * log(n) + r)) where r is the length of the answer
+vector<vector<int>> longest_k_increasing_subsequence_nr(const vector<int> &p, int k){
+	int n = (int)p.size();
+	{ // Check if p is a permutation
+		vector<int> flag(n);
+		for(auto x: p){
+			assert(0 <= x && x < n && !flag[x]);
+			flag[x] = true;
+		}
+	}
+	vector<array<int, 3>> swaps;
+	vector<vector<int>> s;
+	for(auto x: p){
+		bool found = false;
+		for(auto i = 0; i < min(k, (int)s.size()); ++ i){
+			int j = upper_bound(s[i].begin(), s[i].end(), x) - s[i].begin();
+			if(j == (int)s[i].size()){
+				s[i].push_back(x);
+				found = true;
+				break;
+			}
+			for(auto jj = (int)s[i].size() - 1; jj > j; -- jj) swaps.push_back({x, s[i][jj - 1], s[i][jj]});
+			swap(s[i][j], x);
+		}
+		if(!found && (int)s.size() < k) s.emplace_back(vector<int>{x});
+	}
+	vector<int> next(n + 1, -1), prev(n + 1, -1);
+	for(auto i = 0; i < (int)s.size(); ++ i){
+		prev[s[i].front()] = n;
+		for(auto j = 0; j < (int)s[i].size() - 1; ++ j){
+			next[s[i][j]] = s[i][j + 1];
+			prev[s[i][j + 1]] = s[i][j];
+		}
+		next[s[i].back()] = n;
+	}
+	reverse(swaps.begin(), swaps.end());
+	for(auto [x, y, z]: swaps){ // yxz->yzx
+		if(next[x] != z) continue;
+		if(!~next[y]){
+			prev[y]= prev[x], next[prev[y]] = y;
+			next[y] = z, prev[z] = y;
+			prev[x] = next[x] = -1;
+		}
+		else{
+			next[x] = next[y], prev[next[x]] = x;
+			next[y] = z, prev[z] = y;
+		}
+	}
+	vector<vector<int>> res(k);
+	vector<int> seq(n, -1);
+	for(auto x = 0, it = 0; x < n; ++ x) if(~prev[x]){
+		seq[x] = prev[x] == n ? it ++ : seq[prev[x]];
+		res[seq[x]].push_back(x);
+	}
+	return res;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>longest_k_increasing_subsequence_nr</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

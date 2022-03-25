@@ -1,0 +1,137 @@
+<snippet>
+	<content><![CDATA[
+// k-increasing subsequence is a subsequence that is a union of k increasing subsequences
+// Source: MIPT-2015 ACM-ICPC Workshop Round 1 Problem E Solution
+// Returns a 2d array representing a partition of k-increasing subsequence of maximum length into k increasing subsequences in the given array
+// p must be a permutation
+// O(n * (k * log(n) + k^2))
+vector<vector<int>> longest_k_increasing_subsequence_nklogn_nk2(const vector<int> &p, int k){
+	int n = (int)p.size();
+	{ // Check if p is a permutation
+		vector<int> flag(n);
+		for(auto x: p){
+			assert(0 <= x && x < n && !flag[x]);
+			flag[x] = true;
+		}
+	}
+	vector<vector<int>> s(k);
+	vector<int> final_level(n, -1), final_value(n, -1);
+	for(auto ind = 0; ind < n; ++ ind){
+		int x = p[ind];
+		bool found = false;
+		for(auto i = 0; i < k; ++ i){
+			int j = upper_bound(s[i].begin(), s[i].end(), x) - s[i].begin();
+			if(j == (int)s[i].size()){
+				final_level[ind] = i;
+				final_value[ind] = x;
+				s[i].push_back(x);
+				found = true;
+				break;
+			}
+			swap(s[i][j], x);
+		}
+		if(!found){
+			final_level[ind] = k;
+			final_value[ind] = x;
+		}
+	}
+	vector<vector<int>> from(k, vector<int>(k));
+	vector<vector<int>> to(k, vector<int>(k));
+	vector<vector<int>> res(k);
+	for(auto i = 0; i < k; ++ i){
+		int size = (int)s[i].size();
+		to[i][i] = size;
+		fill(from[i].begin() + i + 1, from[i].end(), size);
+		fill(to[i].begin() + i + 1, to[i].end(), size);
+	}
+	for(auto ind = n - 1; ind >= 0; -- ind){
+		int i = final_level[ind], x = final_value[ind], seq = k;
+		if(i < k){
+			seq = 0;
+			while(seq < k && (to[i][seq] < (int)s[i].size() || (int)s[i].size() <= from[i][seq])) ++ seq;
+			s[i].pop_back();
+			int size = (int)s[i].size();
+			for(auto j = 0; j < k; ++ j){
+				from[i][j] = min(from[i][j], size);
+				to[i][j] = min(to[i][j], size);
+			}
+		}
+		while(i){
+			-- i;
+			int pos = lower_bound(s[i].begin(), s[i].end(), x) - s[i].begin() - 1, y = s[i][pos], seq2 = 0;
+			while(seq2 < k && (to[i][seq2] <= pos || pos < from[i][seq2])) ++ seq2;
+			if(seq < k && seq2 == k){
+				if(from[i][seq] == to[i][seq]){
+					from[i][seq] = pos;
+					to[i][seq] = pos + 1;
+				}
+				else{
+					assert(from[i][seq] > pos);
+					for(auto j = 0; j < k; ++ j){
+						if(pos < from[i][j] && to[i][j] <= from[i][seq]){
+							from[i][j] = pos;
+							to[i][j] = pos;
+						}
+					}
+					from[i][seq] = pos;
+				}
+				seq = k;
+			}
+			else if(seq == k && seq2 < k){
+				if(pos + 1 < to[i][seq2]) seq = k;
+				else{
+					-- to[i][seq2];
+					seq = seq2;
+				}
+			}
+			else if(seq < k && seq2 < k){
+				if(from[i][seq] < to[i][seq]){
+					assert(to[i][seq2] <= from[i][seq]);
+					for(auto j = 0; j < k; ++ j){
+						if(to[i][seq2] <= from[i][j] && to[i][j] <= from[i][seq]){
+							from[i][j] = pos;
+							to[i][j] = pos;
+						}
+					}
+					from[i][seq] = pos;
+					to[i][seq2] = pos;
+					seq = seq2;
+				}
+				else{
+					if(pos + 1 < to[i][seq2]){
+						from[i][seq] = pos;
+						to[i][seq] = to[i][seq2];
+						for(auto j = i - 1; j >= 0; -- j){
+							swap(from[j][seq], from[j][seq2]);
+							swap(to[j][seq], to[j][seq2]);
+						}
+						swap(res[seq], res[seq2]);
+						to[i][seq2] = pos;
+						seq = seq2;
+					}
+					else{
+						from[i][seq] = pos;
+						to[i][seq] = pos + 1;
+						-- to[i][seq2];
+						seq = seq2;
+					}
+				}
+			}
+			s[i][pos] = x;
+			x = y;
+		}
+		assert(x == p[ind]);
+		if(seq < k){
+			if(!res[seq].empty()) assert(x < res[seq].back());
+			res[seq].push_back(x);
+		}
+	}
+	for(auto i = 0; i < k; ++ i) reverse(res[i].begin(), res[i].end());
+	return res;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>longest_k_increasing_subsequence_nklogn_nk2</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
