@@ -11,11 +11,11 @@ istream &operator>>(istream &in, __int128_t &x){
 ostream &operator<<(ostream &out, __int128_t x){
 	if(!x) return out << 0;
 	if(x < 0) out << "-", x = -x;
-	int a[5];
-	static constexpr int block = 29, full_mask = (1 << block) - 1;
+	constexpr int block = 1e9;
+	array<int, 6> a{};
 	int it = 0;
-	while(x) a[it ++] = x & full_mask, x >>= block;
-	while(it --) out << a[it];
+	for(; x; x /= block) a[it ++] = x % block;
+	for(-- it; it >= 0; -- it) out << a[it];
 	return out;
 }
 __int128_t abs(__int128_t x){
@@ -31,12 +31,26 @@ istream &operator>>(istream &in, __uint128_t &x){
 }
 ostream &operator<<(ostream &out, __uint128_t x){
 	if(!x) return out << 0;
-	array<int, 5> a{};
-	static constexpr int block = 29, full_mask = (1 << block) - 1;
+	constexpr int block = 1e9;
+	array<int, 6> a{};
 	int it = 0;
-	while(x) a[it ++] = x & full_mask, x >>= block;
-	while(it --) out << a[it];
+	for(; x; x /= block) a[it ++] = x % block;
+	for(-- it; it >= 0; -- it) out << a[it];
 	return out;
+}
+__int128_t gcd(__int128_t x, __int128_t y){
+	for(x = abs(x), y = abs(y); y; swap(x, y)) x %= y;
+	return x;
+}
+__int128_t lcm(__int128_t x, __int128_t y){
+	return x / gcd(x, y) * y;
+}
+__uint128_t gcd(__uint128_t x, __uint128_t y){
+	for(; y; swap(x, y)) x %= y;
+	return x;
+}
+__uint128_t lcm(__uint128_t x, __uint128_t y){
+	return x / gcd(x, y) * y;
 }
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->

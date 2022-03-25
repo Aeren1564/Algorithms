@@ -1,16 +1,14 @@
 <snippet>
 	<content><![CDATA[
-// for each item, return the first state which pred returns false
+// For each of n items, return the first state which pred returns false
+// Binary search state lies within [low, high)
+// init(): set the state to low
+// advance(): increase the state by one
+// pred(i): check if item i satisfies the pred for current state (must be T, T, ..., T, F, ..., F)
 // O(log(high - low)) init() calls
 // O((high - low) * log(high - low)) advance() calls
 // O(n * log(high - low)) pred() calls
-vector<int> parallel_binary_search(
-	int n, // number of items
-	int low, int high, // binary search state lies within [low, high)
-	function<void()> init, // initialize the state to 'low'
-	function<void()> advance, // advance the state by a unit
-	function<bool(int)> pred // pred(item_id) is partitioned into T, ..., T, F, ..., F
-){ // binary search n items on [low, high)
+vector<int> parallel_binary_search(int n, int low, int high, auto init, auto advance, auto pred){
 	vector<int> l(n, low), r(n, high);
 	vector<vector<int>> update(high - low);
 	while(true){
@@ -21,9 +19,10 @@ vector<int> parallel_binary_search(
 		}
 		if(done) break;
 		init();
-		for(auto s = low; s < high; ++ s, advance()){
+		for(auto s = low; s < high; ++ s){
 			for(auto i: update[s - low]) (pred(i) ? l : r)[i] = s;
 			update[s - low].clear();
+			if(s + 1 < high) advance();
 		}
 	}
 	return r;
