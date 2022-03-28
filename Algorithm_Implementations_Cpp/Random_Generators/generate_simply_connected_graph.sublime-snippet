@@ -1,6 +1,6 @@
 <snippet>
 	<content><![CDATA[
-// Requires random
+// Requires random and generate_tree
 vector<array<int, 2>> generate_simply_connected_graph(int n, int m){
 	assert(n - 1 <= m && m <= 1LL * n * (n - 1) / 2);
 	auto res = generate_tree(n);

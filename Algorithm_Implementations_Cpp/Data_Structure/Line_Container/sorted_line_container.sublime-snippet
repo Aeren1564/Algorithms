@@ -1,79 +1,113 @@
 <snippet>
 	<content><![CDATA[
-// array<T, 3> represents a line. (constant term, slope, auxiliary variable)
 template<class T, bool GET_MAX = false>
-struct sorted_line_container: deque<array<T, 3>>{
-#define USE(x) using deque<array<T, 3>>::x;
-	USE(size) USE(empty) USE(front) USE(back) USE(begin) USE(end) USE(rbegin) USE(rend) USE(pop_front) USE(pop_back) USE(erase) USE(push_back) USE(push_front)
-#undef USE
-	static constexpr T inf = numeric_limits<T>::max();
-	// (for doubles, use inf = 1/.0, div(a,b) = a/b)
-	T div(T a, T b){ return a / b - ((a ^ b) < 0 && a % b); }
-	bool isect_front(class deque<array<T, 3>>::iterator x, class deque<array<T, 3>>::iterator y){
-		if(y == end()){ (*x)[2] = inf; return false; }
-		else{ (*x)[2] = div((*y)[0] - (*x)[0], (*x)[1] - (*y)[1]); return (*x)[2] >= (*y)[2]; }
+struct sorted_line_container{
+	struct line_type{
+		T k, d; // Constant term, Slope
+		mutable T p;
+		friend ostream &operator<<(ostream &out, const line_type &L){
+			return out << "{" << L.d << ", " << L.k << ", " << L.p << "}";
+		}
+	};
+	deque<line_type> data; // Constant term, Slope
+	static constexpr T inf = numeric_limits<T>::max() / 2;
+	T div(T a, T b){
+		if constexpr(is_integral<T>::value) return a / b - ((a ^ b) < 0 && a % b);
+		else return a / b;
 	}
-	bool isect_back(class deque<array<T, 3>>::reverse_iterator x, class deque<array<T, 3>>::reverse_iterator y){
-		if(x == rend()) return false;
-		else{ (*x)[2] = div((*y)[0] - (*x)[0], (*x)[1] - (*y)[1]); return (*x)[2] >= (*y)[2]; }
+	template<class It>
+	bool isect_front(It x, It y){
+		if(y == data.end()){
+			x->p = inf;
+			return false;
+		}
+		else{
+			x->p = div(y->k - x->k, x->d - y->d);
+			return x->p >= y->p;
+		}
 	}
-	T eval(array<T, 3> line, T x){
-		return line[0] + line[1] * x;
+	template<class Rit>
+	bool isect_back(Rit x, Rit y){
+		if(x == data.rend()){
+			return false;
+		}
+		else{
+			x->p = div(y->k - x->k, x->d - y->d);
+			return x->p >= y->p;
+		}
+	}
+	int size() const{
+		return (int)data.size();
+	}
+	bool empty() const{
+		return data.empty();
 	}
 	// Slopes must increase monotonously
+	// Amortized O(1)
 	template<bool FIRST_CALL = true>
-	void inc_push(array<T, 3> L){
+	void inc_push(const line_type &L){
 		if(FIRST_CALL && !GET_MAX){
-			dec_push<false>({-L[0], -L[1]});
+			dec_push<false>({-L.k, -L.d});
 			return;
 		}
-		assert(empty() || back()[1] <= L[1]);
-		if(empty() || back()[1] < L[1] || back()[0] < L[0]){
-			if(!empty() && L[1] == back()[1]) erase(-- end());
-			L[2] = inf, push_back(L); isect_back(++ rbegin(), rbegin());
-			while((int)size() >= 2 && isect_back(++ ++ rbegin(), ++ rbegin())) erase(-- -- end()), isect_back(++ rbegin(), rbegin());
+		assert(data.empty() || data.back().d <= L.d);
+		if(data.empty() || data.back().d < L.d || data.back().k < L.k){
+			if(!data.empty() && L.d == data.back().d) data.erase(-- data.end());
+			L.p = inf;
+			data.push_back(L);
+			isect_back(++ data.rbegin(), data.rbegin());
+			while((int)data.size() >= 2 && isect_back(++ ++ data.rbegin(), ++ data.rbegin())){
+				data.erase(-- -- data.end());
+				isect_back(++ data.rbegin(), data.rbegin());
+			}
 		}
 	}
 	// Slopes must decrease monotonously
+	// Amortized O(1)
 	template<bool FIRST_CALL = true>
-	void dec_push(array<T, 3> L){
+	void dec_push(const line_type &L){
 		if(FIRST_CALL && !GET_MAX){
-			inc_push<false>({-L[0], -L[1]});
+			inc_push<false>({-L.k, -L.d});
 			return;
 		}
-		assert(empty() || L[1] <= front()[1]);
-		if(empty() || L[1] < front()[1] || front()[0] < L[0]){
-			if(!empty() && L[1] == front()[1]) erase(begin());
-			L[2] = 0, push_front(L), isect_front(begin(), ++ begin());
-			while((int)size() >= 2 && isect_front(begin(), ++ begin())) erase(++ begin());
+		assert(data.empty() || L.d <= data.front().d);
+		if(data.empty() || L.d < data.front().d || data.front().k < L.k){
+			if(!data.empty() && L.d == data.front().d) data.erase(data.begin());
+			L.p = 0;
+			data.push_front(L);
+			isect_front(data.begin(), ++ data.begin());
+			while((int)data.size() >= 2 && isect_front(data.begin(), ++ data.begin())){
+				data.erase(++ data.begin());
+			}
 		}
 	}
 	// Other queries must not be called and x must be decreasing
-	// O(1)
+	// Amortized O(1)
 	T dec_query(T x){
-		assert(!empty());
-		while((int)size() >= 2 && eval(*rbegin(), x) <= eval(*++ rbegin(), x)) pop_back(); back()[2] = inf;
-		return eval(*rbegin(), x) * (GET_MAX ? 1 : -1);
+		assert(!data.empty());
+		while((int)data.size() >= 2 && data.rbegin()->k + data.rbegin()->d * x <= next(data.rbegin())->k + next(data.rbegin())->d * x) data.pop_back();
+		data.back()[2] = inf;
+		return (data.rbegin()->k + data.rbegin()->d * x) * (GET_MAX ? 1 : -1);
 	}
 	// Other queries must not be called and x must be increasing
-	// O(1)
+	// Amortized O(1)
 	T inc_query(T x){
-		assert(!empty());
-		while((int)size() >= 2 && eval(*begin(), x) <= eval(*++ begin(), x)) pop_front();
-		return eval(*begin(), x) * (GET_MAX ? 1 : -1);
+		assert(!data.empty());
+		while((int)data.size() >= 2 && data.begin()->k + data.begin()->d * x <= next(data.begin())->k + next(data.begin())->d * x) data.pop_front();
+		return (data.begin()->k + data.begin()->d * x) * (GET_MAX ? 1 : -1);
 	}
 	// Other queries must not be called
-	// O(log n)
+	// O(log(n))
 	T query(T x){
-		assert(!empty());
-		if((int)size() == 1) return eval(*begin(), x) * (GET_MAX ? 1 : -1);
-		if(eval(*begin(), x) >= eval(*++ begin(), x)) return eval(*begin(), x) * (GET_MAX ? 1 : -1);
-		int low = 0, high = (int)size() - 1;
+		assert(!data.empty());
+		if((int)data.size() == 1) return (data.begin()->k + data.begin()->d * x) * (GET_MAX ? 1 : -1);
+		if(data.begin()->k + data.begin()->d * x >= next(data.begin())->k + next(data.begin())->d * x) return (data.begin()->k + data.begin()->d * x) * (GET_MAX ? 1 : -1);
+		int low = 0, high = (int)data.size() - 1;
 		while(high - low >= 2){
 			int mid = low + (high - low >> 1);
-			(eval(*(begin() + mid), x) < eval(*(begin() + mid + 1), x) ? low : high) = mid;
+			((data.begin() + mid)->k + (data.begin() + mid)->d * x < (data.begin() + mid + 1)->k + (data.begin() + mid + 1)->d * x ? low : high) = mid;
 		}
-		return eval(*(begin() + low + 1), x) * (GET_MAX ? 1 : -1);
+		return ((data.begin() + low + 1)->k + (data.begin() + low + 1)->d * x) * (GET_MAX ? 1 : -1);
 	}
 };
 ]]></content>

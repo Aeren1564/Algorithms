@@ -1,36 +1,60 @@
 <snippet>
 	<content><![CDATA[
-struct line_type{
-	mutable long long d, k, p;
-	bool operator<(const line_type &otr) const{ return d < otr.d; }
-	bool operator<(long long x) const{ return p < x;}
-	friend ostream &operator<<(ostream &out, const line_type &L){
-		return out << "{" << L.d << ", " << L.k << ", " << L.p << "}";
+// Source: KACTL
+template<class T, bool GET_MAX = true>
+struct line_container{
+	struct line_type{
+		T k, d; // Constant term, Slope
+		mutable T p;
+		bool operator<(const line_type &otr) const{
+			return d < otr.d;
+		}
+		bool operator<(T x) const{
+			return p < x;
+		}
+		friend ostream &operator<<(ostream &out, const line_type &L){
+			return out << "{" << L.d << ", " << L.k << ", " << L.p << "}";
+		}
+	};
+	multiset<line_type, less<>> data;
+	T inf = numeric_limits<T>::max() / 2;
+	T div(T a, T b){
+		if constexpr(is_integral<T>::value) return a / b - ((a ^ b) < 0 && a % b);
+		else return a / b;
 	}
-};
-template<bool GET_MAX = true>
-struct line_container: multiset<line_type, less<>>{
-	// (for doubles, use inf = 1/.0, div(a,b) = a/b)
-	static constexpr long long inf = numeric_limits<long long>::max();
-	long long div(long long a, long long b){ return a / b - ((a ^ b) < 0 && a % b); }
-	bool isect(iterator x, iterator y){
-		if(y == end()){ x->p = inf; return false; }
+	template<class It>
+	bool isect(It x, It y){
+		if(y == data.end()){
+			x->p = inf;
+			return false;
+		}
 		if(x->d == y->d) x->p = x->k > y->k ? inf : -inf;
 		else x->p = div(y->k - x->k, x->d - y->d);
 		return x->p >= y->p;
 	}
-	void push(line_type L){
-		if(!GET_MAX) L.d = -L.d, L.k = -L.k;
-		L.p = 0;
-		auto z = insert(L), y = z ++, x = y;
-		while(isect(y, z)) z = erase(z);
-		if(x != begin() && isect(-- x, y)) isect(x, y = erase(y));
-		while((y = x) != begin() && (-- x)->p >= y->p) isect(x, erase(y));
+	int size() const{
+		return (int)data.size();
 	}
-	long long query(long long x){
-		assert(!empty());
-		auto l = *lower_bound(x);
-		return (l.d * x + l.k) * (GET_MAX ? 1 : -1);
+	bool empty() const{
+		return data.empty();
+	}
+	// O(log n)
+	void push(line_type L){
+		if(!GET_MAX){
+			L.d = -L.d;
+			L.k = -L.k;
+		}
+		L.p = 0;
+		auto z = data.insert(L), y = z ++, x = y;
+		while(isect(y, z)) z = data.erase(z);
+		if(x != data.begin() && isect(-- x, y)) isect(x, y = data.erase(y));
+		while((y = x) != data.begin() && (-- x)->p >= y->p) isect(x, data.erase(y));
+	}
+	// O(log n)
+	T query(T x){
+		assert(!data.empty());
+		auto l = *data.lower_bound(x);
+		return (l.k + l.d * x) * (GET_MAX ? 1 : -1);
 	}
 };
 ]]></content>

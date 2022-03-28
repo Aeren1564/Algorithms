@@ -2,15 +2,6 @@
 	<content><![CDATA[
 // Requires graph
 struct functional_graph_processor{
-	int n;
-	vector<vector<int>> cycle; // main cycles
-	vector<int> cycle_id; // id of the cycle it belongs to, -1 if not part of one
-	vector<int> cycle_pos; // position in the cycle, -1 if not part of one
-	vector<int> prev; // previous vertex in the cycle, -1 if not part of one
-	vector<int> size; // size of the weakly connected component of the i-th main cycle
-	vector<int> root; // first reachable node in the main cycle
-	vector<int> depth; // # of edges from the main cycle
-	graph<int> abr; // forest of arborescences of reversed edges not on the main cycle
 	functional_graph_processor(const vector<int> &next): n((int)next.size()), cycle_id(n, -1), cycle_pos(n, -1), root(n, -1), depth(n, -1), abr(n){
 		vector<int> was(n);
 		for(auto u = 0; u < n; ++ u){
@@ -46,6 +37,67 @@ struct functional_graph_processor{
 			dfs(dfs, u);
 		}
 	}
+	template<class T>
+	functional_graph_processor(const graph<T> &g){
+		int n = g.n;
+		assert(n == (int)g.edge.size());
+		vector<int> pv(n, -1), state(n), on_cycle(n);
+		vector<vector<int>> cycle;
+		auto dfs = [&](auto self, int u, int p)->void{
+			state[u] = 1;
+			for(auto id: g.adj[u]){
+				if(g.ignore && g.ignore(id)) continue;
+				auto &e = g.edge[id];
+				int v = u ^ e.from ^ e.to;
+				if(v == p) continue;
+				if(state[v] == 1){
+					cycle.emplace_back();
+					for(auto w = u; w != v; w = pv[w]){
+						cycle.back().push_back(w);
+						on_cycle[w] = true;
+					}
+					cycle.back().push_back(v);
+					on_cycle[v] = true;
+				}
+				else if(state[v] == 0){
+					pv[v] = u;
+					self(self, v, u);
+				}
+			}
+			state[u] = 2;
+		};
+		for(auto u = 0; u < n; ++ u){
+			if(state[u] != 2){
+				assert(state[u] == 0);
+				dfs(dfs, u, -1);
+			}
+		}
+		vector<int> next(n, -1);
+		auto dfs2 = [&](auto self, int u, int p)->void{
+			for(auto id: g.adj[u]){
+				if(g.ignore && g.ignore(id)) continue;
+				auto &e = g.edge[id];
+				int v = u ^ e.from ^ e.to;
+				if(v == p || on_cycle[v]) continue;
+				next[v] = u;
+				self(self, v, u);
+			}
+		};
+		for(auto &c: cycle){
+			for(auto i = 0; i < (int)c.size(); ++ i) next[c[i]] = c[(i + 1) % (int)c.size()];
+			for(auto u: c) dfs2(dfs2, u, -1);
+		}
+		*this = functional_graph_processor(next);
+	}
+	int n;
+	vector<vector<int>> cycle; // main cycles
+	vector<int> cycle_id; // id of the cycle it belongs to, -1 if not part of one
+	vector<int> cycle_pos; // position in the cycle, -1 if not part of one
+	vector<int> prev; // previous vertex in the cycle, -1 if not part of one
+	vector<int> size; // size of the weakly connected component of the i-th main cycle
+	vector<int> root; // first reachable node in the main cycle
+	vector<int> depth; // # of edges from the main cycle
+	graph<int> abr; // forest of arborescences of reversed edges not on the main cycle
 };
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
