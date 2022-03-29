@@ -6,8 +6,12 @@ struct point{
 	point(){ }
 	template<class U> point(const point<U> &otr): x(otr.x), y(otr.y){ }
 	template<class U, class V> point(U x, V y): x(x), y(y){ }
+	template<class U> point(const array<U, 2> &p): x(p[0]), y(p[1]){ }
 	template<class U> explicit operator point<U>() const{
 		return point<U>(static_cast<U>(x), static_cast<U>(y));
+	}
+	template<class U> explicit operator array<U, 2>() const{
+		return {static_cast<U>(x), static_cast<U>(y)};
 	}
 	T operator*(const point &otr) const{
 		return x * otr.x + y * otr.y;

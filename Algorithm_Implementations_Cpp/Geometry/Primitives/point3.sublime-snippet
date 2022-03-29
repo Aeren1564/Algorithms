@@ -6,8 +6,12 @@ struct point3{
 	point3(){ }
 	template<class U> point3(const point3<U> &otr): x(otr.x), y(otr.y), z(otr.z){ }
 	template<class U, class V, class W> point3(U x, V y, W z): x(x), y(y), z(z){ }
+	template<class U> point3(const array<U, 3> &p): x(p[0]), y(p[1]), z(p[2]){ }
 	template<class U> explicit operator point3<U>() const{
 		return point3<U>(static_cast<U>(x), static_cast<U>(y), static_cast<U>(z));
+	}
+	template<class U> explicit operator array<U, 3>() const{
+		return {static_cast<U>(x), static_cast<U>(y), static_cast<U>(z)};
 	}
 	T operator*(const point3 &otr) const{
 		return x * otr.x + y * otr.y + z * otr.z;

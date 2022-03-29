@@ -1,8 +1,9 @@
 <snippet>
 	<content><![CDATA[
-// type {0: both, 1: lower, 2: upper}
+// Type {0: both, 1: lower, 2: upper}
+// Requires point
 template<class T, int type = 0>
-struct convex_hull{ // (Lower, Upper) type {0: both, 1: lower, 2: upper}
+struct convex_hull{
 	vector<point<T>> lower, upper;
 	convex_hull(vector<point<T>> arr = {}, bool is_sorted = false){
 		if(!is_sorted) sort(arr.begin(), arr.end()), arr.erase(unique(arr.begin(), arr.end()), arr.end());;
