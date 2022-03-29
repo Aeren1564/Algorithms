@@ -1,10 +1,10 @@
 <snippet>
 	<content><![CDATA[
-struct dfs_maximum_bipartite_matching{
+struct maximum_bipartite_matching_dfs{
 	int n, m, matching = 0;
 	vector<vector<int>> adj;
 	vector<int> pu, pv; // u is matched with pu[u] and v with pv[v], -1 if no match
-	dfs_maximum_bipartite_matching(int n, int m): n(n), m(m), pu(n, -1), pv(m, -1), cur(n), adj(n){ }
+	maximum_bipartite_matching_dfs(int n, int m): n(n), m(m), pu(n, -1), pv(m, -1), cur(n), adj(n){ }
 	int insert(int from, int to){
 		adj[from].push_back(to);
 		return (int)adj[from].size() - 1;
@@ -56,7 +56,7 @@ struct dfs_maximum_bipartite_matching{
 };
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
-	<tabTrigger>dfs_maximum_bipartite_matching</tabTrigger> -->
+	<tabTrigger>maximum_bipartite_matching_dfs</tabTrigger> -->
 	<!-- Optional: Set a scope to limit where the snippet will trigger -->
 	<scope>source.c++</scope> -->
 </snippet>

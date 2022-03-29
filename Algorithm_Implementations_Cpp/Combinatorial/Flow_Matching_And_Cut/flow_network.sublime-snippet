@@ -15,7 +15,7 @@ struct flow_network{
 		for(auto &e: edge) e.flow = 0;
 		flow = 0;
 	}
-	int insert(int from, int to, T forward_cap, T backward_cap){
+	int insert(int from, int to, T forward_cap, T backward_cap = 0){
 		int ind = (int)edge.size();
 		adj[from].push_back(ind);
 		edge.push_back({from, to, forward_cap, 0});
@@ -26,6 +26,13 @@ struct flow_network{
 	void add_flow(int i, T f){
 		edge[i].flow += f;
 		edge[i ^ 1].flow -= f;
+	}
+	friend ostream &operator<<(ostream &out, const flow_network &F){
+		out << "\n";
+		for(auto &e: F.edge){
+			out << "{" << e.from << " -> " << e.to << ", " << e.flow << "/" << e.capacity << "\n";
+		}
+		return out;
 	}
 };
 ]]></content>

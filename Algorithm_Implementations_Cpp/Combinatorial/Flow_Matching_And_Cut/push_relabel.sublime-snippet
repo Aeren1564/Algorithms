@@ -1,0 +1,100 @@
+<snippet>
+	<content><![CDATA[
+// Requires flow_network
+template<class T>
+struct push_relabel{
+	static constexpr T eps = (T)1e-9, inf = numeric_limits<T>::max();
+	flow_network<T> &F;
+	vector<T> ec;
+	vector<int> cur, H, co;
+	vector<vector<int>> hs;
+	push_relabel(flow_network<T> &F): F(F), ec(F.n), cur(F.n), H(F.n), co(F.n << 1), hs(F.n << 1){ }
+	// Find a maximum source-sink flow
+	// O(V^2 * sqrt(E)) with gap heuristic
+	T maximum_flow(int source, int sink){
+		assert(0 <= source && source < F.n && 0 <= sink && sink < F.n);
+		int n = F.n;
+		fill(ec.begin(), ec.end(), 0);
+		ec[sink] = 1;
+		fill(cur.begin(), cur.end(), 0);
+		fill(H.begin(), H.end(), 0);
+		H[source] = n;
+		fill(co.begin(), co.end(), 0);
+		co[0] = n - 1;
+		fill(hs.begin(), hs.end(), vector<int>{});
+		for(auto id: F.adj[source]){
+			auto &e = F.edge[id];
+			if(ec[e.to] <= eps && e.capacity > eps) hs[H[e.to]].push_back(e.to);
+			ec[e.from] -= e.capacity;
+			ec[e.to] += e.capacity;
+			F.add_flow(id, e.capacity);
+		}
+		if(hs[0].empty()) return -ec[source];
+		for(auto hi = 0; hi >= 0; ){
+			int u = hs[hi].back();
+			hs[hi].pop_back();
+			while(ec[u] > eps){
+				if(cur[u] == (int)F.adj[u].size()){
+					H[u] = inf;
+					for(auto i = 0; i < (int)F.adj[u].size(); ++ i){
+						auto &e = F.edge[F.adj[u][i]];
+						if(e.capacity - e.flow > eps && H[u] > H[e.to] + 1){
+							H[u] = H[e.to] + 1;
+							cur[u] = i;
+						}
+					}
+					if(++ co[H[u]], !-- co[hi] && hi < n) for(auto i = 0; i < n; ++ i) if(hi < H[i] && H[i] < n){
+						-- co[H[i]];
+						H[i] = n + 1;
+					}
+					hi = H[u];
+				}
+				else{
+					auto &e = F.edge[F.adj[u][cur[u]]];
+					if(e.capacity - e.flow > eps && H[u] == H[e.to] + 1){
+						auto f = min(ec[u], e.capacity - e.flow);
+						if(ec[e.to] <= eps && f > eps) hs[H[e.to]].push_back(e.to);
+						ec[e.from] -= f;
+						ec[e.to] += f;
+						F.add_flow(F.adj[u][cur[u]], f);
+					}
+					else ++ cur[u];
+				}
+			}
+			while(hi >= 0 && hs[hi].empty()) -- hi;
+		}
+		return -ec[source];
+	}
+	vector<int> vis, q;
+	// Find a minimum source-sink cut
+	// O(V^2 * sqrt(E)) with gap heuristic
+	tuple<T, vector<int>, vector<int>> minimum_cut(int source, int sink){
+		T weight = maximum_flow(source, sink);
+		vis.assign(F.n, false);
+		q.resize(F.n);
+		vector<int> left, right;
+		q[0] = source;
+		vis[source] = true;
+		for(auto beg = 0, end = 1; beg < end; ){
+			int u = q[beg ++];
+			for(auto id: F.adj[u]){
+				auto &e = F.edge[id];
+				if(e.capacity - e.flow > eps && !vis[e.to]){
+					vis[e.to] = true;
+					q[end ++] = e.to;
+				}
+			}
+		}
+		for(auto u = 0; u < F.n; ++ u){
+			if(vis[u]) left.push_back(u);
+			else right.push_back(u);
+		}
+		return {weight, left, right};
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>push_relabel</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
