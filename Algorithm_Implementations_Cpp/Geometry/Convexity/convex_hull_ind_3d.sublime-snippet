@@ -1,5 +1,7 @@
 <snippet>
 	<content><![CDATA[
+// Returns the set of indices for each faces
+// No four points must be coplanar
 // O(n^2)
 // Requires point3
 template<class T>

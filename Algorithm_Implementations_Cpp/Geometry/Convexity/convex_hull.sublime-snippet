@@ -21,8 +21,8 @@ struct convex_hull{ // (Lower, Upper) type {0: both, 1: lower, 2: upper}
 		res.insert(res.end(), ++ upper.begin(), -- upper.end());
 		return res;
 	}
-	// get the point in convex hull with the maximum inner product with p
-	// O(log n)
+	// Returns the point in convex hull with the maximum inner product with p
+	// O(log(n))
 	pair<bool, int> max_element(const point<T> &p) const{
 		if(p.y >= 0 && !upper.empty()){
 			int low = 0, high = (int)upper.size();
@@ -46,7 +46,7 @@ struct convex_hull{ // (Lower, Upper) type {0: both, 1: lower, 2: upper}
 			return {0, res};
 		}
 	}
-	// get the sorted list of points
+	// Returns the sorted list of points
 	// O(n)
 	vector<point<T>> linearize() const{
 		if(type == 1) return lower;
@@ -56,7 +56,7 @@ struct convex_hull{ // (Lower, Upper) type {0: both, 1: lower, 2: upper}
 		merge(lower.begin(), lower.end(), ++ upper.rbegin(), -- upper.rend(), res.begin());
 		return res;
 	}
-	// merge two convex hulls
+	// Merge two convex hulls
 	// O(n + m)
 	convex_hull operator^(const convex_hull &otr) const{
 		vector<point<T>> A = linearize(), B = otr.linearize(), C((int)A.size() + (int)B.size());
