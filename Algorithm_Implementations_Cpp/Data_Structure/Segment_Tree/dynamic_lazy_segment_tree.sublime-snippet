@@ -12,7 +12,7 @@ struct dynamic_lazy_segment_tree{
 	F3 UU; // semigroup operation (superset, subset)
 	F4 U_init; // semigroup default element for the interval [l, r)
 	F5 UT; // action of U on T (superset, subset)
-	dynamic_lazy_segment_tree(B n, F1 TT, T T_id, F2 T_init, F3 UU, F4 U_init, F5 UT): n(n), TT(TT), T_id(T_id), T_init(T_init), UU(UU), U_init(U_init), UT(UT){
+	dynamic_lazy_segment_tree(B n, F1 TT, T T_id, F2 T_init, F3 UU, F4 U_init, F5 UT, U): n(n), TT(TT), T_id(T_id), T_init(T_init), UU(UU), U_init(U_init), UT(UT){
 		new_state(-1, -1, T_init(0, n), U_init(0, n));
 	}
 	void extend(int u, B l, B r){
@@ -40,8 +40,9 @@ struct dynamic_lazy_segment_tree{
 		left.push_back(v), right.push_back(w), data.push_back(x), updates.push_back(y);
 		return last_state();
 	}
-	// O(log n)
+	// O(log(n))
 	void update(B ql, B qr, U x){
+		assert(0 <= ql && ql <= qr && qr <= n);
 		auto recurse = [&](auto recurse, int u, B l, B r)->void{
 			if(qr <= l || r <= ql) return;
 			if(ql <= l && r <= qr){
@@ -55,8 +56,9 @@ struct dynamic_lazy_segment_tree{
 		};
 		recurse(recurse, 0, 0, n);
 	}
-	// O(log n)
+	// O(log(n))
 	T query(B ql, B qr){
+		assert(0 <= ql && ql <= qr && qr <= n);
 		auto recurse = [&](auto recurse, int u, B l, B r)->T{
 			if(qr <= l || r <= ql) return T_id;
 			if(ql <= l && r <= qr) return data[u];
@@ -66,28 +68,55 @@ struct dynamic_lazy_segment_tree{
 		};
 		return recurse(recurse, 0, 0, n);
 	}
-	// f(sum[l, r)) is T, T, ..., T, F, F, ..., F, returns max r with T
-	// O(log n)
-	B max_pref(B ql, auto f){
+	// pred(sum[l, r)) is T, T, ..., T, F, F, ..., F
+	// Returns max r with T
+	// O(log(n))
+	B max_pref(B ql, auto pred){
+		assert(pred(T_id));
+		if(ql == n) return ql;
 		T pref = T_id;
-		auto recurse = [&](auto recurse, int u, B l, B r)->B{
+		auto recurse = [&](auto self, int u, B l, B r)->B{
 			if(r <= ql) return -1;
-			if(ql <= l && f(TT(pref, data[u]))){
+			if(ql <= l && pred(TT(pref, data[u]))){
 				pref = TT(pref, data[u]);
+				return -1;
+			}
+			if(r - l == 1) return l;
+			extend(u, l, r), push(u, l, r);
+			B m = l + (r - l >> 1), p = self(self, left[u], l, m);
+			return ~p ? p : self(self, right[u], m, r);
+		};
+		B qr = recurse(recurse, 0, 0, n);
+		if(!~qr) qr = n;
+		return qr;
+	}
+	// pred(sum[l, r)) is F, F, ..., F, T, T, ..., T
+	// Returns min l with T
+	// O(log(n))
+	B min_suff(B qr, auto pred){
+		assert(pred(T_id));
+		if(qr == 0) return qr;
+		T suff = T_id;
+		auto recurse = [&](auto self, int u, B l, B r)->B{
+			if(qr <= l) return -1;
+			if(r <= qr && pred(TT(data[u], suff))){
+				suff = TT(data[u], suff);
 				return -1;
 			}
 			if(r - l == 1) return r;
 			extend(u, l, r), push(u, l, r);
-			B m = l + (r - l >> 1), p = recurse(recurse, left[u], l, m);
-			return ~p ? p : recurse(recurse, right[u], m, r);
+			B m = l + (r - l >> 1), p = self(self, right[u], m, r);
+			return ~p ? p : self(self, left[u], l, m);
 		};
-		return recurse(recurse, 0, 0, n);
+		B ql = recurse(recurse, 0, 0, n);
+		if(!~ql) ql = 0;
+		return ql;
 	}
 	template<class output_stream>
 	friend output_stream &operator<<(output_stream &out, dynamic_lazy_segment_tree<B, T, U, F1, F2, F3, F4, F5> seg){
 		out << "[";
 		for(auto i = 0; i < seg.n; ++ i){
-			out << seg.query(i);
+			out << seg.query(i, i + 1);
 			if(i != seg.n - 1) out << ", ";
 		}
 		return out << ']';

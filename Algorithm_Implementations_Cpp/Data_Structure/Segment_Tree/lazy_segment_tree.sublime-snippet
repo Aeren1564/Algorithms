@@ -101,8 +101,7 @@ struct lazy_segment_tree{
 	// Returns max r with T
 	// O(log n)
 	int max_pref(int l, auto pred){
-		assert(0 <= l && l <= n);
-		assert(pred(T_id));
+		assert(0 <= l && l <= n && pred(T_id));
 		if(l == n) return n;
 		l += size;
 		for(auto i = log; i >= 1; -- i) push(l >> i);
