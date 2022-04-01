@@ -4,7 +4,36 @@ template<int base, int base_digits>
 struct bigint_base{
 	vector<int> a;
 	int sign;
-	int size(){
+	bigint_base(): sign(1){ }
+	bigint_base(int v): bigint_base((long long)v){ }
+	bigint_base(long long v){
+		*this = v;
+	}
+	bigint_base(const string &s){
+		read(s);
+	}
+	void trim(){
+		while(!a.empty() && !a.back()) a.pop_back();
+		if(a.empty()) sign = 1;
+	}
+	void read(const string &s){
+		sign = 1;
+		a.clear();
+		int pos = 0;
+		while(pos < (int)s.size() && (s[pos] == '-' || s[pos] == '+')){
+			if(s[pos] == '-') sign = -sign;
+			++ pos;
+		}
+		for(auto i = (int)s.size() - 1; i >= pos; i -= base_digits){
+			int x = 0;
+			for(auto j = max(pos, i - base_digits + 1); j <= i; ++ j) x = x * 10 + s[j] - '0';
+			a.push_back(x);
+		}
+		trim();
+	}
+	// Length of number in base 10
+	// Assumes 10^base_digits = base
+	int length(){
 		if(a.empty()) return 0;
 		int res = ((int)a.size() - 1) * base_digits, ca = a.back();
 		while(ca) ++ res, ca /= 10;
@@ -12,7 +41,7 @@ struct bigint_base{
 	}
 	bigint_base operator^(const bigint_base &v){
 		bigint_base res = 1, a = *this, b = v;
-		for(; !b.isZero(); a *= a, b /= 2) if(b % 2) res *= a;
+		for(; b; a *= a, b /= 2) if(b % 2) res *= a;
 		return res;
 	}
 	string to_string(){
@@ -28,13 +57,14 @@ struct bigint_base{
 		for(auto c: s) res += c - '0';
 		return res;
 	}
-	bigint_base(): sign(1){ }
-	bigint_base(int v): bigint_base((long long)v){ }
-	bigint_base(long long v){ *this = v; }
-	bigint_base(const string &s){ read(s); }
-	bigint_base &operator=(const bigint_base &v){
-		sign = v.sign;
-		a = v.a;
+	operator bool() const{
+		return !a.empty();
+	}
+	bigint_base &operator=(int v){
+		sign = 1;
+		a.clear();
+		if(v < 0) sign = -1, v = -v;
+		for(; v > 0; v = v / base) a.push_back(v % base);
 		return *this;
 	}
 	bigint_base &operator=(long long v){
@@ -42,6 +72,11 @@ struct bigint_base{
 		a.clear();
 		if(v < 0) sign = -1, v = -v;
 		for(; v > 0; v = v / base) a.push_back(v % base);
+		return *this;
+	}
+	bigint_base &operator=(const bigint_base &v){
+		sign = v.sign;
+		a = v.a;
 		return *this;
 	}
 	bigint_base operator+(const bigint_base &v) const{
@@ -108,7 +143,7 @@ struct bigint_base{
 		res *= v;
 		return res;
 	}
-	friend pair<bigint_base, bigint_base> divmod(const bigint_base &a1, const bigint_base &b1) {
+	friend pair<bigint_base, bigint_base> div(const bigint_base &a1, const bigint_base &b1) {
 		int norm = base / (b1.a.back() + 1);
 		bigint_base a = a1.abs() * norm, b = b1.abs() * norm, q, r;
 		q.a.resize(a.a.size());
@@ -119,15 +154,15 @@ struct bigint_base{
 			int s2 = (int)r.a.size() <= (int)b.a.size() - 1 ? 0 : r.a[(int)b.a.size() - 1];
 			int d = ((long long)base * s1 + s2) / b.a.back();
 			r -= b * d;
-			while(r < 0) r += b, -- d;
+			while(r.sign < 0 && !r.a.empty()) r += b, -- d;
 			q.a[i] = d;
 		}
 		q.sign = a1.sign * b1.sign, r.sign = a1.sign;
 		q.trim(), r.trim();
 		return {q, r / norm};
 	}
-	bigint_base operator/(const bigint_base &v) const{ return divmod(*this, v).first; }
-	bigint_base operator%(const bigint_base &v) const{ return divmod(*this, v).second; }
+	bigint_base operator/(const bigint_base &v) const{ return div(*this, v).first; }
+	bigint_base operator%(const bigint_base &v) const{ return div(*this, v).second; }
 	bigint_base &operator/=(int v){
 		if(v < 0) sign = -sign, v = -v;
 		for(auto i = (int)a.size() - 1, rem = 0; i >= 0; -- i){
@@ -164,11 +199,6 @@ struct bigint_base{
 	bool operator>=(const bigint_base &v) const{ return !(*this < v); }
 	bool operator==(const bigint_base &v) const{ return !(*this < v) && !(v < *this); }
 	bool operator!=(const bigint_base &v) const{ return *this < v || v < *this; }
-	void trim(){
-		while(!a.empty() && !a.back()) a.pop_back();
-		if(a.empty()) sign = 1;
-	}
-	bool isZero() const{ return a.empty() || ((int)a.size() == 1 && !a[0]); }
 	bigint_base operator-() const{
 		bigint_base res = *this;
 		res.sign = -sign;
@@ -179,27 +209,16 @@ struct bigint_base{
 		res.sign *= res.sign;
 		return res;
 	}
-	long long longValue() const{
+	long long to_long_long() const{
 		long long res = 0;
 		for(auto i = (int)a.size() - 1; i >= 0; -- i) res = res * base + a[i];
 		return res * sign;
 	}
-	friend bigint_base gcd(const bigint_base &a, const bigint_base &b){ return b.isZero() ? a : gcd(b, a % b); }
-	friend bigint_base lcm(const bigint_base &a, const bigint_base &b){ return a / gcd(a, b) * b; }
-	void read(const string &s){
-		sign = 1;
-		a.clear();
-		int pos = 0;
-		while(pos < (int)s.size() && (s[pos] == '-' || s[pos] == '+')){
-			if(s[pos] == '-') sign = -sign;
-			++ pos;
-		}
-		for(auto i = (int)s.size() - 1; i >= pos; i -= base_digits){
-			int x = 0;
-			for(auto j = max(pos, i - base_digits + 1); j <= i; ++ j) x = x * 10 + s[j] - '0';
-			a.push_back(x);
-		}
-		trim();
+	friend bigint_base gcd(const bigint_base &a, const bigint_base &b){
+		return b ? gcd(b, a % b) : a;
+	}
+	friend bigint_base lcm(const bigint_base &a, const bigint_base &b){
+		return a / gcd(a, b) * b;
 	}
 	friend istream& operator>>(istream &stream, bigint_base &v){
 		string s;

@@ -5,8 +5,8 @@ template<class T>
 struct push_relabel{
 	static constexpr T eps = (T)1e-9, inf = numeric_limits<T>::max();
 	flow_network<T> &F;
-	vector<T> ec;
-	vector<int> cur, H, co;
+	vector<T> ec, H;
+	vector<int> cur, co;
 	vector<vector<int>> hs;
 	push_relabel(flow_network<T> &F): F(F), ec(F.n), cur(F.n), H(F.n), co(F.n << 1), hs(F.n << 1){ }
 	// Find a maximum source-sink flow
