@@ -6,8 +6,19 @@ template<class T>
 struct circle{
 	point<T> center;
 	T radius;
+	circle(): center{}, radius{}{}
+	template<class U, class V, class W>
+	circle(U x, V y, W r): center(x, y), radius(r){ }
+	template<class U>
+	circle(const circle<U> &c): center(c.center), radius(c.radius){ }
 	friend istream &operator>>(istream &in, circle &c){
 		return in >> c.center >> c.radius;
+	}
+	bool operator==(const circle &c) const{
+		return center == c.center && radius == c.radius;
+	}
+	bool operator!=(const circle &c) const{
+		return center != c.center || radius != c.radius;
 	}
 	template<class U>
 	U square(U x){
@@ -26,28 +37,24 @@ struct circle{
 		return c.radius < radius && squared_distance(center, c.center) < square(radius - c.radius);
 	}
 	bool intersect(const circle &c) const{
-		return square(radius - c.radius) <= squared_distance(center, c.center) && squared_distance(center, c.center) <= square(radius + c.radius);
+		auto d = squared_distance(center, c.center);
+		return square(radius - c.radius) <= d && d <= square(radius + c.radius);
 	}
 	bool intersect_at_one_point(const circle &c) const{
-		return square(radius - c.radius) == squared_distance(center, c.center) || squared_distance(center, c.center) == square(radius + c.radius);
+		auto d = squared_distance(center, c.center);
+		return *this != c && (square(radius - c.radius) == d || d == square(radius + c.radius));
 	}
 	bool intersect_at_two_points(const circle &c) const{
-		return square(radius - c.radius) < squared_distance(center, c.center) && squared_distance(center, c.center) < square(radius + c.radius);
-	}
-	// Returns the list of intersection points.
-	// The ordering "center -> list" forms a positive orientation
-	template<class U>
-	vector<point<U>> intersections(const circle &c) const{
-		if(!intersect(c)) return {};
-		U dist = squared_distance(center, c.center);
-		U A = (square(radius) - square(c.radius)) / (2 * dist);
-		U B = (U)0.5 * sqrt((U)2 * (square(radius) + square(c.radius)) / dist - square<U>(square(radius) - square(c.radius)) / square(dist) - 1);
-		return {
-			{(U)0.5 * (center.x + c.center.x) + A * (c.center.x - center.x) + B * (c.center.y - center.y), (U)0.5 * (center.y + c.center.y) + A * (c.center.y - center.y) + B * (center.x - c.center.x)},
-			{(U)0.5 * (center.x + c.center.x) + A * (c.center.x - center.x) - B * (c.center.y - center.y), (U)0.5 * (center.y + c.center.y) + A * (c.center.y - center.y) - B * (center.x - c.center.x)}
-		};
+		auto d = squared_distance(center, c.center);
+		return square(radius - c.radius) < d && d < square(radius + c.radius);
 	}
 };
+
+using circleint = circle<int>;
+using circlell = circle<long long>;
+using circlelll = circle<__int128_t>;
+using circled = circle<double>;
+using circleld = circle<long double>;
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
 	<tabTrigger>circle</tabTrigger> -->
