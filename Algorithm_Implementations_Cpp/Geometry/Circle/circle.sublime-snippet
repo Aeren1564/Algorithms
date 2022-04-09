@@ -48,6 +48,26 @@ struct circle{
 		auto d = squared_distance(center, c.center);
 		return square(radius - c.radius) < d && d < square(radius + c.radius);
 	}
+	// In case of returning two points, center->list forms a positive orientation
+	pair<int, array<point<double>, 2>> tangent_points(const point<T> &p) const{
+		auto d = squared_distance(center, p);
+		if(d < radius * radius) return {0, {}};
+		if(d == radius * radius) return {1, {p}};
+		auto l = radius * radius / sqrt(d), r = sqrt(d) - l;
+		auto mid = (r * point<double>(center) + l * point<double>(p)) / (l + r);
+		auto h = h = sqrt(radius * radius - l * l) * (mid - center).perp().unit();
+		return {2, {mid - h, mid + h}};
+	}
+	// In case of returning two points, center->list forms a positive orientation
+	pair<int, array<point<long double>, 2>> tangent_pointsl(const point<T> &p) const{
+		auto d = squared_distance(center, p);
+		if(d < radius * radius) return {0, {}};
+		if(d == radius * radius) return {1, {p}};
+		auto l = radius * radius / sqrtl(d), r = sqrtl(d) - l;
+		auto mid = (r * point<long double>(center) + l * point<long double>(p)) / (l + r);
+		auto h = h = sqrtl(radius * radius - l * l) * (mid - center).perp().unitl();
+		return {2, {mid - h, mid + h}};
+	}
 };
 
 using circleint = circle<int>;

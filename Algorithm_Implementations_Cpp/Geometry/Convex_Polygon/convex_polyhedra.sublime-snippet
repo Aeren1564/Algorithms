@@ -5,7 +5,7 @@
 // O(n^2)
 // Requires point3
 template<class T>
-vector<array<int, 3>> convex_hull_ind_3d(const vector<point3<T>> &a){
+vector<array<int, 3>> convex_polyhedra(const vector<point3<T>> &a){
 	struct PR{
 		int a, b;
 		void ins(int x){ (a == -1 ? a : b) = x; }
@@ -60,7 +60,7 @@ vector<array<int, 3>> convex_hull_ind_3d(const vector<point3<T>> &a){
 }
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
-	<tabTrigger>convex_hull_ind_3d</tabTrigger> -->
+	<tabTrigger>convex_polyhedra</tabTrigger> -->
 	<!-- Optional: Set a scope to limit where the snippet will trigger -->
 	<scope>source.c++</scope> -->
 </snippet>

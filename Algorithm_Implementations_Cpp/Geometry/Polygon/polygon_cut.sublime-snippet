@@ -1,15 +1,31 @@
 <snippet>
 	<content><![CDATA[
-// Returns the polygon on the left of line l
-// T must be of floating type
-// Requires point and line
+// Returns the polygon on the left of line p->q
+// Requires point
 template<class T>
-vector<point<T>> polygon_cut(const vector<point<T>> &a, const line<T> &l){
+vector<point<double>> polygon_cut(const vector<point<T>> &a, const point<T> &p, const point<T> &q){
 	vector<point<T>> res;
+	auto d = q - p;
 	for(auto i = 0; i < (int)a.size(); ++ i){
 		auto cur = a[i], prev = i ? a[i - 1] : a.back();
-		bool side = doubled_signed_area(l.p, l.q(), cur) > 0;
-		if(side != (doubled_signed_area(l.p, l.q(), prev) > 0)) res.push_back(l.p + (cur - l.p ^ prev - cur) / (l.d ^ prev - cur) * l.d);
+		bool side = doubled_signed_area(p, q, cur) > 0;
+		if(side != (doubled_signed_area(p, q, prev) > 0)){
+			res.push_back(point<double>(p) + 1.0 * (cur - p ^ prev - cur) / (d ^ prev - cur) * point<double>(d));
+		}
+		if(side) res.push_back(cur);
+	}
+	return res;
+}
+template<class T>
+vector<point<long double>> polygon_cutl(const vector<point<T>> &a, const point<T> &p, const point<T> &q){
+	vector<point<T>> res;
+	auto d = q - p;
+	for(auto i = 0; i < (int)a.size(); ++ i){
+		auto cur = a[i], prev = i ? a[i - 1] : a.back();
+		bool side = doubled_signed_area(p, q, cur) > 0;
+		if(side != (doubled_signed_area(p, q, prev) > 0)){
+			res.push_back(point<long double>(p) + 1.0l * (cur - p ^ prev - cur) / (d ^ prev - cur) * point<long double>(d));
+		}
 		if(side) res.push_back(cur);
 	}
 	return res;

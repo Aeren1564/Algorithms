@@ -133,17 +133,19 @@ template<class T>
 long double anglel(const point<T> &p, const point<T> &q){
 	return atan2l(p ^ q, p * q);
 }
+// check if p->q->r is sorted with respect to the origin
 template<class T>
 bool is_sorted(const point<T> &origin, point<T> p, point<T> q, point<T> r){
 	p -= origin, q -= origin, r -= origin;
 	T x = p ^ r, y = p ^ q, z = q ^ r;
 	return x >= 0 && y >= 0 && z >= 0 || x < 0 && (y >= 0 || z >= 0);
-} // check if p->q->r is sorted with respect to the origin
+}
+// check if begin->end is sorted with respect to the origin
 template<class T, class IT>
 bool is_sorted(const point<T> &origin, IT begin, IT end){
 	for(auto i = 0; i < (int)(end - begin) - 2; ++ i) if(!is_sorted(origin, *(begin + i), *(begin + i + 1), *(begin + i + 2))) return false;
 	return true;
-} // check if begin->end is sorted with respect to the origin
+}
 template<class T>
 bool counterclockwise(const point<T> &p, const point<T> &q, const point<T> &r){
 	return doubled_signed_area(p, q, r) > 0;
@@ -151,6 +153,18 @@ bool counterclockwise(const point<T> &p, const point<T> &q, const point<T> &r){
 template<class T>
 bool clockwise(const point<T> &p, const point<T> &q, const point<T> &r){
 	return doubled_signed_area(p, q, r) < 0;
+}
+template<class T>
+bool colinear(const point<T> &p, const point<T> &q, const point<T> &r){
+	return doubled_signed_area(p, q, r) == 0;
+}
+template<class T>
+bool colinear(const vector<point<T>> &a){
+	int i = 1;
+	while(i < (int)a.size() && a[0] == a[i]) ++ i;
+	if(i >= (int)a.size()) return true;
+	for(auto j = i + 1; j < (int)a.size(); ++ j) if(!colinear(a[0], a[i], a[j])) return false;
+	return true;
 }
 
 using pointint = point<int>;
