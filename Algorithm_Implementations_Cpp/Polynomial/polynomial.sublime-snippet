@@ -247,7 +247,7 @@ struct polynomial_base{
 	}
 	static polynomial_base multiply_all(const vector<polynomial_base> &a){
 		if(a.empty()) return {1};
-		auto solve = [&](auto self, int l, int r)->vector<T>{
+		auto solve = [&](auto self, int l, int r)->polynomial_base{
 			if(r - l == 1) return a[l];
 			int m = l + (r - l >> 1);
 			return self(self, l, m) * self(self, m, r);
