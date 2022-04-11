@@ -1,0 +1,83 @@
+<snippet>
+	<content><![CDATA[
+// Requires matroid
+struct matroid_intersection{
+	int n;
+	vector<int> state;
+	matroid_intersection(int n): n(n), state(n), pv(n), q(n + 1){ }
+	vector<int> pv, q;
+	template<class M1, class M2>
+	bool augment(M1 &m1, M2 &m2){
+		fill(pv.begin(), pv.end(), -1);
+		int beg = 0, end = 0;
+		q[end ++] = n;
+		auto forward_edge = [&](int u){
+			vector<int> res;
+			m1.clear();
+			for(auto v = 0; v < n; ++ v) if(state[v] && v != u) m1.insert(v);
+			for(auto v = 0; v < n; ++ v) if(!state[v] && !~pv[v] && m1.check(v)){
+				res.push_back(v);
+				pv[v] = u;
+			}
+			return res;
+		};
+		auto backward_edge = [&](int u){
+			m2.clear();
+			for(auto rep = 0; rep < 2; ++ rep) for(auto v = 0; v < n; ++ v) if((v == u || state[v]) && !~pv[v] == rep){
+				if(!m2.check(v)){
+					if(rep){
+						q[end ++] = v;
+						pv[v] = u;
+						return v;
+					}
+					else return -1;
+				}
+				m2.insert(v);
+			}
+			return n;
+		};
+		while(beg < end){
+			int u = q[beg ++], v;
+			for(auto w: forward_edge(u)) while((v = backward_edge(w)) >= 0) if(v == n){
+				while(w != n){
+					state[w] ^= 1;
+					w = pv[w];
+				}
+				return true;
+			}
+		}
+		return false;
+	}
+	// ---------------------------------------------
+	// | # of member function calls where          |
+	// | r is the size of the answer and           |
+	// | n is the size of the ground set           |
+	// ---------------------------------------------
+	// | Member Function | M1         | M2         |
+	// ---------------------------------------------
+	// | insert()        | O(r^3)     | O(r^2 * n) |
+	// | check()         | O(r^2 * n) | O(r^2 * n) |
+	// | clear()         | O(r^2)     | O(r * n)   |
+	// ---------------------------------------------
+	template<class M1, class M2>
+	vector<int> maximum_common_independent_set(M1 m1, M2 m2){
+		fill(state.begin(), state.end(), false);
+		m1.clear();
+		m2.clear();
+		for(auto u = 0; u < n; ++ u) if(m1.check(u) && m2.check(u)){
+			state[u] = true;
+			m1.insert(u);
+			m2.insert(u);
+		}
+		while(augment<M1, M2>(m1, m2));
+		vector<int> res;
+		for(auto u = 0; u < n; ++ u) if(state[u]) res.push_back(u);
+		return res;
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>matroid_intersection</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
