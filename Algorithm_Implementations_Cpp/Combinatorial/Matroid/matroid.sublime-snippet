@@ -51,7 +51,9 @@ struct Z2_linear_matroid{
 };
 struct partition_matroid{
 	vector<int> rem, group, limit;
-	partition_matroid(const vector<int> &group, const vector<int> &limit): rem(limit), group(group), limit(limit){ }
+	partition_matroid(const vector<int> &group, const vector<int> &limit): rem(limit), group(group), limit(limit){
+		for(auto &g: group) assert(0 <= g && g < (int)limit.size());
+	}
 	bool check(int i){
 		return rem[group[i]];
 	}
