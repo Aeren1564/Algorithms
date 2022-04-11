@@ -15,7 +15,7 @@ struct colorful_matroid{
 };
 // Requires disjoint_set
 struct graphic_matroid{
-	disjoint_set dsu;
+	disjoint_set<> dsu;
 	vector<array<int, 2>> e;
 	vector<int> init_state;
 	graphic_matroid(int n, const vector<array<int, 2>> &e): dsu(n), e(e), init_state(n, -1){ }
