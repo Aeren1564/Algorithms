@@ -2,21 +2,18 @@
 	<content><![CDATA[
 // Requires matroid
 template<class T>
-struct minimum_cost_matroid_intersection_spfa{
+struct minimum_cost_matroid_intersection_bellman_ford{
 	int n;
 	vector<int> state;
-	minimum_cost_matroid_intersection_spfa(int n): n(n), state(n), dist(n + 1), adj(n + 1), pv(n + 1), in_q(n + 1){ }
+	minimum_cost_matroid_intersection_bellman_ford(int n): n(n), state(n), dist(n + 1), pv(n + 1){ }
 	vector<pair<T, int>> dist;
-	vector<vector<pair<int, T>>> adj;
-	vector<int> pv, q, in_q;
+	vector<tuple<int, int, T>> edge;
+	vector<int> pv;
 	template<class M1, class M2>
 	bool augment(const vector<T> &cost, M1 &m1, M2 &m2){
 		fill(dist.begin(), dist.end(), pair<T, int>{numeric_limits<T>::max() / 2, 0});
-		for(auto &s: adj) s.clear();
+		edge.clear();
 		fill(pv.begin(), pv.end(), -1);
-		int beg = 0;
-		q.clear();
-		fill(in_q.begin(), in_q.end(), false);
 		m1.clear();
 		m2.clear();
 		for(auto u = 0; u < n; ++ u) if(state[u]){
@@ -24,12 +21,8 @@ struct minimum_cost_matroid_intersection_spfa{
 			m2.insert(u);
 		}
 		for(auto u = 0; u < n; ++ u) if(!state[u]){
-			if(m1.check(u)){
-				dist[pv[u] = u] = {cost[u], 0};
-				q.push_back(u);
-				in_q[u] = true;
-			}
-			if(m2.check(u)) adj[u].push_back({n, 0});
+			if(m1.check(u)) dist[pv[u] = u] = {cost[u], 0};
+			if(m2.check(u)) edge.emplace_back(u, n, 0);
 		}
 		for(auto u = 0; u < n; ++ u) if(state[u]){
 			m1.clear();
@@ -39,22 +32,18 @@ struct minimum_cost_matroid_intersection_spfa{
 				m2.insert(v);
 			}
 			for(auto v = 0; v < n; ++ v) if(!state[v]){
-				if(m1.check(v)) adj[u].push_back({v, cost[v]});
-				if(m2.check(v)) adj[v].push_back({u, -cost[u]});;
+				if(m1.check(v)) edge.push_back({u, v, cost[v]});
+				if(m2.check(v)) edge.push_back({v, u, -cost[u]});
 			}
 		}
-		while(beg < (int)q.size()){
-			int u = q[beg ++];
-			in_q[u] = false;
-			for(auto [v, w]: adj[u]){
+		for(auto changed = true; changed; ){
+			changed = false;
+			for(auto [u, v, w]: edge){
 				pair<T, int> dist_next{dist[u].first + w, dist[u].second + 1};
-				if(dist_next < dist[v]){
+				if(~pv[u] && dist_next < dist[v]){
 					dist[v] = dist_next;
 					pv[v] = u;
-					if(!in_q[v]){
-						q.push_back(v);
-						in_q[v] = true;
-					}
+					changed = true;
 				}
 			}
 		}
@@ -89,7 +78,7 @@ struct minimum_cost_matroid_intersection_spfa{
 };
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
-	<tabTrigger>minimum_cost_matroid_intersection_spfa</tabTrigger> -->
+	<tabTrigger>minimum_cost_matroid_intersection_bellman_ford</tabTrigger> -->
 	<!-- Optional: Set a scope to limit where the snippet will trigger -->
 	<scope>source.c++</scope> -->
 </snippet>

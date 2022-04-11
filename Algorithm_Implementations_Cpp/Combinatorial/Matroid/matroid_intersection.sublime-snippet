@@ -48,17 +48,19 @@ struct matroid_intersection{
 		}
 		return false;
 	}
-	// ---------------------------------------------
-	// | # of member function calls where          |
-	// | r is the size of the answer and           |
-	// | n is the size of the ground set           |
-	// ---------------------------------------------
-	// | Member Function | M1         | M2         |
-	// ---------------------------------------------
-	// | insert()        | O(r^3)     | O(r^2 * n) |
-	// | check()         | O(r^2 * n) | O(r^2 * n) |
-	// | clear()         | O(r^2)     | O(r * n)   |
-	// ---------------------------------------------
+	/*
+	---------------------------------------------
+	| # of member function calls where          |
+	| r is the size of the answer and           |
+	| n is the size of the ground set           |
+	---------------------------------------------
+	| Member Function | M1         | M2         |
+	---------------------------------------------
+	| insert()        | O(r^3)     | O(r^2 * n) |
+	| check()         | O(r^2 * n) | O(r^2 * n) |
+	| clear()         | O(r^2)     | O(r * n)   |
+	---------------------------------------------
+	*/
 	template<class M1, class M2>
 	vector<int> maximum_common_independent_set(M1 m1, M2 m2){
 		fill(state.begin(), state.end(), false);
