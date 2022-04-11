@@ -3,144 +3,173 @@
 // Requires point
 template<class T>
 struct convex_polygon{
-	// {lower part, upper part}
-	array<vector<point<T>>, 2> data;
-	// Construct the convex polygon as the convex hull of arr
+	vector<point<T>> data;
+#define PREV(i) i ? i - 1 : (int)data.size() - 1
+#define NEXT(i) i < (int)data.size() - 1 ? i + 1 : 0
+	// Construct the convex polygon as the convex hull of a
 	// O(n * log(n)) if is_sorted = false, O(n) otherwise
-	convex_polygon(vector<point<T>> arr = {}, bool is_sorted = false){
-		if(!is_sorted) sort(arr.begin(), arr.end()), arr.erase(unique(arr.begin(), arr.end()), arr.end());;
+	convex_polygon(vector<point<T>> a = {}, bool is_sorted = false){
+		if(!is_sorted) sort(a.begin(), a.end()), a.erase(unique(a.begin(), a.end()), a.end());;
+		vector<point<T>> upper;
 #define ADDP(C, cmp) while((int)C.size() > 1 && doubled_signed_area(C[(int)C.size() - 2], p, C.back()) cmp 0) C.pop_back(); C.push_back(p);
-		for(auto &p: arr){
-			ADDP(data[0], >=)
-			ADDP(data[1], <=)
+		for(auto &p: a){
+			ADDP(data, >=)
+			ADDP(upper, <=)
 		}
 #undef ADDP
-		reverse(data[1].begin(), data[1].end());
-	}
-	// O(n)
-	vector<point<T>> raw_data() const{
-		if((int)data[0].size() <= 1) return data[0];
-		vector<point<T>> res(data[0]);
-		res.insert(res.end(), ++ data[1].begin(), -- data[1].end());
-		return res;
+		if((int)upper.size() >= 3) data.insert(data.end(), ++ upper.rbegin(), -- upper.rend());
 	}
 	// O(1)
-	point<T> &at(pair<bool, int> i){
-		return data[i.first][i.second];
+	point<T> &operator[](int i){
+		return data[i];
 	}
 	// O(1)
-	const point<T> &at(pair<bool, int> i) const{
-		return data[i.first][i.second];
+	const point<T> &operator[](int i) const{
+		return data[i];
+	}
+	int size() const{
+		return (int)data.size();
 	}
 	// Returns the sorted list of points
 	// O(n)
 	vector<point<T>> linearize() const{
-		if((int)data[0].size() <= 1) return data[0];
-		vector<point<T>> res((int)data[0].size() + (int)data[1].size() - 2);
-		merge(data[0].begin(), data[0].end(), ++ data[1].rbegin(), -- data[1].rend(), res.begin());
+		if(data.empty()) return {};
+		auto res = data;
+		int p = max_element(res.begin(), res.end()) - res.begin();
+		reverse(res.begin() + p + 1, res.end());
+		inplace_merge(res.begin(), res.begin() + p + 1, res.end());
 		return res;
 	}
 	// Merge two convex polygons
 	// O(n + m)
 	convex_polygon operator^(const convex_polygon &otr) const{
-		vector<point<T>> A = linearize(), B = otr.linearize(), C(A.size() + B.size());
+		vector<point<T>> A = linearize(), B = otr.linearize(), C((int)A.size() + (int)B.size());
 		merge(A.begin(), A.end(), B.begin(), B.end(), C.begin());
 		return {C, true};
 	}
 	// O(n)
-	array<vector<point<T>>, 2> boundary() const{
-		vector<point<T>> L(data[0]), R(data[1]);
-		for(auto i = (int)data[0].size() - 1; i > 0; -- i) L[i] -= L[i - 1];
-		for(auto i = (int)data[1].size() - 1; i > 0; -- i) R[i] -= R[i - 1];
-		return {L, R};
+	vector<point<T>> boundary() const{
+		auto res = data;
+		if(!res.empty()) for(auto i = (int)res.size() - 1; i > 0; -- i) res[i] -= res[i - 1];
+		return res;
 	}
 	// Minkowski addition
 	// O(n + m)
 	convex_polygon operator+(const convex_polygon &otr) const{
-		convex_polygon res;
 		auto A = boundary(), B = otr.boundary();
-		for(auto t = 0; t < 2; ++ t){
-			if(A[t].empty() || B[t].empty()) continue;
-			res.data[t].resize(A[t].size() + B[t].size() - 1);
-			res.data[t][0] = A[t][0] + B[t][0];
-			merge(A[t].begin() + 1, A[t].end(), B[t].begin() + 1, B[t].end(), res.data[t].begin() + 1, [&](auto p, auto q){ return (p ^ q) > 0; });
-			for(auto i = 1; i < (int)res.data[t].size(); ++ i) res.data[t][i] += res.data[t][i - 1];
+		convex_polygon res;
+		if(A.empty() || B.empty()) return res;
+		res.resize(A.size() + B.size() - 1);
+		res[0] = A[0] + B[0];
+		merge(A.begin() + 1, A.end(), B.begin() + 1, B.end(), res.begin() + 1, [&](auto p, auto q){ return (p ^ q) > 0; });
+		for(auto i = 1; i < (int)res.size(); ++ i) res[i] += res[i - 1];
+		int size = 1;
+		for(auto i = 1; i < (int)res.size(); ){
+			while(i < (int)res.size() && colinear(res[i - 1], res[i], res[i == (int)res.size() - 1 ? 0 : i + 1])) ++ i;
+			if(i < (int)res.size()) res[size ++] = res[i];
 		}
+		res.data.resize(size);
 		return res;
 	}
 	// O(n)
 	convex_polygon operator-() const{
-		auto A = linearize();
-		for(auto &p: A) p = -p;
-		reverse(A.begin(), A.end());
-		return {A, true};
+		convex_polygon res;
+		reverse(res.data.begin(), res.data.end());
+		for(auto &p: res.data) p = -p;
+		rotate(res.data.begin(), min_element(res.data.begin(), res.data.end()), res.data.end());
+		return res;
 	}
 	// O(n)
 	convex_polygon operator-(const convex_polygon &otr) const{
 		return *this + -otr;
 	}
-	// Returns the point with the maximum inner product with p
+	// Returns a point in CCW order with the maximum inner product with p
 	// Assumes the polygon is not empty
 	// O(log(n))
-	pair<bool, int> extreme_point(const point<T> &p) const{
-		assert(!data[0].empty() && !data[1].empty());
-		auto &c = data[p.y >= 0];
-		int low = 0, high = (int)c.size();
-		while(high - low >= 3){
-				int mid = low + (high - low >> 1);
-				p * c[mid] <= p * c[mid + 1] ? low = mid : high = mid + 1;
+	int extreme_point(const point<T> &p) const{
+		assert(!data.empty());
+		auto q = p.perp();
+		if((int)data.size() == 1 || (data[0] - data.back() ^ q) >= 0 && (q ^ data[1] - data[0]) >= 0) return 0;
+		int low = 0, high = (int)data.size() - 1;
+		while(high - low >= 2){
+			int mid = low + (high - low >> 1);
+			(is_sorted_by_angle(point<T>(), data[low + 1] - data[low], data[mid + 1] - data[mid], q) ? low : high) = mid;
 		}
-		int res = low;
-		for(auto i = low + 1; i < high; ++ i) if(p * c[res] < p * c[i]) res = i;
-		return {p.y >= 0, res};
+		return high;
 	}
 	// Assumes the convex polygon is not empty
 	// O(n)
-	array<pair<bool, int>, 2> diameter() const{
-		assert(!data[0].empty() && !data[1].empty());
-		if((int)data[0].size() == 1) return {{{0, 0}, {0, 0}}};
-		pair<T, array<pair<bool, int>, 2>> res{0, {{{0, 0}, {0, 0}}}};
-		auto next = [&](pair<bool, int> i)->pair<bool, int>{
-			++ i.second;
-			if(i.second == (int)data[i.first].size()) i.first = !i.first, i.second = 1;
-			return i;
-		};
-		pair<bool, int> i, j = {0, 1}, ni, nj = next(j);
-		for(auto t = 0; t < 2; ++ t) for(auto x = 0; x < (int)data[t].size() - 1; ++ x){
-			i = {t, x}, ni = next(i);
-			for(; ; j = nj, nj = next(j)){
-				res = max(res, decltype(res){squared_distance(at(i), at(j)), {i, j}});
-				if((at(ni) - at(i) ^ at(nj) - at(j)) <= 0) break;
+	array<int, 2> diameter() const{
+		assert(!data.empty());
+		if((int)data.size() == 1) return {0, 0};
+		pair<T, array<int, 2>> res{0, {0, 0}};
+		for(auto i = 0, j = 1; i < (int)data.size(); ++ i){
+			while(true){
+				res = max(res, decltype(res){squared_distance(data[i], data[j]), {i, j}});
+				if((data[NEXT(i)] - data[i] ^ data[NEXT(j)] - data[j]) <= 0) break;
+				j = NEXT(j);
 			}
 		}
 		return res.second;
 	}
-	// Partition the plane into three parts: 0(strictly inside), 1(boundary), 2(strictly outside)
-	// Returns the part the point belongs to
+	// Source: https://github.com/koosaga/DeobureoMinkyuParty/blob/master/teamnote.pdf
+	// Returns -1 if p lies strictly within the convex polygon
+	// Otherwise, split the plane like below, and return the corresponding vertex it contains
+	/*
+	     x
+	     x
+	     xxxxxxxxxxxxxx
+	     x       x
+	     x       x
+	     x       x
+	xxxxxxxxxxxxxx
+	             x
+	             x
+	*/
+	// In other words, draw a tangent line from p clockwise, and return the cloest tangent point
+	// Set orientation = -1 to reverse the orientation
 	// O(log(n))
-	int locate(const point<T> &p) const{
-		if(data[0].empty()) return 2;
-		auto lies_on = [&](const point<T> &a, const point<T> &b)->bool{
-			auto d = b - a;
-			if(d ^ p - a) return false;
-			auto x = d * (p - a);
-			return 0 <= x && x <= d.squared_norm();
+	int locate(const point<T> &p, int orientation = 1){
+		assert(!data.empty() && abs(orientation) == 1);
+		if((int)data.size() == 1) return 0;
+		auto eval = [&](int i, int j)->T{
+			return (data[i] - p ^ data[j] - p) * orientation;
 		};
-		if((int)data[0].size() == 2 && (int)data[1].size() == 2) return 1 + !lies_on(data[0].front(), data[0].back());
-		auto last = data[1][(int)data.size() - 2];
-		if(clockwise(data[0][0], data[0][1], p) || clockwise(last, data[0][0], p)) return 2;
-		if(lies_on(data[0][0], data[0][1]) || lies_on(last, data[0][0])) return 1;
-		int l = 1, r = (int)data[0].size() + (int)data[1].size() - 2;
+		auto belong = [&](int i, int j, int k){
+			return eval(i, j) <= 0 && eval(j, k) >= 0;
+		};
+		int l = 0, r = (int)data.size(), res = -1;
+		if(belong((int)data.size() - 1, 0, 1)){
+			res = 0;
+			goto _FOUND_FLAG;
+		}
 		while(r - l >= 2){
 			int m = l + (r - l >> 1);
-			counterclockwise(data[0][0], m < (int)data[0].size() - 1 ? data[0][m] : data[1][m - (int)data[0].size() + 1], p) ? l = m : r = m;
+			if(belong(m - 1, m, NEXT(m))){
+				res = m;
+				goto _FOUND_FLAG;
+			}
+			if(eval(l, NEXT(l)) < 0){ // up
+				if(eval(m, NEXT(m)) > 0) r = m;
+				else if(eval(m, l) > 0) l = m;
+				else r = m;
+			}
+			else{ // down
+				if(eval(m, NEXT(m)) < 0) l = m;
+				else if(eval(m, l) < 0) l = m;
+				else r = m;
+			}
 		}
-		auto a = l < (int)data[0].size() - 1 ? data[0][l] : data[1][l - (int)data[0].size() + 1];
-		auto b = l + 1 < (int)data[0].size() - 1 ? data[0][l + 1] : data[1][l + 1 - (int)data[0].size() + 1];
-		if(lies_on(a, b)) return 1;
-		else if(counterclockwise(a, b, p)) return 0;
-		else return 2;
+		if(l && belong(PREV(l), l, NEXT(l))) res = l;
+		else if(r != (int)data.size() && belong(PREV(r), r, NEXT(r))) res = r;
+		_FOUND_FLAG:;
+		if(~res){
+			int i = (res + (int)data.size() - orientation) % (int)data.size();
+			if(belong(PREV(i), i, NEXT(i))) res = i;
+		}
+		return res;
 	}
+#undef NEXT
 };
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->

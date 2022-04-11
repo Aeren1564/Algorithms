@@ -133,17 +133,19 @@ template<class T>
 long double anglel(const point<T> &p, const point<T> &q){
 	return atan2l(p ^ q, p * q);
 }
-// check if p->q->r is sorted with respect to the origin
+// Check if p->q->r is sorted by angle with respect to the origin
 template<class T>
-bool is_sorted(const point<T> &origin, point<T> p, point<T> q, point<T> r){
-	p -= origin, q -= origin, r -= origin;
-	T x = p ^ r, y = p ^ q, z = q ^ r;
-	return x >= 0 && y >= 0 && z >= 0 || x < 0 && (y >= 0 || z >= 0);
+bool is_sorted_by_angle(const point<T> &origin, const point<T> &p, const point<T> &q, const point<T> &r){
+	T x = p - origin ^ q - origin;
+	T y = q - origin ^ r - origin;
+	if(x >= 0 && y >= 0) return true;
+	if(x < 0 && y < 0) return false;
+	return (p - origin ^ r - origin) < 0;
 }
-// check if begin->end is sorted with respect to the origin
-template<class T, class IT>
-bool is_sorted(const point<T> &origin, IT begin, IT end){
-	for(auto i = 0; i < (int)(end - begin) - 2; ++ i) if(!is_sorted(origin, *(begin + i), *(begin + i + 1), *(begin + i + 2))) return false;
+// Check if a is sorted by angle with respect to the origin
+template<class T>
+bool is_sorted_by_angle(const point<T> &origin, const vector<point<T>> &a){
+	for(auto i = 0; i < (int)a.size() - 2; ++ i) if(!is_sorted_by_angle(origin, a[i], a[i + 1], a[i + 2])) return false;
 	return true;
 }
 template<class T>
