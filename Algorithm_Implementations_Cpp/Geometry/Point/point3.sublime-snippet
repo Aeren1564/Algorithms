@@ -7,11 +7,8 @@ struct point3{
 	template<class U> point3(const point3<U> &otr): x(otr.x), y(otr.y), z(otr.z){ }
 	template<class U, class V, class W> point3(U x, V y, W z): x(x), y(y), z(z){ }
 	template<class U> point3(const array<U, 3> &p): x(p[0]), y(p[1]), z(p[2]){ }
-	template<class U> explicit operator point3<U>() const{
-		return point3<U>(static_cast<U>(x), static_cast<U>(y), static_cast<U>(z));
-	}
-	template<class U> explicit operator array<U, 3>() const{
-		return {static_cast<U>(x), static_cast<U>(y), static_cast<U>(z)};
+	template<class U> operator array<U, 3>() const{
+		return {x, y, z};
 	}
 	T operator*(const point3 &otr) const{
 		return x * otr.x + y * otr.y + z * otr.z;
@@ -48,6 +45,9 @@ struct point3{
 #undef compareop
 	double norm() const{
 		return sqrt(x * x + y * y + z * z);
+	}
+	double norml() const{
+		return sqrtl(x * x + y * y + z * z);
 	}
 	T squared_norm() const{
 		return x * x + y * y + z * z;
@@ -92,12 +92,20 @@ double distance(const point3<T> &p, const point3<T> &q){
 	return (p - q).norm();
 }
 template<class T>
+long double distancel(const point3<T> &p, const point3<T> &q){
+	return (p - q).norml();
+}
+template<class T>
 T squared_distance(const point3<T> &p, const point3<T> &q){
 	return (p - q).squared_norm();
 }
 template<class T>
 double angle(const point3<T> &p, const point3<T> &q){
 	return atan2((p ^ q).norm(), p * q);
+}
+template<class T>
+long double anglel(const point3<T> &p, const point3<T> &q){
+	return atan2l((p ^ q).norml(), p * q);
 }
 
 using point3int = point3<int>;
