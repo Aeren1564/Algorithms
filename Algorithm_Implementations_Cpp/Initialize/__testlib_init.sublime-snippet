@@ -1,0 +1,33 @@
+<snippet>
+	<content><![CDATA[
+#include "testlib.h"
+#include <bits/stdc++.h>
+using namespace std;
+#if __cplusplus > 201703L
+#include <ranges>
+using namespace numbers;
+#endif
+
+
+
+int main(int argc, char* argv[]){
+	registerGen(argc, argv, 1);
+	$0
+	return 0;
+}
+
+/*
+
+*/
+
+////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                    //
+//                                   Coded by Aeren                                   //
+//                                                                                    //
+////////////////////////////////////////////////////////////////////////////////////////
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>testlib_init</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
