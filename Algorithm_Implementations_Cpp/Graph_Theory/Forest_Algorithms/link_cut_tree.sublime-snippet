@@ -189,8 +189,8 @@ struct node: splay_tree<node *>{
 			ctmax(aux_max, ch[1]->aux_max);
 		}
 	}
-	void apply(long long lazy){
-
+	void apply(auto lazy){
+		
 	}
 	template<bool add>
 	void refresh_virtual(node* v){
@@ -200,8 +200,10 @@ struct node: splay_tree<node *>{
 		splay_tree::reverse();
 
 	}
-	void push() override{ // make sure push fix the node (don't call splay_tree::refresh)
+	// Make sure push fix the node (don't call splay_tree::refresh)
+	void push() override{
 		splay_tree::push();
+
 	}
 };
 struct node: splay_tree<node *>{

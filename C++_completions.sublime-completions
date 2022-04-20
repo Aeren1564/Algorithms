@@ -96,8 +96,8 @@
         { "trigger": "vcounted", "contents": "ranges::views::counted($1)"},
         { "trigger": "vreverse", "contents": "ranges::views::reverse"},
         { "trigger": "velements", "contents": "ranges::views::elements<$1>"},
-        { "trigger": "vkeys", "contents": "ranges::views::keys($1)"},
-        { "trigger": "vvalues", "contents": "ranges::views::values($1)"},
+        { "trigger": "vkeys", "contents": "ranges::views::keys"},
+        { "trigger": "vvalues", "contents": "ranges::views::values"},
 
         { "trigger": "input", "contents": "copy_n(istream_iterator<${1:int}>(cin), ${2:n}, $3.begin())"},
         { "trigger": "output", "contents": "ranges::copy($1, ostream_iterator<${2:int}>(${3:cout}, ${4:\" \"}))"},
