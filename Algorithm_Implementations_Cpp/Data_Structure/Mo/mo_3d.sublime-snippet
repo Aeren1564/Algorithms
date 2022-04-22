@@ -7,9 +7,9 @@
 // set BX = BY = cbrt(X Y) to achieve N cbrt(X Y) calls
 template<int BX, int BY>
 struct mo_3d{
-	vector<array<int, 4>> points; // x, y, z, ind
-	void insert(int x, int y, int z, int id){
-		points.push_back({x, y, z, id});
+	vector<array<int, 4>> points;
+	void query(int qi, int x, int y, int z){
+		points.push_back({x, y, z, qi});
 	}
 	// Access each points starting from (0, 0, 0)
 	// Each functions acts as if [x, y) is an interval at time z
@@ -19,14 +19,14 @@ struct mo_3d{
 		};
 		sort(points.begin(), points.end(), cmp);
 		int x = 0, y = 0, z = 0;
-		for(auto &[qx, qy, qz, id]: points){
+		for(auto &[qx, qy, qz, qi]: points){
 			while(qx < x) dec_x(-- x); // Insertion
 			while(y < qy) inc_y(y ++); // Insertion
 			while(x < qx) inc_x(x ++); // Deletion
 			while(qy < y) dec_y(-- y); // Deletion
 			while(z < qz) inc_z(z ++); // Wind forward
 			while(qz < z) dec_z(z --); // Wind backward
-			process(id);
+			process(qi);
 		}
 	}
 };

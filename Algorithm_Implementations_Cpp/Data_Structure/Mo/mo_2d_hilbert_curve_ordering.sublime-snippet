@@ -8,21 +8,21 @@
 // Requires hilbert_curve_2d
 struct mo_2d_hilbert_curve_ordering{
 	hilbert_curve_2d<int, long long> curve;
-	vector<tuple<long long, int, int, int>> points; // order, x, y, ind
+	vector<tuple<long long, int, int, int>> points;
 	mo_2d_hilbert_curve_ordering(int level): curve(level){ }
-	void insert(int x, int y, int id){
-		points.push_back({curve.order(x, y), x, y, id});
+	void query(int qi, int x, int y){
+		points.push_back({curve.order(x, y), x, y, qi});
 	}
 	// starting from (0, 0), access each points and execute queries
 	void solve(auto inc_x, auto dec_x, auto inc_y, auto dec_y, auto process){
 		sort(points.begin(), points.end());
 		int x = 0, y = 0;
-		for(auto &[ignore, qx, qy, id]: points){
+		for(auto &[ignore, qx, qy, qi]: points){
 			while(qx < x) dec_x(), -- x;
 			while(y < qy) inc_y(), ++ y;
 			while(x < qx) inc_x(), ++ x;
 			while(qy < y) dec_y(), -- y;
-			process(id);
+			process(qi);
 		}
 	}
 };

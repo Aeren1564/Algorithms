@@ -1,0 +1,43 @@
+<snippet>
+	<content><![CDATA[
+// Requires persistent_segment_tree
+template<class T = int, class F = plus<>>
+struct distinct_value_query_solver_online{
+	int n;
+	vector<int> root;
+	persistent_segment_tree<T, F> pseg;
+	// 0 <= a[i] < sigma must hold for all 0 <= i < n
+	// O(n * log(n) + sigma)
+	distinct_value_query_solver_online(const vector<int> &a, int sigma, F TT = plus<>(), T T_id = {}): distinct_value_query_solver_online(a, vector<T>(sigma, 1), TT = plus<>(), T_id = {}){ }
+	// 0 <= a[i] < sigma must hold for all 0 <= i < n
+	// O(n * log(n) + sigma)
+	distinct_value_query_solver_online(const vector<int> &a, const vector<T> &w, F TT = plus<>(), T T_id = {}): n((int)a.size()), root(n + 1), pseg(n + 1, TT, T_id){
+		for(auto &x: a) assert(0 <= x && x < (int)w.size());
+		vector<tuple<int, int, T>> event(n);
+		vector<int> last(w.size(), -1);
+		for(auto i = 0; i < n; ++ i){
+			event[i] = {last[a[i]], i, w[a[i]]};
+			last[a[i]] = i;
+		}
+		sort(event.rbegin(), event.rend());
+		for(auto i = 0; i <= n; ++ i){
+			while(!event.empty() && get<0>(event.back()) < i){
+				pseg.set(pseg.last_state(), get<1>(event.back()), get<2>(event.back()));
+				event.pop_back();
+			}
+			root[i] = pseg.last_state();
+		}
+	}
+	// Find the sum of w[x] over all distinct values x appearing in a[ql, qr)
+	// O(log(n))
+	T query(int ql, int qr) const{
+		assert(0 <= ql && ql <= qr && qr <= n);
+		return pseg.query(root[ql], ql, qr);
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>distinct_value_query_solver_online</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

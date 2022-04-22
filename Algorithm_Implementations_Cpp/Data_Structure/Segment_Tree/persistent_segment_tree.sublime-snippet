@@ -12,7 +12,7 @@ struct persistent_segment_tree{
 	persistent_segment_tree(const vector<T> &a, F TT, T T_id): n((int)a.size()), TT(TT), T_id(T_id){
 		build(a);
 	}
-	int last_state(){
+	int last_state() const{
 		return (int)data.size() - 1;
 	}
 	int new_state(int l, int r, T x){
@@ -24,7 +24,7 @@ struct persistent_segment_tree{
 	// O(n)
 	int build(const vector<T> &a){
 		if(a.empty()) return new_state(-1, -1, T_id);
-		auto recurse = [&](auto self, int l, int r){
+		auto recurse = [&](auto self, int l, int r)->int{
 			if(r - l == 1) return new_state(-1, -1, a[l]);
 			int m = l + (r - l >> 1);
 			int v = self(self, l, m), w = self(self, m, r);
@@ -34,7 +34,7 @@ struct persistent_segment_tree{
 	}
 	// O(log n)
 	int set(int u, int p, T x){
-		auto recurse = [&](auto self, int u, int l, int r){
+		auto recurse = [&](auto self, int u, int l, int r)->int{
 			if(r - l == 1) return new_state(-1, -1, x);
 			int m = l + (r - l >> 1), v = left[u], w = right[u];
 			if(p < m) v = self(self, v, l, m);
@@ -44,8 +44,8 @@ struct persistent_segment_tree{
 		return recurse(recurse, u, 0, n);
 	}
 	// O(log n)
-	T query(int u, int ql, int qr){
-		auto recurse = [&](auto self, int u, int l, int r){
+	T query(int u, int ql, int qr) const{
+		auto recurse = [&](auto self, int u, int l, int r)->T{
 			if(qr <= l || r <= ql) return T_id;
 			if(ql <= l && r <= qr) return data[u];
 			int m = l + (r - l >> 1);

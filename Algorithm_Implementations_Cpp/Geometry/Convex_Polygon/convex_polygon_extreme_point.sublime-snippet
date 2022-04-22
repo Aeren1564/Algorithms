@@ -1,0 +1,24 @@
+<snippet>
+	<content><![CDATA[
+// Returns a point with the maximum inner product with p
+// Assumes the polygon is not empty
+// Requires point and convex_polygon
+// O(log(n))
+template<class T>
+int convex_polygon_extreme_point(const convex_polygon<T> &c, const point<T> &p){
+	assert(!c.empty());
+	auto q = p.perp();
+	if((int)c.size() == 1 || (c[0] - c.back() ^ q) >= 0 && (q ^ c[1] - c[0]) >= 0) return 0;
+	int low = 0, high = (int)c.size() - 1;
+	while(high - low >= 2){
+		int mid = low + (high - low >> 1);
+		(is_sorted_by_angle(point<T>(), c[low + 1] - c[low], c[mid + 1] - c[mid], q) ? low : high) = mid;
+	}
+	return high;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>convex_polygon_extreme_point</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

@@ -7,8 +7,8 @@
 struct mo_2d_rectilinear_spanning_tree_ordering{
 	vector<point<int>> points{{0, 0}};
 	vector<int> ind{-1};
-	void insert(int x, int y, int id){
-		points.push_back({x, y}), ind.push_back(id);
+	void query(int qi, int x, int y){
+		points.push_back({x, y}), ind.push_back(qi);
 	}
 	// Access each points and execute queries.
 	void solve(auto inc_x, auto dec_x, auto inc_y, auto dec_y, auto process){

@@ -1,0 +1,45 @@
+<snippet>
+	<content><![CDATA[
+// Requires fenwick_tree
+template<class T = int>
+struct distinct_value_query_solver_offline{
+	int n;
+	vector<tuple<int, int, T>> event;
+	vector<array<int, 3>> queries;
+	// 0 <= a[i] < sigma must hold for all 0 <= i < n
+	// O(n * log(n) + sigma)
+	distinct_value_query_solver_offline(const vector<int> &a, int sigma): distinct_value_query_solver_offline(a, vector<T>(sigma, 1)){ }
+	// 0 <= a[i] < sigma must hold for all 0 <= i < n
+	// O(n * log(n) + sigma)
+	distinct_value_query_solver_offline(const vector<int> &a, const vector<T> &w): n((int)a.size()), event(n){
+		for(auto &x: a) assert(0 <= x && x < (int)w.size());
+		vector<int> last(w.size(), -1);
+		for(auto i = 0; i < n; ++ i){
+			event[i] = {last[a[i]], i, w[a[i]]};
+			last[a[i]] = i;
+		}
+	}
+	void query(int qi, int ql, int qr){
+		queries.push_back({ql, qr, qi});
+	}
+	// f(query id, answer)
+	// O((n + q) * (log(n) + log(q)))
+	void solve(auto f){
+		sort(queries.begin(), queries.end());
+		sort(event.rbegin(), event.rend());
+		fenwick_tree<T> fw(n);
+		for(auto &q: queries){
+			while(!event.empty() && get<0>(event.back()) < q[0]){
+				fw.update(get<1>(event.back()), get<2>(event.back()));
+				event.pop_back();
+			}
+			f(q[2], fw.query(q[0], q[1]));
+		}
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>distinct_value_query_solver_offline</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

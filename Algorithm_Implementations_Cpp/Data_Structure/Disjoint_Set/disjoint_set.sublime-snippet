@@ -5,6 +5,11 @@ struct disjoint_set{
 	int n, _classes;
 	vector<int> p;
 	disjoint_set(int n): n(n), _classes(n), p(n, -1){ }
+	int make_set(){
+		p.push_back(-1);
+		++ _classes;
+		return n ++;
+	}
 	int classes() const{
 		return _classes;
 	}

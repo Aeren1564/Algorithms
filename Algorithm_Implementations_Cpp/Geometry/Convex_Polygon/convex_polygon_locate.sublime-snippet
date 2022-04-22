@@ -1,0 +1,71 @@
+<snippet>
+	<content><![CDATA[
+// Source: https://github.com/koosaga/DeobureoMinkyuParty/blob/master/teamnote.pdf
+// Returns -1 if p lies strictly within the convex polygon
+// Otherwise, split the plane like below, and return the corresponding vertex it contains
+/*
+     x
+     x
+     xxxxxxxxxxxxxx
+     x       x
+     x       x
+     x       x
+xxxxxxxxxxxxxx
+             x
+             x
+*/
+// In other words, draw a tangent line from p clockwise, and return the cloest tangent point
+// Set orientation = -1 to reverse the orientation
+// Requires point and convex_polygon
+// O(log(n))
+template<class T>
+int convex_polygon_locate(const convex_polygon<T> &c, const point<T> &p, int orientation = 1){
+	assert(!c.empty() && abs(orientation) == 1);
+#define PREV(i) i ? i - 1 : (int)c.size() - 1
+#define NEXT(i) i < (int)c.size() - 1 ? i + 1 : 0
+	if((int)c.size() == 1) return 0;
+	auto eval = [&](int i, int j)->T{
+		return (c[i] - p ^ c[j] - p) * orientation;
+	};
+	auto belong = [&](int i, int j, int k){
+		return eval(i, j) <= 0 && eval(j, k) >= 0;
+	};
+	int l = 0, r = (int)c.size(), res = -1;
+	if(belong((int)c.size() - 1, 0, 1)){
+		res = 0;
+		goto _FOUND_FLAG;
+	}
+	while(r - l >= 2){
+		int m = l + (r - l >> 1);
+		if(belong(m - 1, m, NEXT(m))){
+			res = m;
+			goto _FOUND_FLAG;
+		}
+		if(eval(l, NEXT(l)) < 0){ // up
+			if(eval(m, NEXT(m)) > 0) r = m;
+			else if(eval(m, l) > 0) l = m;
+			else r = m;
+		}
+		else{ // down
+			if(eval(m, NEXT(m)) < 0) l = m;
+			else if(eval(m, l) < 0) l = m;
+			else r = m;
+		}
+	}
+	if(l && belong(PREV(l), l, NEXT(l))) res = l;
+	else if(r != (int)c.size() && belong(PREV(r), r, NEXT(r))) res = r;
+	_FOUND_FLAG:;
+	if(~res){
+		int i = (res + (int)c.size() - orientation) % (int)c.size();
+		if(belong(PREV(i), i, NEXT(i))) res = i;
+	}
+#undef PREV
+#undef NEXT
+	return res;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>convex_polygon_locate</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
