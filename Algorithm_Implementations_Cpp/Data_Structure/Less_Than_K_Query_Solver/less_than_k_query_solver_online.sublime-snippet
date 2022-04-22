@@ -1,0 +1,50 @@
+<snippet>
+	<content><![CDATA[
+// Requires persistent_segment_tree
+template<class T, class F = plus<>>
+struct less_than_k_query_solver_online{
+	int n, sigma;
+	vector<int> root;
+	persistent_segment_tree<T, F> pseg;
+	less_than_k_query_solver_online(const vector<int> &a, int sigma, F TT = plus<>(), T T_id = {}): less_than_k_query_solver_online(a, vector<T>(sigma, 1), TT, T_id){ }
+	less_than_k_query_solver_online(const vector<int> &a, const vector<T> &w, F TT = plus<>(), T T_id = {}): n((int)a.size()), sigma((int)w.size()), root(sigma + 1), pseg(n, TT, T_id){
+		for(auto &x: a) assert(0 <= x && x < (int)w.size());
+		vector<tuple<int, int, T>> event(n);
+		for(auto i = 0; i < n; ++ i) event[i] = {a[i], i, w[a[i]]};
+		sort(event.rbegin(), event.rend());
+		for(auto i = 0; i <= sigma; ++ i){
+			while(!event.empty() && get<0>(event.back()) < i){
+				pseg.set(pseg.last_state(), get<1>(event.back()), get<2>(event.back()));
+				event.pop_back();
+			}
+			root[i] = pseg.last_state();
+		}
+	}
+	T query_less(int ql, int qr, int k) const{
+		assert(0 <= k && k <= sigma);
+		return pseg.query(root[k], ql, qr);
+	}
+	T query_equal_or_less(int ql, int qr, int k) const{
+		assert(0 <= k && k <= sigma);
+		return pseg.query(root[k], ql, qr);
+	}
+	T query_greater(int ql, int qr, int k) const{
+		assert(0 <= k && k <= sigma);
+		return qr - ql - pseg.query(root[k], ql, qr);
+	}
+	T query_equal_or_greater(int ql, int qr, int k) const{
+		assert(0 <= k && k <= sigma);
+		return qr - ql - pseg.query(root[k], ql, qr); 
+	}
+	// Count # of elements within [kl, kr)
+	T query_within(int ql, int qr, int kl, int kr) const{
+		assert(0 <= kl && kl <= kr && kr <= sigma);
+		return pseg.query(root[kr], ql, qr) - pseg.query(root[kl], ql, qr);
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>less_than_k_query_solver_online</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
