@@ -1,0 +1,37 @@
+<snippet>
+	<content><![CDATA[
+// Requires fenwick_tree
+template<class T>
+struct less_than_k_query_solver_offline{
+	int n;
+	vector<tuple<int, int, T>> event;
+	vector<array<int, 4>> queries;
+	less_than_k_query_solver_offline(const vector<int> &a, int sigma): less_than_k_query_solver_offline(a, vector<T>(sigma, 1)){ }
+	less_than_k_query_solver_offline(const vector<int> &a, const vector<T> &w): n((int)a.size()), event(n){
+		for(auto &x: a) assert(0 <= x && x < (int)w.size());
+		for(auto i = 0; i < n; ++ i) event[i] = {a[i], i, w[a[i]]};
+	}
+	void query(int qi, int ql, int qr, int k){
+		queries.push_back({k, ql, qr, qi});
+	}
+	// f(query id, answer)
+	// O((n + q) * (log(n) + log(q)))
+	void solve(auto f){
+		sort(queries.begin(), queries.end());
+		sort(event.rbegin(), event.rend());
+		fenwick_tree<T> tr(n);
+		for(auto &q: queries){
+			while(!event.empty() && get<0>(event.back()) < q[0]){
+				tr.update(get<1>(event.back()), get<2>(event.back()));
+				event.pop_back();
+			}
+			f(q[3], tr.query(q[1], q[2]));
+		}
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>less_than_k_query_solver_offline</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

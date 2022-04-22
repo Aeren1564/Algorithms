@@ -19,6 +19,7 @@ struct distinct_value_query_solver_offline{
 			last[a[i]] = i;
 		}
 	}
+	// Set the answer of query qi to the sum of w[x] over all distinct values x appearing in a[ql, qr)
 	void query(int qi, int ql, int qr){
 		queries.push_back({ql, qr, qi});
 	}
