@@ -1,6 +1,6 @@
 <snippet>
 	<content><![CDATA[
-// Requires fenwick_tree
+// Requires fenwick_tree_sum
 template<class T = int>
 struct distinct_value_query_solver_offline{
 	int n;
@@ -28,7 +28,7 @@ struct distinct_value_query_solver_offline{
 	void solve(auto f){
 		sort(queries.begin(), queries.end());
 		sort(event.rbegin(), event.rend());
-		fenwick_tree<T> fw(n);
+		fenwick_tree_sum<T> fw(n);
 		for(auto &q: queries){
 			while(!event.empty() && get<0>(event.back()) < q[0]){
 				fw.update(get<1>(event.back()), get<2>(event.back()));

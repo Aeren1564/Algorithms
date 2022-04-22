@@ -1,6 +1,6 @@
 <snippet>
 	<content><![CDATA[
-// Requires fenwick_tree
+// Requires fenwick_tree_sum
 template<class T>
 struct less_than_k_query_solver_offline{
 	int n;
@@ -20,7 +20,7 @@ struct less_than_k_query_solver_offline{
 	void solve(auto f){
 		sort(queries.begin(), queries.end());
 		sort(event.rbegin(), event.rend());
-		fenwick_tree<T> tr(n);
+		fenwick_tree_sum<T> tr(n);
 		for(auto &q: queries){
 			while(!event.empty() && get<0>(event.back()) < q[0]){
 				tr.update(get<1>(event.back()), get<2>(event.back()));

@@ -1,13 +1,13 @@
 <snippet>
 	<content><![CDATA[
 // Efficient map when only the keys are integers in range [offset, offset + len)
-// Requires fenwick_tree
+// Requires fenwick_tree_sum
 template<class T, class U>
 struct integral_map{
 	int _size = 0;
 	T offset, maxval;
 	vector<int> freq;
-	fenwick_tree<int> data_key;
+	fenwick_tree_sum<int> data_key;
 	vector<U> data_value;
 	integral_map(int len, T offset = {}): offset(offset), maxval(offset + len), freq(len), data_key(len), data_value(len){ }
 	integral_map(const vector<pair<T, U>> &init, int len, T offset = 0): offset(offset), maxval(offset + len), freq(len), data_value(len), _size((int)init.size()){

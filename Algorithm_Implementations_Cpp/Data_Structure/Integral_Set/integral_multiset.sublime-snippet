@@ -1,13 +1,13 @@
 <snippet>
 	<content><![CDATA[
 // Efficient multiset when the keys are integers in range [offset, offset + len)
-// Requires fenwick_tree
+// Requires fenwick_tree_sum
 template<class T>
 struct integral_multiset{
 	int _size = 0;
 	T offset, maxval;
 	vector<int> freq;
-	fenwick_tree<int> data;
+	fenwick_tree_sum<int> data;
 	integral_multiset(int len, T offset = {}): offset(offset), maxval(offset + len), freq(len), data(len){ }
 	integral_multiset(const vector<T> &init, int len, T offset = 0): offset(offset), maxval(offset + len), freq(len){
 		for(auto x: init){

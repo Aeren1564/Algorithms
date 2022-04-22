@@ -1,13 +1,13 @@
 <snippet>
 	<content><![CDATA[
 // O(n log n)
-// Requires fenwick_tree
+// Requires fenwick_tree_sum
 template<class T, class Compare = less<>>
 long long count_inversions(const vector<T> &a, bool count_equal = false, Compare cmp = less<>()){
 	int n = (int)a.size();
 	vector<T> cmpr = a;
 	sort(cmpr.begin(), cmpr.end(), cmp);
-	fenwick_tree<int> rsumq(n);
+	fenwick_tree_sum<int> rsumq(n);
 	long long res = 0;
 	for(auto x: a){
 		int i = lower_bound(cmpr.begin(), cmpr.end(), x, cmp) - cmpr.begin();
