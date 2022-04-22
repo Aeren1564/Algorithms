@@ -36,8 +36,10 @@ struct persistent_segment_tree{
 		};
 		return recurse(recurse, 0, (int)a.size());
 	}
+	// Assumes u represents an interval of size n
 	// O(log n)
 	int set(int u, int p, T x){
+		assert(0 <= p && p < n);
 		auto recurse = [&](auto self, int u, int l, int r)->int{
 			if(r - l == 1) return new_state(-1, -1, x);
 			int m = l + (r - l >> 1), v = left[u], w = right[u];
@@ -47,8 +49,10 @@ struct persistent_segment_tree{
 		};
 		return recurse(recurse, u, 0, n);
 	}
+	// Assumes u represents an interval of size n
 	// O(log n)
 	T query(int u, int ql, int qr) const{
+		assert(0 <= ql && ql <= qr && qr <= n);
 		auto recurse = [&](auto self, int u, int l, int r)->T{
 			if(qr <= l || r <= ql) return T_id;
 			if(ql <= l && r <= qr) return data[u];
@@ -61,8 +65,8 @@ struct persistent_segment_tree{
 	// Returns max r with T
 	// Assumes u represents an interval of size n
 	// O(log(n))
-	int max_pref(int u, int ql, auto pred){
-		assert(pred(T_id));
+	int max_pref(int u, int ql, auto pred) const{
+		assert(0 <= ql && ql <= n && pred(T_id));
 		if(ql == n) return ql;
 		T pref = T_id;
 		auto recurse = [&](auto self, int u, int l, int r)->int{
@@ -83,8 +87,8 @@ struct persistent_segment_tree{
 	// Returns min l with T
 	// Assumes u represents an interval of size n
 	// O(log(n))
-	int min_suff(int u, int qr, auto pred){
-		assert(pred(T_id));
+	int min_suff(int u, int qr, auto pred) const{
+		assert(0 <= qr && qr <= n && pred(T_id));
 		if(qr == 0) return qr;
 		T suff = T_id;
 		auto recurse = [&](auto self, int u, int l, int r)->int{
