@@ -1,15 +1,13 @@
 <snippet>
 	<content><![CDATA[
-template<class T, class F>
-struct persistent_segment_tree{
+template<class T>
+struct persistent_segment_tree_sum{
 	int n;
 	vector<int> left, right;
 	vector<T> data;
-	F TT; // monoid operation (always adjacent)
-	T T_id; // monoid identity
-	persistent_segment_tree(int n, F TT, T T_id): persistent_segment_tree(vector<T>(n, T_id), TT, T_id){ }
-	persistent_segment_tree(int n, T init, F TT, T T_id): persistent_segment_tree(vector<T>(n, init), TT, T_id){ }
-	persistent_segment_tree(const vector<T> &a, F TT, T T_id): TT(TT), T_id(T_id){
+	persistent_segment_tree_sum(int n): persistent_segment_tree_sum(vector<T>(n)){ }
+	persistent_segment_tree_sum(int n, T init): persistent_segment_tree_sum(vector<T>(n, init)){ }
+	persistent_segment_tree_sum(const vector<T> &a){
 		build(a);
 	}
 	int last_state() const{
@@ -27,12 +25,12 @@ struct persistent_segment_tree{
 		left.clear();
 		right.clear();
 		data.clear();
-		if(a.empty()) return new_state(-1, -1, T_id);
+		if(a.empty()) return new_state(-1, -1, {});
 		auto recurse = [&](auto self, int l, int r)->int{
 			if(r - l == 1) return new_state(-1, -1, a[l]);
 			int m = l + (r - l >> 1);
 			int v = self(self, l, m), w = self(self, m, r);
-			return new_state(v, w, TT(data[v], data[w]));
+			return new_state(v, w, data[v] + data[w]);
 		};
 		return recurse(recurse, 0, (int)a.size());
 	}
@@ -43,17 +41,17 @@ struct persistent_segment_tree{
 			int m = l + (r - l >> 1), v = left[u], w = right[u];
 			if(p < m) v = self(self, v, l, m);
 			else w = self(self, w, m, r);
-			return new_state(v, w, TT(data[v], data[w]));
+			return new_state(v, w, data[v] + data[w]);
 		};
 		return recurse(recurse, u, 0, n);
 	}
 	// O(log n)
 	T query(int u, int ql, int qr) const{
 		auto recurse = [&](auto self, int u, int l, int r)->T{
-			if(qr <= l || r <= ql) return T_id;
+			if(qr <= l || r <= ql) return {};
 			if(ql <= l && r <= qr) return data[u];
 			int m = l + (r - l >> 1);
-			return TT(self(self, left[u], l, m), self(self, right[u], m, r));
+			return self(self, left[u], l, m) + self(self, right[u], m, r);
 		};
 		return recurse(recurse, u, 0, n);
 	}
@@ -62,13 +60,13 @@ struct persistent_segment_tree{
 	// Assumes u represents an interval of size n
 	// O(log(n))
 	int max_pref(int u, int ql, auto pred){
-		assert(pred(T_id));
+		assert(pred({}));
 		if(ql == n) return ql;
-		T pref = T_id;
+		T pref = {};
 		auto recurse = [&](auto self, int u, int l, int r)->int{
 			if(r <= ql) return -1;
-			if(ql <= l && pred(TT(pref, data[u]))){
-				pref = TT(pref, data[u]);
+			if(ql <= l && pred(pref + data[u])){
+				pref = pref + data[u];
 				return -1;
 			}
 			if(r - l == 1) return l;
@@ -84,13 +82,13 @@ struct persistent_segment_tree{
 	// Assumes u represents an interval of size n
 	// O(log(n))
 	int min_suff(int u, int qr, auto pred){
-		assert(pred(T_id));
+		assert(pred({}));
 		if(qr == 0) return qr;
-		T suff = T_id;
+		T suff = {};
 		auto recurse = [&](auto self, int u, int l, int r)->int{
 			if(qr <= l) return -1;
-			if(r <= qr && pred(TT(data[u], suff))){
-				suff = TT(data[u], suff);
+			if(r <= qr && pred(data[u] + suff)){
+				suff = data[u] + suff;
 				return -1;
 			}
 			if(r - l == 1) return r;
@@ -104,7 +102,7 @@ struct persistent_segment_tree{
 };
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
-	<tabTrigger>persistent_segment_tree</tabTrigger> -->
+	<tabTrigger>persistent_segment_tree_sum</tabTrigger> -->
 	<!-- Optional: Set a scope to limit where the snippet will trigger -->
 	<scope>source.c++</scope> -->
 </snippet>
