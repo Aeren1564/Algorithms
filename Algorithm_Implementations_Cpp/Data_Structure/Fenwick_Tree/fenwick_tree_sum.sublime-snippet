@@ -1,0 +1,62 @@
+<snippet>
+	<content><![CDATA[
+template<class T>
+struct fenwick_tree_sum{
+	int n;
+	vector<T> data;
+	fenwick_tree_sum(){ }
+	// O(n)
+	fenwick_tree_sum(int n): n(n), data(n){ }
+	// O(n)
+	fenwick_tree_sum(int n, T init): fenwick_tree_sum(vector<T>(n, init)){ }
+	// O(n)
+	fenwick_tree_sum(const vector<T> &v): n((int)v.size()), data(v){
+		for(auto i = 1; i <= n; ++ i) if(i + (i & -i) <= n) data[i + (i & -i) - 1] += data[i - 1];
+	}
+	fenwick_tree_sum(const fenwick_tree_sum &otr): n(otr.n), data(otr.data){
+	}
+	// O(log n)
+	void update(int p, T x){
+		assert(0 <= p && p < n);
+		for(++ p; p <= n; p += p & -p) data[p - 1] += x;
+	}
+	// O(log n)
+	T query(int r) const{
+		T s{};
+		for(; r > 0; r -= r & -r) s += data[r - 1];
+		return s;
+	}
+	// O(log n)
+	T query(int l, int r) const{
+		assert(0 <= l && l <= r && r <= n);
+		return query(r) - query(l);
+	}
+	// pred(sum[0, r)) is T, T, ..., T, F, F, ..., F
+	// Returns max r with T
+	// O(log n)
+	int max_pref(auto pred) const{
+		assert(pred({}));
+		int p = 0;
+		T sum{};
+		for(auto pw = 1 << __lg(n + 1); pw; pw >>= 1) if(p + pw <= n && pred(sum + data[p + pw - 1])){
+			sum += data[p + pw - 1];
+			p += pw;
+		}
+		return p;
+	}
+	template<class output_stream>
+	friend output_stream &operator<<(output_stream &out, const fenwick_tree_sum<T> &fw){
+		out << "[";
+		for(auto i = 0; i < fw.n; ++ i){
+			out << fw.query(i, i + 1);
+			if(i != fw.n - 1) out << ", ";
+		}
+		return out << ']';
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>fenwick_tree_sum</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

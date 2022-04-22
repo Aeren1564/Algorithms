@@ -1,11 +1,11 @@
 <snippet>
 	<content><![CDATA[
 template<class B, class T>
-struct fenwick_tree_2d_sparse{
+struct fenwick_tree_2d_sparse_sum{
 	vector<B> X;
 	vector<vector<array<B, 2>>> Y;
 	vector<vector<T>> data;
-	fenwick_tree_2d_sparse(vector<pair<array<B, 2>, T>> init): X(init.size()){
+	fenwick_tree_2d_sparse_sum(vector<pair<array<B, 2>, T>> init): X(init.size()){
 		sort(init.begin(), init.end());
 		for(auto i = 0; i < (int)init.size(); ++ i){
 			X[i] = init[i].first[0];
@@ -72,7 +72,7 @@ struct fenwick_tree_2d_sparse{
 };
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
-	<tabTrigger>fenwick_tree_2d_sparse</tabTrigger> -->
+	<tabTrigger>fenwick_tree_2d_sparse_sum</tabTrigger> -->
 	<!-- Optional: Set a scope to limit where the snippet will trigger -->
 	<scope>source.c++</scope> -->
 </snippet>

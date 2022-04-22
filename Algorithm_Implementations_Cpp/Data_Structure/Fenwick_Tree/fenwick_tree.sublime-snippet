@@ -1,51 +1,47 @@
 <snippet>
 	<content><![CDATA[
-template<class T>
+template<class T, class F, class I>
 struct fenwick_tree{
 	int n;
 	vector<T> data;
+	F TT;
+	T T_id;
+	I TinvT;
 	fenwick_tree(){ }
-	// O(n)
-	fenwick_tree(int n): n(n), data(n){ }
-	// O(n)
-	fenwick_tree(int n, T init): fenwick_tree(vector<T>(n, init)){ }
-	// O(n)
-	fenwick_tree(const vector<T> &v): n((int)v.size()), data(v){
-		for(auto i = 1; i <= n; ++ i) if(i + (i & -i) <= n) data[i + (i & -i) - 1] += data[i - 1];
-	}
-	fenwick_tree(const fenwick_tree &otr): n(otr.n), data(otr.data){
+	fenwick_tree(int n, F TT, T T_id, I TinvT): fenwick_tree(vector<T>(n, T_id), TT, T_id, TinvT){ }
+	fenwick_tree(int n, T init, F TT, T T_id, I TinvT): fenwick_tree(vector<T>(n, init), TT, T_id, TinvT){ }
+	fenwick_tree(const vector<T> &v, F TT, T T_id, I TinvT): n((int)v.size()), data(v), TT(TT), T_id(T_id), TinvT(TinvT){
+		for(auto i = 1; i <= n; ++ i) if(i + (i & -i) <= n) data[i + (i & -i) - 1] = TT(data[i + (i & -i) - 1], data[i - 1]);
 	}
 	// O(log n)
 	void update(int p, T x){
 		assert(0 <= p && p < n);
-		for(++ p; p <= n; p += p & -p) data[p - 1] += x;
+		for(++ p; p <= n; p += p & -p) data[p - 1] = TT(data[p - 1], x);
 	}
 	// O(log n)
 	T query(int r) const{
-		T s{};
-		for(; r > 0; r -= r & -r) s += data[r - 1];
+		T s = T_id;
+		for(; r > 0; r -= r & -r) s = TT(s, data[r - 1]);
 		return s;
 	}
 	// O(log n)
 	T query(int l, int r) const{
 		assert(0 <= l && l <= r && r <= n);
-		return query(r) - query(l);
+		return TinvT(query(r), query(l));
 	}
-	// pred(sum[0, r)) is T, T, ..., T, F, F, ..., F
-	// Returns max r with T
+	// f(sum[0, r)) is T, T, ..., T, F, F, ..., F, returns max r with T
 	// O(log n)
-	int max_pref(auto pred) const{
-		assert(pred({}));
+	int max_pref(auto f) const{
 		int p = 0;
-		T sum{};
-		for(auto pw = 1 << __lg(n + 1); pw; pw >>= 1) if(p + pw <= n && pred(sum + data[p + pw - 1])){
-			sum += data[p + pw - 1];
-			p += pw;
+		T pref = T_id;
+		for(auto i = __lg(n + 1); i >= 0; -- i) if(p + (1 << i) <= n && f(TT(pref, data[p + (1 << i) - 1]))){
+			pref = TT(pref, data[p + (1 << i) - 1]);
+			p += 1 << i;
 		}
 		return p;
 	}
 	template<class output_stream>
-	friend output_stream &operator<<(output_stream &out, const fenwick_tree<T> &fw){
+	friend output_stream &operator<<(output_stream &out, const fenwick_tree<T, F, I> &fw){
 		out << "[";
 		for(auto i = 0; i < fw.n; ++ i){
 			out << fw.query(i, i + 1);

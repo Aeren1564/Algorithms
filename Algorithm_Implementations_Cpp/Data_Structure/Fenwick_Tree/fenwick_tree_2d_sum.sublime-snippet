@@ -1,16 +1,16 @@
 <snippet>
 	<content><![CDATA[
 template<class T>
-struct fenwick_tree_2d{
+struct fenwick_tree_2d_sum{
 	int n, m;
 	vector<vector<T>> data;
 	// O(n * m)
-	fenwick_tree_2d(const vector<vector<T>> &a): n((int)a.size()), m((int)a[0].size()), data(a){
+	fenwick_tree_2d_sum(const vector<vector<T>> &a): n((int)a.size()), m((int)a[0].size()), data(a){
 		for(auto i = 1; i <= n; ++ i) if(i + (i & -i) <= n) for(auto j = 1; j <= m; ++ j) data[i + (i & -i) - 1][j - 1] += data[i - 1][j - 1];
 		for(auto i = 1; i <= n; ++ i) for(auto j = 1; j <= m; ++ j) if(j + (j & -j) <= n) data[i - 1][j + (j & -j) - 1] += data[i - 1][j - 1];
 	}
 	// O(n * m)
-	fenwick_tree_2d(int n, int m): n(n), m(m), data(n, vector<T>(m)){}
+	fenwick_tree_2d_sum(int n, int m): n(n), m(m), data(n, vector<T>(m)){}
 	// a[p][q] += x
 	// O(log n * log m)
 	void update(int p, int q, T x){
@@ -32,7 +32,7 @@ struct fenwick_tree_2d{
 		return query(xr, yr) - query(xr, yl) - query(xl, yr) + query(xl, yl);
 	}
 	template<class output_stream>
-	friend output_stream &operator<<(output_stream &out, const fenwick_tree_2d<T> &fw){
+	friend output_stream &operator<<(output_stream &out, const fenwick_tree_2d_sum<T> &fw){
 		for(auto i = 0; i < fw.n; ++ i){
 			out << "\n[";
 			for(auto j = 0; j < fw.m; ++ j){
@@ -46,7 +46,7 @@ struct fenwick_tree_2d{
 };
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
-	<tabTrigger>fenwick_tree_2d</tabTrigger> -->
+	<tabTrigger>fenwick_tree_2d_sum</tabTrigger> -->
 	<!-- Optional: Set a scope to limit where the snippet will trigger -->
 	<scope>source.c++</scope> -->
 </snippet>
