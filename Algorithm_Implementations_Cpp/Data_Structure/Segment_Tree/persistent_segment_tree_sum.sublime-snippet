@@ -10,6 +10,13 @@ struct persistent_segment_tree_sum{
 	persistent_segment_tree_sum(const vector<T> &a){
 		build(a);
 	}
+	persistent_segment_tree_sum &operator=(const persistent_segment_tree_sum &pseg){
+		n = pseg.n;
+		left = pseg.left;
+		right = pseg.right;
+		data = pseg.data;
+		return *this;
+	}
 	int last_state() const{
 		return (int)data.size() - 1;
 	}
@@ -102,6 +109,25 @@ struct persistent_segment_tree_sum{
 		int ql = recurse(recurse, u, 0, n);
 		if(!~ql) ql = 0;
 		return ql;
+	}
+	// Assumes u represents an interval of size n
+	template<class output_stream>
+	output_stream &print(output_stream &out, int u) const{
+		#ifdef LOCAL
+		if(!n) return out << "{}\n";
+		out << "{";
+		auto dfs = [&](auto self, int u, int l, int r)->void{
+			if(r - l == 1){
+				out << data[u] << ", ";
+				return;
+			}
+			int m = l + (r - l >> 1);
+			self(self, left[u], l, m), self(self, right[u], m, r);
+		};
+		dfs(dfs, u, 0, n);
+		out << "\b\b}\n";
+		#endif
+		return out;
 	}
 };
 ]]></content>

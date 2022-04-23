@@ -1,0 +1,56 @@
+<snippet>
+	<content><![CDATA[
+// Requires persistent_segment_tree and less_than_k_query_solver_online
+template<class T, class F = plus<>>
+struct static_sparse_rectangle_query_processor_online{
+	int sigma_x, sigma_y;
+	vector<int> lower_bound_x;
+	less_than_k_query_solver_online<T, F> ltk;
+	static_sparse_rectangle_query_processor_online(const vector<array<int, 2>> points, int sigma_x, int sigma_y, F TT = plus<>(), T T_id = {}): ltk({}, 0, TT, T_id){
+		int n = (int)points.size();
+		vector<tuple<int, int, T>> points2(n);
+		for(auto i = 0; i < n; ++ i){
+			auto &[x, y, w] = points2;
+			x = points[i][0];
+			y = points[i][1];
+			w = 1;
+		}
+		*this = static_sparse_rectangle_query_processor_online(points2, sigma_x, sigma_y, TT, T_id);
+	}
+	static_sparse_rectangle_query_processor_online(vector<tuple<int, int, T>> points, int sigma_x, int sigma_y, F TT = plus<>(), T T_id = {}): sigma_x(sigma_x), sigma_y(sigma_y), lower_bound_x(sigma_x + 1), ltk({}, 0, TT, T_id){
+		for(auto [x, y, w]: points) assert(0 <= x && x < sigma_x && 0 <= y && y < sigma_y);
+		sort(points.begin(), points.end());
+		int n = (int)points.size();
+		for(auto x = 0, i = 0; x <= sigma_x; ++ x){
+			while(i < n && get<0>(points[i]) < x) ++ i;
+			lower_bound_x[x] = i;
+		}
+		vector<int> Y(n);
+		vector<T> w(n);
+		for(auto i = 0; i < n; ++ i){
+			Y[i] = get<1>(points[i]);
+			w[i] = get<2>(points[i]);
+		}
+		ltk = {Y, sigma_y, w, TT, T_id};
+	}
+	static_sparse_rectangle_query_processor_online &operator=(const static_sparse_rectangle_query_processor_online &rqp){
+		sigma_x = rqp.sigma_x;
+		sigma_y = rqp.sigma_y;
+		lower_bound_x = rqp.lower_bound_x;
+		ltk = rqp.ltk;
+		return *this;
+	}
+	// Find the sum of weights of points in [xlow, xhigh) x [ylow, yhigh)
+	// O(log(n))
+	T query(int xlow, int xhigh, int ylow, int yhigh) const{
+		assert(0 <= xlow && xlow <= xhigh && xhigh <= sigma_x);
+		assert(0 <= ylow && ylow <= yhigh && yhigh <= sigma_y);
+		return ltk.query_within(lower_bound_x[xlow], lower_bound_x[xhigh], ylow, yhigh);
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>static_sparse_rectangle_query_processor_online</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

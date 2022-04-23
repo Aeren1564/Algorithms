@@ -1,0 +1,58 @@
+<snippet>
+	<content><![CDATA[
+// Requires fenwick_tree_sum and less_than_k_query_solver_offline
+template<class T>
+struct static_sparse_rectangle_query_processor_offline{
+	int sigma_x, sigma_y;
+	vector<int> lower_bound_x;
+	less_than_k_query_solver_offline<T> ltk;
+	static_sparse_rectangle_query_processor_offline(const vector<array<int, 2>> points, int sigma_x, int sigma_y): ltk({}, 0){
+		int n = (int)points.size();
+		vector<tuple<int, int, T>> points2(n);
+		for(auto i = 0; i < n; ++ i){
+			auto &[x, y, w] = points2;
+			x = points[i][0];
+			y = points[i][1];
+			w = 1;
+		}
+		*this = static_sparse_rectangle_query_processor_offline(points2, sigma_x, sigma_y);
+	}
+	static_sparse_rectangle_query_processor_offline(vector<tuple<int, int, T>> points, int sigma_x, int sigma_y): sigma_x(sigma_x), sigma_y(sigma_y), lower_bound_x(sigma_x + 1), ltk({}, 0){
+		for(auto [x, y, w]: points) assert(0 <= x && x < sigma_x && 0 <= y && y < sigma_y);
+		sort(points.begin(), points.end());
+		int n = (int)points.size();
+		for(auto x = 0, i = 0; x <= sigma_x; ++ x){
+			while(i < n && get<0>(points[i]) < x) ++ i;
+			lower_bound_x[x] = i;
+		}
+		vector<int> Y(n);
+		vector<T> w(n);
+		for(auto i = 0; i < n; ++ i){
+			Y[i] = get<1>(points[i]);
+			w[i] = get<2>(points[i]);
+		}
+		ltk = {Y, sigma_y, w};
+	}
+	static_sparse_rectangle_query_processor_offline &operator=(const static_sparse_rectangle_query_processor_offline &rqp){
+		sigma_x = rqp.sigma_x;
+		sigma_y = rqp.sigma_y;
+		lower_bound_x = rqp.lower_bound_x;
+		ltk = rqp.ltk;
+		return *this;
+	}
+	// Set the answer of query qi to the sum of weights of points in [xlow, xhigh) x [0, yhigh)
+	void query(int qi, int xlow, int xhigh, int yhigh){
+		assert(0 <= xlow && xlow <= xhigh && xhigh <= sigma_x);
+		assert(0 <= yhigh && yhigh <= sigma_y);
+		ltk.query(qi, lower_bound_x[xlow], lower_bound_x[xhigh], yhigh);
+	}
+	void solve(auto f){
+		ltk.solve([&](int qi, T x){ f(qi, x); });
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>static_sparse_rectangle_query_processor_offline</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
