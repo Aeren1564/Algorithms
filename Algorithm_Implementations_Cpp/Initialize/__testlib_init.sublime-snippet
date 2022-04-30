@@ -10,7 +10,7 @@ using namespace numbers;
 
 
 
-int main(int argc, char* argv[]){
+int main(int argc, char *argv[]){
 	registerGen(argc, argv, 1); // For generators
 	// registerValidation(argc, argv); // For validators
 	// registerTestlibCmd(argc, argv); // For checkers

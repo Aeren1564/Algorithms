@@ -46,6 +46,14 @@ struct graph{
 	void reset_ignoration_rule(){
 		ignore = nullptr;
 	}
+	friend ostream &operator<<(ostream &out, const graph &g){
+		for(auto id = 0; id < (int)g.edge.size(); ++ id){
+			if(g.ignore && g.ignore(id)) continue;
+			auto &e = g.edge[id];
+			out << "{" << e.from << ", " << e.to << ", " << e.cost << "}\n";
+		}
+		return out;
+	}
 };
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
