@@ -29,7 +29,7 @@ struct cartesian_tree{
 		adj.push_back({-1, -1});
 		int u = n - 1;
 		while(~u && cmp(x, data[u])) u = pv[u];
-		if(!~u || adj[u][1]){
+		if(!~u && ~root || ~u && ~adj[u][1]){
 			int v = ~u ? adj[u][1] : root;
 			pv[v] = n;
 			adj[n][0] = v;
@@ -38,20 +38,19 @@ struct cartesian_tree{
 			adj[u][1] = n;
 			pv[n] = u;
 		}
+		if(!~u) root = n;
 		++ n;
 	}
-	// Warning: calling extend() invalidates the dfs states
+	// Warning: calling extend() invalidates the bfs states
 	vector<int> order;
 	vector<int> pos;
-	vector<int> end;
 	vector<int> size;
 	vector<int> depth;
 	vector<array<int, 2>> range;
 	vector<int> q;
-	void dfs(){
+	void bfs(){
 		order.clear();
 		pos.assign(n, -1);
-		end.assign(n, -1);
 		size.assign(n, 1);
 		depth.assign(n, 0);
 		range.assign(n, {});
@@ -68,7 +67,6 @@ struct cartesian_tree{
 		for(auto i = (int)order.size() - 1; i >= 0; -- i){
 			int u = order[i];
 			for(auto v: adj[u]) if(~v) size[u] += size[v];
-			end[u] = pos[u] + size[u];
 			range[u] = {u, u + 1};
 			if(~adj[u][0]) range[u][0] -= size[adj[u][0]];
 			if(~adj[u][1]) range[u][1] += size[adj[u][1]];
