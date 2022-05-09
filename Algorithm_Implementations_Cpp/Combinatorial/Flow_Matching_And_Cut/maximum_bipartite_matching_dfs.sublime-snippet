@@ -25,6 +25,8 @@ struct maximum_bipartite_matching_dfs{
 	}
 	// O(VE)
 	int maximum_matching(){
+		mt19937 rng(1564);
+		for(auto u = 0; u < n; ++ u) shuffle(adj[u].begin(), adj[u].end(), rng);
 		while(true){
 			int augment = 0;
 			++ id;

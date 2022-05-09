@@ -1,5 +1,6 @@
 <snippet>
 	<content><![CDATA[
+// act_comp() accesses sccs in the reverse topological order
 // Requires graph
 // O(|V| + |E|)
 template<class T>
@@ -17,7 +18,8 @@ void strongly_connected_components(const graph<T> &g, auto act_comp){
 		}
 		if(low == val[u]){
 			do{
-				v = s.back(); s.pop_back();
+				v = s.back();
+				s.pop_back();
 				comp[v] = ncomps;
 				cur.push_back(v);
 			}while(v != u);
@@ -28,7 +30,7 @@ void strongly_connected_components(const graph<T> &g, auto act_comp){
 		return val[u] = low;
 	};
 	for(auto u = 0; u < n; ++ u) if(comp[u] < 0) dfs(dfs, u);
-} // accesses sccs in the reverse topological order
+}
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
 	<tabTrigger>strongly_connected_components</tabTrigger> -->
