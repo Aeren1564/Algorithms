@@ -1,0 +1,84 @@
+<snippet>
+	<content><![CDATA[
+// Source: https://en.wikipedia.org/wiki/Cartesian_tree#Efficient_construction
+// Tie broken by index (smaller index has lower depth)
+template<class T, class Compare = less<>>
+struct cartesian_tree{
+	int n = 0, root = -1;
+	vector<T> data;
+	vector<int> pv;
+	vector<array<int, 2>> adj;
+	Compare cmp;
+	cartesian_tree(const vector<T> &data = {}, Compare cmp = less<>()): cmp(cmp){
+		extend(data);
+	}
+	cartesian_tree &operator=(const cartesian_tree &ct){
+		n = ct.n;
+		root = ct.root;
+		data = ct.data;
+		pv = ct.pv;
+		adj = ct.adj;
+	}
+	void extend(const vector<T> &a){
+		for(auto x: a) extend(x);
+	}
+	// Amortized O(1)
+	void extend(T x){
+		data.push_back(x);
+		pv.push_back(-1);
+		adj.push_back({-1, -1});
+		int u = n - 1;
+		while(~u && cmp(x, data[u])) u = pv[u];
+		if(!~u || adj[u][1]){
+			int v = ~u ? adj[u][1] : root;
+			pv[v] = n;
+			adj[n][0] = v;
+		}
+		if(~u){
+			adj[u][1] = n;
+			pv[n] = u;
+		}
+		++ n;
+	}
+	// Warning: calling extend() invalidates the dfs states
+	vector<int> order;
+	vector<int> pos;
+	vector<int> end;
+	vector<int> size;
+	vector<int> depth;
+	vector<array<int, 2>> range;
+	vector<int> q;
+	void dfs(){
+		order.clear();
+		pos.assign(n, -1);
+		end.assign(n, -1);
+		size.assign(n, 1);
+		depth.assign(n, 0);
+		range.assign(n, {});
+		q = {root};
+		for(auto l = 0; l < (int)q.size(); ++ l){
+			int u = q[l];
+			pos.push_back((int)order.size());
+			order.push_back(u);
+			for(auto v: adj[u]) if(~v){
+				depth[v] = depth[u] + 1;
+				q.push_back(v);
+			}
+		}
+		for(auto i = (int)order.size() - 1; i >= 0; -- i){
+			int u = order[i];
+			for(auto v: adj[u]) if(~v) size[u] += size[v];
+			end[u] = pos[u] + size[u];
+			range[u] = {u, u + 1};
+			if(~adj[u][0]) range[u][0] -= size[adj[u][0]];
+			if(~adj[u][1]) range[u][1] += size[adj[u][1]];
+			assert(range[u][1] - range[u][0] == size[u]);
+		}
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>cartesian_tree</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
