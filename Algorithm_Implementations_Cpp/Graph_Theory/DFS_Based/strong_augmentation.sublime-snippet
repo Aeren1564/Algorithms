@@ -1,0 +1,58 @@
+<snippet>
+	<content><![CDATA[
+// g must be a directed acyclic graph
+// Requires graph
+template<class T>
+vector<array<int, 2>> strong_augmentation(const graph<T> &g){
+	int n = g.n;
+	if(n <= 1) return {};
+	vector<int> is_source(n, true), is_sink(n);
+	for(auto u = 0; u < n; ++ u){
+		is_sink[u] = g.adj[u].empty();
+		for(auto id: g.adj[u]){
+			if(g.ignore && g.ignore(id)) continue;
+			is_source[g.edge[id].to] = false;
+		}
+	}
+	vector<int> source, sink, found(n);
+	for(auto r = 0; r < n; ++ r){
+		if(found[r] || !is_source[r]) continue;
+		static vector<int> stack;
+		stack.push_back(r);
+		while(!stack.empty()){
+			int u = stack.back();
+			stack.pop_back();
+			if(found[u]) continue;
+			found[u] = true;
+			if(is_sink[u]){
+				source.push_back(r);
+				sink.push_back(u);
+				is_source[r] = is_sink[u] = false;
+				stack.clear();
+				break;
+			}
+			for(auto id: g.adj[u]){
+				if(g.ignore && g.ignore(id)) continue;
+				stack.push_back(g.edge[id].to);
+			}
+		}
+	}
+	int p = (int)source.size();
+	for(auto u = 0; u < n; ++ u){
+		if(is_source[u]) source.push_back(u);
+		if(is_sink[u]) sink.push_back(u);
+	}
+	int l = (int)source.size(), r = (int)sink.size(), lr = min(l, r);
+	vector<array<int, 2>> res{{sink[0], source[p - 1]}};
+	for(auto i = 1; i < p; ++ i) res.push_back({sink[i], source[i - 1]});
+	for(auto i = p; i < lr; ++ i) res.push_back({sink[i], source[i]});
+	for(auto i = lr; i < l; ++ i) res.push_back({sink[0], source[i]});
+	for(auto i = lr; i < r; ++ i) res.push_back({sink[i], source[0]});
+	return res;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>strong_augmentation</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
