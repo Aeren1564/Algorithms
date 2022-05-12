@@ -52,9 +52,9 @@ struct spfa{
 		return {};
 	}
 	// Returns the negative cycle (list of edge ids) if there's one.
-	// O(|E_C| * |V_C|) where
-	// V_C is the set of vertices reachable from src and
-	// E_C is the set of edges reachable from src
+	// O(|E| * |V|) where
+	// V is the set of vertices reachable from src and
+	// E is the set of edges reachable from src
 	int attempt;
 	vector<int> in_queue, q, was;
 	template<class U>

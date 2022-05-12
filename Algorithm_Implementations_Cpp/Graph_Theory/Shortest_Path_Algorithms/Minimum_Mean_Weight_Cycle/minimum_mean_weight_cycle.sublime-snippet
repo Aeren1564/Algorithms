@@ -1,7 +1,7 @@
 <snippet>
 	<content><![CDATA[
 // G must be a weighted directed graph
-// Returns the edge list for minimum mean weight cycle if there are any.
+// Returns the edge list for minimum mean weight cycle if there are any
 // O(|V| * (|V| + |E|))
 // Requires graph
 template<class T, class U>
