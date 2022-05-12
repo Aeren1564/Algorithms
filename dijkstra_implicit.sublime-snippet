@@ -1,0 +1,57 @@
+<snippet>
+	<content><![CDATA[
+template<class T>
+struct dijkstra_implicit{
+	int n;
+	vector<T> dist;
+	vector<array<int, 2>> pe;
+	vector<int> pv, was, order;
+	dijkstra_implicit(int n){ init(n); }
+	void init(int n){
+		this->n = n;
+		dist.assign(n, numeric_limits<T>::max());
+		pv.assign(n, -1);
+		pe.assign(n, {-1, -1});
+		was.assign(n, -1);
+		attempt = 0;
+	}
+	int attempt;
+	priority_queue<pair<T, int>, vector<pair<T, int>>, greater<pair<T, int>>> pq;
+	// The graph is represented implicitly
+	// get_deg(u) returns the degree of u
+	// get_adj(u, i) returns a pair of the i-th neighbor of u, possibly -1 representing an invalid node, and the weight of the edge joining them
+	// O((|V| + |E|) * log |V|) where
+	// V is the set of vertices reachable from src and
+	// E is the set of edges reachable from src
+	void run(auto get_deg, auto get_adj, const vector<int> &src){
+		++ attempt;
+		for(auto u: src){
+			was[u] = attempt;
+			pq.push({dist[u] = {}, u});
+			pv[u] = pe[u] = -1;
+		}
+		order.clear();
+		while(!pq.empty()){
+			T d;
+			int u;
+			tie(d, u) = pq.top();
+			pq.pop();
+			if(d != dist[u]) continue;
+			order.push_back(u);
+			for(auto i = 0, deg = get_deg(u); i < deg; ++ i){
+				auto [v, w] = get_adj(u, i);
+				if(!~v) continue;
+				if(was[v] != attempt || dist[u] + w < dist[v]){
+					pq.push({dist[v] = dist[u] + w, v});
+					pv[v] = u, pe[v] = {u, i}, was[v] = attempt;
+				}
+			}
+		}
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>c++</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<!-- <scope>source.python</scope> -->
+</snippet>
