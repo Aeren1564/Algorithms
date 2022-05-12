@@ -33,7 +33,8 @@ struct dial{
 		}
 		while(any_of(dqs.begin(), dqs.end(), [&](auto &dq){ return !dq.empty(); })){
 			while(dqs[it].empty()) it = (it + 1) % C;
-			auto [d, u] = dqs[it].front(); dqs[it].pop_front();
+			auto [d, u] = dqs[it].front();
+			dqs[it].pop_front();
 			if(d != dist[u]) continue;
 			for(auto id: g.adj[u]){
 				if(g.ignore && g.ignore(id)) continue;
