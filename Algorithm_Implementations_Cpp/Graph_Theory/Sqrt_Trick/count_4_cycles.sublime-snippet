@@ -1,6 +1,6 @@
 <snippet>
 	<content><![CDATA[
-// O(V + E * sqrt(E)) for graphs without loops or multiedges
+// O(n + m * sqrt(m)) for graphs without loops or multiedges
 template<class T>
 T count_4_cycles(int n, const vector<array<int, 2>> &edge){
 	int m = (int)edge.size();

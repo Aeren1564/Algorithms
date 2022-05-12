@@ -1,6 +1,6 @@
 <snippet>
 	<content><![CDATA[
-// O(V + E * sqrt(E) + th) for graphs without loops or multiedges
+// O(n + m * sqrt(m) + th) for graphs without loops or multiedges
 void find_4_cycles(int n, const vector<array<int, 2>> &edge, auto process, int th = 1){
 	int m = (int)edge.size();
 	vector<int> deg(n), order, pos(n);
