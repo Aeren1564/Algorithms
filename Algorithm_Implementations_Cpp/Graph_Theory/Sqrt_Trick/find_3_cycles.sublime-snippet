@@ -1,11 +1,11 @@
 <snippet>
 	<content><![CDATA[
-// O(V + E * sqrt(E)) for graphs without loops or multiedges
-template<class T>
-T count_4_cycles(int n, const vector<array<int, 2>> &edge){
+// https://i11www.iti.kit.edu/extra/publications/sw-fclt-05_t.pdf
+// O(n + m * sqrt(m)) process() calls for graphs without loop or multiedges
+void find_3_cycles(int n, const vector<array<int, 2>> &edge, auto process){
 	int m = (int)edge.size();
 	vector<int> deg(n), order, pos(n);
-	vector<vector<int>> appear(m + 1), adj(n);
+	vector<vector<int>> appear(m + 1), adj(n), found(n);
 	for(auto [u, v]: edge) ++ deg[u], ++ deg[v];
 	for(auto u = 0; u < n; ++ u) appear[deg[u]].push_back(u);
 	for(auto d = m; d >= 0; -- d) order.insert(order.end(), appear[d].begin(), appear[d].end());
@@ -14,17 +14,21 @@ T count_4_cycles(int n, const vector<array<int, 2>> &edge){
 		int u = pos[edge[i][0]], v = pos[edge[i][1]];
 		adj[u].push_back(v), adj[v].push_back(u);
 	}
-	T res = 0;
-	vector<int> cnt(n);
-	for(auto u = 0; u < n; ++ u){
-		for(auto v: adj[u]) if(u < v) for(auto w: adj[v]) if(u < w) cnt[w] = 0;
-		for(auto v: adj[u]) if(u < v) for(auto w: adj[v]) if(u < w) res += cnt[w] ++;
+	for(auto u = 0; u < n; ++ u) for(auto v: adj[u]) if(u < v){
+		for(auto i = 0, j = 0; i < (int)found[u].size() && j < (int)found[v].size(); ){
+			if(found[u][i] == found[v][i]){
+				process(order[u], order[v], order[found[u][i]]);
+				++ i, ++ j;
+			}
+			else if(found[u][i] < found[v][j]) ++ i;
+			else ++ j;
+		}
+		found[v].push_back(u);
 	}
-	return res;
 }
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
-	<tabTrigger>count_4_cycles</tabTrigger> -->
+	<tabTrigger>find_3_cycles</tabTrigger> -->
 	<!-- Optional: Set a scope to limit where the snippet will trigger -->
 	<scope>source.c++</scope> -->
 </snippet>
