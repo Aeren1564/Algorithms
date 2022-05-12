@@ -16,14 +16,14 @@ struct dijkstra{
 		attempt = 0;
 	}
 	int attempt;
-	// O(|E_C| log |V_C|) where
-	// V_C is the set of vertices reachable from src and
-	// E_C is the set of edges reachable from src
+	priority_queue<pair<T, int>, vector<pair<T, int>>, greater<pair<T, int>>> pq;
+	// O((|V| + |E|) * log |V|) where
+	// V is the set of vertices reachable from src and
+	// E is the set of edges reachable from src
 	template<class U>
 	void run(const graph<U> &g, const vector<int> &src){
 		assert(n == g.n);
 		++ attempt;
-		priority_queue<pair<T, int>, vector<pair<T, int>>, greater<pair<T, int>>> pq;
 		for(auto u: src){
 			was[u] = attempt;
 			pq.push({dist[u] = {}, u});
