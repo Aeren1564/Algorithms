@@ -29,22 +29,23 @@ struct bfs_forest{
 		attempt = 0;
 	}
 	int attempt = 0;
+	vector<int> q;
 	template<class U, class F = plus<>>
 	void bfs(const graph<U> &g, const vector<int> &src, bool clear_order = true, F UT = plus<>()){
 		assert(n == g.n);
 		++ attempt;
 		if(clear_order) order.clear();
-		deque<int> dq;
+		q = src;
 		for(auto u: src){
 			was[u] = attempt;
 			depth[u] = 0;
 			dist[u] = T_id;
 			root[u] = u;
-			pv[u] = pe[u] = -1;
-			dq.push_back(u);
+			pv[u] = -1;
+			pe[u] = -1;
 		}
-		while(!dq.empty()){
-			int u = dq.front(); dq.pop_front();
+		for(auto it = 0; it < (int)q.size(); ++ it){
+			int u = q[it];
 			pos[u] = (int)order.size();
 			order.push_back(u);
 			for(auto id: g.adj[u]){
@@ -58,9 +59,10 @@ struct bfs_forest{
 				pv[v] = u;
 				pe[v] = id;
 				root[v] = root[u];
-				dq.push_back(v);
+				q.push_back(v);
 			}
 		}
+		q.clear();
 	}
 	template<class U, class F = plus<>>
 	void bfs_all(const graph<U> &g, F UT = plus<>()){

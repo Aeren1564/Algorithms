@@ -27,7 +27,8 @@ struct dijkstra{
 		for(auto u: src){
 			was[u] = attempt;
 			pq.push({dist[u] = {}, u});
-			pv[u] = pe[u] = -1;
+			pv[u] = -1;
+			pe[u] = -1;
 		}
 		order.clear();
 		while(!pq.empty()){

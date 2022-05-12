@@ -29,7 +29,8 @@ struct dial{
 		for(auto u: src){
 			was[u] = attempt;
 			dqs[it].push_back({dist[u] = {}, u});
-			pv[u] = pe[u] = -1;
+			pv[u] = -1;
+			pe[u] = -1;
 		}
 		while(any_of(dqs.begin(), dqs.end(), [&](auto &dq){ return !dq.empty(); })){
 			while(dqs[it].empty()) it = (it + 1) % C;
