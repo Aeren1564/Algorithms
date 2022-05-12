@@ -1,0 +1,57 @@
+<snippet>
+	<content><![CDATA[
+template<class T>
+struct dial_implicit{
+	int n;
+	vector<T> dist;
+	vector<array<int, 2>> pe;
+	vector<int> pv, was;
+	dial_implicit(int n){ init(n); }
+	void init(int n){
+		this->n = n;
+		dist.assign(n, numeric_limits<T>::max());
+		pv.assign(n, -1);
+		pe.assign(n, {-1, -1});
+		was.assign(n, -1);
+		attempt = 0;
+	}
+	int attempt;
+	// The graph is represented implicitly
+	// get_deg(u) returns the degree of u
+	// get_adj(u, i) returns a pair of the i-th neighbor of u, possibly -1 representing an invalid node, and the weight of the edge joining them
+	// Edge weights must be integers in range [0, C)
+	// O(|E| + min(|V| * C, (sum of edge weights))) where
+	// V is the set of vertices reachable from src and
+	// E is the set of edges reachable from src
+	void run(auto get_deg, auto get_adj, const int C, const vector<int> &src){
+		++ attempt;
+		int it = 0;
+		vector<deque<array<int, 2>>> dqs(C);
+		for(auto u: src){
+			was[u] = attempt;
+			dqs[it].push_back({dist[u] = {}, u});
+			pv[u] = -1;
+			pe[u] = {-1, -1};
+		}
+		while(any_of(dqs.begin(), dqs.end(), [&](auto &dq){ return !dq.empty(); })){
+			while(dqs[it].empty()) it = (it + 1) % C;
+			auto [d, u] = dqs[it].front();
+			dqs[it].pop_front();
+			if(d != dist[u]) continue;
+			for(auto i = 0, deg = get_deg(u); i < deg; ++ i){
+				auto [v, w] = get_adj(u, i);
+				if(!~v) continue;
+				if(was[v] != attempt || d + w < dist[v]){
+					dqs[(d + w) % C].push_back({dist[v] = d + w, v});
+					pv[v] = u, pe[v] = {u, i}, was[v] = attempt;
+				}
+			}
+		}
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<!-- <tabTrigger>hello</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<!-- <scope>source.python</scope> -->
+</snippet>
