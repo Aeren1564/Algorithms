@@ -16,10 +16,10 @@ struct dial{
 		attempt = 0;
 	}
 	int attempt;
-	// O(|E_C| + min(|V_C| * C, (sum of edge weight))) where
+	// O(|E| + min(|V| * C, (sum of edge weights))) where
 	// C is the upper bound of edge weight,
-	// V_C is the set of vertices reachable from src, and
-	// E_C is the set of edges reachable from src
+	// V is the set of vertices reachable from src, and
+	// E is the set of edges reachable from src
 	template<class U>
 	void run(const graph<U> &g, const int C, const vector<int> &src){
 		assert(n == g.n);
