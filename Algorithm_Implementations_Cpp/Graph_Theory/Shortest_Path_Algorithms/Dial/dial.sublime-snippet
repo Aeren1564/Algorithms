@@ -16,9 +16,9 @@ struct dial{
 		attempt = 0;
 	}
 	int attempt;
+	// Edge weights must be integers in range [0, C)
 	// O(|E| + min(|V| * C, (sum of edge weights))) where
-	// C is the upper bound of edge weight,
-	// V is the set of vertices reachable from src, and
+	// V is the set of vertices reachable from src and
 	// E is the set of edges reachable from src
 	template<class U>
 	void run(const graph<U> &g, const int C, const vector<int> &src){
@@ -40,9 +40,8 @@ struct dial{
 				auto &e = g.edge[id];
 				int v = u ^ e.from ^ e.to;
 				if(was[v] != attempt || d + e.cost < dist[v]){
-					was[v] = attempt;
-					dqs[(d + e.cost) % C].push_back({dist[v] = dist[u] + e.cost, v});
-					pv[v] = u, pe[v] = id;
+					dqs[(d + e.cost) % C].push_back({dist[v] = d + e.cost, v});
+					pv[v] = u, pe[v] = id, was[v] = attempt;
 				}
 			}
 		}

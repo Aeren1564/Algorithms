@@ -28,21 +28,20 @@ struct dijkstra_implicit{
 		for(auto u: src){
 			was[u] = attempt;
 			pq.push({dist[u] = {}, u});
-			pv[u] = pe[u] = -1;
+			pv[u] = -1;
+			pe[u] = {-1, -1};
 		}
 		order.clear();
 		while(!pq.empty()){
-			T d;
-			int u;
-			tie(d, u) = pq.top();
+			auto [d, u] = pq.top();
 			pq.pop();
 			if(d != dist[u]) continue;
 			order.push_back(u);
 			for(auto i = 0, deg = get_deg(u); i < deg; ++ i){
 				auto [v, w] = get_adj(u, i);
 				if(!~v) continue;
-				if(was[v] != attempt || dist[u] + w < dist[v]){
-					pq.push({dist[v] = dist[u] + w, v});
+				if(was[v] != attempt || d + w < dist[v]){
+					pq.push({dist[v] = d + w, v});
 					pv[v] = u, pe[v] = {u, i}, was[v] = attempt;
 				}
 			}
