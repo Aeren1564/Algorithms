@@ -1,6 +1,5 @@
 <snippet>
 	<content><![CDATA[
-// Requires graph
 template<class T>
 struct dfs_forest{
 	int n;
@@ -37,8 +36,10 @@ struct dfs_forest{
 		attempt = 0;
 	}
 	int attempt;
-	template<class U, class F = plus<>>
-	void dfs(const graph<U> &g, int u, bool clear_order = true, F UT = plus<>()){
+	// O(n + m)
+	// Requires graph
+	template<class Graph, class F = plus<>>
+	void dfs(const Graph &g, int u, bool clear_order = true, F UT = plus<>()){
 		assert(n == g.n);
 		++ attempt;
 		depth[u] = 0;
@@ -82,9 +83,59 @@ struct dfs_forest{
 		};
 		recurse(recurse, u);
 	}
-	template<class U, class F = plus<>>
-	void dfs_all(const graph<U> &g, F UT = plus<>()){
-		for(auto u = 0; u < n; ++ u) if(!~depth[u]) dfs<U, F>(g, u, false, UT);
+	// O(n + m)
+	template<class Graph, class F = plus<>>
+	void dfs_all(const Graph &g, F UT = plus<>()){
+		for(auto u = 0; u < n; ++ u) if(!~depth[u]) dfs<Graph, F>(g, u, false, UT);
+	}
+	// O(n + m)
+	template<class F = plus<>>
+	void dfs_implicitly(auto get_deg, auto get_adj, int u, bool clear_order = true, F UT = plus<>()){
+		++ attempt;
+		depth[u] = 0;
+		dist[u] = T_id;
+		root[u] = u;
+		pv[u] = pe[u] = -1;
+		if(clear_order) order.clear();
+		auto recurse = [&](auto self, int u)->void{
+			was[u] = attempt;
+			pos[u] = (int)order.size();
+			order.push_back(u);
+			size[u] = 1;
+			min_depth[u] = depth[u];
+			min_depth_origin[u] = u;
+			min_depth_spanning_edge[u] = -1;
+			for(auto i = 0, deg = get_deg(u); i < deg; ++ i){
+				auto [v, w] = get_adj(u, i);
+				if(!~v) continue;
+				if(was[v] == attempt){
+					if(min_depth[u] > depth[v]){
+						min_depth[u] = depth[v];
+						min_depth_spanning_edge[u] = i;
+					}
+					continue;
+				}
+				depth[v] = depth[u] + 1;
+				dist[v] = UT(w, dist[u]);
+				pv[v] = u;
+				pe[v] = i;
+				root[v] = root[u];
+				self(self, v);
+				size[u] += size[v];
+				if(min_depth[u] > min_depth[v]){
+					min_depth[u] = min_depth[v];
+					min_depth_origin[u] = min_depth_origin[v];
+					min_depth_spanning_edge[u] = min_depth_spanning_edge[v];
+				}
+			}
+			end[u] = (int)order.size();
+		};
+		recurse(recurse, u);
+	}
+	// O(n + m)
+	template<class F = plus<>>
+	void dfs_all_implicitly(auto get_deg, auto get_adj, F UT = plus<>()){
+		for(auto u = 0; u < n; ++ u) if(!~depth[u]) dfs<F>(get_deg, get_adj, u, false, UT);
 	}
 };
 ]]></content>

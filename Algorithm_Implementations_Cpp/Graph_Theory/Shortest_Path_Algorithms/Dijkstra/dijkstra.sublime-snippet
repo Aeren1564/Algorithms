@@ -1,6 +1,5 @@
 <snippet>
 	<content><![CDATA[
-// Requires graph
 template<class T>
 struct dijkstra{
 	int n;
@@ -20,8 +19,9 @@ struct dijkstra{
 	// O((|V| + |E|) * log |V|) where
 	// V is the set of vertices reachable from src and
 	// E is the set of edges reachable from src
-	template<class U>
-	void run(const graph<U> &g, const vector<int> &src){
+	// Requires graph
+	template<class Graph>
+	void run(const Graph &g, const vector<int> &src){
 		assert(n == g.n);
 		++ attempt;
 		for(auto u: src){
@@ -45,6 +45,36 @@ struct dijkstra{
 				if(was[v] != attempt || dist[u] + e.cost < dist[v]){
 					pq.push({dist[v] = dist[u] + e.cost, v});
 					pv[v] = u, pe[v] = id, was[v] = attempt;
+				}
+			}
+		}
+	}
+	// The graph is represented implicitly
+	// get_deg(u) returns the degree of u
+	// get_adj(u, i) returns a pair of the i-th neighbor of u, possibly -1 representing an invalid node, and the weight of the edge joining them
+	// O((|V| + |E|) * log |V|) where
+	// V is the set of vertices reachable from src and
+	// E is the set of edges reachable from src
+	void run_implicitly(auto get_deg, auto get_adj, const vector<int> &src){
+		++ attempt;
+		for(auto u: src){
+			was[u] = attempt;
+			pq.push({dist[u] = {}, u});
+			pv[u] = -1;
+			pe[u] = -1;
+		}
+		order.clear();
+		while(!pq.empty()){
+			auto [d, u] = pq.top();
+			pq.pop();
+			if(d != dist[u]) continue;
+			order.push_back(u);
+			for(auto i = 0, deg = get_deg(u); i < deg; ++ i){
+				auto [v, w] = get_adj(u, i);
+				if(!~v) continue;
+				if(was[v] != attempt || d + w < dist[v]){
+					pq.push({dist[v] = d + w, v});
+					pv[v] = u, pe[v] = i, was[v] = attempt;
 				}
 			}
 		}
