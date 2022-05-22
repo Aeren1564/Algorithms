@@ -1,0 +1,77 @@
+<snippet>
+	<content><![CDATA[
+// Implementation of https://page.mi.fu-berlin.de/rote/Papers/pdf/Counting+convex+polygons+in+planar+point+sets.pdf
+// Points must be distinct
+// O(n^3)
+// Requires point
+template<class T, class U>
+U count_convex_polygon(vector<point<T>> a){
+	int n = (int)a.size();
+	sort(a.begin(), a.end());
+	assert(unique(a.begin(), a.end()) == a.end());
+	if(n <= 2) return 0;
+	vector<vector<int>> order(n, vector<int>(n)), init_order(n);
+	for(auto i = 0; i < n; ++ i){
+		init_order[i].resize(n - 1 - i);
+		iota(init_order[i].begin(), init_order[i].end(), i + 1);
+		sort(init_order[i].begin(), init_order[i].end(), [&](int j, int k){ return (a[j] - a[i] ^ a[k] - a[i]) > 0; });
+		iota(order[i].begin(), order[i].end(), 0);
+		order[i].erase(order[i].begin() + i);
+		auto pivot = partition(order[i].begin(), order[i].end(), [&](int j){ return a[j] > a[i]; });
+		sort(order[i].begin(), pivot, [&](int j, int k){ return (a[j] - a[i] ^ a[k] - a[i]) > 0; });
+		sort(pivot, order[i].end(), [&](int j, int k){ return (a[j] - a[i] ^ a[k] - a[i]) > 0; });
+	}
+	U res = 0;
+	vector<vector<U>> dp(n, vector<U>(n));
+	for(auto s = 0; s < n; ++ s){
+		for(auto u = s + 1; u < n; u ++){
+			order[u].erase(find(order[u].begin(), order[u].end(), s));
+		}
+		for(auto q: init_order[s]){
+			if(q < s) continue;
+			auto ccw = [&](int p, int q, int r)->bool{
+				return (a[q] - a[p] ^ a[r] - a[p]) > 0;
+			};
+			auto colinear = [&](int p, int q, int r)->bool{
+				return (a[q] - a[p] ^ a[r] - a[p]) == 0;
+			};
+			auto d = a[q] - a[s];
+			rotate(order[q].begin(), max_element(order[q].begin(), order[q].end(), [&](int i, int j){
+				int typei = (d ^ (a[i] - a[s])) > 0;
+				int typej = (d ^ (a[j] - a[s])) > 0;
+				return typei != typej ? typei < typej : (a[i] - a[q] ^ a[j] - a[q]) < 0;
+			}), order[q].end());
+			{
+				int i = (int)order[q].size();
+				while(i > 0 && ccw(s, q, order[q][i - 1]) && colinear(q, order[q][0], order[q][i - 1])) -- i;
+				rotate(order[q].begin(), order[q].begin() + i, order[q].end());
+			}
+			int l1 = 0, r1 = 0, l2, r2;
+			while(r1 < (int)order[q].size() && ccw(s, q, order[q][r1])) ++ r1;
+			if(l1 == r1) continue;
+			l2 = r1;
+			while(l2 < (int)order[q].size() && colinear(s, q, order[q][l2])) ++ l2;
+			r2 = l2;
+			while(r2 < (int)order[q].size() && ccw(s, order[q][r2], q))	++ r2;
+			dp[q][order[q][0]] = 1;
+			for(auto i = l2; i < r2; ++ i) if(ccw(order[q][i], q, order[q][0])) dp[q][order[q][0]] += dp[order[q][i]][q];
+			res += dp[q][order[q][0]];
+			for(auto i = l1 + 1, j = l2; i < r1; ++ i){
+				dp[q][order[q][i]] = dp[q][order[q][i - 1]];
+				while(j < r2 && ccw(order[q][j], q, order[q][i - 1])) ++ j;
+				while(j < r2 && ccw(order[q][j], q, order[q][i])){
+					dp[q][order[q][i]] += dp[order[q][j]][q];
+					++ j;
+				}
+				res += dp[q][order[q][i]];
+			}
+		}
+	}
+	return res;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>count_convex_polygon</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
