@@ -1,0 +1,64 @@
+<snippet>
+	<content><![CDATA[
+// Implementation of https://www.sciencedirect.com/science/article/pii/0166218X9290233Z/pdf?md5=85be43b019b58c7e267ce9c117371cd5&pid=1-s2.0-0166218X9290233Z-main.pdf
+// For u != v, adjm[u][v] = 1 and adjm[v][u] = 0 iff the arc u->v exists
+// Returns topologically sorted list of hamiltonian cycles for each strongly connected components
+// O(n^2)
+vector<vector<int>> find_maximal_cycles_in_tournament_graphs(const vector<vector<int>> &adjm){
+	int n = (int)adjm.size();
+	assert(n);
+	for(auto u = 0; u < n; ++ u) assert((int)adjm[u].size() == n);
+	for(auto u = 0; u < n; ++ u) for(auto v = u + 1; v < n; ++ v) assert((adjm[u][v] ^ adjm[v][u]) == 1 && 0 <= adjm[u][v] && adjm[u][v] <= 1);
+	vector<int> path(n);
+	iota(path.begin(), path.end(), 0);
+	sort(path.begin(), path.end(), [&](int u, int v){ return adjm[u][v]; });
+	auto solve = [&](auto self, vector<int> subset)->vector<vector<int>>{
+		assert(!subset.empty());
+		if((int)subset.size() == 1) return {subset};
+		if((int)subset.size() == 2){
+			if(adjm[subset[1]][subset[0]]) swap(subset[0], subset[1]);
+			return {{subset[0]}, {subset[1]}};
+		}
+		int n = (int)subset.size(), j = n - 1;
+		while(j >= 2 && adjm[subset[0]][subset[j]]) -- j;
+		if(j < 2){
+			int u = subset[0];
+			subset.erase(subset.begin());
+			auto res = self(self, subset);
+			res.insert(res.begin(), {u});
+			return move(res);
+		}
+		vector<int> cycle(subset.begin(), subset.begin() + j + 1);
+		vector<int> path(subset.begin() + j + 1, subset.end());
+		while(true){
+			if(path.empty()) return {cycle};
+			int i = 0, j = 1;
+			while(i < (int)cycle.size() && adjm[cycle[i]][path[0]]) ++ i;
+			if(i < (int)cycle.size()){
+				cycle.insert(cycle.begin() + i, path[0]);
+				path.erase(path.begin());
+				continue;
+			}
+			for(; j < (int)path.size(); ++ j){
+				i = 1;
+				while(i < (int)cycle.size() && adjm[cycle[i]][path[j]]) ++ i;
+				if(i < (int)cycle.size()) break;
+			}
+			if(j < (int)path.size()){
+				cycle.insert(cycle.begin() + i, path.begin(), path.begin() + j + 1);
+				path.erase(path.begin(), path.begin() + j + 1);
+				continue;
+			}
+			auto res = self(self, path);
+			res.insert(res.begin(), {cycle});
+			return move(res);
+		}
+	};
+	return solve(solve, path);
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>find_maximal_cycles_in_tournament_graphs</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
