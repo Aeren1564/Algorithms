@@ -1,6 +1,5 @@
 <snippet>
 	<content><![CDATA[
-// Requires graph
 template<int h = 20>
 struct binary_lifting{
 	int n = 0;
@@ -12,8 +11,9 @@ struct binary_lifting{
 		for(auto u = 0; u < n; ++ u) lift[u][0] = ~pv[u] ? pv[u] : u;
 		for(auto bit = 1; bit < h; ++ bit) for(auto u = 0; u < n; ++ u) lift[u][bit] = lift[lift[u][bit - 1]][bit - 1];
 	}
-	template<class T>
-	binary_lifting(const graph<T> &g, const vector<int> &roots){
+	// Requires graph
+	template<class Graph>
+	binary_lifting(const Graph &g, const vector<int> &roots){
 		vector<int> pv(g.n, -1), depth(g.n);
 		auto dfs = [&](auto self, int u, int pe)->void{
 			for(auto id: g.adj[u]){

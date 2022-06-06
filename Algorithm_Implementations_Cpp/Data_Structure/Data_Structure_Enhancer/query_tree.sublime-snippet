@@ -1,12 +1,14 @@
 <snippet>
 	<content><![CDATA[
-// For a commutative data structure supporting true O(T(n)) insertion, support deletion in O(T(n) log n) offline.
+// For a commutative data structure supporting true(non-amortized) O(T(n)) insertion, support deletion in O(T(n) * log(n)) offline.
 template<class E>
 struct query_tree{
-	int n; // max query range
+	int n;
 	vector<vector<E>> queues;
 	query_tree(int n): n(n), queues(n << 1){ }
+	// Element e exists at time [ql, qr)
 	void insert(E e, int ql, int qr){
+		assert(0 <= ql && ql <= qr && qr <= n);
 		auto recurse = [&](auto self, int u, int l, int r)->void{
 			if(qr <= l || r <= ql) return;
 			if(ql <= l && r <= qr) queues[u].push_back(e);
@@ -17,10 +19,10 @@ struct query_tree{
 		};
 		recurse(recurse, 0, 0, n);
 	}
-	// O(q log n) insert calls and O(n) answer calls
+	// O(q * log(n)) insert() calls and O(n) answer() calls
 	template<class I, class T, class R, class A>
 	void solve(I insert, T time, R reverse_to, A answer){
-		auto dfs = [&](auto self, int u, int l, int r)->void{
+		auto recurse = [&](auto self, int u, int l, int r)->void{
 			int timer = time();
 			for(auto e: queues[u]) insert(e);
 			if(r - l == 1) answer(l);
@@ -30,7 +32,7 @@ struct query_tree{
 			}
 			reverse_to(timer);
 		};
-		dfs(dfs, 0, 0, n);
+		recurse(recurse, 0, 0, n);
 	}
 };
 ]]></content>

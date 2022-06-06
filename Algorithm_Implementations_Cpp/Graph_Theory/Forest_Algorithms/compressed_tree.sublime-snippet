@@ -1,11 +1,14 @@
 <snippet>
 	<content><![CDATA[
+// Build the minimal tree containing all the nodes
+// O(|subset| * log(|subset|))
 // Requires graph, range_minmax_query_solver, and lca_solver
-vector<array<int, 2>> compressed_tree(const lca_solver &ls, const vector<int> &subset){ // build the minimal tree containing all the nodes in O(|subset| log |subset|)
+vector<array<int, 2>> compressed_tree(const lca_solver &ls, const vector<int> &subset){
 	auto order = subset;
 	const auto &p = ls.pos;
-	auto cmp = [&](int u, int v){ return p[u] < p[v]; };
+	auto cmp = [&](int u, int v){ return p[u] != p[v] ? p[u] < p[v] : u < v; };
 	sort(order.begin(), order.end(), cmp);
+	order.erase(unique(order.begin(), order.end()), order.end());
 	for(auto i = 1, sz = (int)order.size(); i < sz; ++ i) order.push_back(ls.lca(order[i - 1], order[i]));
 	sort(order.begin(), order.end(), cmp), order.erase(unique(order.begin(), order.end()), order.end());
 	vector<array<int, 2>> edge;

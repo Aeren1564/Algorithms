@@ -1,0 +1,77 @@
+<snippet>
+	<content><![CDATA[
+struct reachable_even_cycle_finder{
+	int n;
+	reachable_even_cycle_finder(int n): n(n), it(0), was(n), pos(n){ }
+	int it;
+	vector<int> was;
+	vector<int> pos;
+	deque<int> path;
+	// Find a simple even cycle reachable from s in the simple undirected graph g
+	// Minimum degree of nodes reachable from s must be >= 3
+	// O(length of the maximal)
+	template<class T>
+	pair<T, vector<int>> find(const graph<T> &g, int s){
+		assert(n == g.n && 0 <= s && s < n);
+		++ it;
+		path.clear();
+		int head = -1;
+		auto find_maximal_path = [&](int u, bool forward)->void{
+			while(true){
+				was[u] = it;
+				int next = -1;
+				if(!forward) head = u;
+				for(auto id: g.adj[u]){
+					if(g.ignore && g.ignore(id)) continue;
+					auto &e = g.edge[id];
+					int v = u ^ e.from ^ e.to;
+					if(was[v] != it){
+						next = v;
+						forward ? path.push_back(id) : path.push_front(id);
+						break;
+					}
+				}
+				if(!~next) break;
+				u = next;
+			}
+		};
+		find_maximal_path(s, true);
+		find_maximal_path(s, false);
+		pos[head] = 0;
+		for(auto i = 0, u = head; i < (int)path.size(); ++ i){
+			auto &e = g.edge[path[i]];
+			u ^= e.from ^ e.to;
+			pos[u] = i + 1;
+		}
+		vector<array<int, 2>> adj;
+		for(auto id: g.adj[head]){
+			if(g.ignore && g.ignore(id)) continue;
+			auto &e = g.edge[id];
+			int u = head ^ e.from ^ e.to;
+			if(pos[u] >= 2){
+				adj.push_back({pos[u], id});
+				if((int)adj.size() == 2) break;
+			}
+		}
+		assert((int)adj.size() == 2);
+		for(auto [p, id]: adj){
+			if(p & 1){
+				vector<int> even_cycle;
+				for(auto i = 0; i < p; ++ i) even_cycle.push_back(path[i]);
+				even_cycle.push_back(id);
+				return {head, even_cycle};
+			}
+		}
+		if(adj[0][0] > adj[1][0]) swap(adj[0], adj[1]);
+		vector<int> even_cycle{adj[0][1]};
+		for(auto i = adj[0][0]; i < adj[1][0]; ++ i) even_cycle.push_back(path[i]);
+		even_cycle.push_back(adj[1][1]);
+		return {head, even_cycle};
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>reachable_even_cycle_finder</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
