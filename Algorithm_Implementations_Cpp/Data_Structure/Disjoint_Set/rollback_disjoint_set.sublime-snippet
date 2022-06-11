@@ -36,10 +36,11 @@ struct rollback_disjoint_set{
 		u = root(u), v = root(v);
 		if(u == v) return false;
 		-- _classes;
-		if(p[u] > p[v]) swap(u, v);
+		bool swapped = false;
+		if(p[u] > p[v]) swap(u, v), swapped = true;
 		recover.emplace_back(v, p[v]);
 		p[u] += p[v], p[v] = u;
-		act(u, v);
+		act(u, v, swapped);
 		return true;
 	}
 	// O(1)

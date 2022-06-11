@@ -34,9 +34,10 @@ struct disjoint_set{
 		u = root(u), v = root(v);
 		if(u == v) return false;
 		-- _classes;
-		if constexpr(Enable_small_to_large) if(p[u] > p[v]) swap(u, v);
+		bool swapped = false;
+		if constexpr(Enable_small_to_large) if(p[u] > p[v]) swap(u, v), swapped = true;
 		p[u] += p[v], p[v] = u;
-		act(u, v);
+		act(u, v, swapped);
 		return true;
 	}
 	void clear(){
