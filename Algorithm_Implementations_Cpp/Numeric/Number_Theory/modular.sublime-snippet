@@ -55,7 +55,7 @@ struct modular_base{
 		return v;
 	}
 	const Type& operator()() const{ return value; }
-	template<typename U> explicit operator U() const{ return value; }
+	template<typename U> operator U() const{ return value; }
 	constexpr static Type mod(){ return T::value; }
 	modular_base &operator+=(const modular_base &otr){ if((value += otr.value) >= mod()) value -= mod(); return *this; }
 	modular_base &operator-=(const modular_base &otr){ if((value -= otr.value) < 0) value += mod(); return *this; }
