@@ -33,8 +33,9 @@ struct range_mode_query_solver_online{
 	}
 	// Returns a pair (mode, frequency)
 	// O(B)
-	pair<T, int> query(int ql, int qr){
-		assert(0 <= ql && ql < qr && qr <= n);
+	pair<T, int> query(int ql, int qr) const{
+		assert(0 <= ql && ql <= qr && qr <= n);
+		if(ql == qr) return {{}, 0};
 		const int bl = ql / B, br = qr / B;
 		int mode = -1, freq = 0;
 		if(bl == br){
