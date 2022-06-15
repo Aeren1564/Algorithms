@@ -22,11 +22,11 @@ struct combinatorics{
 	}
 	// O(1)
 	T C(int n, int k) const{
-		return n < 0 ? C(-n + k - 1, k) * (k & 1 ? -1 : 1) : n < k || k < 0 ? 0 : fact[n] * invfact[k] * invfact[n - k];
+		return n < 0 ? C(-n + k - 1, k) * (k & 1 ? -1 : 1) : n < k || k < 0 ? T() : fact[n] * invfact[k] * invfact[n - k];
 	}
 	// O(1)
 	T P(int n, int k) const{
-		return n < k ? 0 : fact[n] * invfact[n - k];
+		return n < k ? T() : fact[n] * invfact[n - k];
 	}
 	// O(1)
 	T H(int n, int k) const{
@@ -53,14 +53,14 @@ struct combinatorics{
 	}
 	// O(1)
 	bool parity_C(long long n, long long k) const{
-		return n < k ? 0 : (n & k) == k;
+		return n < k ? false : (n & k) == k;
 	}
 	// Number of ways to place n '('s and k ')'s starting with m copies of '(' such that in each prefix, number of '(' is equal or greater than ')'
 	// Catalan(n, n, 0): n-th catalan number
 	// O(1)
 	T Catalan(int n, int k, int m = 0) const{
 		assert(0 <= min({n, k, m}));
-		return k <= m ? C(n + k, n) : k <= n + m ? C(n + k, n) - C(n + k, k - m - 1) : 0;
+		return k <= m ? C(n + k, n) : k <= n + m ? C(n + k, n) - C(n + k, k - m - 1) : T();
 	}
 };
 ]]></content>

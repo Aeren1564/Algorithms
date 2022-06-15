@@ -1,28 +1,35 @@
 <snippet>
 	<content><![CDATA[
-// Note: construction of an AC-automaton is offline.
-// O(sigma * (sum of length)) where sigma is the size of alphabets
-// All alphabets must be within [0, sigma)
 template<class Char_Type, int sigma>
 struct aho_corasic_automaton_fixed{
-	// Begin States
-	vector<int> len{0}, link{-1}, exit_link{-1}, is_terminal{false};
+	vector<int> len{0};
+	vector<int> link{-1};
+	vector<int> exit_link{-1};
+	vector<int> is_terminal{false};
+	vector<pair<int, Char_Type>> pv{{-1, {}}};
 	vector<array<int, sigma>> next{{}};
-	// End States
 	int new_state(){
 		len.push_back(0);
 		link.push_back(-1);
 		exit_link.push_back(-1);
 		is_terminal.push_back(false);
+		pv.push_back({-1, {}});
 		next.push_back({});
 		return (int)len.size() - 1;
 	}
 	aho_corasic_automaton_fixed(){ }
+	// O(sigma * (sum of length)) where sigma is the size of alphabets
+	// All alphabets must be within [0, sigma)
 	aho_corasic_automaton_fixed(const vector<vector<Char_Type>> &patterns){
 		for(auto s: patterns){
 			int u = 0;
 			for(auto c: s){
-				if(!next[u][c]) next[u][c] = new_state(), len[next[u][c]] = len[u] + 1;
+				assert(0 <= c && c < sigma);
+				if(!next[u][c]){
+					next[u][c] = new_state();
+					len[next[u][c]] = len[u] + 1;
+					pv[next[u][c]] = {u, c};
+				}
 				u = next[u][c];
 			}
 			is_terminal[u] = true;
@@ -33,7 +40,7 @@ struct aho_corasic_automaton_fixed{
 			for(auto c = 0; c < sigma; ++ c){
 				int v = next[u][c];
 				if(!v) continue;
-				link[v] = !~link[u] ? 0 : next[link[u]][c];
+				link[v] = ~link[u] ? next[link[u]][c] : 0;
 				exit_link[v] = is_terminal[link[v]] ? link[v] : exit_link[link[v]];
 				dq.push_back(v); 
 			}
@@ -45,6 +52,13 @@ struct aho_corasic_automaton_fixed{
 	}
 	int size() const{ // # of states
 		return (int)len.size();
+	}
+	vector<Char_Type> restore(int u) const{
+		assert(0 <= u && u < (int)next.size());
+		vector<Char_Type> res;
+		for(; u; u = pv[u].first) res.push_back(pv[u].second);
+		reverse(res.begin(), res.end());
+		return res;
 	}
 };
 ]]></content>
