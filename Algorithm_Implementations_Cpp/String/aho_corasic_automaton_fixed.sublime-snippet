@@ -48,7 +48,11 @@ struct aho_corasic_automaton_fixed{
 		}
 	}
 	int next_state(int u, Char_Type c) const{
-		return !~u ? 0 : next[u][c];
+		return next[u][c];
+	}
+	int next_state(int u, const vector<Char_Type> &s) const{
+		for(auto c: s) u = next[u][c];
+		return u;
 	}
 	int size() const{ // # of states
 		return (int)len.size();
