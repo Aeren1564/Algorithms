@@ -1,6 +1,5 @@
 <snippet>
 	<content><![CDATA[
-// Requires graph
 struct functional_graph_processor{
 	functional_graph_processor(const vector<int> &next): n((int)next.size()), cycle_id(n, -1), cycle_pos(n, -1), root(n, -1), depth(n, -1), abr(n){
 		vector<int> was(n);
@@ -32,13 +31,14 @@ struct functional_graph_processor{
 				root[u] = root[v];
 				++ size[cycle_id[root[u]]];
 				depth[u] = depth[v] + 1;
-				abr.orient(v, u, 1);
+				abr[v].push_back(u);
 			};
 			dfs(dfs, u);
 		}
 	}
-	template<class T>
-	functional_graph_processor(const graph<T> &g){
+	// Requires graph
+	template<class Graph>
+	functional_graph_processor(const Graph &g){
 		int n = g.n;
 		assert(n == (int)g.edge.size());
 		vector<int> pv(n, -1), state(n), on_cycle(n);
@@ -97,7 +97,7 @@ struct functional_graph_processor{
 	vector<int> size; // size of the weakly connected component of the i-th main cycle
 	vector<int> root; // first reachable node in the main cycle
 	vector<int> depth; // # of edges from the main cycle
-	graph<int> abr; // forest of arborescences of reversed edges not on the main cycle
+	vector<vector<int>> abr; // forest of arborescences of reversed edges not on the main cycle
 };
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
