@@ -11,6 +11,14 @@ struct graph{
 	vector<vector<int>> adj;
 	function<bool(int)> ignore;
 	graph(int n = 0): n(n), adj(n){ }
+	graph(const vector<vector<int>> &adj, bool undirected = true): n(n){
+		if(undirected) for(auto u = 0; u < n; ++ u) for(auto v: adj[u]) if(u < v) link(u, v);
+		else for(auto u = 0; u < n; ++ u) for(auto v: adj[u]) orient(u, v);
+	}
+	graph(const vector<vector<pair<int, T>>> &adj, bool undirected = true): n(n){
+		if(undirected) for(auto u = 0; u < n; ++ u) for(auto [v, w]: adj[u]) if(u < v) link(u, v, w);
+		else for(auto u = 0; u < n; ++ u) for(auto [v, w]: adj[u]) orient(u, v, w);
+	}
 	int link(int u, int v, T w = {}){ // insert an undirected edge
 		int id = (int)edge.size();
 		adj[u].push_back(id), adj[v].push_back(id), edge.push_back({u, v, w});
