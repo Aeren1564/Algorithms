@@ -19,6 +19,12 @@ struct graph{
 		if(undirected) for(auto u = 0; u < n; ++ u) for(auto [v, w]: adj[u]) if(u < v) link(u, v, w);
 		else for(auto u = 0; u < n; ++ u) for(auto [v, w]: adj[u]) orient(u, v, w);
 	}
+	graph(int n, vector<array<int, 2>> &edge, bool undirected = true): n(n){
+		for(auto [u, v]: edge) undirected ? link(u, v) : orient(u, v);
+	}
+	graph(int n, vector<tuple<int, int, T>> &edge, bool undirected = true): n(n){
+		for(auto [u, v, w]: edge) undirected ? link(u, v, w) : orient(u, v, w);
+	}
 	int link(int u, int v, T w = {}){ // insert an undirected edge
 		int id = (int)edge.size();
 		adj[u].push_back(id), adj[v].push_back(id), edge.push_back({u, v, w});
