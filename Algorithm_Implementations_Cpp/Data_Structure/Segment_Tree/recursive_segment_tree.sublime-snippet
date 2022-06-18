@@ -54,8 +54,9 @@ struct recursive_segment_tree{
 		auto recurse = [&](auto self, int u, int l, int r)->void{
 			if(qr <= l || r <= ql || exit_rule(data[u])) return;
 			if(ql <= l && r <= qr && enter_rule(data[u])){
-				data[u] = UT(update_rule(data[u]), data[u]);
-				updates[u] = UU(update_rule(data[u]), updates[u]);
+				U f = update_rule(data[u]);
+				data[u] = UT(f, data[u]);
+				updates[u] = UU(f, updates[u]);
 				return;
 			}
 			push(u, l, r);
@@ -113,6 +114,15 @@ struct recursive_segment_tree{
 			return p > 0 ? p : self(self, u + 1, l, m);
 		};
 		return recurse(recurse, 0, 0, n);
+	}
+	template<class output_stream>
+	friend output_stream &operator<<(output_stream &out, recursive_segment_tree<T, U, F1, F2, F3, F4> seg){
+		out << "[";
+		for(auto i = 0; i < seg.n; ++ i){
+			out << seg.query(i, i + 1);
+			if(i != seg.n - 1) out << ", ";
+		}
+		return out << ']';
 	}
 };
 ]]></content>
