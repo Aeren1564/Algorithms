@@ -1,0 +1,40 @@
+<snippet>
+	<content><![CDATA[
+// Source: KATL
+// O(n) applications of division on T
+template<class T>
+vector<T> tridiagonal_matrix_equation_solver(vector<T> diag, const vector<T>& sup,
+		const vector<T>& sub, vector<T> b){
+	int n = (int)b.size();
+	vector<int> tr(n);
+	for(auto i = 0; i < n - 1; ++ i){
+		if(-T(1e-9) <= diag[i] && diag[i] <= T(1e-9)){
+			b[i + 1] -= b[i] * diag[i + 1] / sup[i];
+			if(i + 2 < n) b[i + 2] -= b[i] * sub[i + 1] / sup[i];
+			diag[i + 1] = sub[i];
+			tr[++ i] = 1;
+		}
+		else{
+			diag[i + 1] -= sup[i] * sub[i] / diag[i];
+			b[i+1] -= b[i] * sub[i] / diag[i];
+		}
+	}
+	for(auto i = n; i --; ){
+		if(tr[i]){
+			swap(b[i], b[i - 1]);
+			diag[i - 1] = diag[i];
+			b[i] /= sup[i - 1];
+		}
+		else{
+			b[i] /= diag[i];
+			if(i) b[i - 1] -= b[i] * sup[i - 1];
+		}
+	}
+	return b;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>tridiagonal_matrix_equation_solver</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

@@ -1,0 +1,44 @@
+<snippet>
+	<content><![CDATA[
+template<int BX>
+struct mo_2d_rollback{
+	vector<array<int, 3>> query;
+	void insert(int qi, int l, int r){
+		query.push_back({l, r, qi});
+	}
+	void solve(auto insert, auto time, auto reverse_to, auto answer){
+		auto cmp = [&](const auto &p, const auto &q)->bool{
+			return p[0] / BX != q[0] / BX ? p < q : p[1] < q[1];
+		};
+		sort(query.begin(), query.end(), cmp);
+		int init = time();
+		for(auto [ql, qr, qi]: query){
+			if(qr - ql <= BX){
+				for(auto i = ql; i < qr; ++ i) insert(i);
+				answer(qi);
+				reverse_to(init);
+			}
+		}
+		int last_block = -1, l, r;
+		for(auto [ql, qr, qi]: query){
+			if(qr - ql <= BX) continue;
+			int block = ql / BX;
+			if(block != last_block){
+				reverse_to(init);
+				l = (block + 1) * BX, r = qr;
+				for(auto i = l; i < r; ++ i) insert(i);
+			}
+			while(r < qr) insert(r ++);
+			int t = time();
+			for(auto i = ql; i < l; ++ i) insert(i);
+			answer(qi);
+			reverse_to(t);
+		}
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>mo_2d_rollback</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

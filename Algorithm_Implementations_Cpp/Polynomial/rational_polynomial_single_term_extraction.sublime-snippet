@@ -18,7 +18,7 @@ T rational_polynomial_single_term_extraction(vector<T> p, vector<T> q, U i){
 	for(; i; i >>= 1){
 		for(auto i = 0; i < n; ++ i) p[i] *= q[n >> 1 ^ i];
 		if(~i & 1) for(auto i = 0; i < n >> 1; ++ i) p[i] = inv2 * (p[i] + p[n >> 1 ^ i]);
-		else for(auto i = 0; i < n >> 1; ++ i) p[i] = inv2 * (i ? -ntt::root[n - i] : 1) * (p[i] - p[n >> 1 ^ i]);
+		else for(auto i = 0; i < n >> 1; ++ i) p[i] = inv2 * (i ? -ntt::root[n - i] : T(1)) * (p[i] - p[n >> 1 ^ i]);
 		p.resize(n >> 1);
 		ntt::double_up(p);
 		for(auto i = 0; i < n >> 1; ++ i) q[i] *= q[n >> 1 ^ i];
