@@ -9,10 +9,10 @@ long long count_inversions(const vector<T> &a, bool count_equal = false, Compare
 	sort(cmpr.begin(), cmpr.end(), cmp);
 	fenwick_tree_sum<int> rsumq(n);
 	long long res = 0;
-	for(auto x: a){
-		int i = lower_bound(cmpr.begin(), cmpr.end(), x, cmp) - cmpr.begin();
-		res += rsumq.query(i + !count_equal, n);
-		rsumq.update(i, 1);
+	for(auto i = 0; i < n; ++ i){
+		int p = lower_bound(cmpr.begin(), cmpr.end(), a[i], cmp) - cmpr.begin();
+		res += i - rsumq.pref(p + !count_equal);
+		rsumq.update(p, 1);
 	}
 	return res;
 }

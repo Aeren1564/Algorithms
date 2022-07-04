@@ -21,15 +21,20 @@ struct fenwick_tree_sum{
 		for(++ p; p <= n; p += p & -p) data[p - 1] += x;
 	}
 	// O(log n)
-	T query(int r) const{
+	T pref(int r) const{
+		assert(0 <= r && r <= n);
 		T s{};
 		for(; r > 0; r -= r & -r) s += data[r - 1];
 		return s;
 	}
 	// O(log n)
 	T query(int l, int r) const{
-		assert(0 <= l && l <= r && r <= n);
-		return query(r) - query(l);
+		assert(l <= r);
+		return pref(r) - pref(l);
+	}
+	// O(log n)
+	T query(int p) const{
+		return pref(p + 1) - pref(p);
 	}
 	// pred(sum[0, r)) is T, T, ..., T, F, F, ..., F
 	// Returns max r with T
@@ -48,7 +53,7 @@ struct fenwick_tree_sum{
 	friend output_stream &operator<<(output_stream &out, const fenwick_tree_sum<T> &fw){
 		out << "[";
 		for(auto i = 0; i < fw.n; ++ i){
-			out << fw.query(i, i + 1);
+			out << fw.query(i);
 			if(i != fw.n - 1) out << ", ";
 		}
 		return out << ']';

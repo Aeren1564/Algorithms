@@ -16,7 +16,7 @@ struct fenwick_tree_max{
 		for(++ p; p <= n; p += p & -p) data[p - 1] = max(data[p - 1], x);
 	}
 	// O(log n)
-	T query(int r) const{
+	T pref(int r) const{
 		T s = numeric_limits<T>::min();
 		for(; r > 0; r -= r & -r) s = max(s, data[r - 1]);
 		return s;
@@ -31,15 +31,6 @@ struct fenwick_tree_max{
 			p += 1 << i;
 		}
 		return p;
-	}
-	template<class output_stream>
-	friend output_stream &operator<<(output_stream &out, const fenwick_tree_max<T> &fw){
-		out << "[";
-		for(auto i = 0; i < fw.n; ++ i){
-			out << fw.query(i, i + 1);
-			if(i != fw.n - 1) out << ", ";
-		}
-		return out << ']';
 	}
 };
 ]]></content>

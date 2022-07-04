@@ -73,7 +73,7 @@ struct integral_map{
 	int order_of_key(T x) const{
 		if(x < offset) return 0;
 		if(maxval <= x) return _size;
-		return data_key.query(x - offset);
+		return data_key.pref(x - offset);
 	}
 	// O(log len)
 	T front() const{
@@ -88,21 +88,21 @@ struct integral_map{
 	// Returns {maxval, {}} if no such element
 	// O(log len)
 	pair<T, U> lower_bound(T x) const{
-		return find_by_order(data_key.query(x - offset));
+		return find_by_order(data_key.pref(x - offset));
 	}
 	// O(log len), returns {maxval, {}} if no such element
 	pair<T, U> upper_bound(T x) const{
-		return find_by_order(data_key.query(x - offset + 1));
+		return find_by_order(data_key.pref(x - offset + 1));
 	}
 	// Returns {minval, {}} if no such element
 	// O(log len)
 	T reverse_lower_bound(T x) const{
-		return find_by_order(data_key.query(x - offset + 1) - 1);
+		return find_by_order(data_key.pref(x - offset + 1) - 1);
 	}
 	// Returns {minval, {}} if no such element
 	// O(log len)
 	T reverse_upper_bound(T x) const{
-		return find_by_order(data_key.query(x - offset) - 1);
+		return find_by_order(data_key.pref(x - offset) - 1);
 	}
 };
 ]]></content>
