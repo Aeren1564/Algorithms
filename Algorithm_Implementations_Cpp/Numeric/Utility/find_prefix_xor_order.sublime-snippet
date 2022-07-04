@@ -1,0 +1,31 @@
+<snippet>
+	<content><![CDATA[
+// Solution to https://codeforces.com/gym/378271/problem/B
+// Let f(a) be the array of prefix xors of a
+// Return the minimum integer m such that f^m(a) = b, or -1 if there's no such m
+// O(n * log(n))
+template<class T>
+int find_prefix_xor_order(vector<T> a, const vector<T> &b){
+	assert((int)a.size() == (int)b.size());
+	int n = (int)a.size(), s = 0;
+	while(s < n && !a[s]){
+		if(b[s]) return -1;
+		++ s;
+	}
+	if(s == n) return 0;
+	if(a[s] != b[s]) return -1;
+	int res = 0;
+	for(auto bit = 0; s + (1 << bit) <= n; ++ bit){
+		if(equal(a.begin() + s + (1 << bit), a.begin() + min(s + (1 << bit + 1), n), b.begin() + s + (1 << bit), b.begin() + min(s + (1 << bit + 1), n))) continue;
+		res |= 1 << bit;
+		for(auto i = s + (1 << bit); i < n; ++ i) a[i] ^= a[i - (1 << bit)];
+		if(!equal(a.begin() + s + (1 << bit), a.begin() + min(s + (1 << bit + 1), n), b.begin() + s + (1 << bit), b.begin() + min(s + (1 << bit + 1), n))) return -1;
+	}
+	return res;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>find_prefix_xor_order</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
