@@ -34,12 +34,13 @@ struct fenwick_tree{
 		assert(0 <= p && p < n);
 		return TinvT(pref(p + 1), pref(p));
 	}
-	// f(sum[0, r)) is T, T, ..., T, F, F, ..., F, returns max r with T
+	// pred(sum[0, r)) is T, T, ..., T, F, F, ..., F, returns max r with T
 	// O(log n)
-	int max_pref(auto f) const{
+	int max_pref(auto pred) const{
+		assert(pred(T_id));
 		int p = 0;
 		T pref = T_id;
-		for(auto i = __lg(n + 1); i >= 0; -- i) if(p + (1 << i) <= n && f(TT(pref, data[p + (1 << i) - 1]))){
+		for(auto i = __lg(n + 1); i >= 0; -- i) if(p + (1 << i) <= n && pred(TT(pref, data[p + (1 << i) - 1]))){
 			pref = TT(pref, data[p + (1 << i) - 1]);
 			p += 1 << i;
 		}
