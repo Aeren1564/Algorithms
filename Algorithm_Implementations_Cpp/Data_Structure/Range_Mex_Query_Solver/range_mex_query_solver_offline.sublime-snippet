@@ -1,0 +1,38 @@
+<snippet>
+	<content><![CDATA[
+// Requires segment_tree
+struct range_mex_query_solver_offline{
+	int n;
+	vector<int> a;
+	vector<array<int, 3>> queries;
+	range_mex_query_solver_offline(const vector<int> &a): n((int)a.size()), a(a){
+		for(auto x: a) assert(x >= 0);
+	}
+	void query(int qi, int l, int r){
+		assert(0 <= l && l <= r && r <= n);
+		queries.push_back({l, r, qi});
+	}
+	// f(query id, answer)
+	void solve(auto f){
+		sort(queries.begin(), queries.end());
+		segment_tree seg(n + 1, n, [&](int x, int y){ return max(x, y); }, -1);
+		while(!queries.empty() && queries.back()[0] == n){
+			f(queries.back()[2], 0);
+			queries.pop_back();
+		}
+		for(auto l = n - 1; l >= 0; -- l){
+			int x = min(a[l], n);
+			seg.set(x, min(l, seg.query(x)));
+			while(!queries.empty() && queries.back()[0] == l){
+				f(queries.back()[2], seg.max_pref(0, [&](auto mx){ return mx < queries.back()[1]; }));
+				queries.pop_back();
+			}
+		}
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>range_mex_query_solver_offline</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
