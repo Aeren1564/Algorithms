@@ -4,10 +4,9 @@ template<class T>
 struct fenwick_tree_max{
 	int n;
 	vector<T> data;
-	fenwick_tree_max(){ }
-	fenwick_tree_max(int n): fenwick_tree_max(vector<T>(n, numeric_limits<T>::min())){ }
-	fenwick_tree_max(int n, T init): fenwick_tree_max(vector<T>(n, init)){ }
-	fenwick_tree_max(const vector<T> &v): n((int)v.size()), data(v){
+	T T_id;
+	fenwick_tree_max(int n, T init, T T_id = numeric_limits<T>::min()): fenwick_tree_max(vector<T>(n, init), T_id){ }
+	fenwick_tree_max(const vector<T> &v, T T_id = numeric_limits<T>::min()): n((int)v.size()), data(v), T_id(T_id){
 		for(auto i = 1; i <= n; ++ i) if(i + (i & -i) <= n) data[i + (i & -i) - 1] = max(data[i + (i & -i) - 1], data[i - 1]);
 	}
 	// O(log n)
@@ -17,16 +16,16 @@ struct fenwick_tree_max{
 	}
 	// O(log n)
 	T pref(int r) const{
-		T s = numeric_limits<T>::min();
+		T s = T_id;
 		for(; r > 0; r -= r & -r) s = max(s, data[r - 1]);
 		return s;
 	}
 	// pred(sum[0, r)) is T, T, ..., T, F, F, ..., F, returns max r with T
 	// O(log n)
 	int max_pref(auto pred) const{
-		assert(pred(numeric_limits<T>::min()));
+		assert(pred(T_id));
 		int p = 0;
-		T pref = numeric_limits<T>::min();
+		T pref = T_id;
 		for(auto i = __lg(n + 1); i >= 0; -- i) if(p + (1 << i) <= n && pred(max(pref, data[p + (1 << i) - 1]))){
 			pref = max(pref, data[p + (1 << i) - 1]);
 			p += 1 << i;

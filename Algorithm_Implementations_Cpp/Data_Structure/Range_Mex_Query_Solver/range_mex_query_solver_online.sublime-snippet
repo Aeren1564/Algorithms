@@ -1,0 +1,25 @@
+<snippet>
+	<content><![CDATA[
+// Requires persistent_segment_tree_max
+struct range_mex_query_solver_online{
+	int n;
+	vector<int> a, root;
+	persistent_segment_tree_max<int> pseg;
+	range_mex_query_solver_online(const vector<int> &a): n((int)a.size()), a(a), root(n), pseg(n + 1, n, -1){
+		for(auto i = n - 1; i >= 0; -- i){
+			int u = pseg.last_state(), x = min(a[i], n);
+			root[i] = pseg.set(u, x, i);
+		}
+	}
+	int query(int l, int r) const{
+		assert(0 <= l && l <= r && r <= n);
+		if(l == n) return 0;
+		return pseg.max_pref(root[l], 0, [&](auto mx){ return mx < r; });
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>range_mex_query_solver_online</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

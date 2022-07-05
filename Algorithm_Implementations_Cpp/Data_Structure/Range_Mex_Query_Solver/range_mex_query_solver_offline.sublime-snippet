@@ -22,7 +22,7 @@ struct range_mex_query_solver_offline{
 		}
 		for(auto l = n - 1; l >= 0; -- l){
 			int x = min(a[l], n);
-			seg.set(x, min(l, seg.query(x)));
+			seg.set(x, l);
 			while(!queries.empty() && queries.back()[0] == l){
 				f(queries.back()[2], seg.max_pref(0, [&](auto mx){ return mx < queries.back()[1]; }));
 				queries.pop_back();
