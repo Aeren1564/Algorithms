@@ -1,0 +1,62 @@
+<snippet>
+	<content><![CDATA[
+// Requires fenwick_tree_sum
+template<class T>
+struct value_range_query_solver_offline{
+	int n;
+	vector<tuple<int, int, T>> event;
+	vector<array<int, 4>> queries;
+	value_range_query_solver_offline(const vector<int> &a): value_range_query_solver_offline(a, vector<T>(a.size(), 1)){ }
+	value_range_query_solver_offline(const vector<int> &a, const vector<T> &w): n((int)a.size()), event(n){
+		assert(n == (int)w.size());
+		for(auto i = 0; i < n; ++ i) event[i] = {a[i], i, w[i]};
+	}
+	value_range_query_solver_offline &operator=(const value_range_query_solver_offline &vrq){
+		n = vrq.n;
+		event = vrq.event;
+		queries = vrq.queries;
+		return *this;
+	}
+	void query(int qi, int ql, int qr, int k){
+		assert(0 <= ql && ql <= qr && qr <= n);
+		queries.push_back({k, ql, qr, qi});
+	}
+	// The answer of query qi is the sum of w[i] over all i with
+	//  ql <= i < qr and a[i] < k
+	// f(query id, answer)
+	// O(n * log(n) + q * log(q))
+	void solve_less(auto f){
+		sort(queries.begin(), queries.end());
+		sort(event.rbegin(), event.rend());
+		fenwick_tree_sum<T> fw(n);
+		for(auto &q: queries){
+			while(!event.empty() && get<0>(event.back()) < q[0]){
+				fw.update(get<1>(event.back()), get<2>(event.back()));
+				event.pop_back();
+			}
+			f(q[3], fw.query(q[1], q[2]));
+		}
+	}
+	// The answer of query qi is the sum of w[i] over all i with
+	//  ql <= i < qr and k <= a[i]
+	// f(query id, answer)
+	// O(n * log(n) + q * log(q))
+	void solve_equal_or_greater(auto f){
+		sort(queries.rbegin(), queries.rend());
+		sort(event.begin(), event.end());
+		fenwick_tree_sum<T> fw(n);
+		for(auto &q: queries){
+			while(!event.empty() && q[0] <= get<0>(event.back())){
+				fw.update(get<1>(event.back()), get<2>(event.back()));
+				event.pop_back();
+			}
+			f(q[3], fw.query(q[1], q[2]));
+		}
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>value_range_query_solver_offline</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

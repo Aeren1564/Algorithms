@@ -1,12 +1,13 @@
 <snippet>
 	<content><![CDATA[
-// Requires persistent_segment_tree and less_than_k_query_solver_online
-template<class T, class F = plus<>>
+// Requires persistent_segment_tree and value_range_query_solver_online
+template<class T, class F = plus<>, bool GET_LESS = true>
 struct static_sparse_rectangle_query_processor_online{
 	int sigma_x, sigma_y;
 	vector<int> lower_bound_x;
-	less_than_k_query_solver_online<T, F> ltk;
-	static_sparse_rectangle_query_processor_online(const vector<array<int, 2>> points, int sigma_x, int sigma_y, F TT = plus<>(), T T_id = {}): ltk({}, 0, TT, T_id){
+	value_range_query_solver_online<T, F, GET_LESS> vrq;
+	// O(sigma_x + sigma_y + n * log(n))
+	static_sparse_rectangle_query_processor_online(const vector<array<int, 2>> points, int sigma_x, int sigma_y, F TT = plus<>(), T T_id = {}): vrq({}, 0, TT, T_id){
 		int n = (int)points.size();
 		vector<tuple<int, int, T>> points2(n);
 		for(auto i = 0; i < n; ++ i){
@@ -17,7 +18,8 @@ struct static_sparse_rectangle_query_processor_online{
 		}
 		*this = static_sparse_rectangle_query_processor_online(points2, sigma_x, sigma_y, TT, T_id);
 	}
-	static_sparse_rectangle_query_processor_online(vector<tuple<int, int, T>> points, int sigma_x, int sigma_y, F TT = plus<>(), T T_id = {}): sigma_x(sigma_x), sigma_y(sigma_y), lower_bound_x(sigma_x + 1), ltk({}, 0, TT, T_id){
+	// O(sigma_x + sigma_y + n * log(n))
+	static_sparse_rectangle_query_processor_online(vector<tuple<int, int, T>> points, int sigma_x, int sigma_y, F TT = plus<>(), T T_id = {}): sigma_x(sigma_x), sigma_y(sigma_y), lower_bound_x(sigma_x + 1), vrq({}, 0, TT, T_id){
 		for(auto [x, y, w]: points) assert(0 <= x && x < sigma_x && 0 <= y && y < sigma_y);
 		sort(points.begin(), points.end());
 		int n = (int)points.size();
@@ -31,21 +33,22 @@ struct static_sparse_rectangle_query_processor_online{
 			Y[i] = get<1>(points[i]);
 			w[i] = get<2>(points[i]);
 		}
-		ltk = {Y, sigma_y, w, TT, T_id};
+		vrq = {Y, sigma_y, w, TT, T_id};
 	}
 	static_sparse_rectangle_query_processor_online &operator=(const static_sparse_rectangle_query_processor_online &rqp){
 		sigma_x = rqp.sigma_x;
 		sigma_y = rqp.sigma_y;
 		lower_bound_x = rqp.lower_bound_x;
-		ltk = rqp.ltk;
+		vrq = rqp.vrq;
 		return *this;
 	}
-	// Find the sum of weights of points in [xlow, xhigh) x [ylow, yhigh)
+	// Return sum of weights of points
+	//  in [xl, xr) x ([0, y) if GET_LESS else [y, sigma_y))
 	// O(log(n))
-	T query(int xlow, int xhigh, int ylow, int yhigh) const{
-		assert(0 <= xlow && xlow <= xhigh && xhigh <= sigma_x);
-		assert(0 <= ylow && ylow <= yhigh && yhigh <= sigma_y);
-		return ltk.query_within(lower_bound_x[xlow], lower_bound_x[xhigh], ylow, yhigh);
+	T query(int xl, int xr, int y) const{
+		assert(0 <= xl && xl <= xr && xr <= sigma_x);
+		assert(0 <= y && y <= sigma_y);
+		return vrq.query(lower_bound_x[xl], lower_bound_x[xr], y);
 	}
 };
 ]]></content>

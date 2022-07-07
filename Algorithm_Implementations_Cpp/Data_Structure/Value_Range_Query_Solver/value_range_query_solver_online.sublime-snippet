@@ -1,0 +1,53 @@
+<snippet>
+	<content><![CDATA[
+// Requires persistent_segment_tree
+template<class T, class F = plus<>, bool GET_LESS = true>
+struct value_range_query_solver_online{
+	int n, sigma;
+	vector<int> root;
+	persistent_segment_tree<T, F> pseg;
+	// O(sigma + n * log(n))
+	value_range_query_solver_online(const vector<int> &a, int sigma, F TT = plus<>(), T T_id = {}): value_range_query_solver_online(a, sigma, vector<T>((int)a.size(), 1), TT, T_id){ }
+	// O(sigma + n * log(n))
+	value_range_query_solver_online(const vector<int> &a, int sigma, const vector<T> &w, F TT = plus<>(), T T_id = {}): n((int)a.size()), sigma(sigma), root(sigma + 1), pseg(n, TT, T_id){
+		assert(sigma >= 0);
+		for(auto &x: a) assert(0 <= x && x < sigma);
+		assert((int)w.size() == n);
+		vector<vector<pair<int, T>>> event(sigma);
+		for(auto i = 0; i < n; ++ i) event[a[i]].push_back({i, w[i]});
+		if constexpr(GET_LESS){
+			for(auto x = 0; x < sigma; ++ x){
+				root[x] = pseg.last_state();
+				for(auto [i, y]: event[x]) pseg.set(pseg.last_state(), i, y);
+			}
+			root[sigma] = pseg.last_state();
+		}
+		else{
+			root[sigma] = pseg.last_state();
+			for(auto x = sigma - 1; x >= 0; -- x){
+				for(auto [i, y]: event[x]) pseg.set(pseg.last_state(), i, y);
+				root[x] = pseg.last_state();
+			}
+		}
+	}
+	value_range_query_solver_online &operator=(const value_range_query_solver_online &vrq){
+		n = vrq.n;
+		sigma = vrq.sigma;
+		root = vrq.root;
+		pseg = vrq.pseg;
+		return *this;
+	}
+	// Find the sum of w[i] for all i with
+	//  ql <= i < qr and (a[i] < k if GET_LESS else k <= a[i])
+	// O(log(n))
+	T query(int ql, int qr, int k) const{
+		assert(0 <= k && k <= sigma);
+		return pseg.query(root[k], ql, qr);
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>value_range_query_solver_online</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
