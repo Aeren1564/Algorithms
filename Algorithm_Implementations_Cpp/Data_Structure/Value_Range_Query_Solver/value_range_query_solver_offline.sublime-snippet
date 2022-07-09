@@ -1,6 +1,5 @@
 <snippet>
 	<content><![CDATA[
-// Requires fenwick_tree_sum
 template<class T>
 struct value_range_query_solver_offline{
 	int n;
@@ -21,36 +20,42 @@ struct value_range_query_solver_offline{
 		assert(0 <= ql && ql <= qr && qr <= n);
 		queries.push_back({k, ql, qr, qi});
 	}
-	// The answer of query qi is the sum of w[i] over all i with
+	// init(n) Initialize DS over identity array A of length n
+	// set(p, x): A[p] <- x, A[p] is always identity beforehand
+	// query(l, r): return sum in A[l:r)
+	// answer(qi, x): answer to query qi is sum of w[i] over all i with
 	//  ql <= i < qr and a[i] < k
-	// f(query id, answer)
-	// O(n * log(n) + q * log(q))
-	void solve_less(auto f){
+	// O(init() + n * (log(n) + update()) + q * (log(q) + query() + answer()))
+	void solve_less(auto init, auto set, auto query, auto answer){
 		sort(queries.begin(), queries.end());
-		sort(event.rbegin(), event.rend());
-		fenwick_tree_sum<T> fw(n);
+		sort(event.begin(), event.end());
+		init(n);
+		auto i = 0;
 		for(auto &q: queries){
-			while(!event.empty() && get<0>(event.back()) < q[0]){
-				fw.update(get<1>(event.back()), get<2>(event.back()));
-				event.pop_back();
+			while(i < (int)event.size() && get<0>(event[i]) < q[0]){
+				update(get<1>(event[i]), get<2>(event[i]));
+				++ i;
 			}
-			f(q[3], fw.query(q[1], q[2]));
+			answer(q[3], query(q[1], q[2]));
 		}
 	}
-	// The answer of query qi is the sum of w[i] over all i with
-	//  ql <= i < qr and k <= a[i]
-	// f(query id, answer)
-	// O(n * log(n) + q * log(q))
-	void solve_equal_or_greater(auto f){
+	// init(n) Initialize DS over identity array A of length n
+	// set(p, x): A[p] <- x, A[p] is always identity beforehand
+	// query(l, r): return sum in A[l:r)
+	// answer(qi, x): answer to query qi is sum of w[i] over all i with
+	//  ql <= i < qr and a[i] < k
+	// O(init() + n * (log(n) + update()) + q * (log(q) + query() + answer()))
+	void solve_equal_or_greater(auto init, auto set, auto query, auto answer){
 		sort(queries.rbegin(), queries.rend());
-		sort(event.begin(), event.end());
-		fenwick_tree_sum<T> fw(n);
+		sort(event.rbegin(), event.rend());
+		init(n);
+		auto i = 0;
 		for(auto &q: queries){
-			while(!event.empty() && q[0] <= get<0>(event.back())){
-				fw.update(get<1>(event.back()), get<2>(event.back()));
-				event.pop_back();
+			while(i < (int)event.size() && q[0] <= get<0>(event[i])){
+				update(get<1>(event[i]), get<2>(event[i]));
+				++ i;
 			}
-			f(q[3], fw.query(q[1], q[2]));
+			answer(q[3], query(q[1], q[2]));
 		}
 	}
 };

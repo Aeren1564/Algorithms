@@ -1,6 +1,5 @@
 <snippet>
 	<content><![CDATA[
-// Requires fenwick_tree_sum
 template<class T = int>
 struct distinct_value_query_solver_offline{
 	int n, sigma;
@@ -26,22 +25,26 @@ struct distinct_value_query_solver_offline{
 		queries = dvq.queries;
 		return *this;
 	}
-	// Set the answer of query qi to the sum of w[x] over all distinct values x appearing in a[ql, qr)
 	void query(int qi, int ql, int qr){
+		assert(0 <= ql && ql <= qr && qr <= n);
 		queries.push_back({ql, qr, qi});
 	}
-	// f(query id, answer)
-	// O((n + q) * (log(n) + log(q)))
-	void solve(auto f){
+	// init(n) Initialize DS over identity array A of length n
+	// set(p, x): A[p] <- x, A[p] is always identity beforehand
+	// query(l, r): return sum in A[l:r)
+	// answer(qi, x): answer to query qi is sum of w[x] over all distinct values x in a[ql, qr)
+	// O(init() + n * (log(n) + update()) + q * (log(q) + query() + answer()))
+	void solve(auto init, auto set, auto query, auto answer){
 		sort(queries.begin(), queries.end());
-		sort(event.rbegin(), event.rend());
-		fenwick_tree_sum<T> fw(n);
+		sort(event.begin(), event.end());
+		init(n);
+		int i = 0;
 		for(auto &q: queries){
-			while(!event.empty() && get<0>(event.back()) < q[0]){
-				fw.update(get<1>(event.back()), get<2>(event.back()));
-				event.pop_back();
+			while(i < (int)event.size() && get<0>(event[i]) < q[0]){
+				set(get<1>(event[i]), get<2>(event[i]));
+				++ i;
 			}
-			f(q[2], fw.query(q[0], q[1]));
+			answer(q[2], query(q[0], q[1]));
 		}
 	}
 };

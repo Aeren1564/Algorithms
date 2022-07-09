@@ -1,6 +1,5 @@
 <snippet>
 	<content><![CDATA[
-// Requires fenwick_tree_sum and value_range_query_solver_offline
 template<class T>
 struct static_sparse_rectangle_query_processor_offline{
 	int sigma_x;
@@ -45,17 +44,25 @@ struct static_sparse_rectangle_query_processor_offline{
 		assert(0 <= xl && xl <= xr && xr <= sigma_x);
 		vrq.query(qi, lower_bound_x[xl], lower_bound_x[xr], y);
 	}
-	// The answer to the query qi is the sum of weights of points in
+	// init(n) Initialize DS over identity array A of length n
+	// set(p, x): A[p] <- x, A[p] is always identity beforehand
+	// query(l, r): return sum in A[l:r)
+	// answer(qi, x): answer to query qi is sum of weights of points in
 	//  [xl, xr) x [-INF, y)
-	// O(n * log(n) + q * log(q))
-	void solve_less(auto f){
-		vrq.solve_less([&](int qi, T x){ f(qi, x); });
+	// O(init() + n * (log(n) + update()) + q * (log(q) + query() + answer()))
+	// Requires value_range_query_solver_offline
+	void solve_less(auto init, auto set, auto query, auto answer){
+		vrq.solve_less(init, set, query, answer);
 	}
-	// The answer to the query qi is the sum of weights of points in
+	// init(n) Initialize DS over identity array A of length n
+	// set(p, x): A[p] <- x, A[p] is always identity beforehand
+	// query(l, r): return sum in A[l:r)
+	// answer(qi, x): answer to query qi is sum of weights of points in
 	//  [xl, xr) x [y, INF)
-	// O(n * log(n) + q * log(q))
-	void solve_equal_or_greater(auto f){
-		vrq.solve_equal_or_greater([&](int qi, T x){ f(qi, x); });
+	// O(init() + n * (log(n) + update()) + q * (log(q) + query() + answer()))
+	// Requires value_range_query_solver_offline
+	void solve_equal_or_greater(auto init, auto set, auto query, auto answer){
+		vrq.solve_equal_or_greater(init, set, query, answer);
 	}
 };
 ]]></content>
