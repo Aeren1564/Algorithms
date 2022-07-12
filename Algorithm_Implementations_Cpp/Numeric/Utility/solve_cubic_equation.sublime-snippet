@@ -1,0 +1,36 @@
+<snippet>
+	<content><![CDATA[
+// Implementation of https://en.wikipedia.org/wiki/Cubic_equation#General_cubic_formula
+// T must be of floating or complex type
+// Solve the equation of form
+// a*X^3 + b*X^2 + c*X + d = 0
+// Returns {true, set of solution} if finite solutions
+// Returns {false, empty set} otherwise
+template<class T>
+pair<bool, vector<complex<long double>>> solve_cubic_equation(T a, T b, T c, T d, const long double &eps = 1e-10){
+	using ld = long double;
+	using cld = complex<ld>;
+	if(abs(a) > eps){
+		cld D0 = b * b - 3.0l * a * c;
+		cld D1 = 2.0l * b * b * b - 9.0l * a * b * c + 27.0l * a * a * d;
+		cld C = pow((D1 + sqrt(D1 * D1 - 4.0l * D0 * D0 * D0)) / 2.0l, 1.0l / 3.0l);
+		vector<cld> res;
+		for(auto zeta: {cld(1.0l), -0.5l + sqrtl(3) * 0.5il, -0.5l - sqrtl(3.0l) * 0.5il}){
+			res.push_back(-1 / (3.0l * a) * (b + (abs(C) > eps ? zeta * C + D0 / (zeta * C) : 0.0l)));
+		}
+		return {true, res};
+	}
+	else if(abs(b) > eps){
+		cld D = c * c - 4.0l * b * d;
+		return {true, {(-c + sqrt(D)) / (2.0l * b), (-c - sqrt(D)) / (2.0l * b)}};
+	}
+	else if(abs(c) > eps) return {true, {-d / c}};
+	else if(abs(d) > eps) return {true, {}};
+	else return {false, {}};
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>solve_cubic_equation</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
