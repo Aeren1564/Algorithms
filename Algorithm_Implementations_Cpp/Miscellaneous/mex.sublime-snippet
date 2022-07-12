@@ -1,0 +1,16 @@
+<snippet>
+	<content><![CDATA[
+int mex(const vector<int> &a){
+	int n = (int)a.size();
+	vector<int> found(n + 1);
+	for(auto x: a) if(x <= n) found[x] = true;
+	int res = 0;
+	while(found[res]) ++ res;
+	return res;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>mex</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
