@@ -49,7 +49,7 @@ optional<point<long double>> intersect_no_parallel_overlapl(const line<T> &L, co
 	if(s < 0) s = -s, ls = -ls, rs = -rs;
 	if(EndpointChecker<LA>()(decltype(ls)(0), ls) && EndpointChecker<LB>()(ls, s) &&
 	EndpointChecker<RA>()(decltype(rs)(0), rs) && EndpointChecker<RB>()(rs, s)){
-		return static_cast<point<long double>>(L.p) + 1.0 * ls / s * static_cast<point<long double>>(L.d);
+		return static_cast<point<long double>>(L.p) + 1.0l * ls / s * static_cast<point<long double>>(L.d);
 	}
 	else return {};
 }
