@@ -9,10 +9,16 @@
 // O((high - low) * log(high - low)) advance() calls
 // O(n * log(high - low)) pred() calls
 array<vector<int>, 2> double_parallel_binary_search(int n, int low, int high, auto init, auto advance, auto pred0, auto pred1){
+	assert(low <= high);
 	vector<int> l0(n, low), r0(n, high);
 	vector<vector<int>> update0(high - low);
 	vector<int> l1(n, low), r1(n, high);
 	vector<vector<int>> update1(high - low);
+	init();
+	for(auto i = 0; i < n; ++ i){
+		if(!pred0(i)) r0[i] = low;
+		if(!pred1(i)) r1[i] = low;
+	}
 	while(true){
 		bool done = true;
 		for(auto i = 0; i < n; ++ i){
@@ -26,14 +32,14 @@ array<vector<int>, 2> double_parallel_binary_search(int n, int low, int high, au
 			}
 		}
 		if(done) break;
-		init();
 		for(auto s = low; s < high; ++ s){
 			for(auto i: update0[s - low]) (pred0(i) ? l0 : r0)[i] = s;
 			update0[s - low].clear();
 			for(auto i: update1[s - low]) (pred1(i) ? l1 : r1)[i] = s;
 			update1[s - low].clear();
-			if(s + 1 < high) advance();
+			if(s + 1 < high) advance(s);
 		}
+		init();
 	}
 	return {r0, r1};
 }

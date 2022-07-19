@@ -28,6 +28,19 @@ struct polynomial_base{
 	const T &operator[](int i) const{
 		return data[i];
 	}
+	friend ostream &operator<<(ostream &out, const polynomial_base &p){
+		if(p.data.empty()){
+			return out << "{}";
+		}
+		else{
+			out << "{";
+			for(auto i = 0; i < (int)p.data.size(); ++ i){
+				out << p.data[i];
+				i + 1 < (int)p.data.size() ? out << ", " : out << "}";
+			}
+			return out;
+		}
+	}
 	operator vector<T>() const{
 		return data;
 	}

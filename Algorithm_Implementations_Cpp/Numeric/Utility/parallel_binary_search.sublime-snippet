@@ -3,14 +3,17 @@
 // For each of n items, return the first state which pred returns false
 // Binary search state lies within [low, high)
 // init(): set the state to low
-// advance(): increase the state by one
+// advance(t): increase the state by one where the current state is t
 // pred(i): check if item i satisfies the pred for current state (must be T, T, ..., T, F, ..., F)
 // O(log(high - low)) init() calls
 // O((high - low) * log(high - low)) advance() calls
 // O(n * log(high - low)) pred() calls
 vector<int> parallel_binary_search(int n, int low, int high, auto init, auto advance, auto pred){
+	assert(low <= high);
 	vector<int> l(n, low), r(n, high);
 	vector<vector<int>> update(high - low);
+	init();
+	for(auto i = 0; i < n; ++ i) if(!pred(i)) r[i] = low;
 	while(true){
 		bool done = true;
 		for(auto i = 0; i < n; ++ i) if(r[i] - l[i] >= 2){
@@ -18,12 +21,12 @@ vector<int> parallel_binary_search(int n, int low, int high, auto init, auto adv
 			update[l[i] + (r[i] - l[i] >> 1) - low].push_back(i);
 		}
 		if(done) break;
-		init();
 		for(auto s = low; s < high; ++ s){
 			for(auto i: update[s - low]) (pred(i) ? l : r)[i] = s;
 			update[s - low].clear();
-			if(s + 1 < high) advance();
+			if(s + 1 < high) advance(s);
 		}
+		init();
 	}
 	return r;
 }
