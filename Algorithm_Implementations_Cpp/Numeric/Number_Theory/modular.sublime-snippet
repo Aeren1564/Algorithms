@@ -149,7 +149,29 @@ template<typename T> istream &operator>>(istream &in, modular_base<T> &number){
 	number.value = modular_base<T>::normalize(x);
 	return in;
 }
-template<typename T> ostream &operator<<(ostream &out, const modular_base<T> &number){ return out << number(); }
+#define _PRINT_AS_FRACTION
+template<typename T> ostream &operator<<(ostream &out, const modular_base<T> &number){
+#ifdef LOCAL
+#ifdef _PRINT_AS_FRACTION
+	for(auto d = 1; ; ++ d){
+		if((number * d).value <= 1000000){
+			out << (number * d).value << "/" << d;
+			break;
+		}
+		else if((-number * d).value <= 1000000){
+			out << "-" << (-number * d).value << "/" << d;
+			break;
+		}
+	}
+	return out;
+#else
+	return out << number();
+#endif
+#else
+	return out << number();
+#endif
+}
+#undef _PRINT_AS_FRACTION
 
 /*
 using ModType = int;
