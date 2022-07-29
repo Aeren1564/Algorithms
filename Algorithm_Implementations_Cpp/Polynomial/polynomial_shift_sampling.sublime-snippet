@@ -1,0 +1,39 @@
+<snippet>
+	<content><![CDATA[
+// Given the unique polynomial P of degree < n with P(i)=p[i] for all 0<=i<n
+// Compute P(delta+i) for all 0<=i<m
+// O(polymul(max(n, m)) + max(n, m) * log(max(n, m)))
+template<class T>
+vector<T> polynomial_shift_sampling(const vector<T> &p, T delta, int m, auto polymul){
+	int n = (int)p.size();
+	assert(n >= 1 && m >= 0);
+	vector<T> fact(n + 1, 1), invfact(n + 1, 1);
+	for(auto x = 2; x <= n; ++ x) fact[x] = fact[x - 1] * x;
+	invfact[n] = T(1) / fact[n];
+	for(auto x = n - 1; x >= 2; -- x) invfact[x] = invfact[x + 1] * (x + 1);
+	vector<T> q(n), r(n + m);
+	for(auto i = 0; i < n; ++ i) q[i] = p[i] * invfact[i] * invfact[n - 1 - i] * (n - i & 1 ? 1 : -1);
+	for(auto i = 0; i < n + m; ++ i) r[i] = delta + i - (n - 1) ? T(1) / (delta + i - (n - 1)) : T(0);
+	vector<T> res = polymul(q, r);
+	res = vector<T>(res.begin() + n - 1, res.begin() + n - 1 + m);
+	vector<T> seg(n + m << 1);
+	for(auto i = 0; i < n + m; ++ i) seg[n + m + i] = delta - (n - 1) + i;
+	for(auto i = n + m - 1; i; -- i) seg[i] = seg[i << 1] * seg[i << 1 | 1];
+	for(auto i = 0; i < m; ++ i){
+		if((delta + i).value < n){
+			res[i] = p[(delta + i).value];
+			continue;
+		}
+		for(auto l = n + m + i, r = 2 * n + m + i; l < r; l >>= 1, r >>= 1){
+			if(l & 1) res[i] *= seg[l], ++ l;
+			if(r & 1) -- r, res[i] *= seg[r];
+		}
+	}
+	return res;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>polynomial_shift_sampling</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

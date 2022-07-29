@@ -1,0 +1,70 @@
+<snippet>
+	<content><![CDATA[
+template<class T, int BX, class F = plus<>, bool GET_LESS = true>
+struct value_range_query_solver_online_sqrt{
+	int n, sigma;
+	vector<vector<T>> large;
+	vector<vector<int>> small_mapping;
+	vector<vector<vector<T>>> small;
+	F TT; // Commutative monoid operation
+	T T_id; // Commutative monoid identity
+	value_range_query_solver_online_sqrt(const vector<int> &a, int sigma, F TT = plus<>(), T T_id = {}): value_range_query_solver_online_sqrt(a, sigma, vector<T>((int)a.size(), 1), TT, T_id){ }
+	// O(n / BX * sigma + n * BX + n * log(n))
+	value_range_query_solver_online_sqrt(const vector<int> &a, int sigma, const vector<T> &w, F TT = plus<>(), T T_id = {}): n((int)a.size()), sigma(sigma), large(n / BX + 2, vector<T>(sigma + 1, T_id)), small_mapping(n / BX + 1, vector<int>(sigma + 1)), small(n / BX + 1), TT(TT), T_id(T_id){
+		assert(sigma >= 0);
+		for(auto &x: a) assert(0 <= x && x < sigma);
+		assert((int)w.size() == n);
+		vector<T> sum(sigma);
+		for(auto bi = 0; bi <= n / BX; ++ bi){
+			int l = bi * BX, r = min(n, l + BX);
+			for(auto i = l; i < r; ++ i) sum[a[i]] = TT(sum[a[i]], w[i]);
+			vector<int> order(r - l);
+			iota(order.begin(), order.end(), l);
+			sort(order.begin(), order.end(), [&](int i, int j){ return a[i] < a[j]; });
+			order.erase(unique(order.begin(), order.end(), [&](int i, int j){ return a[i] == a[j]; }), order.end());
+			small[bi].assign(r - l + 1, vector<T>(sigma + 1, T_id));
+			large[bi + 1] = large[bi];
+			if(GET_LESS){
+				for(auto x = 0; x < sigma; ++ x) large[bi + 1][x + 1] = TT(large[bi + 1][x], sum[x]);
+				for(auto i = 0; i < (int)order.size(); ++ i) small_mapping[bi][a[order[i]] + 1] = i + 1;
+				for(auto x = 0; x < sigma; ++ x) small_mapping[bi][x + 1] = max(small_mapping[bi][x], small_mapping[bi][x + 1]);
+				for(auto i = l; i < r; ++ i) small[bi][i + 1 - l][small_mapping[bi][a[i] + 1]] = TT(small[bi][i + 1 - l][small_mapping[bi][a[i] + 1]], w[i]);
+				for(auto i = 0; i <= r - l; ++ i) for(auto x = 1; x <= sigma; ++ x) small[bi][i][x] = TT(small[bi][i][x - 1], small[bi][i][x]);
+				for(auto i = 1; i <= r - l; ++ i) for(auto x = 0; x <= sigma; ++ x) small[bi][i][x] = TT(small[bi][i - 1][x], small[bi][i][x]);
+			}
+			else{
+				for(auto x = sigma - 1; x >= 0; -- x) large[bi + 1][x] = TT(large[bi + 1][x + 1], sum[x]);
+				fill(small_mapping[bi].begin(), small_mapping[bi].end(), (int)order.size());
+				for(auto i = 0; i < (int)order.size(); ++ i) small_mapping[bi][a[order[i]]] = i;
+				for(auto x = sigma - 1; x >= 0; -- x) small_mapping[bi][x] = min(small_mapping[bi][x], small_mapping[bi][x + 1]);
+				for(auto i = l; i < r; ++ i) small[bi][i + 1 - l][small_mapping[bi][a[i]]] = TT(small[bi][i + 1 - l][small_mapping[bi][a[i]]], w[i]);
+				for(auto i = 0; i <= r - l; ++ i) for(auto x = sigma - 1; x >= 0; -- x) small[bi][i][x] = TT(small[bi][i][x + 1], small[bi][i][x]);
+				for(auto i = 1; i <= r - l; ++ i) for(auto x = 0; x <= sigma; ++ x) small[bi][i][x] = TT(small[bi][i - 1][x], small[bi][i][x]);
+			}
+		}
+	}
+	value_range_query_solver_online_sqrt &operator=(const value_range_query_solver_online_sqrt &vrq){
+		n = vrq.n;
+		sigma = vrq.sigma;
+		large = vrq.large;
+		small_mapping = vrq.small_mapping;
+		small = vrq.small;
+		return *this;
+	}
+	// Find the sum of w[i] for all i with
+	//  0 <= i < qr and (a[i] < k if GET_LESS else k <= a[i])
+	// O(1)
+	T query(int qr, int k) const{
+		assert(0 <= qr && qr <= n);
+		assert(0 <= k && k <= sigma);
+		if(qr == 0) return T_id;
+		int bi = (qr - 1) / BX;
+		return TT(large[bi][k], small[bi][qr - BX * bi][small_mapping[bi][k]]);
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>value_range_query_solver_online_sqrt</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
