@@ -1,16 +1,18 @@
 <snippet>
 	<content><![CDATA[
-// For integral or modular type
+// T must be integral or modular type
 // O(n^3)
 template<class T>
-T integral_determinant(vector<vector<T>> M){
+T determinant_integral(vector<vector<T>> M){
 	if(M.empty()) return 1;
 	int n = (int)M.size();
 	assert((int)M[0].size() == n);
 	T res = 1;
 	for(auto i = 0; i < n; ++ i){
 		for(auto j = i + 1; j < n; ++ j) while(M[j][i]){
-			int t = M[i][i] / M[j][i];
+			int t;
+			if constexpr(is_integral<T>::value) t = M[i][i] / M[j][i];
+			else t = M[i][i].value / M[j][i].value;
 			if(t) for(auto k = i; k < n; ++ k) M[i][k] -= M[j][k] * t;
 			swap(M[i], M[j]);
 			res *= -1;
@@ -22,7 +24,7 @@ T integral_determinant(vector<vector<T>> M){
 }
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
-	<tabTrigger>integral_determinant</tabTrigger> -->
+	<tabTrigger>determinant_integral</tabTrigger> -->
 	<!-- Optional: Set a scope to limit where the snippet will trigger -->
 	<scope>source.c++</scope> -->
 </snippet>

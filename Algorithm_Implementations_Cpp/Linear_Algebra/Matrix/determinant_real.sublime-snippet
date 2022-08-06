@@ -2,7 +2,7 @@
 	<content><![CDATA[
 // O(n^3)
 template<class T>
-T real_determinant(vector<vector<T>> M){
+T determinant_real(vector<vector<T>> M){
 	if(M.empty()) return 1;
 	int n = (int)M.size();
 	assert((int)M[0].size() == n);
@@ -21,7 +21,7 @@ T real_determinant(vector<vector<T>> M){
 }
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
-	<tabTrigger>real_determinant</tabTrigger> -->
+	<tabTrigger>determinant_real</tabTrigger> -->
 	<!-- Optional: Set a scope to limit where the snippet will trigger -->
 	<scope>source.c++</scope> -->
 </snippet>
