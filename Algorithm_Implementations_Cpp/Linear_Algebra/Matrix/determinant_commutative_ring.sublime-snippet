@@ -14,7 +14,7 @@ T determinant_commutative_ring(const vector<vector<T>> &M, T T_id_add = 0, T T_i
 	for(auto i = 0; i < n; ++ i) dp[n & 1][i][i] = T_id_mul;
 	for(auto l = 0; l < n - 1; ++ l){
 		for(auto p: {0, 1}) for(auto &r: dp_next[p]) fill(r.begin(), r.end(), T_id_add);
-		for(auto p = 0; p < 2; ++ p) for(auto i = 0; i < n; ++ i) for(auto j = i; j < n; ++ j){
+		for(auto p = 0; p < 2; ++ p) for(auto i = 0; i <= l; ++ i) for(auto j = i; j < n; ++ j){
 			T delta = dp[p][i][j], delta2 = delta * M[j][i];
 			for(auto k = i + 1; k < n; ++ k){
 				dp_next[p][i][k] += delta * M[j][k];
