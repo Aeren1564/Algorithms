@@ -1,6 +1,6 @@
 <snippet>
 	<content><![CDATA[
-// Returns det((xI - a) * (flip ? -1 : 1))
+// Returns det(xI - a) if not flip otherwise det(a - xI)
 // O(n^3)
 template<class T>
 vector<T> characteristic_polynomial(vector<vector<T>> a, bool flip = false){
