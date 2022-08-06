@@ -1,0 +1,73 @@
+<snippet>
+	<content><![CDATA[
+template<class T>
+struct ring{
+	// Modify begin
+	static ring additive_identity(){
+		return 0;
+	}
+	static ring multiplicative_identity(){
+		return 1;
+	}
+	T data;
+	ring &operator=(const ring &x) const{
+		data = x.data;
+		return *this;
+	}
+	bool operator==(const ring &x) const{
+		return data == x.data;
+	}
+	ring &operator+=(const ring &x){
+		data += x.data;
+		return *this;
+	}
+	ring &operator-=(const ring &x){
+		data -= x.data;
+		return *this;
+	}
+	ring &operator*=(const ring &x){
+		data *= x.data;
+		return *this;
+	}
+	// Modify end
+	bool operator!=(const ring &x) const{
+		return !(*this == x);
+	}
+	ring operator+(const ring &x) const{
+		return ring(*this) += x;
+	}
+	ring operator+() const{
+		return *this;
+	}
+	ring operator-(const ring &x) const{
+		return ring(*this) -= x;
+	}
+	ring operator-() const{
+		return ring::additive_identity() - *this;
+	}
+	ring operator*(const ring &x) const{
+		return ring(*this) *= x;
+	}
+	ring &operator++(){
+		return *this += ring::multiplicative_identity();
+	}
+	ring operator++(int){
+		auto res = *this;
+		*this += ring::multiplicative_identity();
+		return res;
+	}
+	ring &operator--(){
+		return *this -= ring::multiplicative_identity();
+	}
+	ring operator--(int){
+		auto res = *this;
+		*this -= ring::multiplicative_identity();
+		return res;
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>ring</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

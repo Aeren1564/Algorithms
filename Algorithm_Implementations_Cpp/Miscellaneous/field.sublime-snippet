@@ -1,0 +1,81 @@
+<snippet>
+	<content><![CDATA[
+template<class T>
+struct field{
+	// Modify begin
+	static field additive_identity(){
+		return 0;
+	}
+	static field multiplicative_identity(){
+		return 1;
+	}
+	T data;
+	field &operator=(const field &x) const{
+		data = x.data;
+		return *this;
+	}
+	bool operator==(const field &x) const{
+		return data == x.data;
+	}
+	field &operator+=(const field &x){
+		data += x.data;
+		return *this;
+	}
+	field &operator-=(const field &x){
+		data -= x.data;
+		return *this;
+	}
+	field &operator*=(const field &x){
+		data *= x.data;
+		return *this;
+	}
+	field &operator/=(const field &x){
+		assert(!(*this == x));
+		data /= x.data;
+		return *this;
+	}
+	// Modify end
+	bool operator!=(const field &x) const{
+		return !(*this == x);
+	}
+	field operator+(const field &x) const{
+		return field(*this) += x;
+	}
+	field operator+() const{
+		return *this;
+	}
+	field operator-(const field &x) const{
+		return field(*this) -= x;
+	}
+	field operator-() const{
+		return field::additive_identity() - *this;
+	}
+	field operator*(const field &x) const{
+		return field(*this) *= x;
+	}
+	field operator/(const field &x) const{
+		return field(*this) /= x;
+	}
+	field &operator++(){
+		return *this += field::multiplicative_identity();
+	}
+	field operator++(int){
+		auto res = *this;
+		*this += field::multiplicative_identity();
+		return res;
+	}
+	field &operator--(){
+		return *this -= field::multiplicative_identity();
+	}
+	field operator--(int){
+		auto res = *this;
+		*this -= field::multiplicative_identity();
+		return res;
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>field</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
