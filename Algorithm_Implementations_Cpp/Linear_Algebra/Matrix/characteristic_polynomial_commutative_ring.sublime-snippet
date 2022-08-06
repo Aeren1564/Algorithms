@@ -1,0 +1,43 @@
+<snippet>
+	<content><![CDATA[
+// Implementation of "Determinant: Combinatorics, Algorithms, and Complexity" by Meena Mahajan
+// Returns det(xI - a) if not flip otherwise det(a - xI)
+// T must be a commutative ring
+// O(n^4)
+template<class T>
+vector<T> characteristic_polynomial_commutative_ring(const vector<vector<T>> &M, T T_id_add = 0, T T_id_mul = 1, bool flip = false){
+	if(M.empty()) return {T_id_mul};
+	int n = (int)M.size();
+	assert((int)M[0].size() == n);
+	array<vector<vector<T>>, 2> dp, dp_next;
+	dp.fill(vector<vector<T>>(n, vector<T>(n, T_id_add)));
+	dp_next = dp;
+	vector<T> res(n + 1, T_id_add);
+	res[n] = n & 1 ? -T_id_mul : T_id_mul;
+	for(auto i = 0; i < n; ++ i) dp[n & 1][i][i] = T_id_mul;
+	for(auto l = 0; l <= n - 1; ++ l){
+		for(auto i = 0; i < n; ++ i) for(auto j = i; j < n; ++ j){
+			res[n - 1 - l] -= dp[0][i][j] * M[j][i];
+			res[n - 1 - l] += dp[1][i][j] * M[j][i];
+		}
+		if(l < n - 1){
+			for(auto p: {0, 1}) for(auto &r: dp_next[p]) fill(r.begin(), r.end(), T_id_add);
+			for(auto p = 0; p < 2; ++ p) for(auto i = 0; i < n; ++ i) for(auto j = i; j < n; ++ j){
+				T delta = dp[p][i][j], delta2 = delta * M[j][i];
+				for(auto k = i + 1; k < n; ++ k){
+					dp_next[p][i][k] += delta * M[j][k];
+					dp_next[p ^ 1][k][k] += delta2;
+				}
+			}
+			swap(dp, dp_next);
+		}
+	}
+	if(!flip && n & 1) for(auto &x: res) x = -x;
+	return res;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>characteristic_polynomial_commutative_ring</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
