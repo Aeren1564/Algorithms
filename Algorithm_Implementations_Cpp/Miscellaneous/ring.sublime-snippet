@@ -10,10 +10,6 @@ struct ring{
 		return 1;
 	}
 	T data;
-	ring &operator=(const ring &x) const{
-		data = x.data;
-		return *this;
-	}
 	bool operator==(const ring &x) const{
 		return data == x.data;
 	}
@@ -28,6 +24,9 @@ struct ring{
 	ring &operator*=(const ring &x){
 		data *= x.data;
 		return *this;
+	}
+	friend ostream &operator<<(ostream &out, const ring &x){
+		return out << x.data;
 	}
 	// Modify end
 	bool operator!=(const ring &x) const{

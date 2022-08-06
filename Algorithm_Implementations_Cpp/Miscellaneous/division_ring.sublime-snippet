@@ -10,10 +10,6 @@ struct division_ring{
 		return 1;
 	}
 	T data;
-	division_ring &operator=(const division_ring &x) const{
-		data = x.data;
-		return *this;
-	}
 	bool operator==(const division_ring &x) const{
 		return data == x.data;
 	}
@@ -33,6 +29,9 @@ struct division_ring{
 		assert(!(*this == x));
 		data /= x.data;
 		return *this;
+	}
+	friend ostream &operator<<(ostream &out, const division_ring &x){
+		return out << x.data;
 	}
 	// Modify end
 	bool operator!=(const division_ring &x) const{
