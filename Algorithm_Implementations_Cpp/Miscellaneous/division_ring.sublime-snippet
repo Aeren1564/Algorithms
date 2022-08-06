@@ -1,0 +1,81 @@
+<snippet>
+	<content><![CDATA[
+template<class T>
+struct division_ring{
+	// Modify begin
+	static division_ring additive_identity(){
+		return 0;
+	}
+	static division_ring multiplicative_identity(){
+		return 1;
+	}
+	T data;
+	division_ring &operator=(const division_ring &x) const{
+		data = x.data;
+		return *this;
+	}
+	bool operator==(const division_ring &x) const{
+		return data == x.data;
+	}
+	division_ring &operator+=(const division_ring &x){
+		data += x.data;
+		return *this;
+	}
+	division_ring &operator-=(const division_ring &x){
+		data -= x.data;
+		return *this;
+	}
+	division_ring &operator*=(const division_ring &x){
+		data *= x.data;
+		return *this;
+	}
+	division_ring &operator/=(const division_ring &x){
+		assert(!(*this == x));
+		data /= x.data;
+		return *this;
+	}
+	// Modify end
+	bool operator!=(const division_ring &x) const{
+		return !(*this == x);
+	}
+	division_ring operator+(const division_ring &x) const{
+		return division_ring(*this) += x;
+	}
+	division_ring operator+() const{
+		return *this;
+	}
+	division_ring operator-(const division_ring &x) const{
+		return division_ring(*this) -= x;
+	}
+	division_ring operator-() const{
+		return division_ring::additive_identity() - *this;
+	}
+	division_ring operator*(const division_ring &x) const{
+		return division_ring(*this) *= x;
+	}
+	division_ring operator/(const division_ring &x) const{
+		return division_ring(*this) /= x;
+	}
+	division_ring &operator++(){
+		return *this += division_ring::multiplicative_identity();
+	}
+	division_ring operator++(int){
+		auto res = *this;
+		*this += division_ring::multiplicative_identity();
+		return res;
+	}
+	division_ring &operator--(){
+		return *this -= division_ring::multiplicative_identity();
+	}
+	division_ring operator--(int){
+		auto res = *this;
+		*this -= division_ring::multiplicative_identity();
+		return res;
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>division_ring</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
