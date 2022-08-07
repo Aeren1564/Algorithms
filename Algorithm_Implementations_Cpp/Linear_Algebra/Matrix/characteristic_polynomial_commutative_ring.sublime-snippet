@@ -22,7 +22,7 @@ vector<T> characteristic_polynomial_commutative_ring(const vector<vector<T>> &M,
 		}
 		if(l < n - 1){
 			for(auto p: {0, 1}) for(auto &r: dp_next[p]) fill(r.begin(), r.end(), T_id_add);
-			for(auto p = 0; p < 2; ++ p) for(auto i = 0; i < n; ++ i) for(auto j = i; j < n; ++ j){
+			for(auto p: {0, 1}) for(auto i = 0; i < n; ++ i) for(auto j = i; j < n; ++ j){
 				T delta = dp[p][i][j], delta2 = delta * M[j][i];
 				for(auto k = i + 1; k < n; ++ k){
 					dp_next[p][i][k] += delta * M[j][k];
