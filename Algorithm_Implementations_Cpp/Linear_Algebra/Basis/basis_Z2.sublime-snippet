@@ -12,7 +12,7 @@ struct basis_Z2{
 		int from, to;
 	};
 	vector<modifier_type> log;
-	basis_Z2(const vector<bitset<S>> &a){
+	basis_Z2(const vector<bitset<S>> &a = {}){
 		for(auto &v: a) insert(v);
 	}
 	int rank() const{
