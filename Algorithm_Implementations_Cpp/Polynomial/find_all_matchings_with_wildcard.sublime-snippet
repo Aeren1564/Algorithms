@@ -4,7 +4,7 @@
 // 0 represents wildcard, where it can match with any character
 // Assumes low alphabet size. Switch to higher percision FFT if not.
 // O((n + m) log (n + m))
-// Requres fast_fourier_transform and convolute_integral
+// Requres fast_fourier_transform
 template<class Char_Type>
 vector<int> find_all_matchings_with_wildcard(const vector<Char_Type> &text, const vector<Char_Type> &pattern){
 	int n = (int)text.size(), m = (int)pattern.size();
@@ -18,7 +18,7 @@ vector<int> find_all_matchings_with_wildcard(const vector<Char_Type> &text, cons
 			q[j] = 1;
 			for(auto rep = 4 - e; rep; -- rep) q[j] *= pattern[m - 1 - j];
 		}
-		temp = convolute_integral(p, q);
+		temp = fft::convolute_splitting(p, q);
 		for(auto k = 0; k < n + m - 1; ++ k) r[k] += (e == 2 ? -2 : 1) * temp[k];
 	}
 	vector<int> res;
