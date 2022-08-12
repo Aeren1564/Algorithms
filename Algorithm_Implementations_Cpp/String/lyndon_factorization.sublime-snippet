@@ -1,16 +1,16 @@
 <snippet>
 	<content><![CDATA[
-// duval algorithm for computing lyndon factorization
+// Duval algorithm for computing lyndon factorization
+// Return the list of starting indices
 // O(n)
 template<class Char_Type>
-vector<vector<Char_Type>> lyndon_factorization(const vector<Char_Type> &s){
-	int n = s.size();
-	int i = 0;
-	vector<vector<Char_Type>> res;
+vector<int> lyndon_factorization(const vector<Char_Type> &s){
+	int n = (int)s.size();
+	vector<int> res;
 	for(auto i = 0; i < n; ){
-		int j = i + 1, k = i;
-		for(; j < n && s[k] <= s[j]; ++ j) s[k] < s[j] ? k = i : ++ k;
-		for(; i <= k; i += j - k) res.push_back({s.begin() + i, s.begin() + i + j - k});
+		int l = i, r = i + 1;
+		for(; r < n && s[l] <= s[r]; ++ r) s[l] < s[r] ? l = i : ++ l;
+		for(; i <= l; i += r - l) res.push_back(i);
 	}
 	return res;
 }
