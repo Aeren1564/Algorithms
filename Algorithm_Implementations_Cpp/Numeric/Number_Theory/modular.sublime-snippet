@@ -149,7 +149,7 @@ template<typename T> istream &operator>>(istream &in, modular_base<T> &number){
 	number.value = modular_base<T>::normalize(x);
 	return in;
 }
-#define _PRINT_AS_FRACTION
+// #define _PRINT_AS_FRACTION
 template<typename T> ostream &operator<<(ostream &out, const modular_base<T> &number){
 #ifdef LOCAL
 #ifdef _PRINT_AS_FRACTION
