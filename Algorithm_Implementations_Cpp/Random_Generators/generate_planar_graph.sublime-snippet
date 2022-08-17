@@ -1,11 +1,12 @@
 <snippet>
 	<content><![CDATA[
 // Requires random, point, line, and line_intersection
-pair<vector<array<int, 2>>, vector<pointll>> generate_plannar_graph(int n, int m_upper, int max_c = 1000000000){
+pair<vector<array<int, 2>>, vector<pointll>> generate_planar_graph(int n, int m_upper, int max_c = 1000000000){
+	assert(0 <= n);
 	vector<pointll> embedding(n);
 	for(auto u = 0; u < n; ++ u){
-		embedding[u].x = rng() % max_c;
-		embedding[u].y = rng() % max_c;
+		embedding[u].x = rng() % (max_c + 1);
+		embedding[u].y = rng() % (max_c + 1);
 	}
 	vector<array<int, 2>> edge;
 	for(auto u = 0; u < n; ++ u) for(auto v = u + 1; v < n; ++ v) if(rng() & 1){
@@ -18,13 +19,16 @@ pair<vector<array<int, 2>>, vector<pointll>> generate_plannar_graph(int n, int m
 				break;
 			}
 		}
-		if(!fail) edge.push_back({u, v});
+		if(!fail){
+			if(rng() & 1) swap(u, v);
+			edge.push_back({u, v});
+		}
 	}
 	return {edge, embedding};
 }
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
-	<tabTrigger>generate_plannar_graph</tabTrigger> -->
+	<tabTrigger>generate_planar_graph</tabTrigger> -->
 	<!-- Optional: Set a scope to limit where the snippet will trigger -->
 	<scope>source.c++</scope> -->
 </snippet>

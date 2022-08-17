@@ -1,0 +1,40 @@
+<snippet>
+	<content><![CDATA[
+// Requires random, point, line, and line_intersection
+// Vertices 0 ~ n_l-1 lie on x=0 with increasing y coordinate
+// Vertices n_l ~ n_l+n_r-1 lie on x = max_c with increasing y coordinate (can be decreasing if can_be_reversed = true)
+pair<vector<array<int, 2>>, vector<pointll>> generate_parallel_planar_graph(int n, int n_l, int n_r, bool can_be_reversed = false, int max_c = 1000000000){
+	assert(0 <= min(n_l, n_r) && n_l + n_r <= n);
+	vector<pointll> embedding(n);
+	for(auto u = 0; u < n; ++ u){
+		if(u >= n_l + n_r) embedding[u].x = rng() % (max_c + 1);
+		else if(u >= n_l) embedding[u].x = max_c;
+		embedding[u].y = rng() % (max_c + 1);
+	}
+	sort(embedding.begin(), embedding.begin() + n_l);
+	if(!can_be_reversed || rng() & 1) sort(embedding.begin() + n_l, embedding.begin() + n_l + n_r);
+	else sort(embedding.begin() + n_l, embedding.begin() + n_l + n_r, greater<>());
+	vector<array<int, 2>> edge;
+	for(auto u = 0; u < n; ++ u) for(auto v = u + 1; v < n; ++ v) if(rng() & 1){
+		linell L(embedding[u], embedding[v]);
+		bool fail = false;
+		for(auto [w, x]: edge){
+			linell M(embedding[w], embedding[x]);
+			if(intersect_closed_segments(L, M)){
+				fail = true;
+				break;
+			}
+		}
+		if(!fail){
+			if(rng() & 1) swap(u, v);
+			edge.push_back({u, v});
+		}
+	}
+	return {edge, embedding};
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>generate_parallel_planar_graph</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
