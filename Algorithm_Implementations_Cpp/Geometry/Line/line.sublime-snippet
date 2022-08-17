@@ -5,7 +5,8 @@ template<class T>
 struct line{
 	point<T> p{}, d{}; // p + d*t
 	line(){ }
-	line(const line &l): p(l.p), d(l.d){ }
+	template<class U>
+	line(const line<U> &l): p(l.p), d(l.d){ }
 	template<class U, class V>
 	line(const point<U> &p, const point<V> &q, bool Two_Points = true): p(p), d(Two_Points ? q - p : q){ }
 	line(const point<T> &d): p(), d(d){ }
@@ -81,7 +82,7 @@ long double distance_to_segmentl(const point<T> &p, const line<T> &L){
 }
 template<class T>
 point<double> projection(const point<T> &p, const line<T> &L){
-	return static_cast<point<double>>(L.p) + (L ? (p - L.p) * L.d / L.d.squared_norm() * point<double>(L.d) : point<double>());
+	return point<double>(L.p) + (L ? (p - L.p) * L.d / L.d.squared_norm() * point<double>(L.d) : point<double>());
 }
 template<class T>
 point<long double> projectionl(const point<T> &p, const line<T> &L){
