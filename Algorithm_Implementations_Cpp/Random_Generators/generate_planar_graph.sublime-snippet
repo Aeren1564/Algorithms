@@ -1,7 +1,7 @@
 <snippet>
 	<content><![CDATA[
 // Requires random, point, line, and line_intersection
-pair<vector<array<int, 2>>, vector<pointll>> generate_planar_graph(int n, int m_upper, int max_c = 1000000000){
+pair<vector<array<int, 2>>, vector<pointll>> generate_planar_graph(int n, int m_max, int max_c = 1000000000){
 	assert(0 <= n);
 	vector<pointll> embedding(n);
 	for(auto u = 0; u < n; ++ u){
@@ -9,7 +9,8 @@ pair<vector<array<int, 2>>, vector<pointll>> generate_planar_graph(int n, int m_
 		embedding[u].y = rng() % (max_c + 1);
 	}
 	vector<array<int, 2>> edge;
-	for(auto u = 0; u < n; ++ u) for(auto v = u + 1; v < n; ++ v) if(rng() & 1){
+	for(auto rep = m_max; n && rep; -- rep){
+		int u = rng() % (n - 1), v = rng() % (n - 1 - u) + u + 1;
 		linell L(embedding[u], embedding[v]);
 		bool fail = false;
 		for(auto [w, x]: edge){
@@ -19,10 +20,7 @@ pair<vector<array<int, 2>>, vector<pointll>> generate_planar_graph(int n, int m_
 				break;
 			}
 		}
-		if(!fail){
-			if(rng() & 1) swap(u, v);
-			edge.push_back({u, v});
-		}
+		if(!fail) edge.push_back({u, v});
 	}
 	return {edge, embedding};
 }

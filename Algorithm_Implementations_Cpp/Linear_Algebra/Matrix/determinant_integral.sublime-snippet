@@ -10,7 +10,7 @@ T determinant_integral(vector<vector<T>> M){
 	T res = 1;
 	for(auto i = 0; i < n; ++ i){
 		for(auto j = i + 1; j < n; ++ j) while(M[j][i]){
-			int t;
+			T t;
 			if constexpr(is_integral<T>::value) t = M[i][i] / M[j][i];
 			else t = M[i][i].value / M[j][i].value;
 			if(t) for(auto k = i; k < n; ++ k) M[i][k] -= M[j][k] * t;
