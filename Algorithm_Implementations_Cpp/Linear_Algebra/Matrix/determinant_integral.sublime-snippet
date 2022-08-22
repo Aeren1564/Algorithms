@@ -1,7 +1,7 @@
 <snippet>
 	<content><![CDATA[
 // T must be integral or modular type
-// O(n^3)
+// O(n^3 + n^2 * log(MAXVAL))
 template<class T>
 T determinant_integral(vector<vector<T>> M){
 	if(M.empty()) return 1;
