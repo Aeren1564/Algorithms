@@ -2,7 +2,7 @@
 	<content><![CDATA[
 // T must be of either integer or modular type
 // Returns det(xI - a) if not flip otherwise det(a - xI)
-// O(n^3)
+// O(n^3 + n^2 * log(MAXVAL))
 template<class T>
 vector<T> characteristic_polynomial(vector<vector<T>> M, bool flip = false){
 	if(M.empty()) return {1};
