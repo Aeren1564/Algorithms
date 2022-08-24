@@ -173,18 +173,19 @@ template<typename T> ostream &operator<<(ostream &out, const modular_base<T> &nu
 }
 #undef _PRINT_AS_FRACTION
 
-/*
+// #define _VAR_MOD
+#ifdef _VAR_MOD
 using ModType = int;
 struct VarMod{ static ModType value; };
 ModType VarMod::value;
 ModType &mod = VarMod::value;
 using modular = modular_base<VarMod>;
-*/
-
+#else
 // constexpr int mod = 1e9 + 7; // 1000000007
 constexpr int mod = (119 << 23) + 1; // 998244353
 // constexpr int mod = 1e9 + 9; // 1000000009
 using modular = modular_base<integral_constant<decay<decltype(mod)>::type, mod>>;
+#endif
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
 	<tabTrigger>modular</tabTrigger> -->
