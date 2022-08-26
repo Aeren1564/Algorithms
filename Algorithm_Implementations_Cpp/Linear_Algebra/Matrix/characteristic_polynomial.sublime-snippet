@@ -9,14 +9,16 @@ vector<T> characteristic_polynomial(vector<vector<T>> M, bool flip = false){
 	int n = (int)M.size();
 	assert(n == (int)M[0].size());
 	// Transform the matrix into a similar upper Hessenberg matrix
-	for(auto i = 0; i < n; ++ i) for(auto j = i + 2; j < n; ++ j) while(M[j][i]){
+	vector<int> c(n);
+	iota(c.begin(), c.end(), 0);
+	for(auto i = 0; i < n; ++ i) for(auto j = i + 2; j < n; ++ j) while(M[j][c[i]]){
 			T t;
-		if constexpr(is_integral<T>::value) t = M[i + 1][i] / M[j][i];
-		else t = M[i + 1][i].value / M[j][i].value;
+		if constexpr(is_integral<T>::value) t = M[i + 1][c[i]] / M[j][c[i]];
+		else t = M[i + 1][c[i]].data / M[j][c[i]].data;
 		swap(M[j], M[i + 1]);
-		for(auto k = 0; k < n; ++ k) swap(M[k][i + 1], M[k][j]);
-		for(auto k = i; k < n; ++ k) M[j][k] -= M[i + 1][k] * t;
-		for(auto k = 0; k < n; ++ k) M[k][i + 1] += M[k][j] * t;
+		swap(c[i + 1], c[j]);
+		for(auto k = i; k < n; ++ k) M[j][c[k]] -= M[i + 1][c[k]] * t;
+		for(auto k = 0; k < n; ++ k) M[k][c[i + 1]] += M[k][c[j]] * t;
 	}
 	vector<vector<T>> dp(n + 1);
 	dp[0] = {1};
@@ -24,11 +26,11 @@ vector<T> characteristic_polynomial(vector<vector<T>> M, bool flip = false){
 	for(auto i = 1; i < n; ++ i){
 		dp[i + 1] = dp[i];
 		dp[i + 1].insert(dp[i + 1].begin(), 0);
-		for(auto j = 0; j <= i; ++ j) dp[i + 1][j] -= dp[i][j] * M[i][i];
+		for(auto j = 0; j <= i; ++ j) dp[i + 1][j] -= dp[i][j] * M[i][c[i]];
 		T pref = 1, coef;
 		for(auto j = i; j > 0; -- j){
-			pref *= -M[j][j - 1];
-			coef = pref * -M[j - 1][i] * (j - i & 1 ? 1 : -1);
+			pref *= -M[j][c[j - 1]];
+			coef = pref * -M[j - 1][c[i]] * (j - i & 1 ? 1 : -1);
 			for(auto k = 0; k < j; ++ k) dp[i + 1][k] += coef * dp[j - 1][k];
 		}
 	}
