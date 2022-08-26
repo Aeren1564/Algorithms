@@ -159,7 +159,7 @@ unsigned int mod;
 using modular = modular_unfixed_base<mod>;
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
-	<tabTrigger>modular_unfixed_base</tabTrigger> -->
+	<tabTrigger>modular_unfixed</tabTrigger> -->
 	<!-- Optional: Set a scope to limit where the snippet will trigger -->
 	<!-- <scope>source.python</scope> -->
 </snippet>
