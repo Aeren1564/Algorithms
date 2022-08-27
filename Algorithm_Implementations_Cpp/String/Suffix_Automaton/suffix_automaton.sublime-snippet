@@ -8,8 +8,7 @@ template<class Char_Type, class Adjacency_Type>
 struct suffix_automaton{
 	// Begin States
 	// len: length of the longest substring in the class, suffix link, minimum value in the set endpos
-	vector<int> len{0}, link{-1}, firstpos{-1};
-	vector<bool> is_clone{false};
+	vector<int> len{0}, link{-1}, firstpos{-1}, is_clone{false};
 	vector<Adjacency_Type> next{{}};
 	// End States
 	int new_state(int l, int sl, int fp, bool c, const Adjacency_Type &adj){

@@ -1,18 +1,26 @@
 <snippet>
 	<content><![CDATA[
-// O(n + m)
+// Given a suffix automaton aut of a string s and a string t
+// Returns {
+//  length of the longest common substring,
+//  starting index of any such substring in s,
+//  starting index of any such substring in t
+// }
+// O(m)
 // Requires suffix_automaton
 template<class Char_Type, class Adjacency_Type>
-vector<Char_Type> longest_common_substring(const vector<Char_Type> &s, const vector<Char_Type> &t){
-	suffix_automaton<Char_Type, Adjacency_Type> aut;
-	aut.extend(s);
-	int u = 0, len = 0, u_res = 0, len_res = 0;
-	for(auto i = 0; i < (int)t.size(); ++ i){
+array<int, 3> longest_common_substring(const suffix_automaton<Char_Type, Adjacency_Type> &aut, const vector<Char_Type> &t){
+	int l = 0, r = 0, opt_len = 0;
+	for(auto i = 0, u = 0, len = 0; i < (int)t.size(); ++ i){
 		while(u && !aut.next[u][t[i]]) u = aut.link[u], len = aut.len[u];
 		if(aut.next[u][t[i]]) u = aut.next[u][t[i]], ++ len;
-		if(len_res < len) u_res = u, len_res = len;
+		if(opt_len < len){
+			opt_len = len;
+			l = aut.firstpos[u] + 1 - len;
+			r = i + 1 - len;
+		}
 	}
-	return {t.begin() + (u_res - len_res + 1), t.begin() + u_res};
+	return {opt_len, l, r};
 }
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
