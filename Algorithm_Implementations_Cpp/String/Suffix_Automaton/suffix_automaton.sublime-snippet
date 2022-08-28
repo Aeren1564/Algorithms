@@ -37,6 +37,8 @@ struct suffix_automaton{
 			}
 		}
 		last = cur;
+		count.clear();
+		inv_link.clear();
 	}
 	int size() const{ // # of states
 		return (int)len.size();
@@ -63,6 +65,16 @@ struct suffix_automaton{
 			}
 		};
 		dfs(dfs, 0);
+	}
+	vector<int> find_all_occurrences(int u){
+		assert(!count.empty() && u < size());
+		vector<int> res;
+		auto dfs = [&](auto self, int u)->void{
+			if(!is_clone[u]) res.push_back(firstpos[u]);
+			for(auto v: inv_link[u]) self(self, v);
+		};
+		dfs(dfs, u);
+		return res;
 	}
 };
 ]]></content>
