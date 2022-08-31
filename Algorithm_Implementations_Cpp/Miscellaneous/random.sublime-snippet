@@ -11,7 +11,11 @@ T pick(T x, T y, double p = 0.5){
 	assert(-0.0001 <= p && p <= 1.0001);
 	return randd_t(0, 1)(rng) <= p ? x : y;
 }
-
+array<int, 2> get_range(int n){
+	int l = rng() % n, r = rng() % n;
+	if(l > r) swap(l, r);
+	return {l, r + 1};
+}
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
 	<tabTrigger>random</tabTrigger> -->
