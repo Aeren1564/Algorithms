@@ -6,7 +6,7 @@ struct range_add_range_sum_query_solver{
 	vector<T> data0, data1;
 	range_add_range_sum_query_solver(){ }
 	// O(n)
-	range_add_range_sum_query_solver(int n): n(n), data0(n + 1), data1(n + 1){ }
+	range_add_range_sum_query_solver(int n): n(n), data0(n), data1(n){ }
 	// O(n)
 	range_add_range_sum_query_solver(int n, T init): range_add_range_sum_query_solver(vector<T>(n, init)){ }
 	// O(n)
