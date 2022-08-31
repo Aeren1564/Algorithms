@@ -10,20 +10,20 @@ struct range_add_range_sum_query_solver{
 	// O(n)
 	range_add_range_sum_query_solver(int n, T init): range_add_range_sum_query_solver(vector<T>(n, init)){ }
 	// O(n)
-	range_add_range_sum_query_solver(const vector<T> &v): n((int)v.size()), data0(v), data1(n){
-		for(auto i = 1; i <= n; ++ i) if(i + (i & -i) <= n) data0[i + (i & -i) - 1] += data0[i - 1];
+	range_add_range_sum_query_solver(const vector<T> &v): n((int)v.size()), data0(n), data1(v){
+		for(auto i = 1; i <= n; ++ i) if(i + (i & -i) <= n) data1[i + (i & -i) - 1] += data1[i - 1];
 	}
-	void update(int l, int r, T x){
-		assert(0 <= l && l <= r && r <= n);
-		if(l == r) return;
-		for(++ l; l <= n; l += l & -l) data0[l - 1] += x, data1[l - 1] -= l * x;
-		if(r < n) for(++ r; r <= n; r += r & -r) data0[r - 1] -= x, data1[r - 1] += r * x;
+	void update(int ql, int qr, T x){
+		assert(0 <= ql && ql <= qr && qr <= n);
+		if(ql == qr) return;
+		for(auto l = ql + 1; l <= n; l += l & -l) data0[l - 1] += x, data1[l - 1] -= ql * x;
+		for(auto r = qr + 1; r <= n; r += r & -r) data0[r - 1] -= x, data1[r - 1] += qr * x;
 	}
-	T pref(int r) const{
-		assert(0 <= r && r <= n);
+	T pref(int qr) const{
+		assert(0 <= qr && qr <= n);
 		T sum0 = {}, sum1 = {};
-		for(; r > 0; r -= r & -r) sum0 += data0[r - 1], sum1 += data1[r - 1];
-		return sum0 * r + sum1;
+		for(auto r = qr; r > 0; r -= r & -r) sum0 += data0[r - 1], sum1 += data1[r - 1];
+		return qr * sum0 + sum1;
 	}
 	T query(int l, int r) const{
 		assert(0 <= l && l <= r && r <= n);
