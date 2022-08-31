@@ -7,7 +7,7 @@ struct fenwick_tree_2d_sum{
 	// O(n * m)
 	fenwick_tree_2d_sum(const vector<vector<T>> &a): n((int)a.size()), m((int)a[0].size()), data(a){
 		for(auto i = 1; i <= n; ++ i) if(i + (i & -i) <= n) for(auto j = 1; j <= m; ++ j) data[i + (i & -i) - 1][j - 1] += data[i - 1][j - 1];
-		for(auto i = 1; i <= n; ++ i) for(auto j = 1; j <= m; ++ j) if(j + (j & -j) <= n) data[i - 1][j + (j & -j) - 1] += data[i - 1][j - 1];
+		for(auto i = 1; i <= n; ++ i) for(auto j = 1; j <= m; ++ j) if(j + (j & -j) <= m) data[i - 1][j + (j & -j) - 1] += data[i - 1][j - 1];
 	}
 	// O(n * m)
 	fenwick_tree_2d_sum(int n, int m): n(n), m(m), data(n, vector<T>(m)){}
