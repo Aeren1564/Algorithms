@@ -1,36 +1,59 @@
 <snippet>
 	<content><![CDATA[
-// act_comp() accesses sccs in the reverse topological order
-// Requires graph
-// O(|V| + |E|)
-template<class T>
-void strongly_connected_components(const graph<T> &g, auto act_comp){
-	int n = g.n, it = 0, ncomps = 0, v;
-	vector<int> val(n), comp(n, -1), s, cur;
-	auto dfs = [&](auto self, int u)->int{
-		int low = val[u] = ++ it;
-		s.push_back(u);
-		for(auto id: g.adj[u]){
-			if(g.ignore && g.ignore(id)) continue;
-			auto &e = g.edge[id];
-			int v = u ^ e.from ^ e.to;
-			if(comp[v] < 0) low = min(low, val[v] ?: self(self, v));
-		}
-		if(low == val[u]){
-			do{
-				v = s.back();
-				s.pop_back();
-				comp[v] = ncomps;
-				cur.push_back(v);
-			}while(v != u);
-			act_comp(cur); // Process the component
-			cur.clear();
-			++ ncomps;
-		}
-		return val[u] = low;
-	};
-	for(auto u = 0; u < n; ++ u) if(comp[u] < 0) dfs(dfs, u);
-}
+struct strongly_connected_components{
+	int n;
+	vector<int> cid;
+	strongly_connected_components(int n): n(n), dp(n), cid(n), assigned(n, -1), was(n, -1){ }
+	int attempt = 0;
+	vector<int> assigned, dp, stack, c, was;
+	// act_comp() accesses sccs in the reverse topological order
+	// Requires graph
+	// O(|V| + |E|) where V and E are the set of reachable nodes and edges respectively.
+	template<class T>
+	void run(const graph<T> &g, const vector<int> &init, auto act){
+		assert(n == g.n);
+		int it = 0, count = 0;
+		auto dfs = [&](auto self, int u)->int{
+			int low = dp[u] = ++ it;
+			was[u] = attempt;
+			stack.push_back(u);
+			for(auto id: g.adj[u]){
+				if(g.ignore && g.ignore(id)) continue;
+				int v = g.edge[id].to;
+				if(assigned[v] != attempt){
+					if(was[v] != attempt){
+						was[v] = attempt;
+						dp[v] = 0;
+					}
+					low = min(low, dp[v] ?: self(self, v));
+				}
+			}
+			if(low == dp[u]){
+				int v;
+				do{
+					v = stack.back();
+					stack.pop_back();
+					assigned[v] = attempt;
+					cid[v] = count;
+					c.push_back(v);
+				}while(v != u);
+				act(c);
+				c.clear();
+				++ count;
+			}
+			return dp[u] = low;
+		};
+		for(auto u: init) if(was[u] != attempt) dfs(dfs, u);
+		++ attempt;
+	}
+	template<class T>
+	void run_all(const graph<T> &g, auto act){
+		assert(n == g.n);
+		vector<int> init(n);
+		iota(init.begin(), init.end(), 0);
+		run(g, init, act);
+	}
+};
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
 	<tabTrigger>strongly_connected_components</tabTrigger> -->
