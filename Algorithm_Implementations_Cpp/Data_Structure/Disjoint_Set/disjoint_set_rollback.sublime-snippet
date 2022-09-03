@@ -1,10 +1,10 @@
 <snippet>
 	<content><![CDATA[
-struct rollback_disjoint_set{
+struct disjoint_set_rollback{
 	int n, _classes;
 	vector<int> p;
 	vector<pair<int, int>> recover;
-	rollback_disjoint_set(int n): n(n), _classes(n), p(n, -1){ }
+	disjoint_set_rollback(int n): n(n), _classes(n), p(n, -1){ }
 	// O(1)
 	int classes() const{
 		return _classes;
@@ -81,7 +81,7 @@ struct rollback_disjoint_set{
 };
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
-	<tabTrigger>rollback_disjoint_set</tabTrigger> -->
+	<tabTrigger>disjoint_set_rollback</tabTrigger> -->
 	<!-- Optional: Set a scope to limit where the snippet will trigger -->
 	<scope>source.c++</scope> -->
 </snippet>

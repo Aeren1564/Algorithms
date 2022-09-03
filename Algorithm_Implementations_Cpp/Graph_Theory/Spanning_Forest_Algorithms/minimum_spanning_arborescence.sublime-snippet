@@ -2,7 +2,7 @@
 	<content><![CDATA[
 // Returns {min_cost, parent_vertices}
 // O(E log V)
-// Requires graph and rollback_disjoint_set
+// Requires graph and disjoint_set_rollback
 template<class U, class T>
 optional<pair<U, vector<int>>> minimum_spanning_arborescence(const graph<T> &g, int src){
 	using E = typename graph<T>::E;
@@ -31,7 +31,7 @@ optional<pair<U, vector<int>>> minimum_spanning_arborescence(const graph<T> &g, 
 	int n = g.n;
 	U cost = {};
 	vector<int> pv(n);
-	rollback_disjoint_set dsu(n);
+	disjoint_set_rollback dsu(n);
 	vector<shared_ptr<node>> heap(n);
 	for(auto e: g.edge) heap[e.to] = merge(merge, heap[e.to], shared_ptr<node>(new node{e}));
 	vector<int> seen(n, -1), path(n);
