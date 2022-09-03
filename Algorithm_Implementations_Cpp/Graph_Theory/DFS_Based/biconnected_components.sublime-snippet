@@ -1,36 +1,54 @@
 <snippet>
 	<content><![CDATA[
-// Requires graph
-// O(|V| + |E|)
-template<class T>
-void biconnected_components(const graph<T> &g, auto act_comp, auto act_bridge){
-	int n = g.n, it = 0;
-	vector<int> pos(n), s;
-	auto dfs = [&](auto self, int u, int pe)->int{
-		int top = pos[u] = ++ it;
-		for(auto id: g.adj[u]){
-			if(g.ignore && g.ignore(id) || id == pe) continue;
-			int v = u ^ g.edge[id].from ^ g.edge[id].to;
-			if(pos[v]){
-				top = min(top, pos[v]);
-				if(pos[v] < pos[u]) s.push_back(id);
-			}
-			else{
-				int sz = (int)s.size(), up = self(self, v, id);
-				top = min(top, up);
-				if(up == pos[u]){
-					s.push_back(id);
-					act_comp({s.begin() + sz, s.end()}); // Processes edgelist
-					s.resize(sz);
+struct biconnected_components{
+	int n, attempt = 0;
+	biconnected_components(int n): n(n), pos(n), was(n, -1){ }
+	vector<int> pos, stack, was;
+	// O(n + m) where n and m are the number of reachable nodes and edges respectively.
+	// Requires graph
+	template<class T>
+	void run(const graph<T> &g, const vector<int> &init, auto act_comp, auto act_bridge){
+		assert(n == g.n);
+		int it = 0;
+		auto dfs = [&](auto self, int u, int pe)->int{
+			int top = pos[u] = ++ it;
+			was[u] = attempt;
+			for(auto id: g.adj[u]){
+				if(g.ignore && g.ignore(id) || id == pe) continue;
+				int v = u ^ g.edge[id].from ^ g.edge[id].to;
+				if(was[v] != attempt){
+					was[v] = attempt;
+					pos[v] = 0;
 				}
-				else if(up < pos[u]) s.push_back(id);
-				else act_bridge(id);
+				if(pos[v]){
+					top = min(top, pos[v]);
+					if(pos[v] < pos[u]) stack.push_back(id);
+				}
+				else{
+					int sz = (int)stack.size(), up = self(self, v, id);
+					top = min(top, up);
+					if(up == pos[u]){
+						stack.push_back(id);
+						act_comp(vector<int>{stack.begin() + sz, stack.end()});
+						stack.resize(sz);
+					}
+					else if(up < pos[u]) stack.push_back(id);
+					else act_bridge(id);
+				}
 			}
-		}
-		return top;
-	};
-	for(auto u = 0; u < n; ++ u) if(!pos[u]) dfs(dfs, u, -1);
-}
+			return top;
+		};
+		for(auto u: init) if(was[u] != attempt) dfs(dfs, u, -1);
+		++ attempt;
+	}
+	template<class T>
+	void run_all(const graph<T> &g, auto act_comp, auto act_bridge){
+		assert(n == g.n);
+		vector<int> init(n);
+		iota(init.begin(), init.end(), 0);
+		run(g, init, act_comp, act_bridge);
+	}
+};
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
 	<tabTrigger>biconnected_components</tabTrigger> -->

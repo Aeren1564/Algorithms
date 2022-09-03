@@ -5,10 +5,10 @@ struct strongly_connected_components{
 	vector<int> cid;
 	strongly_connected_components(int n): n(n), dp(n), cid(n), assigned(n, -1), was(n, -1){ }
 	int attempt = 0;
-	vector<int> assigned, dp, stack, c, was;
-	// act_comp() accesses sccs in the reverse topological order
+	vector<int> dp, stack, c, assigned, was;
+	// act() accesses reachable sccs in the reverse topological order
+	// O(n + m) where n and m are the number of reachable nodes and edges respectively.
 	// Requires graph
-	// O(|V| + |E|) where V and E are the set of reachable nodes and edges respectively.
 	template<class T>
 	void run(const graph<T> &g, const vector<int> &init, auto act){
 		assert(n == g.n);
