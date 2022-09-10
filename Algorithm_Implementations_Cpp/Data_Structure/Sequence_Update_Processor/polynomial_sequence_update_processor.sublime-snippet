@@ -41,7 +41,7 @@ struct polynomial_sequence_update_processor{
 		for(auto i = 0; i < n; ++ i) data[i] += deltal[i] + deltar[i];
 	}
 	// O(d * n)
-	vector<T> get() const{
+	vector<T> snapshot() const{
 		vector<T> res(data.begin(), data.end());
 		for(auto rep = 0; rep < d; ++ rep) for(auto i = 1; i < n; ++ i) res[i] += res[i - 1];
 		return res;
