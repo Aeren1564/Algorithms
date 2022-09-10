@@ -1,10 +1,10 @@
 <snippet>
 	<content><![CDATA[
 template<class T>
-struct arithmetic_sequence_updater{
+struct arithmetic_sequence_update_processor{
 	int n;
 	vector<T> data;
-	arithmetic_sequence_updater(int n): n(n), data(n + 2){ }
+	arithmetic_sequence_update_processor(int n): n(n), data(n + 2){ }
 	// Add start, start + step, start + step * 2, ... on [l, r)
 	// O(1)
 	void update(int l, int r, T start, T step){
@@ -24,7 +24,7 @@ struct arithmetic_sequence_updater{
 };
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
-	<tabTrigger>arithmetic_sequence_updater</tabTrigger> -->
+	<tabTrigger>arithmetic_sequence_update_processor</tabTrigger> -->
 	<!-- Optional: Set a scope to limit where the snippet will trigger -->
 	<scope>source.c++</scope> -->
 </snippet>

@@ -1,0 +1,55 @@
+<snippet>
+	<content><![CDATA[
+template<class T>
+struct polynomial_sequence_update_processor{
+	int n, d;
+	vector<T> data;
+	vector<vector<T>> choose;
+	// d: length of the polynomial
+	// O(n + d^2)
+	polynomial_sequence_update_processor(int n, int d): n(n), d(d), data(n), choose(d, vector<T>(d, 1)){
+		assert(n >= 0 && d >= 0);
+		for(auto n = 2; n < d; ++ n) for(auto k = 1; k < n; ++ k) choose[n][k] = choose[n - 1][k - 1] + choose[n - 1][k];
+	}
+	vector<T> c, c_next, deltal, deltar;
+	// Add c[0]+c[1](base+x-l)+...+c[d-1](base+x-l)^{d-1} for each x \in [l,r)
+	// Polynomial_Type must be either vector or array
+	// O(d^3)
+	template<class Polynomial_Type>
+	void update(int l, int r, T base, const Polynomial_Type &coef){
+		assert(0 <= l && l <= r && r <= n);
+		assert((int)coef.size() <= d);
+		c.assign(d, 0);
+		c_next.assign(d, 0);
+		deltal.assign(n, 0);
+		deltar.assign(n, 0);
+		copy(coef.begin(), coef.end(), c.begin());
+		for(auto t = 0; t < d; ++ t){
+			T x = 0, y = 0;
+			for(auto i = d - 1 - t; i >= 0; -- i){
+				x = x * base + c[i];
+				y = y * (base + r - l) + c[i];
+			}
+			if(l + t < n) deltal[l + t] += x;
+			if(r + t < n) deltar[r + t] -= y;
+			for(auto i = min(l + t, n - 1); i > l; -- i) deltal[i] -= deltal[i - 1];
+			for(auto i = min(r + t, n - 1); i > r; -- i) deltar[i] -= deltar[i - 1];
+			fill(c_next.begin(), c_next.begin() + d - 1 - t, 0);
+			for(auto i = 0; i < d - 1 - t; ++ i) for(auto j = i + 1; j <= d - 1 - t; ++ j) c_next[i] += c[j] * choose[j][i];
+			swap(c, c_next);
+		}
+		for(auto i = 0; i < n; ++ i) data[i] += deltal[i] + deltar[i];
+	}
+	// O(d * n)
+	vector<T> get() const{
+		vector<T> res(data.begin(), data.end());
+		for(auto rep = 0; rep < d; ++ rep) for(auto i = 1; i < n; ++ i) res[i] += res[i - 1];
+		return res;
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>polynomial_sequence_update_processor</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
