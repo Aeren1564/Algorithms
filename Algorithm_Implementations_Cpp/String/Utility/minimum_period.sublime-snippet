@@ -4,7 +4,7 @@
 // Requires prefix_function
 template<class Char_Type>
 int minimum_period(const vector<Char_Type> &s){
-	return (int)s.size() - prefix_function<false, Char_Type>(s).back();
+	return (int)s.size() - prefix_function<Char_Type, false>(s).back();
 }
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->

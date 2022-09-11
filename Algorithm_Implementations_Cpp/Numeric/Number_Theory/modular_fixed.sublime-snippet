@@ -96,27 +96,27 @@ vector<modular_fixed_base<mod>> modular_fixed_base<mod>::_INV;
 template<unsigned int mod>
 unsigned int modular_fixed_base<mod>::_primitive_root;
 template<unsigned int mod> bool operator==(const modular_fixed_base<mod> &lhs, const modular_fixed_base<mod> &rhs){ return lhs.data == rhs.data; }
-template<unsigned int mod, class T, class enable_if<is_integral<T>::value>::type* = nullptr> bool operator==(const modular_fixed_base<mod> &lhs, T rhs){ return lhs == modular_fixed_base<mod>(rhs); }
-template<unsigned int mod, class T, class enable_if<is_integral<T>::value>::type* = nullptr> bool operator==(T lhs, const modular_fixed_base<mod> &rhs){ return modular_fixed_base<mod>(lhs) == rhs; }
+template<unsigned int mod, class T, typename enable_if<is_integral<T>::value>::type* = nullptr> bool operator==(const modular_fixed_base<mod> &lhs, T rhs){ return lhs == modular_fixed_base<mod>(rhs); }
+template<unsigned int mod, class T, typename enable_if<is_integral<T>::value>::type* = nullptr> bool operator==(T lhs, const modular_fixed_base<mod> &rhs){ return modular_fixed_base<mod>(lhs) == rhs; }
 template<unsigned int mod> bool operator!=(const modular_fixed_base<mod> &lhs, const modular_fixed_base<mod> &rhs){ return !(lhs == rhs); }
-template<unsigned int mod, class T, class enable_if<is_integral<T>::value>::type* = nullptr> bool operator!=(const modular_fixed_base<mod> &lhs, T rhs){ return !(lhs == rhs); }
-template<unsigned int mod, class T, class enable_if<is_integral<T>::value>::type* = nullptr> bool operator!=(T lhs, const modular_fixed_base<mod> &rhs){ return !(lhs == rhs); }
+template<unsigned int mod, class T, typename enable_if<is_integral<T>::value>::type* = nullptr> bool operator!=(const modular_fixed_base<mod> &lhs, T rhs){ return !(lhs == rhs); }
+template<unsigned int mod, class T, typename enable_if<is_integral<T>::value>::type* = nullptr> bool operator!=(T lhs, const modular_fixed_base<mod> &rhs){ return !(lhs == rhs); }
 template<unsigned int mod> bool operator<(const modular_fixed_base<mod> &lhs, const modular_fixed_base<mod> &rhs){ return lhs.data < rhs.data; }
 template<unsigned int mod> bool operator>(const modular_fixed_base<mod> &lhs, const modular_fixed_base<mod> &rhs){ return lhs.data > rhs.data; }
 template<unsigned int mod> bool operator<=(const modular_fixed_base<mod> &lhs, const modular_fixed_base<mod> &rhs){ return lhs.data <= rhs.data; }
 template<unsigned int mod> bool operator>=(const modular_fixed_base<mod> &lhs, const modular_fixed_base<mod> &rhs){ return lhs.data >= rhs.data; }
 template<unsigned int mod> modular_fixed_base<mod> operator+(const modular_fixed_base<mod> &lhs, const modular_fixed_base<mod> &rhs){ return modular_fixed_base<mod>(lhs) += rhs; }
-template<unsigned int mod, class T, class enable_if<is_integral<T>::value>::type* = nullptr> modular_fixed_base<mod> operator+(const modular_fixed_base<mod> &lhs, T rhs){ return modular_fixed_base<mod>(lhs) += rhs; }
-template<unsigned int mod, class T, class enable_if<is_integral<T>::value>::type* = nullptr> modular_fixed_base<mod> operator+(T lhs, const modular_fixed_base<mod> &rhs){ return modular_fixed_base<mod>(lhs) += rhs; }
+template<unsigned int mod, class T, typename enable_if<is_integral<T>::value>::type* = nullptr> modular_fixed_base<mod> operator+(const modular_fixed_base<mod> &lhs, T rhs){ return modular_fixed_base<mod>(lhs) += rhs; }
+template<unsigned int mod, class T, typename enable_if<is_integral<T>::value>::type* = nullptr> modular_fixed_base<mod> operator+(T lhs, const modular_fixed_base<mod> &rhs){ return modular_fixed_base<mod>(lhs) += rhs; }
 template<unsigned int mod> modular_fixed_base<mod> operator-(const modular_fixed_base<mod> &lhs, const modular_fixed_base<mod> &rhs){ return modular_fixed_base<mod>(lhs) -= rhs; }
-template<unsigned int mod, class T, class enable_if<is_integral<T>::value>::type* = nullptr> modular_fixed_base<mod> operator-(const modular_fixed_base<mod> &lhs, T rhs){ return modular_fixed_base<mod>(lhs) -= rhs; }
-template<unsigned int mod, class T, class enable_if<is_integral<T>::value>::type* = nullptr> modular_fixed_base<mod> operator-(T lhs, const modular_fixed_base<mod> &rhs){ return modular_fixed_base<mod>(lhs) -= rhs; }
+template<unsigned int mod, class T, typename enable_if<is_integral<T>::value>::type* = nullptr> modular_fixed_base<mod> operator-(const modular_fixed_base<mod> &lhs, T rhs){ return modular_fixed_base<mod>(lhs) -= rhs; }
+template<unsigned int mod, class T, typename enable_if<is_integral<T>::value>::type* = nullptr> modular_fixed_base<mod> operator-(T lhs, const modular_fixed_base<mod> &rhs){ return modular_fixed_base<mod>(lhs) -= rhs; }
 template<unsigned int mod> modular_fixed_base<mod> operator*(const modular_fixed_base<mod> &lhs, const modular_fixed_base<mod> &rhs){ return modular_fixed_base<mod>(lhs) *= rhs; }
-template<unsigned int mod, class T, class enable_if<is_integral<T>::value>::type* = nullptr> modular_fixed_base<mod> operator*(const modular_fixed_base<mod> &lhs, T rhs){ return modular_fixed_base<mod>(lhs) *= rhs; }
-template<unsigned int mod, class T, class enable_if<is_integral<T>::value>::type* = nullptr> modular_fixed_base<mod> operator*(T lhs, const modular_fixed_base<mod> &rhs){ return modular_fixed_base<mod>(lhs) *= rhs; }
+template<unsigned int mod, class T, typename enable_if<is_integral<T>::value>::type* = nullptr> modular_fixed_base<mod> operator*(const modular_fixed_base<mod> &lhs, T rhs){ return modular_fixed_base<mod>(lhs) *= rhs; }
+template<unsigned int mod, class T, typename enable_if<is_integral<T>::value>::type* = nullptr> modular_fixed_base<mod> operator*(T lhs, const modular_fixed_base<mod> &rhs){ return modular_fixed_base<mod>(lhs) *= rhs; }
 template<unsigned int mod> modular_fixed_base<mod> operator/(const modular_fixed_base<mod> &lhs, const modular_fixed_base<mod> &rhs) { return modular_fixed_base<mod>(lhs) /= rhs; }
-template<unsigned int mod, class T, class enable_if<is_integral<T>::value>::type* = nullptr> modular_fixed_base<mod> operator/(const modular_fixed_base<mod> &lhs, T rhs) { return modular_fixed_base<mod>(lhs) /= rhs; }
-template<unsigned int mod, class T, class enable_if<is_integral<T>::value>::type* = nullptr> modular_fixed_base<mod> operator/(T lhs, const modular_fixed_base<mod> &rhs) { return modular_fixed_base<mod>(lhs) /= rhs; }
+template<unsigned int mod, class T, typename enable_if<is_integral<T>::value>::type* = nullptr> modular_fixed_base<mod> operator/(const modular_fixed_base<mod> &lhs, T rhs) { return modular_fixed_base<mod>(lhs) /= rhs; }
+template<unsigned int mod, class T, typename enable_if<is_integral<T>::value>::type* = nullptr> modular_fixed_base<mod> operator/(T lhs, const modular_fixed_base<mod> &rhs) { return modular_fixed_base<mod>(lhs) /= rhs; }
 template<unsigned int mod> istream &operator>>(istream &in, modular_fixed_base<mod> &number){
 	long long x;
 	in >> x;
@@ -147,8 +147,8 @@ template<unsigned int mod> ostream &operator<<(ostream &out, const modular_fixed
 }
 #undef _PRINT_AS_FRACTION
 
-// const unsigned int mod = 1e9 + 7; // 1000000007
-const unsigned int mod = (119 << 23) + 1; // 998244353
+const unsigned int mod = 1e9 + 7; // 1000000007
+// const unsigned int mod = (119 << 23) + 1; // 998244353
 // const unsigned int mod = 1e9 + 9; // 1000000009
 using modular = modular_fixed_base<mod>;
 ]]></content>
