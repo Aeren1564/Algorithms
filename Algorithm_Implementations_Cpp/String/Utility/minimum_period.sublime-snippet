@@ -1,14 +1,14 @@
 <snippet>
 	<content><![CDATA[
-// returns 1<=p<=n such that s[i] == s[i+p] for all 0<=i<n-p
+// Returns minimum 1<=p<=n such that s[i] == s[i+p] for all 0<=i<n-p
 // Requires prefix_function
 template<class Char_Type>
-int find_period(const vector<Char_Type> &s){
+int minimum_period(const vector<Char_Type> &s){
 	return (int)s.size() - prefix_function<false, Char_Type>(s).back();
 }
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
-	<tabTrigger>find_period</tabTrigger> -->
+	<tabTrigger>minimum_period</tabTrigger> -->
 	<!-- Optional: Set a scope to limit where the snippet will trigger -->
 	<scope>source.c++</scope> -->
 </snippet>
