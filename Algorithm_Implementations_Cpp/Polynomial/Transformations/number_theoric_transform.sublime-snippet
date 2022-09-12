@@ -8,6 +8,7 @@ struct number_theoric_transform_wrapper{
 	// i \in [2^k, 2^{k+1}) holds w_{2^k+1}^{i-2^k}
 	static vector<T> root;
 	static void adjust_root(int n){
+		if(root.empty()) root = {1, 1};
 		for(auto k = (int)root.size(); k < n; k <<= 1){
 			root.resize(n, 1);
 			T w = T::primitive_root() ^ (T::mod() - 1) / (k << 1);
@@ -84,12 +85,9 @@ struct number_theoric_transform_wrapper{
 		return vector<T>(buffer1.begin(), buffer1.begin() + m);
 	}
 };
-template<class T>
-vector<T> number_theoric_transform_wrapper<T>::root = {1, 1};
-template<class T>
-vector<T> number_theoric_transform_wrapper<T>::buffer1;
-template<class T>
-vector<T> number_theoric_transform_wrapper<T>::buffer2;
+template<class T> vector<T> number_theoric_transform_wrapper<T>::root;
+template<class T> vector<T> number_theoric_transform_wrapper<T>::buffer1;
+template<class T> vector<T> number_theoric_transform_wrapper<T>::buffer2;
 
 using ntt = number_theoric_transform_wrapper<modular>;
 ]]></content>

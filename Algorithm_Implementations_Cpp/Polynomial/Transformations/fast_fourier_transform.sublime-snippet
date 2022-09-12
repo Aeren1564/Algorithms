@@ -7,6 +7,7 @@ struct fast_fourier_transform_wrapper{
 	static vector<CD> root;
 	static vector<CLD> root_ld;
 	static void adjust_root(int n){
+		if(root.empty()) root = {1, 1}, root_ld = {1, 1};
 		for(auto k = (int)root.size(); k < n; k <<= 1){
 			root.resize(n), root_ld.resize(n);
 			auto theta = polar(1.0L, acos(-1.0L) / k);
@@ -98,8 +99,8 @@ struct fast_fourier_transform_wrapper{
 		return res;
 	}
 };
-vector<complex<double>> fast_fourier_transform_wrapper::root = {1, 1};
-vector<complex<long double>> fast_fourier_transform_wrapper::root_ld = {1, 1};
+vector<complex<double>> fast_fourier_transform_wrapper::root;
+vector<complex<long double>> fast_fourier_transform_wrapper::root_ld;
 vector<complex<double>> fast_fourier_transform_wrapper::buffer1;
 vector<complex<double>> fast_fourier_transform_wrapper::buffer2;
 

@@ -17,8 +17,8 @@ struct modular_fixed_base{
 		for(auto x = _INV.size(); x <= SZ; ++ x) _INV.push_back(_mod / x * -_INV[_mod % x]);
 	}
 	// _mod must be a prime
-	static unsigned int _primitive_root;
-	static unsigned int primitive_root(){
+	static modular_fixed_base _primitive_root;
+	static modular_fixed_base primitive_root(){
 		if(_primitive_root) return _primitive_root;
 		if(_mod == 2) return _primitive_root = 1;
 		if(_mod == 998244353) return _primitive_root = 3;
@@ -97,7 +97,7 @@ struct modular_fixed_base{
 template<unsigned int _mod>
 vector<modular_fixed_base<_mod>> modular_fixed_base<_mod>::_INV;
 template<unsigned int _mod>
-unsigned int modular_fixed_base<_mod>::_primitive_root;
+modular_fixed_base<_mod> modular_fixed_base<_mod>::_primitive_root;
 template<unsigned int _mod> bool operator==(const modular_fixed_base<_mod> &lhs, const modular_fixed_base<_mod> &rhs){ return lhs.data == rhs.data; }
 template<unsigned int _mod, class T, typename enable_if<is_integral<T>::value>::type* = nullptr> bool operator==(const modular_fixed_base<_mod> &lhs, T rhs){ return lhs == modular_fixed_base<_mod>(rhs); }
 template<unsigned int _mod, class T, typename enable_if<is_integral<T>::value>::type* = nullptr> bool operator==(T lhs, const modular_fixed_base<_mod> &rhs){ return modular_fixed_base<_mod>(lhs) == rhs; }
