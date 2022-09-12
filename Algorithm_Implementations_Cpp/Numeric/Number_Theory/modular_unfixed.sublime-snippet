@@ -2,7 +2,7 @@
 	<content><![CDATA[
 template<unsigned int &_mod>
 struct modular_unfixed_base{
-	static unsigned int mod(){
+	static unsigned int &mod(){
 		return _mod;
 	}
 	static unsigned long long inverse_mod;
