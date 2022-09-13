@@ -19,6 +19,9 @@ struct polynomial_base{
 	void resize(int n, T x = {}){
 		data.resize(n, x);
 	}
+	void assign(int n, T x = {}){
+		data.assign(n, x);
+	}
 	int degree() const{
 		return data.empty() ? numeric_limits<int>::max() : size() - 1;
 	}
@@ -44,14 +47,17 @@ struct polynomial_base{
 	operator vector<T>() const{
 		return data;
 	}
-	operator bool() const{
-		return !data.empty();
-	}
 	typename vector<T>::iterator begin(){
 		return data.begin();
 	}
 	typename vector<T>::iterator end(){
 		return data.end();
+	}
+	typename vector<T>::reverse_iterator rbegin(){
+		return data.rbegin();
+	}
+	typename vector<T>::reverse_iterator rend(){
+		return data.rend();
 	}
 	T evaluate(T x) const{
 		T res = {};
@@ -61,7 +67,7 @@ struct polynomial_base{
 	polynomial_base operator*(const polynomial_base &p) const{
 		return ntt::convolute(data, p.data);
 	}
-	polynomial_base &operator*=(const vector<T> &p){
+	polynomial_base &operator*=(const polynomial_base &p){
 		return *this = *this * p;
 	}
 	template<class U>
@@ -86,12 +92,14 @@ struct polynomial_base{
 	polynomial_base operator+(const polynomial_base &p) const{
 		return polynomial_base(*this) += p;
 	}
-	polynomial_base &operator+=(const T &x){
+	template<class U>
+	polynomial_base &operator+=(const U &x){
 		if(data.empty()) data.emplace_back();
 		data[0] += x;
 		return *this;
 	}
-	polynomial_base operator+(const T &x) const{
+	template<class U>
+	polynomial_base operator+(const U &x) const{
 		return polynomial_base(*this) += x;
 	}
 	friend polynomial_base operator+(const T &x, const polynomial_base &p){
@@ -105,15 +113,18 @@ struct polynomial_base{
 	polynomial_base operator-(const polynomial_base &p) const{
 		return polynomial_base(*this) -= p;
 	}
-	polynomial_base &operator-=(const T &x){
+	template<class U>
+	polynomial_base &operator-=(const U &x){
 		if(data.empty()) data.emplace_back();
 		data[0] -= x;
 		return *this;
 	}
-	polynomial_base operator-(const T &x) const{
+	template<class U>
+	polynomial_base operator-(const U &x) const{
 		return polynomial_base(*this) -= x;
 	}
-	friend polynomial_base operator-(const T &x, const polynomial_base &p){
+	template<class U>
+	friend polynomial_base operator-(const U &x, const polynomial_base &p){
 		return p - x;
 	}
 	polynomial_base operator-() const{
@@ -125,16 +136,16 @@ struct polynomial_base{
 	// O(n * log(n))
 	polynomial_base inverse(size_t length) const{
 		assert(!data.empty() && data[0]);
-		static vector<T> a, b;
+		static polynomial_base a, b;
 		b = {1 / data[0]};
 		while(b.size() < length){
 			a.assign(b.size() << 2, {});
-			copy(data.begin(), data.begin() + min(b.size() << 1, data.size()), a.begin());
-			ntt::transform(a);
+			copy(data.begin(), data.begin() + min(b.size() << 1, data.size()), a.data.begin());
+			ntt::transform(a.data);
 			b.resize(b.size() << 2);
-			ntt::transform(b);
+			ntt::transform(b.data);
 			for(auto i = 0; i < (int)b.size(); ++ i) b[i] = 2 * b[i] - a[i] * b[i] * b[i];
-			ntt::transform(b, true);
+			ntt::transform(b.data, true);
 			b.resize((int)b.size() >> 1);
 		}
 		return vector<T>(b.begin(), b.begin() + length);
@@ -144,6 +155,19 @@ struct polynomial_base{
 	polynomial_base &inplace_inverse(size_t length){
 		return *this = this->inverse(length);
 	}
+	// O(n * log(n))
+	polynomial_base &inplace_power_series_division(polynomial_base p, size_t length){
+		int i = 0;
+		while(i < min(size(), p.size()) && !data[i] && !p[i]) ++ i;
+		data.erase(data.begin(), data.begin() + i);
+		p.data.erase(p.begin(), p.begin() + i);
+		*this *= p.inverse(length);
+		return *this;
+	}
+	// O(n * log(n))
+	polynomial_base power_series_division(const polynomial_base &p, size_t length){
+		return polynomial_base(*this).inplace_power_series_division(p, length);
+	}
 	// Euclidean division
 	// O(n * log(n))
 	polynomial_base &operator/=(const polynomial_base &p){
@@ -151,10 +175,10 @@ struct polynomial_base{
 			data.clear();
 			return *this;
 		}
-		static vector<T> &b;
+		static polynomial_base b;
 		int n = data.size() - p.size() + 1;
-		b.assign(n, {});
-		copy(p.rbegin(), p.rbegin() + min(p.size(), b.size()), b.begin());
+		b.data.assign(n, {});
+		copy(p.data.rbegin(), p.data.rbegin() + min(p.size(), b.size()), b.data.begin());
 		reverse(data.begin(), data.end());
 		data = ntt::convolute(data, b.inverse(n));
 		data.erase(data.begin() + n, data.end());
@@ -164,13 +188,15 @@ struct polynomial_base{
 	polynomial_base operator/(const polynomial_base &p) const{
 		return polynomial_base(*this) /= p;
 	}
-	polynomial_base &operator/=(T x){
+	template<class U>
+	polynomial_base &operator/=(U x){
 		assert(x);
-		T inv_x = 1 / x;
+		T inv_x = T(1) / x;
 		for(auto &c: data) c *= inv_x;
 		return *this;
 	}
-	polynomial_base operator/(T x) const{
+	template<class U>
+	polynomial_base operator/(U x) const{
 		return polynomial_base(*this) /= x;
 	}
 	pair<polynomial_base, polynomial_base> divrem(const polynomial_base &p) const{

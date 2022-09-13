@@ -52,8 +52,8 @@ struct modular_unfixed_base{
 	constexpr modular_unfixed_base(): data(){ }
 	modular_unfixed_base(const double &x){ data = normalize(llround(x)); }
 	modular_unfixed_base(const long double &x){ data = normalize(llround(x)); }
-	template<class T> modular_unfixed_base(const T &x){ data = normalize(x); }
-	template<class T> static unsigned int normalize(const T &x){
+	template<class T, typename enable_if<is_integral<T>::value>::type* = nullptr> modular_unfixed_base(const T &x){ data = normalize(x); }
+	template<class T, typename enable_if<is_integral<T>::value>::type* = nullptr> static unsigned int normalize(const T &x){
 		assert(inverse_mod);
 		int sign = x >= 0 ? 1 : -1;
 		unsigned int v = _mod <= sign * x ? sign * x - ((unsigned __int128)(sign * x) * inverse_mod >> 64) * _mod : sign * x;
@@ -65,8 +65,8 @@ struct modular_unfixed_base{
 	template<class T> operator T() const{ return data; }
 	modular_unfixed_base &operator+=(const modular_unfixed_base &otr){ if((data += otr.data) >= _mod) data -= _mod; return *this; }
 	modular_unfixed_base &operator-=(const modular_unfixed_base &otr){ if((data += _mod - otr.data) >= _mod) data -= _mod; return *this; }
-	template<class T> modular_unfixed_base &operator+=(const T &otr){ return *this += modular_unfixed_base(otr); }
-	template<class T> modular_unfixed_base &operator-=(const T &otr){ return *this -= modular_unfixed_base(otr); }
+	template<class T, typename enable_if<is_integral<T>::value>::type* = nullptr> modular_unfixed_base &operator+=(const T &otr){ return *this += modular_unfixed_base(otr); }
+	template<class T, typename enable_if<is_integral<T>::value>::type* = nullptr> modular_unfixed_base &operator-=(const T &otr){ return *this -= modular_unfixed_base(otr); }
 	modular_unfixed_base &operator++(){ return *this += 1; }
 	modular_unfixed_base &operator--(){ return *this += _mod - 1; }
 	modular_unfixed_base operator++(int){ modular_unfixed_base result(*this); *this += 1; return result; }
@@ -76,14 +76,14 @@ struct modular_unfixed_base{
 		data = normalize((unsigned long long)data * rhs.data);
 		return *this;
 	}
-	template<class T>
+	template<class T, typename enable_if<is_integral<T>::value>::type* = nullptr>
 	modular_unfixed_base &operator^=(T e){
 		if(e < 0) *this = 1 / *this, e = -e;
 		modular_unfixed_base res = 1;
 		for(; e; *this *= *this, e >>= 1) if(e & 1) res *= *this;
 		return *this = res;
 	}
-	template<class T>
+	template<class T, typename enable_if<is_integral<T>::value>::type* = nullptr>
 	modular_unfixed_base operator^(T e) const{
 		return modular_unfixed_base(*this) ^= e;
 	}

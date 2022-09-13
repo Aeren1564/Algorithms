@@ -48,8 +48,8 @@ struct modular_fixed_base{
 	constexpr modular_fixed_base(): data(){ }
 	modular_fixed_base(const double &x){ data = normalize(llround(x)); }
 	modular_fixed_base(const long double &x){ data = normalize(llround(x)); }
-	template<class T> modular_fixed_base(const T &x){ data = normalize(x); }
-	template<class T> static unsigned int normalize(const T &x){
+	template<class T, typename enable_if<is_integral<T>::value>::type* = nullptr> modular_fixed_base(const T &x){ data = normalize(x); }
+	template<class T, typename enable_if<is_integral<T>::value>::type* = nullptr> static unsigned int normalize(const T &x){
 		int sign = x >= 0 ? 1 : -1;
 		unsigned int v =  _mod <= sign * x ? sign * x % _mod : sign * x;
 		if(sign == -1 && v) v = _mod - v;
@@ -59,8 +59,8 @@ struct modular_fixed_base{
 	template<class T> operator T() const{ return data; }
 	modular_fixed_base &operator+=(const modular_fixed_base &otr){ if((data += otr.data) >= _mod) data -= _mod; return *this; }
 	modular_fixed_base &operator-=(const modular_fixed_base &otr){ if((data += _mod - otr.data) >= _mod) data -= _mod; return *this; }
-	template<class T> modular_fixed_base &operator+=(const T &otr){ return *this += modular_fixed_base(otr); }
-	template<class T> modular_fixed_base &operator-=(const T &otr){ return *this -= modular_fixed_base(otr); }
+	template<class T, enable_if<is_integral<T>::value>::type* = nullptr> modular_fixed_base &operator+=(const T &otr){ return *this += modular_fixed_base(otr); }
+	template<class T, typename enable_if<is_integral<T>::value>::type* = nullptr> modular_fixed_base &operator-=(const T &otr){ return *this -= modular_fixed_base(otr); }
 	modular_fixed_base &operator++(){ return *this += 1; }
 	modular_fixed_base &operator--(){ return *this += _mod - 1; }
 	modular_fixed_base operator++(int){ modular_fixed_base result(*this); *this += 1; return result; }
@@ -70,14 +70,14 @@ struct modular_fixed_base{
 		data = normalize((unsigned long long)data * rhs.data);
 		return *this;
 	}
-	template<class T>
+	template<class T, typename enable_if<is_integral<T>::value>::type* = nullptr>
 	modular_fixed_base &operator^=(T e){
 		if(e < 0) *this = 1 / *this, e = -e;
 		modular_fixed_base res = 1;
 		for(; e; *this *= *this, e >>= 1) if(e & 1) res *= *this;
 		return *this = res;
 	}
-	template<class T>
+	template<class T, typename enable_if<is_integral<T>::value>::type* = nullptr>
 	modular_fixed_base operator^(T e) const{
 		return modular_fixed_base(*this) ^= e;
 	}
