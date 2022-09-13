@@ -84,6 +84,9 @@ struct polynomial_base{
 		for(auto &c: p) c = x * c;
 		return p;
 	}
+	polynomial_base square() const{
+		return ntt::square(data);
+	}
 	polynomial_base &operator+=(const polynomial_base &p){
 		data.resize(max(size(), p.size()));
 		for(auto i = 0; i < (int)p.size(); ++ i) data[i] += p[i];
@@ -102,7 +105,8 @@ struct polynomial_base{
 	polynomial_base operator+(const U &x) const{
 		return polynomial_base(*this) += x;
 	}
-	friend polynomial_base operator+(const T &x, const polynomial_base &p){
+	template<class U>
+	friend polynomial_base operator+(const U &x, const polynomial_base &p){
 		return p + x;
 	}
 	polynomial_base &operator-=(const polynomial_base &p){
@@ -125,12 +129,34 @@ struct polynomial_base{
 	}
 	template<class U>
 	friend polynomial_base operator-(const U &x, const polynomial_base &p){
-		return p - x;
+		return -p + x;
 	}
 	polynomial_base operator-() const{
 		polynomial_base res = *this;
 		for(auto i = 0; i < size(); ++ i) res[i] = T{} - res[i];
 		return res;
+	}
+	polynomial_base &operator++(){
+		if(data.empty()) data.push_back(1);
+		else ++ data[0];
+		return *this;
+	}
+	polynomial_base &operator--(){
+		if(data.empty()) data.push_back(-1);
+		else -- data[0];
+		return *this;
+	}
+	polynomial_base operator++(int){
+		polynomial_base result(*this);
+		if(data.empty()) data.push_back(1);
+		else ++ data[0];
+		return result;
+	}
+	polynomial_base operator--(int){
+		polynomial_base result(*this);
+		if(data.empty()) data.push_back(-1);
+		else -- data[0];
+		return result;
 	}
 	// Returns the first length terms of the inverse series
 	// O(n * log(n))
@@ -161,7 +187,7 @@ struct polynomial_base{
 		while(i < min(size(), p.size()) && !data[i] && !p[i]) ++ i;
 		data.erase(data.begin(), data.begin() + i);
 		p.data.erase(p.begin(), p.begin() + i);
-		*this *= p.inverse(length);
+		(*this *= p.inverse(length)).resize(length);
 		return *this;
 	}
 	// O(n * log(n))
