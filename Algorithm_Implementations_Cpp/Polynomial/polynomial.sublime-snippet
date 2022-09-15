@@ -3,7 +3,7 @@
 // T must support *=, *, +=, -=, and -
 // T{} should return the additive identity
 // Requires modular and number_theoric_transform
-template<class T, class ntt>
+template<class T, class fft>
 struct polynomial_base{
 	vector<T> data;
 	polynomial_base(){}
@@ -13,6 +13,9 @@ struct polynomial_base{
 	polynomial_base(const initializer_list<T> &l): data(l){}
 	template<class It>
 	polynomial_base(It begin, It end): data(begin, end){}
+	bool empty() const{
+		return data.empty();
+	}
 	size_t size() const{
 		return (int)data.size();
 	}
@@ -21,6 +24,19 @@ struct polynomial_base{
 	}
 	void assign(int n, T x = {}){
 		data.assign(n, x);
+	}
+	void push_back(T x){
+		data.push_back(x);
+	}
+	template<class... Args>
+	T &emplace_back(Args&&... args){
+		return data.emplace_back(args...);
+	}
+	vector<T>::iterator erase(vector<T>::iterator pos){
+		return data.erase(pos);
+	}
+	vector<T>::iterator erase(vector<T>::iterator first, vector<T>::iterator last){
+		return data.erase(first, last);
 	}
 	int degree() const{
 		return data.empty() ? numeric_limits<int>::max() : size() - 1;
@@ -65,7 +81,7 @@ struct polynomial_base{
 		return res;
 	}
 	polynomial_base operator*(const polynomial_base &p) const{
-		return ntt::convolute(data, p.data);
+		return fft::convolute(data, p.data);
 	}
 	polynomial_base &operator*=(const polynomial_base &p){
 		return *this = *this * p;
@@ -85,10 +101,10 @@ struct polynomial_base{
 		return p;
 	}
 	polynomial_base square() const{
-		return ntt::square(data);
+		return fft::square(data);
 	}
 	polynomial_base &operator+=(const polynomial_base &p){
-		data.resize(max(size(), p.size()));
+		resize(max(size(), p.size()));
 		for(auto i = 0; i < (int)p.size(); ++ i) data[i] += p[i];
 		return *this;
 	}
@@ -97,7 +113,7 @@ struct polynomial_base{
 	}
 	template<class U>
 	polynomial_base &operator+=(const U &x){
-		if(data.empty()) data.emplace_back();
+		if(empty()) emplace_back();
 		data[0] += x;
 		return *this;
 	}
@@ -110,7 +126,7 @@ struct polynomial_base{
 		return p + x;
 	}
 	polynomial_base &operator-=(const polynomial_base &p){
-		data.resize(max(size(), p.size()));
+		resize(max(size(), p.size()));
 		for(auto i = 0; i < (int)p.size(); ++ i) data[i] -= p[i];
 		return *this;
 	}
@@ -119,7 +135,7 @@ struct polynomial_base{
 	}
 	template<class U>
 	polynomial_base &operator-=(const U &x){
-		if(data.empty()) data.emplace_back();
+		if(empty()) emplace_back();
 		data[0] -= x;
 		return *this;
 	}
@@ -137,24 +153,24 @@ struct polynomial_base{
 		return res;
 	}
 	polynomial_base &operator++(){
-		if(data.empty()) data.push_back(1);
+		if(empty()) push_back(1);
 		else ++ data[0];
 		return *this;
 	}
 	polynomial_base &operator--(){
-		if(data.empty()) data.push_back(-1);
+		if(empty()) push_back(-1);
 		else -- data[0];
 		return *this;
 	}
 	polynomial_base operator++(int){
 		polynomial_base result(*this);
-		if(data.empty()) data.push_back(1);
+		if(empty()) push_back(1);
 		else ++ data[0];
 		return result;
 	}
 	polynomial_base operator--(int){
 		polynomial_base result(*this);
-		if(data.empty()) data.push_back(-1);
+		if(empty()) push_back(-1);
 		else -- data[0];
 		return result;
 	}
@@ -167,11 +183,11 @@ struct polynomial_base{
 		while(b.size() < length){
 			a.assign(b.size() << 2, {});
 			copy(data.begin(), data.begin() + min(b.size() << 1, data.size()), a.data.begin());
-			ntt::transform(a.data);
+			fft::transform(a.data);
 			b.resize(b.size() << 2);
-			ntt::transform(b.data);
+			fft::transform(b.data);
 			for(auto i = 0; i < (int)b.size(); ++ i) b[i] = 2 * b[i] - a[i] * b[i] * b[i];
-			ntt::transform(b.data, true);
+			fft::transform(b.data, true);
 			b.resize((int)b.size() >> 1);
 		}
 		return vector<T>(b.begin(), b.begin() + length);
@@ -206,7 +222,7 @@ struct polynomial_base{
 		b.data.assign(n, {});
 		copy(p.data.rbegin(), p.data.rbegin() + min(p.size(), b.size()), b.data.begin());
 		reverse(data.begin(), data.end());
-		data = ntt::convolute(data, b.inverse(n));
+		data = fft::convolute(data, b.inverse(n));
 		data.erase(data.begin() + n, data.end());
 		reverse(data.begin(), data.end());
 		return *this;
@@ -277,7 +293,7 @@ struct polynomial_base{
 			a.data.assign(s, {});
 			copy(data.begin(), data.begin() + min(s, data.size()), a.begin());
 			++ a[0];
-			(b = ntt::convolute(b, a - b.log(s))).resize(s);
+			(b = fft::convolute(b, a - b.log(s))).resize(s);
 		}
 		b.resize(length);
 		return b;
