@@ -1,22 +1,18 @@
 <snippet>
 	<content><![CDATA[
-// Satisfies \sum_{i=1~n}
-// O(polymul(n-term polynomial))
+// Satisfies \sum_{i=0}^{m-1}i^e = \sum_{j=1}^{e+1}C(e+1,e+1-j)/(e+1)*B[e+1-j]*m^j
+// O(polymul(n))
 // Requires polynomial
-template<class T>
+template<class T, class FFT = ntt>
 vector<T> bernoulli_number(int n){
-	if(n == 0) return {1};
-	static vector<T> fact{1}, invfact{1};
-	if(auto sz = (int)fact.size(); sz <= n + 1){
-		for(auto i = sz; i <= n + 1; ++ i) fact.push_back(fact.back() * i);
-		invfact.resize(n + 2), invfact[n + 1] = 1 / fact.back();
-		for(auto i = n; i >= sz; -- i) invfact[i] = invfact[i + 1] * (i + 1);
-	}
-	static vector<T> a;
-	a.resize(n + 1);
-	copy(invfact.begin() + 1, invfact.begin() + n + 2, a.begin());
-	inplace_inverse(a, n + 1);
-	for(auto i = 0; i <= n; ++ i) a[i] *= fact[i];
+	assert(n >= 0);
+	polynomial_base<T, FFT> a(n + 1);
+	T fact = 1;
+	for(auto x = 2; x <= n + 1; ++ x) fact *= x;
+	a[n] = fact = 1 / fact;
+	for(auto x = n - 1; x >= 0; -- x) a[x] = fact *= x + 2;
+	a.inplace_inverse(n + 1);
+	for(auto x = 2; x <= n; ++ x) a[x] *= fact *= x;
 	return a;
 }
 ]]></content>
