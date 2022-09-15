@@ -1,22 +1,18 @@
 <snippet>
 	<content><![CDATA[
-// O(polymul(n-term polynomial))
+// a[x]: # of ways to partition x labelled objects
+// O(polymul(n))
 // Requires polynomial
-template<class T>
+template<class T, class FFT = ntt>
 vector<T> bell_number(int n){
-	if(n == 0) return {};
-	static vector<T> fact{1}, invfact{1};
-	if(auto sz = (int)fact.size(); sz <= n){
-		for(auto i = sz; i <= n; ++ i) fact.push_back(fact.back() * i);
-		invfact.resize(n + 1), invfact[n] = 1 / fact.back();
-		for(auto i = n - 1; i >= sz; -- i) invfact[i] = invfact[i + 1] * (i + 1);
-	}
-	static vector<T> a;
-	a.resize(n);
-	copy(invfact.begin(), invfact.begin() + n, a.begin());
-	a[0] = 0;
-	inplace_exponential(a, n);
-	for(auto i = 2; i < n; ++ i) a[i] *= fact[i];
+	assert(n >= 0);
+	polynomial_base<T, FFT> a(n + 1);
+	T fact = 1;
+	for(auto x = 2; x <= n; ++ x) fact *= x;
+	a[n] = fact = 1 / fact;
+	for(auto x = n - 1; x >= 1; -- x) a[x] = fact *= x + 1;
+	a.inplace_exp(n + 1);
+	for(auto x = 2; x <= n; ++ x) a[x] *= fact *= x;
 	return a;
 }
 ]]></content>
