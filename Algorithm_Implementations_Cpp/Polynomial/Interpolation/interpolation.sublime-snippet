@@ -1,27 +1,28 @@
 <snippet>
 	<content><![CDATA[
-// O((Complexity of product of n term polynomial) * log n)
+// Returns a length n polynomial P where P(x[i]) = y[i] for all 0<=i<n
+// O(polymul(n) * log(n))
 // Requires polynomial
-template<class T>
-vector<T> interpolation(const vector<T> &x, const vector<T> &y){
+template<class T, class FFT = ntt>
+polynomial_base<T, FFT> interpolation(const vector<T> &x, const vector<T> &y){
 	assert(x.size() == y.size());
-	if(x.empty()) return { };
+	if(x.empty()) return {};
 	int n = (int)x.size();
-	vector<vector<T>> st((n << 1) - 1);
+	vector<polynomial_base<T, FFT>> tree(n << 1);
 	auto build = [&](auto self, int u, int l, int r)->void{
-		if(r - l == 1) st[u] = vector<T>{-x[l], 1};
+		if(r - l == 1) tree[u] = vector<T>{-x[l], 1};
 		else{
 			int m = l + (r - l >> 1), v = u + (m - l << 1);
 			self(self, u + 1, l, m), self(self, v, m, r);
-			st[u] = st[u + 1] * st[v];
+			tree[u] = tree[u + 1] * tree[v];
 		}
 	};
 	build(build, 0, 0, n);
-	vector<T> m = st[0], dm = derivative(m), val(n);
-	auto eval = [&](auto self, int u, int l, int r, vector<T> f)->void{
-		f %= st[u];
-		if((int)f.size() < 150){
-			for(auto i = l; i < r; ++ i) val[i] = evaluate(f, x[i]);
+	polynomial_base<T, FFT> val(n);
+	auto eval = [&](auto self, int u, int l, int r, polynomial_base<T, FFT> f)->void{
+		f %= tree[u];
+		if((int)f.size() < 200){
+			for(auto i = l; i < r; ++ i) val[i] = f.evaluate(x[i]);
 			return;
 		}
 		if(r - l == 1) val[l] = f[0];
@@ -30,12 +31,12 @@ vector<T> interpolation(const vector<T> &x, const vector<T> &y){
 			self(self, u + 1, l, m, f), self(self, v, m, r, f);
 		}
 	};
-	eval(eval, 0, 0, n, dm);
+	eval(eval, 0, 0, n, tree[0].derivative());
 	for(auto i = 0; i < n; ++ i) val[i] = y[i] / val[i];
-	auto calc = [&](auto self, int u, int l, int r)->vector<T>{
-		if(r - l == 1) return vector<T>{val[l]};
+	auto calc = [&](auto self, int u, int l, int r)->polynomial_base<T, FFT>{
+		if(r - l == 1) return {val[l]};
 		int m = l + (r - l >> 1), v = u + (m - l << 1);
-		return self(self, u + 1, l, m) * st[v] + self(self, v, m, r) * st[u + 1];
+		return self(self, u + 1, l, m) * tree[v] + self(self, v, m, r) * tree[u + 1];
 	};
 	return calc(calc, 0, 0, n);
 }

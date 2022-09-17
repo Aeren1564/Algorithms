@@ -13,6 +13,18 @@ struct polynomial_base{
 	polynomial_base(const initializer_list<T> &l): data(l){}
 	template<class It>
 	polynomial_base(It begin, It end): data(begin, end){}
+	template<class U>
+	static T &inplace_power(T &res, U e){
+		assert(e >= 0);
+		T base = res;
+		res = 1;
+		for(; e; e >>= 1, base *= base) if(e & 1) res *= base;
+		return res;
+	}
+	template<class U>
+	static T power(T base, U e){
+		return inplace_power(T(base), e);
+	}
 	bool empty() const{
 		return data.empty();
 	}
@@ -28,14 +40,23 @@ struct polynomial_base{
 	void push_back(T x){
 		data.push_back(x);
 	}
+	void pop_back(){
+		data.pop_back();
+	}
+	T &back(){
+		return data.back();
+	}
+	const T &back() const{
+		return data.back();
+	}
 	template<class... Args>
 	T &emplace_back(Args&&... args){
 		return data.emplace_back(args...);
 	}
-	vector<T>::iterator erase(vector<T>::iterator pos){
+	typename vector<T>::iterator erase(typename vector<T>::iterator pos){
 		return data.erase(pos);
 	}
-	vector<T>::iterator erase(vector<T>::iterator first, vector<T>::iterator last){
+	typename vector<T>::iterator erase(typename vector<T>::iterator first, typename vector<T>::iterator last){
 		return data.erase(first, last);
 	}
 	int degree() const{
@@ -102,6 +123,21 @@ struct polynomial_base{
 	}
 	polynomial_base square() const{
 		return fft::square(data);
+	}
+	polynomial_base &operator^=(int e){
+		assert(e >= 0);
+		if(empty()) return *this = vector<T>{};
+		if(size() == 1) return *this = vector<T>{power(data[0], e)};
+		if(!e) return *this = vector<T>{1};
+		int n = 1 << __lg(((int)data.size() - 1) * e) + 1;
+		resize(n);
+		fft::transform(data);
+		for(auto &x: data) inplace_power(x, e);
+		fft::transform(data, false);
+		return *this;
+	}
+	polynomial_base operator^=(int e) const{
+		return polynomial_base(*this) ^= e;
 	}
 	polynomial_base &operator+=(const polynomial_base &p){
 		resize(max(size(), p.size()));
@@ -249,7 +285,7 @@ struct polynomial_base{
 	polynomial_base operator%(const polynomial_base &p) const{
 		return this->divrem(p).second;
 	}
-	polynomial_base &operator%=(const polynomial_base &p) const{
+	polynomial_base &operator%=(const polynomial_base &p){
 		return *this = *this % p;
 	}
 	polynomial_base &inplace_derivative(){

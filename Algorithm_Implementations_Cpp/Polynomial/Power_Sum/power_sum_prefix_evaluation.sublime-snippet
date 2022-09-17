@@ -1,0 +1,31 @@
+<snippet>
+	<content><![CDATA[
+// Let f[i] = 0^i + 2^i + ... + (base-1)^i
+// Returns f[0], f[1], ..., f[n-1]
+// O(polymul(n))
+// Requires polynomial
+template<class T, class FFT = ntt>
+vector<T> power_sum_prefix_evaluation(T base, int n){
+	assert(n >= 0);
+	if(!n) return {};
+	if(!base) return vector<T>(n, T());
+	T invfact = 1, pow = base ^ n, temp, invbase = 1 / base;
+	for(auto i = 2; i <= n; ++ i) invfact *= i;
+	invfact = 1 / invfact;
+	polynomial_base<T, FFT> p(n), q(n);
+	temp = invfact;
+	for(auto i = n - 1; i >= 0; -- i) p[i] = temp * (1 - pow), pow *= invbase, temp *= i + 1;
+	temp = -invfact;
+	for(auto i = n - 1; i >= 0; -- i) q[i] = temp, temp *= i + 1;
+	(p *= q.inverse(n)).resize(n);
+	temp = 1;
+	for(auto i = 0; i < n; ++ i) p[i] *= temp, temp *= i + 1;
+	++ p[0];
+	return p;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>power_sum_prefix_evaluation</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

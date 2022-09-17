@@ -1,6 +1,7 @@
 <snippet>
 	<content><![CDATA[
 // a[x]: # of ways to partition x labelled objects
+// Returns {a[0], ..., a[n]}
 // O(polymul(n))
 // Requires polynomial
 template<class T, class FFT = ntt>
