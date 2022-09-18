@@ -1,6 +1,11 @@
 <snippet>
 	<content><![CDATA[
-// O(|V| log |V|) applications of insert() and O(n) applications of answer() and clear()
+// insert(u): insert vertex u into the state
+// answer(u, flag): answer for the subtree of u, flag indicates whether u is included or not
+// clear_subtr(u): erase every vertex in the subtree of u from the state
+// O(n * log(n)) insert() calls
+// answer(u, false) and answer(u, true) is called once for each u
+// sum of subtree size of vertex u for all clear_subtr(u) calls is O(n)
 // Requires graph
 template<class T>
 struct small_to_large_on_forest{
@@ -22,7 +27,7 @@ struct small_to_large_on_forest{
 		};
 		for(auto u: roots) assert(!~pos[u]), dfs(dfs, u, -1);
 	}
-	void solve(int root, auto insert, auto clear, auto answer){
+	void solve(int root, auto insert, auto clear_subtr, auto answer){
 		auto dfs = [&](auto self, int u, int pe, bool keep)->void{
 			int hv = -1, hid = -1;
 			for(auto id: g.adj[u]){
@@ -45,12 +50,12 @@ struct small_to_large_on_forest{
 				for(auto i = pos[v]; i < end[v]; ++ i) insert(order[i]);
 			}
 			answer(u, false), insert(u), answer(u, true);
-			if(!keep) for(auto i = pos[u]; i < end[u]; ++ i) clear(order[i]);
+			if(!keep) clear_subtr(u);
 		};
 		dfs(dfs, root, -1, false);
 	}
-	void solve(auto insert, auto clear, auto answer){
-		for(auto r: roots) solve(r, insert, clear, answer);
+	void solve(auto insert, auto clear_subtr, auto answer){
+		for(auto r: roots) solve(r, insert, clear_subtr, answer);
 	}
 };
 ]]></content>
