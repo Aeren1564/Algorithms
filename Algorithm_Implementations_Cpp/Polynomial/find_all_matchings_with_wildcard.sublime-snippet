@@ -3,7 +3,7 @@
 // Returns the list of all positions of text in pattern
 // 0 represents wildcard, where it can match with any character
 // Assumes low alphabet size. Switch to higher percision FFT if not.
-// O((n + m) log (n + m))
+// O((n + m) * log(n + m))
 // Requres fast_fourier_transform
 template<class Char_Type>
 vector<int> find_all_matchings_with_wildcard(const vector<Char_Type> &text, const vector<Char_Type> &pattern){

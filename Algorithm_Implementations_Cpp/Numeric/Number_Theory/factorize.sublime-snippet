@@ -1,8 +1,9 @@
 <snippet>
 	<content><![CDATA[
-vector<pair<long long, int>> factorize(long long x){
-	vector<pair<long long, int>> res;
-	for(long long p = 2; p * p <= x; ++ p) if(x % p == 0){
+template<class T>
+vector<pair<T, int>> factorize(T x){
+	vector<pair<T, int>> res;
+	for(T p = 2; p * p <= x; ++ p) if(x % p == 0){
 		res.push_back({p, 0});
 		while(x % p == 0) ++ res.back().second, x /= p;
 	}

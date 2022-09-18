@@ -16,7 +16,7 @@ struct number_theoric_transform_wrapper{
 		}
 	}
 	// n must be a power of two
-	// O(n log n)
+	// O(n * log(n))
 	static void transform(vector<T> &p, bool invert = false){
 		int n = (int)p.size();
 		assert(n && __builtin_popcount(n) == 1 && (T::mod() - 1) % n == 0);
@@ -40,7 +40,7 @@ struct number_theoric_transform_wrapper{
 	static vector<T> buffer1, buffer2;
 	// Double the length of the ntt array
 	// n must be a power of two
-	// O(n log n)
+	// O(n * log(n))
 	static void double_up(vector<T> &p){
 		int n = (int)p.size();
 		assert(n && __builtin_popcount(n) == 1 && (T().mod() - 1) % (n << 1) == 0);
@@ -73,7 +73,7 @@ struct number_theoric_transform_wrapper{
 		transform(buffer1, true);
 		return vector<T>(buffer1.begin(), buffer1.begin() + m);
 	}
-	// O(n log n)
+	// O(n * log(n))
 	static vector<T> square(const vector<T> &p){
 		if(p.size() < 40) return convolute_naive(p, p);
 		int m = (int)p.size() * 2 - 1, n = 1 << __lg(m) + 1;

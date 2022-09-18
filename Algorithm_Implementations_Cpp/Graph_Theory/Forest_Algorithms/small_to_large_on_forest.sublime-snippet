@@ -6,8 +6,8 @@ template<class T>
 struct small_to_large_on_forest{
 	int n;
 	graph<T> g;
-	vector<int> roots, sz, order, pos, end;
-	small_to_large_on_forest(const graph<T> &g, const vector<int> &_roots): n(g.n), g(g), sz(n, 1), pos(n, -1), end(n, -1), roots(_roots){
+	vector<int> roots, size, order, pos, end;
+	small_to_large_on_forest(const graph<T> &g, const vector<int> &_roots): n(g.n), g(g), size(n, 1), pos(n, -1), end(n, -1), roots(_roots){
 		auto dfs = [&](auto self, int u, int pe)->void{
 			pos[u] = (int)order.size();
 			order.push_back(u);
@@ -16,7 +16,7 @@ struct small_to_large_on_forest{
 				auto &e = g.edge[id];
 				int v = u ^ e.from ^ e.to;
 				self(self, v, id);
-				sz[u] += sz[v];
+				size[u] += size[v];
 			}
 			end[u] = (int)order.size();
 		};
@@ -29,7 +29,7 @@ struct small_to_large_on_forest{
 				if(id == pe || g.ignore && g.ignore(id)) continue;
 				auto &e = g.edge[id];
 				int v = u ^ e.from ^ e.to;
-				if(!~hv || sz[hv] < sz[v]) hv = v, hid = id;
+				if(!~hv || size[hv] < size[v]) hv = v, hid = id;
 			}
 			for(auto id: g.adj[u]){
 				if(id == pe || id == hid || g.ignore && g.ignore(id)) continue;
@@ -45,7 +45,7 @@ struct small_to_large_on_forest{
 				for(auto i = pos[v]; i < end[v]; ++ i) insert(order[i]);
 			}
 			answer(u, false), insert(u), answer(u, true);
-			if(!keep) clear(u);
+			if(!keep) for(auto i = pos[u]; i < end[u]; ++ i) clear(order[i]);
 		};
 		dfs(dfs, root, -1, false);
 	}

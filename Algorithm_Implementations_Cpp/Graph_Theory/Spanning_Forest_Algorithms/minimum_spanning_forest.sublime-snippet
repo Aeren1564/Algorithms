@@ -3,7 +3,9 @@
 // Requires graph and disjoint_set
 template<class T>
 vector<int> minimum_spanning_forest(const graph<T> &g){
-	vector<int> order((int)g.edge.size());
+	vector<int> order(g.edge.size());
+	iota(order.begin(), order.end(), 0);
+	if(g.ignore) order.erase(remove_if(order.begin(), order.end(), [&](int id){ return g.ignore(id); }), order.end());
 	iota(order.begin(), order.end(), 0);
 	sort(order.begin(), order.end(), [&](int i, int j){ return g.edge[i].cost < g.edge[j].cost; });
 	disjoint_set dsu(g.n);

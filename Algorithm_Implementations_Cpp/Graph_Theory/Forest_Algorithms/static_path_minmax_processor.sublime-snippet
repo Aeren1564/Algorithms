@@ -1,30 +1,29 @@
 <snippet>
 	<content><![CDATA[
-// Requires graph, dsu, and range_minmax_query_solver
+// Requires graph, disjoint_set, and range_minmax_query_solver
 template<class T, class Compare = less<>>
 struct static_path_minmax_processor{
 	int n, m;
 	T minf;
 	vector<int> pos;
-	range_minmax_query_solver<int, Compare> rmq;
+	range_minmax_query_solver<pair<T, int>, Compare> rmq;
 	// O((|V| + |E|) log |V|)
 	static_path_minmax_processor(const graph<T> &g, Compare cmp = less<>(), T minf = numeric_limits<T>::min()): n(g.n), m((int)g.edge.size()), minf(minf), pos(n){
-		assert(m < n); // graph must be a forest
 		vector<int> order(m);
 		iota(order.begin(), order.end(), 0);
 		if(g.ignore) order.erase(remove_if(order.begin(), order.end(), [&](int id){ return g.ignore(id); }), order.end());
 		sort(order.rbegin(), order.rend(), [&](int i, int j){ return cmp(g.edge[i].cost, g.edge[j].cost); });
-		vector<list<pair<int, T>>> lines(n);
-		for(auto u = 0; u < g.n; ++ u) lines[u].push_back({u, minf});
+		vector<list<pair<int, pair<T, int>>>> lines(n);
+		for(auto u = 0; u < g.n; ++ u) lines[u].push_back({u, {minf, -1}});
 		disjoint_set dsu(n);
 		for(auto id: order){
 			auto [u, v, w] = g.edge[id];
 			u = dsu.root(u), v = dsu.root(v), dsu.merge(u, v);
 			if(dsu.root(u) != u) swap(u, v);
-			lines[u].back().second = w, lines[u].splice(lines[u].end(), lines[v]);
+			lines[u].back().second = {w, id}, lines[u].splice(lines[u].end(), lines[v]);
 		}
 		for(auto u = 1; u < n; ++ u) lines[0].splice(lines[0].end(), lines[u]);
-		vector<T> line(n);
+		vector<pair<T, int>> line(n);
 		auto it = lines[0].begin();
 		for(auto i = 0; i < n; ++ i, ++ it) pos[it->first] = i, line[i] = it->second;
 		rmq = {line, cmp};
@@ -32,7 +31,7 @@ struct static_path_minmax_processor{
 	// Returns the minimum edge weight along the u-v path, assuming u and v lies on the same component
 	// numeric_limits<T>::max() if u == v
 	// O(1)
-	T query(int u, int v){
+	pair<T, int> query(int u, int v) const{
 		tie(u, v) = minmax(pos[u], pos[v]); 
 		return rmq.query(u, v);
 	}
