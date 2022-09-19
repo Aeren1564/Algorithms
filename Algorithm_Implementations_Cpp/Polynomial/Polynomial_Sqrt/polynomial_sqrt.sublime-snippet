@@ -1,9 +1,9 @@
 <snippet>
 	<content><![CDATA[
-// O((Complexity of product of n term polynomial) * log n)
+// O(polymul(n) * log(n))
 // Requires mod_sqrt and polynomial
-template<class T>
-optional<vector<T>> polynomial_sqrt(vector<T> a, int length){
+template<class T, class FFT = ntt>
+optional<polynomial_base<T, FFT>> polynomial_sqrt(polynomial_base<T, FFT> a, int length){
 	a.resize(length);
 	int i = find_if(a.begin(), a.end(), [&](auto x){ return x != 0; }) - a.begin();
 	if(i == length) return a;
@@ -13,15 +13,14 @@ optional<vector<T>> polynomial_sqrt(vector<T> a, int length){
 	T c;
 	if(auto p = mod_sqrt(a[0])) c = *p, a /= a[0];
 	else return {};
-	static vector<T> b;
+	polynomial_base<T, FFT> b, x;
 	b = {1};
+	T inv2 = T(1) / 2;
 	while((int)b.size() < length){
-		static vector<T> x;
 		b.resize(b.size() << 1);
 		x.resize(min(a.size(), b.size()));
 		copy(a.begin(), a.begin() + x.size(), x.begin());
-		x *= inverse(b, (int)b.size());
-		T inv2 = 1 / T(2);
+		x *= b.inverse(b.size());
 		for(auto i = b.size() / 2; i < min(b.size(), x.size()); ++ i) b[i] = x[i] * inv2;
 	}
 	b.resize(length);

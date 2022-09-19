@@ -3,8 +3,10 @@
 // T must support *=, *, +=, -=, and -
 // T{} should return the additive identity
 // Requires modular and number_theoric_transform
-template<class T, class fft>
+template<class T, class FFT>
 struct polynomial_base{
+	using Iter = typename vector<T>::iterator;
+	using RevIter = typename vector<T>::reverse_iterator;
 	vector<T> data;
 	polynomial_base(){}
 	polynomial_base(int n): data(n){}
@@ -14,7 +16,7 @@ struct polynomial_base{
 	template<class It>
 	polynomial_base(It begin, It end): data(begin, end){}
 	template<class U>
-	static T &inplace_power(T &res, U e){
+	static T &_inplace_power(T &res, U e){
 		assert(e >= 0);
 		T base = res;
 		res = 1;
@@ -22,8 +24,8 @@ struct polynomial_base{
 		return res;
 	}
 	template<class U>
-	static T power(T base, U e){
-		return inplace_power(T(base), e);
+	static T _power(T base, U e){
+		return polynomial_base::_inplace_power(base, e);
 	}
 	bool empty() const{
 		return data.empty();
@@ -37,11 +39,30 @@ struct polynomial_base{
 	void assign(int n, T x = {}){
 		data.assign(n, x);
 	}
+	Iter insert(Iter it, T x){
+		return data.insert(it, x);
+	}
+	Iter insert(Iter it, int n, T x){
+		return data.insert(it, n, x);
+	}
+	template<class InputIt>
+	Iter insert(Iter it, InputIt first, InputIt last){
+		return data.insert(it, first, last);
+	}
+	Iter insert(Iter it, initializer_list<T> l){
+		return data.insert(it, l);
+	}
 	void push_back(T x){
 		data.push_back(x);
 	}
 	void pop_back(){
 		data.pop_back();
+	}
+	T &front(){
+		return data.front();
+	}
+	const T &front() const{
+		return data.front();
 	}
 	T &back(){
 		return data.back();
@@ -53,10 +74,10 @@ struct polynomial_base{
 	T &emplace_back(Args&&... args){
 		return data.emplace_back(args...);
 	}
-	typename vector<T>::iterator erase(typename vector<T>::iterator pos){
+	Iter erase(Iter pos){
 		return data.erase(pos);
 	}
-	typename vector<T>::iterator erase(typename vector<T>::iterator first, typename vector<T>::iterator last){
+	Iter erase(Iter first, Iter last){
 		return data.erase(first, last);
 	}
 	int degree() const{
@@ -84,16 +105,16 @@ struct polynomial_base{
 	operator vector<T>() const{
 		return data;
 	}
-	typename vector<T>::iterator begin(){
+	Iter begin(){
 		return data.begin();
 	}
-	typename vector<T>::iterator end(){
+	Iter end(){
 		return data.end();
 	}
-	typename vector<T>::reverse_iterator rbegin(){
+	RevIter rbegin(){
 		return data.rbegin();
 	}
-	typename vector<T>::reverse_iterator rend(){
+	RevIter rend(){
 		return data.rend();
 	}
 	T evaluate(T x) const{
@@ -102,7 +123,7 @@ struct polynomial_base{
 		return res;
 	}
 	polynomial_base operator*(const polynomial_base &p) const{
-		return fft::convolute(data, p.data);
+		return FFT::convolute(data, p.data);
 	}
 	polynomial_base &operator*=(const polynomial_base &p){
 		return *this = *this * p;
@@ -122,18 +143,18 @@ struct polynomial_base{
 		return p;
 	}
 	polynomial_base square() const{
-		return fft::square(data);
+		return FFT::square(data);
 	}
 	polynomial_base &operator^=(int e){
 		assert(e >= 0);
 		if(empty()) return *this = vector<T>{};
-		if(size() == 1) return *this = vector<T>{power(data[0], e)};
+		if(size() == 1) return *this = vector<T>{polynomial_base::_power(data[0], e)};
 		if(!e) return *this = vector<T>{1};
 		int n = 1 << __lg(((int)data.size() - 1) * e) + 1;
 		resize(n);
-		fft::transform(data);
-		for(auto &x: data) inplace_power(x, e);
-		fft::transform(data, false);
+		FFT::transform(data);
+		for(auto &x: data) polynomial_base::_inplace_power(x, e);
+		FFT::transform(data, false);
 		return *this;
 	}
 	polynomial_base operator^=(int e) const{
@@ -214,16 +235,16 @@ struct polynomial_base{
 	// O(n * log(n))
 	polynomial_base inverse(size_t length) const{
 		assert(!data.empty() && data[0]);
-		static polynomial_base a, b;
+		polynomial_base a, b;
 		b = {1 / data[0]};
 		while(b.size() < length){
 			a.assign(b.size() << 2, {});
 			copy(data.begin(), data.begin() + min(b.size() << 1, data.size()), a.data.begin());
-			fft::transform(a.data);
+			FFT::transform(a.data);
 			b.resize(b.size() << 2);
-			fft::transform(b.data);
+			FFT::transform(b.data);
 			for(auto i = 0; i < (int)b.size(); ++ i) b[i] = 2 * b[i] - a[i] * b[i] * b[i];
-			fft::transform(b.data, true);
+			FFT::transform(b.data, true);
 			b.resize((int)b.size() >> 1);
 		}
 		return vector<T>(b.begin(), b.begin() + length);
@@ -253,12 +274,12 @@ struct polynomial_base{
 			data.clear();
 			return *this;
 		}
-		static polynomial_base b;
+		polynomial_base b;
 		int n = data.size() - p.size() + 1;
 		b.data.assign(n, {});
 		copy(p.data.rbegin(), p.data.rbegin() + min(p.size(), b.size()), b.data.begin());
 		reverse(data.begin(), data.end());
-		data = fft::convolute(data, b.inverse(n));
+		data = FFT::convolute(data, b.inverse(n));
 		data.erase(data.begin() + n, data.end());
 		reverse(data.begin(), data.end());
 		return *this;
@@ -322,14 +343,14 @@ struct polynomial_base{
 	}
 	polynomial_base exp(size_t length) const{
 		assert(!data.empty() && data[0] == 0);
-		static polynomial_base a, b;
+		polynomial_base a, b;
 		b = {1};
 		while(b.size() < length){
 			size_t s = b.size() << 1;
 			a.data.assign(s, {});
 			copy(data.begin(), data.begin() + min(s, data.size()), a.begin());
 			++ a[0];
-			(b = fft::convolute(b, a - b.log(s))).resize(s);
+			(b = FFT::convolute(b, a - b.log(s))).resize(s);
 		}
 		b.resize(length);
 		return b;
