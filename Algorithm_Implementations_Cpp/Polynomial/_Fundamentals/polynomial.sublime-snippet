@@ -6,7 +6,9 @@
 template<class T, class FFT>
 struct polynomial_base{
 	using Iter = typename vector<T>::iterator;
+	using ConstIter = typename vector<T>::const_iterator;
 	using RevIter = typename vector<T>::reverse_iterator;
+	using ConstRevIter = typename vector<T>::const_reverse_iterator;
 	vector<T> data;
 	polynomial_base(){}
 	polynomial_base(int n): data(n){}
@@ -108,13 +110,25 @@ struct polynomial_base{
 	Iter begin(){
 		return data.begin();
 	}
+	ConstIter begin() const{
+		return data.begin();
+	}
 	Iter end(){
+		return data.end();
+	}
+	ConstIter end() const{
 		return data.end();
 	}
 	RevIter rbegin(){
 		return data.rbegin();
 	}
+	ConstRevIter rbegin() const{
+		return data.rbegin();
+	}
 	RevIter rend(){
+		return data.rend();
+	}
+	ConstRevIter rend() const{
 		return data.rend();
 	}
 	T evaluate(T x) const{
@@ -142,20 +156,8 @@ struct polynomial_base{
 		for(auto &c: p) c = x * c;
 		return p;
 	}
-	polynomial_base square() const{
-		return FFT::square(data);
-	}
-	polynomial_base &operator^=(int e){
-		assert(e >= 0);
-		if(empty()) return *this = vector<T>{};
-		if(size() == 1) return *this = vector<T>{polynomial_base::_power(data[0], e)};
-		if(!e) return *this = vector<T>{1};
-		int n = 1 << __lg(((int)data.size() - 1) * e) + 1;
-		resize(n);
-		FFT::transform(data);
-		for(auto &x: data) polynomial_base::_inplace_power(x, e);
-		FFT::transform(data, false);
-		return *this;
+	polynomial_base &operator^=(size_t e){
+		return power_up(data, e);
 	}
 	polynomial_base operator^=(int e) const{
 		return polynomial_base(*this) ^= e;
@@ -235,15 +237,25 @@ struct polynomial_base{
 	// O(n * log(n))
 	polynomial_base inverse(size_t length) const{
 		assert(!data.empty() && data[0]);
+		auto inv = 1 / data[0];
+		if(data.size() <= 350){
+			polynomial_base res(length);
+			for(auto i = 0; i < length; ++ i){
+				modular s = 0;
+				for(auto j = max(0, i - (int)size() + 1); j < i; ++ j) s -= res[j] * data[i - j];
+				res[i] = (!i + s) * inv;
+			}
+			return res;
+		}
 		polynomial_base a, b;
-		b = {1 / data[0]};
+		b = {inv};
 		while(b.size() < length){
 			a.assign(b.size() << 2, {});
 			copy(data.begin(), data.begin() + min(b.size() << 1, data.size()), a.data.begin());
 			FFT::transform(a.data);
 			b.resize(b.size() << 2);
 			FFT::transform(b.data);
-			for(auto i = 0; i < (int)b.size(); ++ i) b[i] = 2 * b[i] - a[i] * b[i] * b[i];
+			for(auto i = 0; i < (int)b.size(); ++ i) b[i] *= 2 - a[i] * b[i];
 			FFT::transform(b.data, true);
 			b.resize((int)b.size() >> 1);
 		}
@@ -342,15 +354,15 @@ struct polynomial_base{
 		return polynomial_base(*this).inplace_log(length);
 	}
 	polynomial_base exp(size_t length) const{
-		assert(!data.empty() && data[0] == 0);
+		assert(data.empty() || data[0] == 0);
 		polynomial_base a, b;
 		b = {1};
 		while(b.size() < length){
 			size_t s = b.size() << 1;
-			a.data.assign(s, {});
-			copy(data.begin(), data.begin() + min(s, data.size()), a.begin());
+			a.assign(s, {});
+			copy(begin(), begin() + min(s, size()), a.begin());
 			++ a[0];
-			(b = FFT::convolute(b, a - b.log(s))).resize(s);
+			(b = b * (a - b.log(s))).resize(s);
 		}
 		b.resize(length);
 		return b;

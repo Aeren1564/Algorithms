@@ -41,7 +41,7 @@ struct number_theoric_transform_wrapper{
 	// Double the length of the ntt array
 	// n must be a power of two
 	// O(n * log(n))
-	static void double_up(vector<T> &p){
+	static vector<T> &double_up(vector<T> &p){
 		int n = (int)p.size();
 		assert(n && __builtin_popcount(n) == 1 && (T().mod() - 1) % (n << 1) == 0);
 		buffer1.resize(n << 1);
@@ -51,7 +51,24 @@ struct number_theoric_transform_wrapper{
 		for(auto i = 0; i < n; ++ i) p[i] *= root[n | i];
 		transform(p);
 		for(auto i = 0; i < n; ++ i) buffer1[i << 1 | 1] = p[i];
-		p = buffer1;
+		return p = buffer1;
+	}
+	// O(n * (log(n) + log(e)))
+	static vector<T> &power_up(vector<T> &p, size_t e = 2){
+		if(!e) return {1};
+		if(e == 1 || p.empty()) return p;
+		if(p.size() < 40){
+			auto q = p;
+			for(auto rep = 1; rep < e; ++ rep) p = convolute_naive(q, p);
+			return p;
+		}
+		int m = ((int)p.size() - 1) * e + 1, n = 1 << __lg(m) + 1;
+		p.resize(n);
+		transform(p);
+		for(auto i = 0; i < n; ++ i) p[i] ^= e;
+		transform(p, true);
+		p.resize(m);
+		return p;
 	}
 	// O(n * m)
 	static vector<T> convolute_naive(const vector<T> &p, const vector<T> &q){
@@ -70,17 +87,6 @@ struct number_theoric_transform_wrapper{
 		copy(q.begin(), q.end(), buffer2.begin());
 		transform(buffer2);
 		for(auto i = 0; i < n; ++ i) buffer1[i] *= buffer2[i];
-		transform(buffer1, true);
-		return vector<T>(buffer1.begin(), buffer1.begin() + m);
-	}
-	// O(n * log(n))
-	static vector<T> square(const vector<T> &p){
-		if(p.size() < 40) return convolute_naive(p, p);
-		int m = (int)p.size() * 2 - 1, n = 1 << __lg(m) + 1;
-		buffer1.assign(n, 0);
-		copy(p.begin(), p.end(), buffer1.begin());
-		transform(buffer1);
-		for(auto i = 0; i < n; ++ i) buffer1[i] *= buffer1[i];
 		transform(buffer1, true);
 		return vector<T>(buffer1.begin(), buffer1.begin() + m);
 	}
