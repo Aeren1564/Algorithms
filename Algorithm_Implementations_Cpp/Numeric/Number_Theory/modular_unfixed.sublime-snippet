@@ -1,13 +1,19 @@
 <snippet>
 	<content><![CDATA[
-template<unsigned int &_mod>
+template<int id>
 struct modular_unfixed_base{
+	static unsigned int _mod;
 	static unsigned int &mod(){
 		return _mod;
 	}
 	static unsigned long long inverse_mod;
 	static void precalc_barrett(){
 		inverse_mod = (unsigned long long)-1 / _mod + 1;
+	}
+	template<class istream = decltype(cin)>
+	static void setup(istream &in = cin){
+		in >> _mod;
+		precalc_barrett();
 	}
 	template<class T>
 	static vector<modular_unfixed_base> precalc_power(T base, int SZ){
@@ -100,42 +106,40 @@ struct modular_unfixed_base{
 	}
 	unsigned int data;
 };
-template<unsigned int &_mod>
-unsigned long long modular_unfixed_base<_mod>::inverse_mod;
-template<unsigned int &_mod>
-vector<modular_unfixed_base<_mod>> modular_unfixed_base<_mod>::_INV;
-template<unsigned int &_mod>
-modular_unfixed_base<_mod> modular_unfixed_base<_mod>::_primitive_root;
-template<unsigned int &_mod> bool operator==(const modular_unfixed_base<_mod> &lhs, const modular_unfixed_base<_mod> &rhs){ return lhs.data == rhs.data; }
-template<unsigned int &_mod, class T, typename enable_if<is_integral<T>::value>::type* = nullptr> bool operator==(const modular_unfixed_base<_mod> &lhs, T rhs){ return lhs == modular_unfixed_base<_mod>(rhs); }
-template<unsigned int &_mod, class T, typename enable_if<is_integral<T>::value>::type* = nullptr> bool operator==(T lhs, const modular_unfixed_base<_mod> &rhs){ return modular_unfixed_base<_mod>(lhs) == rhs; }
-template<unsigned int &_mod> bool operator!=(const modular_unfixed_base<_mod> &lhs, const modular_unfixed_base<_mod> &rhs){ return !(lhs == rhs); }
-template<unsigned int &_mod, class T, typename enable_if<is_integral<T>::value>::type* = nullptr> bool operator!=(const modular_unfixed_base<_mod> &lhs, T rhs){ return !(lhs == rhs); }
-template<unsigned int &_mod, class T, typename enable_if<is_integral<T>::value>::type* = nullptr> bool operator!=(T lhs, const modular_unfixed_base<_mod> &rhs){ return !(lhs == rhs); }
-template<unsigned int &_mod> bool operator<(const modular_unfixed_base<_mod> &lhs, const modular_unfixed_base<_mod> &rhs){ return lhs.data < rhs.data; }
-template<unsigned int &_mod> bool operator>(const modular_unfixed_base<_mod> &lhs, const modular_unfixed_base<_mod> &rhs){ return lhs.data > rhs.data; }
-template<unsigned int &_mod> bool operator<=(const modular_unfixed_base<_mod> &lhs, const modular_unfixed_base<_mod> &rhs){ return lhs.data <= rhs.data; }
-template<unsigned int &_mod> bool operator>=(const modular_unfixed_base<_mod> &lhs, const modular_unfixed_base<_mod> &rhs){ return lhs.data >= rhs.data; }
-template<unsigned int &_mod> modular_unfixed_base<_mod> operator+(const modular_unfixed_base<_mod> &lhs, const modular_unfixed_base<_mod> &rhs){ return modular_unfixed_base<_mod>(lhs) += rhs; }
-template<unsigned int &_mod, class T, typename enable_if<is_integral<T>::value>::type* = nullptr> modular_unfixed_base<_mod> operator+(const modular_unfixed_base<_mod> &lhs, T rhs){ return modular_unfixed_base<_mod>(lhs) += rhs; }
-template<unsigned int &_mod, class T, typename enable_if<is_integral<T>::value>::type* = nullptr> modular_unfixed_base<_mod> operator+(T lhs, const modular_unfixed_base<_mod> &rhs){ return modular_unfixed_base<_mod>(lhs) += rhs; }
-template<unsigned int &_mod> modular_unfixed_base<_mod> operator-(const modular_unfixed_base<_mod> &lhs, const modular_unfixed_base<_mod> &rhs){ return modular_unfixed_base<_mod>(lhs) -= rhs; }
-template<unsigned int &_mod, class T, typename enable_if<is_integral<T>::value>::type* = nullptr> modular_unfixed_base<_mod> operator-(const modular_unfixed_base<_mod> &lhs, T rhs){ return modular_unfixed_base<_mod>(lhs) -= rhs; }
-template<unsigned int &_mod, class T, typename enable_if<is_integral<T>::value>::type* = nullptr> modular_unfixed_base<_mod> operator-(T lhs, const modular_unfixed_base<_mod> &rhs){ return modular_unfixed_base<_mod>(lhs) -= rhs; }
-template<unsigned int &_mod> modular_unfixed_base<_mod> operator*(const modular_unfixed_base<_mod> &lhs, const modular_unfixed_base<_mod> &rhs){ return modular_unfixed_base<_mod>(lhs) *= rhs; }
-template<unsigned int &_mod, class T, typename enable_if<is_integral<T>::value>::type* = nullptr> modular_unfixed_base<_mod> operator*(const modular_unfixed_base<_mod> &lhs, T rhs){ return modular_unfixed_base<_mod>(lhs) *= rhs; }
-template<unsigned int &_mod, class T, typename enable_if<is_integral<T>::value>::type* = nullptr> modular_unfixed_base<_mod> operator*(T lhs, const modular_unfixed_base<_mod> &rhs){ return modular_unfixed_base<_mod>(lhs) *= rhs; }
-template<unsigned int &_mod> modular_unfixed_base<_mod> operator/(const modular_unfixed_base<_mod> &lhs, const modular_unfixed_base<_mod> &rhs) { return modular_unfixed_base<_mod>(lhs) /= rhs; }
-template<unsigned int &_mod, class T, typename enable_if<is_integral<T>::value>::type* = nullptr> modular_unfixed_base<_mod> operator/(const modular_unfixed_base<_mod> &lhs, T rhs) { return modular_unfixed_base<_mod>(lhs) /= rhs; }
-template<unsigned int &_mod, class T, typename enable_if<is_integral<T>::value>::type* = nullptr> modular_unfixed_base<_mod> operator/(T lhs, const modular_unfixed_base<_mod> &rhs) { return modular_unfixed_base<_mod>(lhs) /= rhs; }
-template<unsigned int &_mod> istream &operator>>(istream &in, modular_unfixed_base<_mod> &number){
+template<int id> unsigned int modular_unfixed_base<id>::_mod;
+template<int id> unsigned long long modular_unfixed_base<id>::inverse_mod;
+template<int id> vector<modular_unfixed_base<id>> modular_unfixed_base<id>::_INV;
+template<int id> modular_unfixed_base<id> modular_unfixed_base<id>::_primitive_root;
+template<int id> bool operator==(const modular_unfixed_base<id> &lhs, const modular_unfixed_base<id> &rhs){ return lhs.data == rhs.data; }
+template<int id, class T, typename enable_if<is_integral<T>::value>::type* = nullptr> bool operator==(const modular_unfixed_base<id> &lhs, T rhs){ return lhs == modular_unfixed_base<id>(rhs); }
+template<int id, class T, typename enable_if<is_integral<T>::value>::type* = nullptr> bool operator==(T lhs, const modular_unfixed_base<id> &rhs){ return modular_unfixed_base<id>(lhs) == rhs; }
+template<int id> bool operator!=(const modular_unfixed_base<id> &lhs, const modular_unfixed_base<id> &rhs){ return !(lhs == rhs); }
+template<int id, class T, typename enable_if<is_integral<T>::value>::type* = nullptr> bool operator!=(const modular_unfixed_base<id> &lhs, T rhs){ return !(lhs == rhs); }
+template<int id, class T, typename enable_if<is_integral<T>::value>::type* = nullptr> bool operator!=(T lhs, const modular_unfixed_base<id> &rhs){ return !(lhs == rhs); }
+template<int id> bool operator<(const modular_unfixed_base<id> &lhs, const modular_unfixed_base<id> &rhs){ return lhs.data < rhs.data; }
+template<int id> bool operator>(const modular_unfixed_base<id> &lhs, const modular_unfixed_base<id> &rhs){ return lhs.data > rhs.data; }
+template<int id> bool operator<=(const modular_unfixed_base<id> &lhs, const modular_unfixed_base<id> &rhs){ return lhs.data <= rhs.data; }
+template<int id> bool operator>=(const modular_unfixed_base<id> &lhs, const modular_unfixed_base<id> &rhs){ return lhs.data >= rhs.data; }
+template<int id> modular_unfixed_base<id> operator+(const modular_unfixed_base<id> &lhs, const modular_unfixed_base<id> &rhs){ return modular_unfixed_base<id>(lhs) += rhs; }
+template<int id, class T, typename enable_if<is_integral<T>::value>::type* = nullptr> modular_unfixed_base<id> operator+(const modular_unfixed_base<id> &lhs, T rhs){ return modular_unfixed_base<id>(lhs) += rhs; }
+template<int id, class T, typename enable_if<is_integral<T>::value>::type* = nullptr> modular_unfixed_base<id> operator+(T lhs, const modular_unfixed_base<id> &rhs){ return modular_unfixed_base<id>(lhs) += rhs; }
+template<int id> modular_unfixed_base<id> operator-(const modular_unfixed_base<id> &lhs, const modular_unfixed_base<id> &rhs){ return modular_unfixed_base<id>(lhs) -= rhs; }
+template<int id, class T, typename enable_if<is_integral<T>::value>::type* = nullptr> modular_unfixed_base<id> operator-(const modular_unfixed_base<id> &lhs, T rhs){ return modular_unfixed_base<id>(lhs) -= rhs; }
+template<int id, class T, typename enable_if<is_integral<T>::value>::type* = nullptr> modular_unfixed_base<id> operator-(T lhs, const modular_unfixed_base<id> &rhs){ return modular_unfixed_base<id>(lhs) -= rhs; }
+template<int id> modular_unfixed_base<id> operator*(const modular_unfixed_base<id> &lhs, const modular_unfixed_base<id> &rhs){ return modular_unfixed_base<id>(lhs) *= rhs; }
+template<int id, class T, typename enable_if<is_integral<T>::value>::type* = nullptr> modular_unfixed_base<id> operator*(const modular_unfixed_base<id> &lhs, T rhs){ return modular_unfixed_base<id>(lhs) *= rhs; }
+template<int id, class T, typename enable_if<is_integral<T>::value>::type* = nullptr> modular_unfixed_base<id> operator*(T lhs, const modular_unfixed_base<id> &rhs){ return modular_unfixed_base<id>(lhs) *= rhs; }
+template<int id> modular_unfixed_base<id> operator/(const modular_unfixed_base<id> &lhs, const modular_unfixed_base<id> &rhs) { return modular_unfixed_base<id>(lhs) /= rhs; }
+template<int id, class T, typename enable_if<is_integral<T>::value>::type* = nullptr> modular_unfixed_base<id> operator/(const modular_unfixed_base<id> &lhs, T rhs) { return modular_unfixed_base<id>(lhs) /= rhs; }
+template<int id, class T, typename enable_if<is_integral<T>::value>::type* = nullptr> modular_unfixed_base<id> operator/(T lhs, const modular_unfixed_base<id> &rhs) { return modular_unfixed_base<id>(lhs) /= rhs; }
+template<int id> istream &operator>>(istream &in, modular_unfixed_base<id> &number){
 	long long x;
 	in >> x;
-	number.data = modular_unfixed_base<_mod>::normalize(x);
+	number.data = modular_unfixed_base<id>::normalize(x);
 	return in;
 }
 // #define _PRINT_AS_FRACTION
-template<unsigned int &_mod> ostream &operator<<(ostream &out, const modular_unfixed_base<_mod> &number){
+template<int id> ostream &operator<<(ostream &out, const modular_unfixed_base<id> &number){
 #ifdef LOCAL
 #ifdef _PRINT_AS_FRACTION
 	for(auto d = 1; ; ++ d){
@@ -158,8 +162,7 @@ template<unsigned int &_mod> ostream &operator<<(ostream &out, const modular_unf
 }
 #undef _PRINT_AS_FRACTION
 
-unsigned int mod;
-using modular = modular_unfixed_base<mod>;
+using modular = modular_unfixed_base<0>;
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
 	<tabTrigger>modular_unfixed</tabTrigger> -->

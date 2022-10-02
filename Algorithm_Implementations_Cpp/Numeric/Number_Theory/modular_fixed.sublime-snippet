@@ -1,5 +1,6 @@
 <snippet>
 	<content><![CDATA[
+using uint = unsigned int;
 template<uint _mod>
 struct modular_fixed_base{
 	static constexpr uint mod(){
@@ -94,10 +95,8 @@ struct modular_fixed_base{
 	}
 	uint data;
 };
-template<uint _mod>
-vector<modular_fixed_base<_mod>> modular_fixed_base<_mod>::_INV;
-template<uint _mod>
-modular_fixed_base<_mod> modular_fixed_base<_mod>::_primitive_root;
+template<uint _mod> vector<modular_fixed_base<_mod>> modular_fixed_base<_mod>::_INV;
+template<uint _mod> modular_fixed_base<_mod> modular_fixed_base<_mod>::_primitive_root;
 template<uint _mod> bool operator==(const modular_fixed_base<_mod> &lhs, const modular_fixed_base<_mod> &rhs){ return lhs.data == rhs.data; }
 template<uint _mod, class T, typename enable_if<is_integral<T>::value>::type* = nullptr> bool operator==(const modular_fixed_base<_mod> &lhs, T rhs){ return lhs == modular_fixed_base<_mod>(rhs); }
 template<uint _mod, class T, typename enable_if<is_integral<T>::value>::type* = nullptr> bool operator==(T lhs, const modular_fixed_base<_mod> &rhs){ return modular_fixed_base<_mod>(lhs) == rhs; }

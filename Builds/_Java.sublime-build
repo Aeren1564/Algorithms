@@ -1,0 +1,10 @@
+{
+	"windows":{
+		"cmd": ["wsl.exe", "javac", "./${file_name}"],
+    "selector": "source.java"
+	},
+	"linux":{
+		"cmd": ["javac", "./${file_name}"],
+		"selector": "source.java"
+	}
+}
