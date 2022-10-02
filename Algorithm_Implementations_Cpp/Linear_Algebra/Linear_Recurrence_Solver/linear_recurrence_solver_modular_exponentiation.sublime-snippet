@@ -18,7 +18,7 @@ struct linear_recurrence_solver_modular_exponentiation{
 	// Berlekamp Massey Algorithm
 	// Find a minimum linear recurrence relation
 	// T must ba a field
-	// O(size(s) * (n + log mod))
+	// O(len(s) * (n + log(mod)))
 	linear_recurrence_solver_modular_exponentiation(const vector<T> &s){
 		int sz = (int)size(s);
 		vector<T> b = {-1};
@@ -42,7 +42,7 @@ struct linear_recurrence_solver_modular_exponentiation{
 			else for(auto i = 0; i < m; ++ i) coef[l - 1 - i] -= freq * b[m - 1 - i];
 		}
 		coef.pop_back();
-		*this = {coef, vector<T>(s.begin(), s.begin() + coef.size())};
+		*this = {vector<T>(s.begin(), s.begin() + coef.size()), coef};
 	}
 	// O(n * log(n) * log(i))
 	template<class U>
