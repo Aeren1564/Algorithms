@@ -12,7 +12,7 @@ struct linear_recurrence_solver{
 	}
 	// Berlekamp Massey Algorithm
 	// Find a minimum linear recurrence relation
-	// O(size(s) * (n + log mod))
+	// O(n^2 + n * log(mod)))
 	linear_recurrence_solver(const vector<T> &s){
 		int sz = (int)s.size();
 		vector<T> b = {-1};

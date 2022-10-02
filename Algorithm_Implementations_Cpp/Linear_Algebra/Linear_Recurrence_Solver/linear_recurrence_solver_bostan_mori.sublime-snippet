@@ -16,7 +16,7 @@ struct linear_recurrence_solver_bostan_mori{
 	// Berlekamp Massey Algorithm
 	// Find a minimum linear recurrence relation
 	// T must ba a field
-	// O(size(s) * (n + log mod))
+	// O(n^2 + n * log(mod)))
 	linear_recurrence_solver_bostan_mori(const vector<T> &s){
 		int sz = (int)size(s);
 		vector<T> b = {-1};
