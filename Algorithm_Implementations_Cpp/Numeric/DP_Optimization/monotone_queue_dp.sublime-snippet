@@ -15,7 +15,7 @@ vector<T> monotone_queue_dp(int n, const vector<T> &init, auto cost){
 	};
 	deque<int> q{0};
 	for(auto i = 1; i <= n; ++ i){
-		while(int(q.size()) > 1 && cross(*q.begin(), *next(q.begin())) < i) q.pop_front();
+		while(q.size() > 1 && compare(dp[q[0]] + cost(q[0], i), dp[q[1]] + cost(q[1], i))) q.pop_front();
 		if constexpr(GET_MAX) dp[i] = max(dp[i], dp[q.front()] + cost(q.front(), i));
 		else dp[i] = min(dp[i], dp[q.front()] + cost(q.front(), i));
 		while(int(q.size()) > 1 && cross(*next(q.rbegin()), *q.rbegin()) >= cross(*q.rbegin(), i)) q.pop_back();
