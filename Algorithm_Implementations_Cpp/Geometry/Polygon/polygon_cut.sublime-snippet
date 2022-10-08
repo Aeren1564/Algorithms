@@ -4,7 +4,7 @@
 // Requires point
 template<class T>
 vector<point<double>> polygon_cut(const vector<point<T>> &a, const point<T> &p, const point<T> &q){
-	vector<point<T>> res;
+	vector<point<double>> res;
 	auto d = q - p;
 	for(auto i = 0; i < (int)a.size(); ++ i){
 		auto cur = a[i], prev = i ? a[i - 1] : a.back();
@@ -18,7 +18,7 @@ vector<point<double>> polygon_cut(const vector<point<T>> &a, const point<T> &p, 
 }
 template<class T>
 vector<point<long double>> polygon_cutl(const vector<point<T>> &a, const point<T> &p, const point<T> &q){
-	vector<point<T>> res;
+	vector<point<long double>> res;
 	auto d = q - p;
 	for(auto i = 0; i < (int)a.size(); ++ i){
 		auto cur = a[i], prev = i ? a[i - 1] : a.back();
