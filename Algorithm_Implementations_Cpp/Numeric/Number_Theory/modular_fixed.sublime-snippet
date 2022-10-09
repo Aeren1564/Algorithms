@@ -129,16 +129,19 @@ template<uint _mod> istream &operator>>(istream &in, modular_fixed_base<_mod> &n
 template<uint _mod> ostream &operator<<(ostream &out, const modular_fixed_base<_mod> &number){
 #ifdef LOCAL
 #ifdef _PRINT_AS_FRACTION
+	out << number();
+	cerr << "(";
 	for(auto d = 1; ; ++ d){
 		if((number * d).data <= 1000000){
-			out << (number * d).data << "/" << d;
+			cerr << (number * d).data << "/" << d;
 			break;
 		}
 		else if((-number * d).data <= 1000000){
-			out << "-" << (-number * d).data << "/" << d;
+			cerr << "-" << (-number * d).data << "/" << d;
 			break;
 		}
 	}
+	cerr << ")";
 	return out;
 #else
 	return out << number();

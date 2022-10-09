@@ -1,0 +1,48 @@
+<snippet>
+	<content><![CDATA[
+// T must be a modular type
+// Requires graph
+template<class T>
+struct tree_hasher{
+	mt19937 rng;
+	vector<int> order;
+	vector<T> base, hash;
+	tree_hasher(): rng(chrono::high_resolution_clock::now().time_since_epoch().count()){}
+	int attempt = 0;
+	vector<int> was;
+	template<class U>
+	void run(const graph<U> &g, const vector<int> &src = {0}, bool clear_order = true){
+		int n = g.n;
+		++ attempt;
+		if(clear_order) order.clear();
+		while(base.size() < n) base.push_back(rng());
+		hash.resize(n);
+		was.resize(n);
+		auto dfs = [&](auto self, int u, int p)->int{
+			order.push_back(u);
+			was[u] = attempt;
+			hash[u] = 1;
+			int d = 0;
+			for(auto id: g.adj[u]){
+				if(g.ignore && g.ignore(id)) continue;
+				int v = g(u, id);
+				if(v == p) continue;
+				d = max(d, self(self, v, u) + 1);
+			}
+			for(auto id: g.adj[u]){
+				if(g.ignore && g.ignore(id)) continue;
+				int v = g(u, id);
+				if(v == p) continue;
+				hash[u] *= base[d] + hash[v];
+			}
+			return d;
+		};
+		for(auto s: src) if(was[s] != attempt) dfs(dfs, s, -1);
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>tree_hasher</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

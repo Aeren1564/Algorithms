@@ -1,0 +1,116 @@
+<snippet>
+	<content><![CDATA[
+// Given a set of disjoint convex polygons, given in CCW, and points, determine the inclusion relation
+// n-th convex polygon is an auxiliary square of infinite size
+// polygon_inclusion(i, j): polygon i directly contains polygon j
+// point_inclusion(i, j): polygon i directly contains point j
+// B_large must be able to hold up to cube of coordinates
+// O(p * log(p)) where p is the number of total points
+template<class B, class B_large = __int128_t>
+void find_convex_polygon_point_inclusion_relations(const vector<vector<array<B, 2>>> &polygon, const vector<array<B, 2>> &point, auto polygon_inclusion, auto point_inclusion){
+	int n = (int)polygon.size(), m = (int)point.size();
+	vector<int> pv(n, -1);
+	// x, 0, i, j : lower polygon    (i,j)->(i,j+1)
+	// x, 1, i, j : upper polygon    (i,j+1)->(i,j)
+	// x, 2, i, j : polygon deletion
+	// x, 3, i    : locate point
+	vector<tuple<B, int, int, int>> event;
+	auto next = [&](int i, int j)->int{
+		return j + 1 < (int)polygon[i].size() ? j + 1 : 0;
+	};
+	for(auto i = 0; i < n; ++ i){
+		assert(polygon[i].size() >= 3);
+		int j = min_element(polygon[i].begin(), polygon[i].end()) - polygon[i].begin();
+		B xlow = polygon[i][j][0];
+		B xhigh = (*max_element(polygon[i].begin(), polygon[i].end()))[0];
+		if(polygon[i][next(i, j)][0] == polygon[i][j][0]) j = next(i, j);
+		for(; polygon[i][j][0] != xhigh; j = next(i, j)) event.push_back({polygon[i][j][0], 0, i, j});
+		event.push_back({xhigh, 2, i, j});
+		if(polygon[i][next(i, j)][0] == xhigh) j = next(i, j);
+		event.push_back({xhigh, 2, i, j});
+		for(; polygon[i][j][0] != xlow; j = next(i, j)) event.push_back({polygon[i][next(i, j)][0], 1, i, j});
+	}
+	for(auto i = 0; i < m; ++ i){
+		auto [x, y] = point[i];
+		event.push_back({x, 3, i, -1});
+	}
+	sort(event.begin(), event.end(), [&](auto e, auto f){
+		if(get<0>(e) != get<0>(f)){
+			return get<0>(e) < get<0>(f);
+		}
+		int te = max(get<1>(e) - 1, 0), tf = max(get<1>(f) - 1, 0);
+		return te != tf ? te < tf : get<2>(e) < get<2>(f);
+	});
+	B X, Y;
+	using T = array<int, 3>; // id, ind, type(lower, upper)
+	auto cmp = [&](const T &a, const T &b)->bool{
+		auto [i, indi, ti] = a;
+		auto [j, indj, tj] = b;
+		if(i == j) return ti < tj;
+		array<B, 2> fromi, di, fromj, dj;
+		for(auto rep = 2; rep; -- rep){
+			if(~i){
+				if(!ti){
+					fromi = polygon[i][indi];
+					di = polygon[i][next(i, indi)];
+				}
+				else{
+					fromi = polygon[i][next(i, indi)];
+					di = polygon[i][indi];
+				}
+				for(auto t = 0; t < 2; ++ t) di[t] -= fromi[t];
+			}
+			else{
+				fromi = {X, Y};
+				di = {1, 0};
+			}
+			assert(di[0]);
+			swap(i, j), swap(indi, indj), swap(ti, tj), swap(fromi, fromj), swap(di, dj);
+		}
+		return (B_large(fromi[1]) * di[0] + B_large(X - fromi[0]) * di[1]) * dj[0] < (B_large(fromj[1]) * dj[0] + B_large(X - fromj[0]) * dj[1]) * di[0];
+	};
+	multiset<T, decltype(cmp)> sweepline(cmp);
+	for(auto [xpos, type, i, j]: event){
+		X = xpos;
+		if(type == 0){
+			T e{i, j, type};
+			auto it = sweepline.lower_bound(e);
+			if(it == sweepline.end() || cmp(e, *it)){
+				// start of a polygon
+				pv[i] = it != sweepline.begin() ? (*prev(it))[2] ? pv[(*prev(it))[0]] : (*prev(it))[0] : n;
+				polygon_inclusion(pv[i], i);
+				sweepline.insert(it, e);
+			}
+			else sweepline.insert(sweepline.erase(it), e);
+		}
+		else if(type == 1){
+			T e{i, j, type};
+			auto it = sweepline.lower_bound(e);
+			sweepline.insert(it != sweepline.end() && !cmp(e, *it) ? sweepline.erase(it) : it, e);
+		}
+		else if(type == 2){
+			T e{-1, -1, 2};
+			Y = polygon[i][j][1];
+			auto it = sweepline.lower_bound(e);
+			assert(it != sweepline.end());
+			sweepline.erase(it);
+		}
+		else{
+			T e{-1, -1, 2};
+			Y = point[i][1];
+			auto it = sweepline.lower_bound(e);
+			if(it != sweepline.begin()){
+				it = prev(it);
+				int j = (*it)[0];
+				point_inclusion((*it)[2] == 0 ? j : pv[j], i);
+			}
+			else point_inclusion(n, i);
+		}
+	}
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>find_convex_polygon_point_inclusion_relations</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

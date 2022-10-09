@@ -1,7 +1,7 @@
 <snippet>
 	<content><![CDATA[
 // Given a set of disjoint circles and points, determine the inclusion relation
-// n-th circle is the auxiliary circle of infinite radius
+// n-th circle is an auxiliary circle of infinite radius
 // circle_inclusion(i, j): circle i directly contains circle j
 // point_inclusion(i, j): circle i directly contains point j
 // B must be able to hold up to square of coordinates
