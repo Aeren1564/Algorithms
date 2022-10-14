@@ -2,7 +2,6 @@
 	<content><![CDATA[
 import java.util.*;
 
-
 public class a{
 	static Scanner sc = new Scanner(System.in);
  	static class Pair{
@@ -38,6 +37,18 @@ public class a{
 		return Math.max(x, y);
 	}
 	static Integer max3(Integer x, Integer y, Integer z){
+		return Math.max(Math.max(x, y), z);
+	}
+	static Long min(Long x, Long y){
+		return Math.min(x, y);
+	}
+	static Long min3(Long x, Long y, Long z){
+		return Math.min(Math.min(x, y), z);
+	}
+	static Long max(Long x, Long y){
+		return Math.max(x, y);
+	}
+	static Long max3(Long x, Long y, Long z){
 		return Math.max(Math.max(x, y), z);
 	}
  	static class Tuple4{
@@ -83,6 +94,36 @@ public class a{
 		return mul(x, inv(y));
 	}
 	////////////////////////////////////////////////////
+	static Integer[] dsu;
+	static void dsu_clear(){
+		for(Integer i = 0; i < dsu.length; ++ i){
+			dsu[i] = -1;
+		}
+	}
+	static Integer dsu_root(Integer u){
+		return dsu[u] >= 0 ? dsu[u] = dsu_root(dsu[u]) : u;
+	}
+	static Integer dsu_size(Integer u){
+		return -dsu[dsu_root(u)];
+	}
+	static Boolean dsu_share(Integer u, Integer v){
+		return dsu_root(u).equals(dsu_root(v));
+	}
+	static Boolean dsu_merge(Integer u, Integer v){
+		u = dsu_root(u);
+		v = dsu_root(v);
+		if(u.equals(v)){
+			return false;
+		}
+		if(dsu[u] > dsu[v]){
+			u ^= v;
+			v ^= u;
+			u ^= v;
+		}
+		dsu[u] += dsu[v];
+		dsu[v] = u;
+		return true;
+	}
 	static ArrayList<Integer>[] adj;
 	static Integer[] size, pv, depth;
 	static Integer[][] lift;
@@ -117,31 +158,21 @@ public class a{
 		return depth[u] + depth[v] - 2 * depth[w];
 	}
 	static final Integer INF = 1000000000;
+	static final Long LINF = 1000000000000000000l;
 	static void dfs(Integer u, Integer p){
-		size[u] = 1;
-		pv[u] = p;
 		if(p.equals(-1)){
 			depth[u] = 0;
-			lift[0][u] = u;
-		}
-		else{
-			lift[0][u] = p;
-		}
-		for(Integer bit = 1; bit < 20; ++ bit){
-			lift[bit][u] = lift[bit - 1][lift[bit - 1][u]];
 		}
 		for(Integer v: adj[u]){
 			if(!v.equals(p)){
 				depth[v] = depth[u] + 1;
 				dfs(v, u);
-				size[u] += size[v];
 			}
 		}
 	}
 	static Pair[] dr = new Pair[]{new Pair(1, 0), new Pair(0, 1), new Pair(-1, 0), new Pair(0, -1)};
 	static char[] drid = new char[]{'D', 'R', 'U', 'L'};
 	////////////////////////////////////////////////////
-
 	@SuppressWarnings("unchecked")
 	public static void main(String[] args){
 		$0
