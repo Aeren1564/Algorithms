@@ -1,0 +1,25 @@
+{
+    "scope":"source.java",
+    "completions":
+    [
+        { "trigger": "Int", "contents": "Integer"},
+        { "trigger": "ri", "contents": "sc.nextInt()"},
+        { "trigger": "rl", "contents": "sc.nextLine()"},
+        { "trigger": "pr", "contents": "System.out.print($1);"},
+        { "trigger": "prl", "contents": "System.out.println($1);"},
+        { "trigger": "prf", "contents": "System.out.printf($1);"},
+    	{ "trigger": "fori", "contents": "for(Integer ${1:i} = ${2:0}; $1 < ${3:n}; ${4:++ $1}){\n\t$0\n}"},
+    	{ "trigger": "forqi", "contents": "for(Integer ${1:qi} = ${2:0}; $1 < ${3:qn}; ${4:++ $1}){\n\t$0\n}"},
+        { "trigger": "rofi", "contents": "for(Integer ${1:i} = ${2:n - 1}; $1 >= ${3:0}; ${4:-- $1}){\n\t$0\n}"},
+        { "trigger": "forgeneral", "contents": "for($1; $2; $3){\n\t$0\n}"},
+        { "trigger": "trav", "contents": "for(${1:Integer} $2: $3){\n\t$0\n}"},
+        { "trigger": "repeat", "contents": "for(Integer rep = ${1:n}; rep; -- rep){\n\t$0\n}"},
+    	{ "trigger": "while", "contents": "while($1){\n\t$0\n}"},
+        { "trigger": "dowhile", "contents": "do{\n\t$0\n}while($1);"},
+    	{ "trigger": "if", "contents": "if($1){\n\t$0\n}"},
+    	{ "trigger": "else if", "contents": "else if($1){\n\t$0\n}"},
+    	{ "trigger": "else", "contents": "else{\n\t$0\n}"},
+    	{ "trigger": "return", "contents": "return $1;"},
+    	{ "trigger": "exit", "contents": "System.exit(0);"},
+    ]
+}
