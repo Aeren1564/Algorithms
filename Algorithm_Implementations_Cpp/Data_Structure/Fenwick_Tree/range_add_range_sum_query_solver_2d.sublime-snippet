@@ -5,15 +5,16 @@ struct range_add_range_sum_query_solver_2d{
 	int n, m;
 	vector<vector<T>> data0, data1, data2, data3;
 	range_add_range_sum_query_solver_2d(){ }
-	// O(n)
+	// O(n * m)
 	range_add_range_sum_query_solver_2d(int n, int m): n(n), m(m), data0(n, vector<T>(m)), data1(n, vector<T>(m)), data2(n, vector<T>(m)), data3(n, vector<T>(m)){ }
-	// O(n)
+	// O(n * m)
 	range_add_range_sum_query_solver_2d(int n, int m, T init): range_add_range_sum_query_solver_2d(vector<vector<T>>(n, vector<T>(m, init))){ }
-	// O(n)
+	// O(n * m)
 	range_add_range_sum_query_solver_2d(const vector<vector<T>> &v): n((int)v.size()), m((int)v[0].size()), data0(n, vector<T>(m)), data1(n, vector<T>(m)), data2(n, vector<T>(m)), data3(v){
 		for(auto i = 1; i <= n; ++ i) if(i + (i & -i) <= n) for(auto j = 0; j < m; ++ j) data3[i + (i & -i) - 1][j] += data3[i - 1][j];
 		for(auto i = 0; i < n; ++ i) for(auto j = 1; j <= m; ++ j) if(j + (j & -j) <= m) data3[i][j + (j & -j) - 1] += data3[i][j - 1];
 	}
+	// O(log(n) * log(m))
 	void update(int xl, int xr, int yl, int yr, T x){
 		assert(0 <= xl && xl <= xr && xr <= n);
 		assert(0 <= yl && yl <= yr && yr <= m);
@@ -43,6 +44,7 @@ struct range_add_range_sum_query_solver_2d{
 			data3[i - 1][j - 1] += xr * (yr * x);
 		}
 	}
+	// O(log(n) * log(m))
 	T pref(int xr, int yr) const{
 		assert(0 <= xr && xr <= n);
 		assert(0 <= yr && yr <= m);
@@ -55,6 +57,7 @@ struct range_add_range_sum_query_solver_2d{
 		}
 		return xr * (yr * sum0) + yr * sum1 + xr * sum2 + sum3;
 	}
+	// O(log(n) * log(m))
 	T query(int xl, int xr, int yl, int yr) const{
 		assert(0 <= xl && xl <= xr && xr <= n);
 		assert(0 <= yl && yl <= yr && yr <= m);

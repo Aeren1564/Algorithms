@@ -1,7 +1,7 @@
 <snippet>
 	<content><![CDATA[
 // Returns the indices
-// O(n log n)
+// O(n * log(n))
 template<class T, class Compare = less<>>
 vector<int> longest_monotone_subsequence(const vector<T> &a, Compare cmp = less<>()){
 	// less: longest increasing subsequence
