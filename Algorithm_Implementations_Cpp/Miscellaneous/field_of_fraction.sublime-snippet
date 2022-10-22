@@ -1,0 +1,71 @@
+<snippet>
+	<content><![CDATA[
+template<class T>
+struct field_of_fraction{
+	static field_of_fraction limit_min(){
+		return {-1, 0};
+	}
+	static field_of_fraction limit_max(){
+		return {1, 0};
+	}
+	T n, d;
+	field_of_fraction(T n = 0, T d = 1): n(n), d(d){
+		if(d < 0) n = -n, d = -d;
+	}
+	field_of_fraction &operator+=(const field_of_fraction &x){
+		return *this = {n * x.d + x.n * d, d * x.d};
+	}
+	field_of_fraction &operator-=(const field_of_fraction &x){
+		return *this = {n * x.d - x.n * d, d * x.d};
+	}
+	field_of_fraction &operator*=(const field_of_fraction &x){
+		return *this = {n * x.n, d * x.d};
+	}
+	friend ostream &operator<<(ostream &out, const field_of_fraction &x){
+		return out << x.n << "/" << x.d;
+	}
+	field_of_fraction operator+(const field_of_fraction &x) const{
+		return field_of_fraction(*this) += x;
+	}
+	field_of_fraction operator+() const{
+		return *this;
+	}
+	field_of_fraction operator-(const field_of_fraction &x) const{
+		return field_of_fraction(*this) -= x;
+	}
+	field_of_fraction operator-() const{
+		return {-n, d};
+	}
+	field_of_fraction operator*(const field_of_fraction &x) const{
+		return field_of_fraction(*this) *= x;
+	}
+	field_of_fraction &operator++(){
+		n += d;
+		return *this;
+	}
+	field_of_fraction operator++(int){
+		auto res = *this;
+		n += d;
+		return res;
+	}
+	field_of_fraction &operator--(){
+		n -= d;
+		return *this;
+	}
+	field_of_fraction operator--(int){
+		auto res = *this;
+		n -= d;
+		return res;
+	}
+#define OP(c)\
+bool operator c(const field_of_fraction &x) const{\
+	return n * x.d c x.n * d;\
+}
+OP(==) OP(!=) OP(<) OP(<=) OP(>) OP(>=)
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>field_of_fraction</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
