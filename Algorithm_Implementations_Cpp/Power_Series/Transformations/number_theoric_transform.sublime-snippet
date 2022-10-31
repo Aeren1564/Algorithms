@@ -53,11 +53,11 @@ struct number_theoric_transform_wrapper{
 		for(auto i = 0; i < n; ++ i) buffer1[i << 1 | 1] = p[i];
 		return p = buffer1;
 	}
-	// O(n * (log(n) + log(e)))
+	// O(n * e * (log(n) + log(e)))
 	static vector<T> &power_up(vector<T> &p, size_t e = 2){
 		if(!e) return {1};
 		if(e == 1 || p.empty()) return p;
-		if(p.size() < 40){
+		if(p.size() * e < 40){
 			auto q = p;
 			for(auto rep = 1; rep < e; ++ rep) p = convolute_naive(q, p);
 			return p;
