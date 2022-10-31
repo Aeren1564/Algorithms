@@ -1,0 +1,40 @@
+<snippet>
+	<content><![CDATA[
+// Requries flow_network and dinic_maximum_flow
+template<class T>
+struct positive_bipartite_two_sat{
+	int n, m, source, sink;
+	flow_network<T> F;
+	dinic_maximum_flow<T> D;
+	positive_bipartite_two_sat(int n, int m, vector<T> wl = {}, vector<T> wr = {}): n(n), m(m), source(n + m), sink(source + 1), F(n + m + 2), D(F){
+		if(wl.empty()) wl = vector<T>(n, 1);
+		if(wr.empty()) wr = vector<T>(m, 1);
+		assert(wl.size() == n && wr.size() == m);
+		assert(!n || *min_element(wl.begin(), wl.end()) >= 0);
+		assert(!m || *min_element(wr.begin(), wr.end()) >= 0);
+		for(auto u = 0; u < n; ++ u) F.insert(source, u, wl[u], 0);
+		for(auto v = 0; v < m; ++ v) F.insert(n + v, sink, wr[v], 0);
+	}
+	void either(int u, int v){
+		assert(0 <= u && u < n);
+		assert(0 <= v && v < m);
+		F.insert(u, n + v, numeric_limits<T>::max(), 0);
+	}
+	// sum of weights of the selected variables,
+	// the set of variables set to true on the left, and
+	// the set of variables set to true on the right.
+	// O((n+m)^2 * C) where C is the # of clauses.
+	tuple<T, vector<int>, vector<int>> minimize(){
+		T weight = D.maximum_flow(source, sink);
+		vector<int> left, right;
+		for(auto u = 0; u < n; ++ u) if(~D.level[u]) left.push_back(u);
+		for(auto v = 0; v < m; ++ v) if(!~D.level[n + v]) right.push_back(v);
+		return {weight, left, right};
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>positive_bipartite_two_sat</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

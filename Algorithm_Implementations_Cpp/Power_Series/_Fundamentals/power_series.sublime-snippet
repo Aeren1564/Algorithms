@@ -4,19 +4,11 @@
 // T{} should return the additive identity
 // Requires modular and number_theoric_transform
 template<class T, class FFT>
-struct power_series_base{
-	using Iter = typename vector<T>::iterator;
-	using ConstIter = typename vector<T>::const_iterator;
-	using RevIter = typename vector<T>::reverse_iterator;
-	using ConstRevIter = typename vector<T>::const_reverse_iterator;
-	vector<T> data;
-	power_series_base(){}
-	power_series_base(int n): data(n){}
-	power_series_base(int n, T x): data(n, x){}
-	power_series_base(const vector<T> &p): data(p){}
-	power_series_base(const initializer_list<T> &l): data(l){}
-	template<class It>
-	power_series_base(It begin, It end): data(begin, end){}
+struct power_series_base: vector<T>{
+#define data (*this)
+	template<class ...Args>
+	power_series_base(Args... args): vector<T>(args...){}
+	power_series_base(initializer_list<T> init): vector<T>(init){}
 	template<class U>
 	static T &_inplace_power(T &res, U e){
 		assert(e >= 0);
@@ -29,117 +21,24 @@ struct power_series_base{
 	static T _power(T base, U e){
 		return power_series_base::_inplace_power(base, e);
 	}
-	bool empty() const{
-		return data.empty();
-	}
-	int size() const{
-		return data.size();
-	}
-	power_series_base & resize(int n, T x = {}){
-		data.resize(n, x);
-		return *this;
-	}
-	power_series_base &assign(int n, T x = {}){
-		data.assign(n, x);
-		return *this;
-	}
-	Iter insert(Iter it, T x){
-		return data.insert(it, x);
-	}
-	Iter insert(Iter it, int n, T x){
-		return data.insert(it, n, x);
-	}
-	template<class InputIt>
-	Iter insert(Iter it, InputIt first, InputIt last){
-		return data.insert(it, first, last);
-	}
-	Iter insert(Iter it, initializer_list<T> l){
-		return data.insert(it, l);
-	}
-	power_series_base &push_back(T x){
-		data.push_back(x);
-		return *this;
-	}
-	power_series_base &pop_back(){
-		data.pop_back();
-		return *this;
-	}
-	T &front(){
-		return data.front();
-	}
-	const T &front() const{
-		return data.front();
-	}
-	T &back(){
-		return data.back();
-	}
-	const T &back() const{
-		return data.back();
-	}
-	template<class... Args>
-	T &emplace_back(Args&&... args){
-		return data.emplace_back(args...);
-	}
-	Iter erase(Iter pos){
-		return data.erase(pos);
-	}
-	Iter erase(Iter first, Iter last){
-		return data.erase(first, last);
-	}
 	int degree() const{
-		return data.empty() ? numeric_limits<int>::max() : size() - 1;
-	}
-	T &operator[](int i){
-		return data[i];
-	}
-	const T &operator[](int i) const{
-		return data[i];
+		return data.empty() ? numeric_limits<int>::max() : data.size() - 1;
 	}
 	friend ostream &operator<<(ostream &out, const power_series_base &p){
-		if(p.data.empty()){
+		if(p.empty()){
 			return out << "{}";
 		}
 		else{
 			out << "{";
-			for(auto i = 0; i < (int)p.data.size(); ++ i){
-				out << p.data[i];
-				i + 1 < (int)p.data.size() ? out << ", " : out << "}";
+			for(auto i = 0; i < (int)p.size(); ++ i){
+				out << p[i];
+				i + 1 < (int)p.size() ? out << ", " : out << "}";
 			}
 			return out;
 		}
 	}
-	operator vector<T>() const{
-		return data;
-	}
-	operator vector<T> &(){
-		return data;
-	}
-	Iter begin(){
-		return data.begin();
-	}
-	ConstIter begin() const{
-		return data.begin();
-	}
-	Iter end(){
-		return data.end();
-	}
-	ConstIter end() const{
-		return data.end();
-	}
-	RevIter rbegin(){
-		return data.rbegin();
-	}
-	ConstRevIter rbegin() const{
-		return data.rbegin();
-	}
-	RevIter rend(){
-		return data.rend();
-	}
-	ConstRevIter rend() const{
-		return data.rend();
-	}
 	power_series_base prefix(int n) const{
-		auto res = vector<T>(begin(), begin() + min(n, size()));
+		auto res = vector<T>(data.begin(), data.begin() + min(n, (int)data.size()));
 		res.resize(n);
 		return res;
 	}
@@ -149,7 +48,7 @@ struct power_series_base{
 		return res;
 	}
 	power_series_base operator*(const power_series_base &p) const{
-		return FFT::convolute(data, p.data);
+		return FFT::convolute(data, p);
 	}
 	power_series_base &operator*=(const power_series_base &p){
 		return *this = *this * p;
@@ -175,7 +74,7 @@ struct power_series_base{
 		return power_series_base(*this) ^= e;
 	}
 	power_series_base &operator+=(const power_series_base &p){
-		resize(max(size(), p.size()));
+		resize(max(data.size(), p.size()));
 		for(auto i = 0; i < (int)p.size(); ++ i) data[i] += p[i];
 		return *this;
 	}
@@ -184,7 +83,7 @@ struct power_series_base{
 	}
 	template<class U>
 	power_series_base &operator+=(const U &x){
-		if(empty()) emplace_back();
+		if(data.empty()) data.emplace_back();
 		data[0] += x;
 		return *this;
 	}
@@ -197,7 +96,7 @@ struct power_series_base{
 		return p + x;
 	}
 	power_series_base &operator-=(const power_series_base &p){
-		resize(max(size(), p.size()));
+		data.resize(max(data.size(), p.size()));
 		for(auto i = 0; i < (int)p.size(); ++ i) data[i] -= p[i];
 		return *this;
 	}
@@ -206,7 +105,7 @@ struct power_series_base{
 	}
 	template<class U>
 	power_series_base &operator-=(const U &x){
-		if(empty()) emplace_back();
+		if(data.empty()) data.emplace_back();
 		data[0] -= x;
 		return *this;
 	}
@@ -220,33 +119,33 @@ struct power_series_base{
 	}
 	power_series_base operator-() const{
 		power_series_base res = *this;
-		for(auto i = 0; i < size(); ++ i) res[i] = T{} - res[i];
+		for(auto i = 0; i < data.size(); ++ i) res[i] = T{} - res[i];
 		return res;
 	}
 	power_series_base &operator++(){
-		if(empty()) push_back(1);
+		if(data.empty()) data.push_back(1);
 		else ++ data[0];
 		return *this;
 	}
 	power_series_base &operator--(){
-		if(empty()) push_back(-1);
+		if(data.empty()) data.push_back(-1);
 		else -- data[0];
 		return *this;
 	}
 	power_series_base operator++(int){
 		power_series_base result(*this);
-		if(empty()) push_back(1);
+		if(data.empty()) data.push_back(1);
 		else ++ data[0];
 		return result;
 	}
 	power_series_base operator--(int){
 		power_series_base result(*this);
-		if(empty()) push_back(-1);
+		if(data.empty()) data.push_back(-1);
 		else -- data[0];
 		return result;
 	}
 	power_series_base &clear_range(int l, int r){
-		assert(0 <= l && l <= r && r <= size());
+		assert(0 <= l && l <= r && r <= data.size());
 		for(auto i = l; i < r; ++ i) data[i] = 0;
 		return *this;
 	}
@@ -260,7 +159,7 @@ struct power_series_base{
 		return res;
 	}
 	power_series_base &inplace_dot_product(const power_series_base &p){
-		for(auto i = 0; i < min(size(), p.size()); ++ i) data[i] *= p[i];
+		for(auto i = 0; i < min(data.size(), p.size()); ++ i) data[i] *= p[i];
 		return *this;
 	}
 	power_series_base dot_product(const power_series_base &p) const{
@@ -277,7 +176,8 @@ struct power_series_base{
 		buffer.transform();
 		buffer.inplace_dot_product(freq);
 		buffer.transform(true);
-		return f.resize(s << 1) -= buffer.clear_range(0, s);
+		f.resize(s << 1);
+		return f -= buffer.clear_range(0, s);
 	}
 	power_series_base &inverse_doubled_up(power_series_base &f) const{
 		assert((f.size() & -f.size()) == f.size());
@@ -291,15 +191,16 @@ struct power_series_base{
 		if(data.size() <= 100){
 			power_series_base res(n);
 			for(auto i = 0; i < n; ++ i){
-				modular s = 0;
-				for(auto j = max(0, i - (int)size() + 1); j < i; ++ j) s -= res[j] * data[i - j];
+				T s = 0;
+				for(auto j = max(0, i - (int)data.size() + 1); j < i; ++ j) s -= res[j] * data[i - j];
 				res[i] = (!i + s) * inv;
 			}
 			return res;
 		}
 		power_series_base res{inv};
 		for(auto s = 1; s < n; s <<= 1) inverse_doubled_up(res);
-		return res.resize(n);
+		res.resize(n);
+		return res;
 	}
 	// Returns the first n terms of the inverse series
 	// O(n * log(n))
@@ -309,9 +210,9 @@ struct power_series_base{
 	// O(n * log(n))
 	power_series_base &inplace_power_series_division(power_series_base p, int n){
 		int i = 0;
-		while(i < min(size(), p.size()) && !data[i] && !p[i]) ++ i;
+		while(i < min(data.size(), p.size()) && !data[i] && !p[i]) ++ i;
 		data.erase(data.begin(), data.begin() + i);
-		p.data.erase(p.begin(), p.begin() + i);
+		p.erase(p.begin(), p.begin() + i);
 		(*this *= p.inverse(n)).resize(n);
 		return *this;
 	}
@@ -328,8 +229,8 @@ struct power_series_base{
 		}
 		power_series_base b;
 		int n = data.size() - p.size() + 1;
-		b.data.assign(n, {});
-		copy(p.data.rbegin(), p.data.rbegin() + min(p.size(), b.size()), b.data.begin());
+		b.assign(n, {});
+		copy(p.rbegin(), p.rbegin() + min(p.size(), b.size()), b.begin());
 		reverse(data.begin(), data.end());
 		data = FFT::convolute(data, b.inverse(n));
 		data.erase(data.begin() + n, data.end());
@@ -363,8 +264,8 @@ struct power_series_base{
 	}
 	power_series_base &inplace_derivative(){
 		if(!data.empty()){
-			for(auto i = 0; i < size(); ++ i) data[i] *= i;
-			erase(begin());
+			for(auto i = 0; i < data.size(); ++ i) data[i] *= i;
+			data.erase(data.begin());
 		}
 		return *this;
 	}
@@ -373,7 +274,7 @@ struct power_series_base{
 		return power_series_base(*this).inplace_derivative();
 	}
 	power_series_base &inplace_derivative_shift(){
-		for(auto i = 0; i < size(); ++ i) data[i] *= i;
+		for(auto i = 0; i < data.size(); ++ i) data[i] *= i;
 		return *this;
 	}
 	// xP'
@@ -383,7 +284,7 @@ struct power_series_base{
 	power_series_base &inplace_antiderivative(){
 		T::precalc_inverse(data.size());
 		data.push_back(0);
-		for(auto i = (int)size() - 1; i >= 1; -- i) data[i] = data[i - 1] / i;
+		for(auto i = (int)data.size() - 1; i >= 1; -- i) data[i] = data[i - 1] / i;
 		data[0] = 0;
 		return *this;
 	}
@@ -393,7 +294,7 @@ struct power_series_base{
 	}
 	power_series_base &inplace_shifted_antiderivative(){
 		T::precalc_inverse(data.size());
-		if(!empty()) data[0] = 0;
+		if(!data.empty()) data[0] = 0;
 		for(auto i = 1; i < data.size(); ++ i) data[i] /= i;
 		return *this;
 	}
@@ -441,7 +342,8 @@ struct power_series_base{
 			z.transform();
 			z.inplace_dot_product(f2);
 			z.transform(true);
-			f.resize(s << 1) += z.clear_range(0, s);
+			f.resize(s << 1);
+			f += z.clear_range(0, s);
 			if(s << 1 < n) f.inverse_doubled_up(g, g2);
 		}
 		return f.resize(n);
@@ -486,6 +388,7 @@ struct power_series_base{
 		};
 		return solve(solve, 0, (int)a.size());
 	}
+#undef data
 };
 
 using power_series = power_series_base<modular, ntt>;

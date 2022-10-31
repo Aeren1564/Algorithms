@@ -3,11 +3,11 @@
 // a[x]: # of ways to partition x labelled objects
 // Returns {a[0], ..., a[n]}
 // O(polymul(n))
-// Requires polynomial
+// Requires power_series
 template<class T, class FFT = ntt>
 vector<T> bell_number(int n){
 	assert(n >= 0);
-	polynomial_base<T, FFT> a(n + 1);
+	power_series_base<T, FFT> a(n + 1);
 	T fact = 1;
 	for(auto x = 2; x <= n; ++ x) fact *= x;
 	a[n] = fact = 1 / fact;

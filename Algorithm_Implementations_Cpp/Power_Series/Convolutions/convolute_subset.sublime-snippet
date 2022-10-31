@@ -1,7 +1,7 @@
 <snippet>
 	<content><![CDATA[
 // (f*g)[mask] = sum{x and y = 0, x or y = mask}(f(x)g(y))
-// O(n log^2 n)
+// O(n * log(n)^2)
 template<class T, int SZ = 20>
 vector<T> convolute_subset(const vector<T> &p, const vector<T> &q){
 	int n = (int)p.size();
