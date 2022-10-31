@@ -1,7 +1,7 @@
 <snippet>
 	<content><![CDATA[
 // Returns sol to x^2=a mod p
-// O(log^2 p) worst case, O(log p) for most p
+// O(log(p)^2) worst case, O(log(p)) for most p
 // Requires modular
 template<class T>
 optional<T> mod_sqrt(T a){

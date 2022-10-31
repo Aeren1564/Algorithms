@@ -1,0 +1,53 @@
+<snippet>
+	<content><![CDATA[
+// O(polymul(n) * log(n))
+// Requires mod_sqrt and power_series
+template<class T, class FFT = ntt>
+optional<power_series_base<T, FFT>> power_series_sqrt(power_series_base<T, FFT> a, int length){
+	a.resize(length);
+	int zero_prefix = find_if(a.begin(), a.end(), [&](auto x){ return x != 0; }) - a.begin();
+	if(zero_prefix == length) return power_series_base<T, FFT>(a.begin(), a.begin() + length);
+	if(zero_prefix & 1) return {};
+	a.erase(a.begin(), a.begin() + zero_prefix);
+	length -= zero_prefix >>= 1;
+	T c;
+	if(auto p = mod_sqrt(a[0])) c = *p, a /= a[0];
+	else return {};
+	T inv2 = T(1) / 2;
+	power_series_base<T, FFT> f{1}, g{1}, z{1};
+	for(auto s = 1; s < length; s <<= 1){
+		z.inplace_dot_product(z);
+		z.transform(true);
+		power_series_base<T, FFT> delta(s << 1), g2(s << 1), eps;
+		for(auto i = 0; i < s; ++ i) delta[s + i] = z[i] - a[i] - (s + i < length ? a[s + i] : T());
+		delta.transform();
+		copy(g.begin(), g.end(), g2.begin());
+		g2.transform();
+		delta.inplace_dot_product(g2);
+		delta.transform(true);
+		f.resize(s << 1);
+		for(auto i = s; i < s << 1; ++ i) f[i] = -inv2 * delta[i];
+		if(s << 1 >= length) break;
+		z = f;
+		z.transform();
+		eps = g2;
+		eps.inplace_dot_product(z);
+		eps.transform(true);
+		eps.clear_range(0, s);
+		eps.transform();
+		eps.inplace_dot_product(g2);
+		eps.transform(true);
+		g.resize(s << 1);
+		for(auto i = s; i < s << 1; ++ i) g[i] = -eps[i];
+	}
+	f.resize(length);
+	for(auto &x: f) x *= c;
+	f.insert(f.begin(), zero_prefix, 0);
+	return f;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>power_series_sqrt</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
