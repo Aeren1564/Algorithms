@@ -6,7 +6,7 @@
 template<class T>
 struct number_theoric_transform_wrapper{
 	// i \in [2^k, 2^{k+1}) holds w_{2^k+1}^{i-2^k}
-	static vector<T> root;
+	static vector<T> root, buffer1, buffer2;
 	static void adjust_root(int n){
 		if(root.empty()) root = {1, 1};
 		for(auto k = (int)root.size(); k < n; k <<= 1){
@@ -16,9 +16,9 @@ struct number_theoric_transform_wrapper{
 		}
 	}
 	// n must be a power of two
+	// p must have next n memories allocated
 	// O(n * log(n))
-	static void transform(vector<T> &p, bool invert = false){
-		int n = (int)p.size();
+	static void transform(int n, T *p, bool invert = false){
 		assert(n && __builtin_popcount(n) == 1 && (T::mod() - 1) % n == 0);
 		for(auto i = 1, j = 0; i < n; ++ i){
 			int bit = n >> 1;
@@ -32,43 +32,33 @@ struct number_theoric_transform_wrapper{
 			p[i + j] = x + y, p[len + i + j] = x - y;
 		}
 		if(invert){
-			reverse(p.begin() + 1, p.end());
+			reverse(p + 1, p + n);
 			T inv_n = T(1) / n;
-			for(auto &x: p) x *= inv_n;
+			for(auto i = 0; i < n; ++ i) p[i] *= inv_n;
 		}
 	}
-	static vector<T> buffer1, buffer2;
+	static void transform(vector<T> &p, bool invert = false){
+		transform((int)p.size(), p.data(), invert);
+	}
 	// Double the length of the ntt array
 	// n must be a power of two
+	// p must have next 2n memories allocated
 	// O(n * log(n))
-	static vector<T> &double_up(vector<T> &p){
-		int n = (int)p.size();
+	static void double_up(int n, T *p){
 		assert(n && __builtin_popcount(n) == 1 && (T().mod() - 1) % (n << 1) == 0);
 		buffer1.resize(n << 1);
 		for(auto i = 0; i < n; ++ i) buffer1[i << 1] = p[i];
-		transform(p, true);
+		transform(n, p, true);
 		adjust_root(n << 1);
 		for(auto i = 0; i < n; ++ i) p[i] *= root[n | i];
-		transform(p);
+		transform(n, p);
 		for(auto i = 0; i < n; ++ i) buffer1[i << 1 | 1] = p[i];
-		return p = buffer1;
+		copy(buffer1.begin(), buffer1.begin() + 2 * n, p);
 	}
-	// O(n * e * (log(n) + log(e)))
-	static vector<T> &power_up(vector<T> &p, size_t e = 2){
-		if(!e) return {1};
-		if(e == 1 || p.empty()) return p;
-		if(p.size() * e < 40){
-			auto q = p;
-			for(auto rep = 1; rep < e; ++ rep) p = convolute_naive(q, p);
-			return p;
-		}
-		int m = ((int)p.size() - 1) * e + 1, n = 1 << __lg(m) + 1;
-		p.resize(n);
-		transform(p);
-		for(auto i = 0; i < n; ++ i) p[i] ^= e;
-		transform(p, true);
-		p.resize(m);
-		return p;
+	static void double_up(vector<T> &p){
+		int n = (int)p.size();
+		p.resize(n << 1);
+		double_up(n, p.data());
 	}
 	// O(n * m)
 	static vector<T> convolute_naive(const vector<T> &p, const vector<T> &q){

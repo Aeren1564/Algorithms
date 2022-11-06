@@ -42,6 +42,14 @@ struct power_series_base: vector<T>{
 		res.resize(n);
 		return res;
 	}
+	power_series_base &inplace_reverse(int n){
+		data.resize(max(n, (int)data.size()));
+		std::reverse(data.begin(), data.begin() + n);
+		return *this;
+	}
+	power_series_base reverse(int n) const{
+		return power_series_base(*this).inplace_reverse(n);
+	}
 	T evaluate(T x) const{
 		T res = {};
 		for(auto i = (int)data.size() - 1; i >= 0; -- i) res = res * x + data[i];
@@ -231,10 +239,10 @@ struct power_series_base: vector<T>{
 		int n = data.size() - p.size() + 1;
 		b.assign(n, {});
 		copy(p.rbegin(), p.rbegin() + min(p.size(), b.size()), b.begin());
-		reverse(data.begin(), data.end());
+		std::reverse(data.begin(), data.end());
 		data = FFT::convolute(data, b.inverse(n));
 		data.erase(data.begin() + n, data.end());
-		reverse(data.begin(), data.end());
+		std::reverse(data.begin(), data.end());
 		return *this;
 	}
 	power_series_base operator/(const power_series_base &p) const{

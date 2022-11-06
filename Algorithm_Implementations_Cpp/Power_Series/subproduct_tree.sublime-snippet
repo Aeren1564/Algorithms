@@ -1,0 +1,107 @@
+<snippet>
+	<content><![CDATA[
+// Requires modular, number_theoric_transform, and power_series
+template<class T, class FFT = ntt>
+struct subproduct_tree{
+private:
+	vector<T> buffer1, buffer2;
+public:
+	// O(n * log(n)^2)
+	subproduct_tree(const vector<T> &x): n((int)x.size()){
+		log = __lg(max(n - 1, 1)) + 1;
+		size = 1 << log;
+		buffer1 = vector<T>(size * (log + 1) << 1);
+		buffer2 = vector<T>(size << 2);
+		data.resize(size << 1);
+		length.resize(size << 1);
+		for(auto i = 1, j = 0; i < size << 1; ++ i){
+			length[i] = size >> __lg(i);
+			data[i] = buffer1.data() + j;
+			j += length[i] << 1;
+		}
+		for(auto i = 0; i < size; ++ i){
+			T y = i < n ? x[i] : T{};
+			data[size + i][0] = -y + 1;
+			data[size + i][1] = -y - 1;
+		}
+		if(size == 1) data[1][1] = data[1][0];
+		for(auto i = size - 1; i >= 1; -- i){
+			for(auto j = 0; j < length[i]; ++ j){
+				data[i][j] = data[i << 1][j];
+				buffer2[j] = data[i << 1 | 1][j];
+			}
+			FFT::double_up(length[i], data[i]);
+			FFT::double_up(length[i], buffer2.data());
+			for(auto j = 0; j < length[i] << 1; ++ j) data[i][j] *= buffer2[j];
+		}
+		root.resize(size << 1);
+		copy(data[1], data[1] + 2 * length[1], root.begin());
+		FFT::transform(root, true);
+	}
+	// O(n * log(n)^2)
+	vector<T> multipoint_evaluation(const power_series_base<T, FFT> &p){
+		vector<T *> c(size << 1);
+		buffer2.assign(size << 1, T{});
+		T *head;
+		for(auto i = 1; i < size << 1; ++ i){
+			if((i & i - 1) == 0 && __lg(i) % 2 == 0) head = buffer2.data();
+			c[i] = head;
+			head += length[i];
+		}
+		power_series_base<T, FFT> q = root.reverse(size + 1).inverse(p.size()).reverse(p.size()) * p;
+		for(auto i = 0; i < size; ++ i) c[1][i] = i < (int)p.size() ? q[(int)p.size() - 1 + i] : T{};
+		vector<T> temp(size);
+		for(auto i = 1; i < size; ++ i){
+			FFT::transform(length[i], c[i]);
+			for(auto k = 0; k < 2; ++ k){
+				temp.resize(length[i]);
+				for(auto j = 0; j < length[i]; ++ j) temp[j] = data[i << 1 | k ^ 1][j] * c[i][j];
+				FFT::transform(temp, true);
+				for(auto j = 0; j < length[i] >> 1; ++ j) c[i << 1 | k][j] = temp[length[i] / 2 + j];
+			}
+		}
+		vector<T> res(n);
+		for(auto i = 0; i < n; ++ i) res[i] = c[size + i][0];
+		return res;
+	}
+	// O(n * log(n)^2)
+	power_series_base<T, FFT> interpolation(const vector<T> &y){
+		vector<T *> c(size << 1);
+		buffer2.assign(size << 1, T{});
+		T *head;
+		for(auto i = 1; i < size << 1; ++ i){
+			if((i & i - 1) == 0 && __lg(i) % 2 == 0) head = buffer2.data();
+			c[i] = head;
+			head += length[i] << 1;
+		}
+		vector<T> z = multipoint_evaluation(power_series_base<T, FFT>(root.begin() + size - (int)y.size(), root.begin() + size + 1).derivative());
+		for(auto i = 0; i < size; ++ i) c[size + i][0] = c[size + i][1] = i < (int)y.size() ? y[i] / z[i] : T{};
+		for(auto i = size - 1; i >= 1; -- i){
+			for(auto j = 0; j < length[i]; ++ j) c[i][j] = c[i << 1][j] * data[i << 1 | 1][j] + c[i << 1 | 1][j] * data[i << 1][j];
+			FFT::double_up(length[i], c[i]);
+		}
+		FFT::transform(length[1] << 1, c[1], true);
+		return power_series_base<T, FFT>(c[1] + size - (int)y.size(), c[1] + size);
+	}
+	int n, size, log;
+	vector<T *> data;
+	vector<int> length;
+	power_series_base<T, FFT> root;
+};
+// O(n * log(n)^2)
+template<class T, class FFT = ntt>
+vector<T> multipoint_evaluation(const power_series_base<T, FFT> &p, const vector<T> &x){
+	return subproduct_tree(x).multipoint_evaluation(p);
+}
+// O(n * log(n)^2)
+template<class T, class FFT = ntt>
+power_series_base<T, FFT> interpolation(const vector<T> &x, const vector<T> &y){
+	assert(x.size() == y.size());
+	return subproduct_tree(x).interpolation(y);
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>subproduct_tree</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
