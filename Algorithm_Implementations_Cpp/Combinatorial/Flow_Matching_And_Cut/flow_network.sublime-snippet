@@ -9,11 +9,9 @@ struct flow_network{
 		T capacity, flow;
 	};
 	vector<E> edge;
-	T flow = 0;
 	flow_network(int n): n(n), adj(n){ }
 	void clear_flow(){
 		for(auto &e: edge) e.flow = 0;
-		flow = 0;
 	}
 	int insert(int from, int to, T forward_cap, T backward_cap = 0){
 		int ind = (int)edge.size();

@@ -7,7 +7,7 @@
 // 3. w(E(S)) <= c(|S|-1) for all non-empty subset S of V
 // calculates min cut at most 2|V|-2 times
 // Source: https://webdocs.cs.ualberta.ca/~zacharyf/courses/approx_2014/notes/nov17-675.pdf
-// Requires graph and dinic_maxflow
+// Requires graph and dinic_maximum_flow
 template<class T>
 bool spanning_tree_polytope_separation_oracle(const graph<T> &g, T c = 1){
 	int n = g.n;
@@ -32,7 +32,7 @@ bool spanning_tree_polytope_separation_oracle(const graph<T> &g, T c = 1){
 			for(auto u = 0; u < n; ++ u) F.adj[u].resize(sz[u]);
 			F.clear_flow();
 			for(auto u = 0; u < n; ++ u) F.insert(s, u, delta[u], 0), F.insert(u, t, 2 * c, 0);
-			if(dinic<T>(F).max_flow(s, t) < 2 * n * c) return false;
+			if(dinic_maximum_flow<T>(F).maximum_flow(s, t) < 2 * n * c) return false;
 			swap(s, t);
 		}
 	}

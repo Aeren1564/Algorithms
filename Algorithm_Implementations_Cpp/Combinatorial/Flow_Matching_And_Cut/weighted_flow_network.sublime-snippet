@@ -10,12 +10,10 @@ struct weighted_flow_network{
 	vector<vector<int>> adj;
 	vector<E> edge;
 	int n;
-	T flow = 0;
-	C cost = 0;
 	weighted_flow_network(int n): n(n), adj(n){ }
 	void clear_flow(){
 		for(auto &e: edge) e.flow = 0;
-		flow = 0, cost = 0;
+		cost = 0;
 	}
 	int insert(int from, int to, T forward_cap, T backward_cap, C cost){
 		assert(0 <= from && from < n && 0 <= to && to < n);

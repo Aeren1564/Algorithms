@@ -10,7 +10,7 @@ struct minimum_cost_maximum_flow_spfa{
 	// type 1: augment as long as a negative cost path exists
 	vector<C> d;
 	vector<int> in_queue, q, pe;
-	bool expath(int source, int sink, bool type = false){
+	T expath(int source, int sink, bool type = false){
 		fill(d.begin(), d.end(), numeric_limits<C>::max());
 		q = {source};
 		d[source] = 0;
@@ -48,9 +48,9 @@ struct minimum_cost_maximum_flow_spfa{
 				F.add_flow(pe[u], push);
 				u = F.edge[pe[u]].from;
 			}
-			F.flow += push;
+			return push;
 		}
-		return found;
+		return 0;
 	}
 	vector<int> stack, state;
 	bool try_cycle_cancelling(){
@@ -117,8 +117,9 @@ struct minimum_cost_maximum_flow_spfa{
 	pair<T, C> solve(int source, int sink, bool type = false, bool negative_cycle_presence = false){
 		F.clear_flow();
 		if(negative_cycle_presence) while(try_cycle_cancelling());
-		while(expath(source, sink, type));
-		return {F.flow, F.cost};
+		T flow = 0;
+		for(T delta; delta = expath(source, sink, type); flow += delta);
+		return {flow, F.cost};
 	}
 };
 ]]></content>

@@ -46,6 +46,7 @@ struct dinic_maximum_flow{
 	// O(V^2 E) ( O(E min(V^2/3, E^1/2)) for unit network )
 	T maximum_flow(int source, int sink){
 		assert(0 <= source && source < F.n && 0 <= sink && sink < F.n);
+		T flow = 0;
 		while(bfs(source, sink)){
 			for(auto i = 0; i < F.n; ++ i) ptr[i] = (int)F.adj[i].size() - 1;
 			T sum = 0;
@@ -55,9 +56,9 @@ struct dinic_maximum_flow{
 				sum += add;
 			}
 			if(sum <= eps) break;
-			F.flow += sum;
+			flow += sum;
 		}
-		return F.flow;
+		return flow;
 	}
 	// Find a minimum source-sink cut
 	// O(V^2 E) ( O(E min(V^2/3, E^1/2)) for unit network )
