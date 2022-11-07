@@ -24,10 +24,10 @@ struct push_relabel{
 		fill(hs.begin(), hs.end(), vector<int>{});
 		for(auto id: F.adj[source]){
 			auto &e = F.edge[id];
-			if(ec[e.to] <= eps && e.capacity > eps) hs[H[e.to]].push_back(e.to);
-			ec[e.from] -= e.capacity;
-			ec[e.to] += e.capacity;
-			F.add_flow(id, e.capacity);
+			if(ec[e.to] <= eps && e.capacity - e.flow > eps) hs[H[e.to]].push_back(e.to);
+			ec[e.from] -= e.capacity - e.flow;
+			ec[e.to] += e.capacity - e.flow;
+			F.add_flow(id, e.capacity - e.flow);
 		}
 		if(hs[0].empty()) return -ec[source];
 		for(auto hi = 0; hi >= 0; ){
@@ -38,7 +38,7 @@ struct push_relabel{
 					H[u] = inf;
 					for(auto i = 0; i < (int)F.adj[u].size(); ++ i){
 						auto &e = F.edge[F.adj[u][i]];
-						if(e.capacity - e.flow > eps && H[u] > H[e.to] + 1){
+						if(e.capacity - e.flow > eps && H[u] - 1 > H[e.to]){
 							H[u] = H[e.to] + 1;
 							cur[u] = i;
 						}
