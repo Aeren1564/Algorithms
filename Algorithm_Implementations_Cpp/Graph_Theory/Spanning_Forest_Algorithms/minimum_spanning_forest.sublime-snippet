@@ -1,8 +1,8 @@
 <snippet>
 	<content><![CDATA[
-// Requires graph and disjoint_set
-template<class T>
-vector<int> minimum_spanning_forest(const graph<T> &g){
+// Requires disjoint_set
+template<class T, class G>
+vector<int> minimum_spanning_forest(const G &g){
 	vector<int> order(g.edge.size());
 	iota(order.begin(), order.end(), 0);
 	if(g.ignore) order.erase(remove_if(order.begin(), order.end(), [&](int id){ return g.ignore(id); }), order.end());
@@ -12,6 +12,19 @@ vector<int> minimum_spanning_forest(const graph<T> &g){
 	for(auto id: order){
 		auto &e = g.edge[id];
 		if(dsu.merge(e.from, e.to)) res.push_back(id);
+	}
+	return res;
+}
+template<class T>
+vector<int> minimum_spanning_forest(int n, const vector<tuple<int, int, T>> &edge){
+	vector<int> order(edge.size());
+	iota(order.begin(), order.end(), 0);
+	sort(order.begin(), order.end(), [&](int i, int j){ return get<2>(edge[i]) < get<2>(edge[j]); });
+	disjoint_set dsu(n);
+	vector<int> res;
+	for(auto id: order){
+		auto &e = edge[id];
+		if(dsu.merge(get<0>(e), get<1>(e))) res.push_back(id);
 	}
 	return res;
 }
