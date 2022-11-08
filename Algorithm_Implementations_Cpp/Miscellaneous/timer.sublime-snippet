@@ -3,22 +3,24 @@
 struct timer{
 	chrono::time_point<chrono::high_resolution_clock> init = chrono::high_resolution_clock::now(), current = chrono::high_resolution_clock::now();
 	void refresh(){
-		#ifdef LOCAL
 		current = chrono::high_resolution_clock::now();
-		#endif
 	}
 	// Measures time from last measure() call(construction if no such call)
-	void measure(){
+	double measure(){
+		double x = chrono::duration<double>(chrono::high_resolution_clock::now() - current).count();
 		#ifdef LOCAL
-		cerr << "Time Passed: " << chrono::duration<double>(chrono::high_resolution_clock::now() - current).count() << endl;
+		cerr << "Time Passed: " << x << endl;
 		current = chrono::high_resolution_clock::now();
 		#endif
+		return x;
 	}
 	// Measures time from the construction
-	void measure_from_start(){
+	double measure_from_start(){
+		double x = chrono::duration<double>(chrono::high_resolution_clock::now() - init).count();
 		#ifdef LOCAL
-		cerr << "Time Since Epoch: " << chrono::duration<double>(chrono::high_resolution_clock::now() - init).count() << endl;
+		cerr << "Time Since Epoch: " << x << endl;
 		#endif
+		return x;
 	}
 };
 ]]></content>
