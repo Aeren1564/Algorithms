@@ -1,20 +1,18 @@
 <snippet>
 	<content><![CDATA[
-// O(polymul(n-term polynomial))
-template<class T>
-vector<T> touchard_polynomial(int n, auto polymul){
-	static vector<T> fact{1}, invfact{1};
-	if(auto sz = (int)fact.size(); sz <= n){
-		for(auto i = sz; i <= n; ++ i) fact.push_back(fact.back() * i);
-		invfact.resize(n + 1), invfact[n] = 1 / fact.back();
-		for(auto i = n - 1; i >= sz; -- i) invfact[i] = invfact[i + 1] * (i + 1);
-	}
-	vector<T> p(n + 1), q(n + 1);
+// O(n * log(n))
+// Requires modular and number_theoric_transform
+template<class T, class FFT>
+vector<T> touchard_polynomial(int n){
+	vector<T> fact(n + 1, 1), invfact(n + 1, 1), p(n + 1), q(n + 1);
+	for(auto i = 2; i <= n; ++ i) fact[i] = fact[i - 1] * i;
+	invfact[n] = 1 / fact[n];
+	for(auto i = n - 1; i >= 2; -- i) invfact[i] = invfact[i + 1] * (i + 1);
 	for(auto i = 0; i <= n; ++ i){
 		p[i] = invfact[i] * (i & 1 ? -1 : 1);
 		q[i] = invfact[i] * (T(i) ^ n);
 	}
-	(p = polymul(p, q)).resize(n + 1);
+	(p = FFT::convolute(p, q)).resize(n + 1);
 	return p;
 }
 ]]></content>
