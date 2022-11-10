@@ -3,8 +3,9 @@
 // Given the unique polynomial P of degree < n with P(i)=p[i] for all 0<=i<n
 // Compute P(delta+i) for all 0<=i<m
 // O(polymul(max(n, m)) + max(n, m) * log(max(n, m)))
-template<class T>
-vector<T> polynomial_shift_sampling(const vector<T> &p, T delta, int m, auto polymul){
+// Requires modular and number_theoric_transform
+template<class T, class FFT = ntt>
+vector<T> polynomial_shift_sampling(const vector<T> &p, T delta, int m){
 	int n = (int)p.size();
 	assert(n >= 1 && m >= 0);
 	vector<T> fact(n + 1, 1), invfact(n + 1, 1);
@@ -14,14 +15,14 @@ vector<T> polynomial_shift_sampling(const vector<T> &p, T delta, int m, auto pol
 	vector<T> q(n), r(n + m);
 	for(auto i = 0; i < n; ++ i) q[i] = p[i] * invfact[i] * invfact[n - 1 - i] * (n - i & 1 ? 1 : -1);
 	for(auto i = 0; i < n + m; ++ i) r[i] = delta + i - (n - 1) ? T(1) / (delta + i - (n - 1)) : T(0);
-	vector<T> res = polymul(q, r);
+	vector<T> res = FFT::convolute(q, r);
 	res = vector<T>(res.begin() + n - 1, res.begin() + n - 1 + m);
 	vector<T> seg(n + m << 1);
 	for(auto i = 0; i < n + m; ++ i) seg[n + m + i] = delta - (n - 1) + i;
 	for(auto i = n + m - 1; i; -- i) seg[i] = seg[i << 1] * seg[i << 1 | 1];
 	for(auto i = 0; i < m; ++ i){
-		if((delta + i).value < n){
-			res[i] = p[(delta + i).value];
+		if((delta + i).data < n){
+			res[i] = p[(delta + i).data];
 			continue;
 		}
 		for(auto l = n + m + i, r = 2 * n + m + i; l < r; l >>= 1, r >>= 1){
