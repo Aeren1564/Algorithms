@@ -6,11 +6,11 @@
 // for all non-negative integer m and e
 // Returns {B[0], ..., B[n]}
 // O(polymul(n))
-// Requires polynomial
+// Requires modular, number_theoric_transform, and power_series
 template<class T, class FFT = ntt>
 vector<T> bernoulli_number(int n){
 	assert(n >= 0);
-	polynomial_base<T, FFT> B(n + 1);
+	power_series_base<T, FFT> B(n + 1);
 	T fact = 1;
 	for(auto x = 2; x <= n + 1; ++ x) fact *= x;
 	B[n] = fact = 1 / fact;

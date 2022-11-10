@@ -1,20 +1,23 @@
 <snippet>
 	<content><![CDATA[
-// a[x]: # of ways to partition x labelled objects
-// Returns {a[0], ..., a[n]}
+// B satisfies
+// 0^e + 1^e + ... + (m-1)^e
+// = 1/(e+1)( C(e+1,0)*B[0]*m^{e+1} + C(e+1,1)*B[1]*m^e + ... + C(e+1,e)*B[e]*m^1 )
+// for all non-negative integer m and e
+// Returns {B[0], ..., B[n]}
 // O(polymul(n))
-// Requires power_series
+// Requires modular, number_theoric_transform, and power_series
 template<class T, class FFT = ntt>
-vector<T> bell_number(int n){
+vector<T> bernoulli_number(int n){
 	assert(n >= 0);
-	power_series_base<T, FFT> a(n + 1);
+	power_series_base<T, FFT> B(n + 1);
 	T fact = 1;
-	for(auto x = 2; x <= n; ++ x) fact *= x;
-	a[n] = fact = 1 / fact;
-	for(auto x = n - 1; x >= 1; -- x) a[x] = fact *= x + 1;
-	a.inplace_exp(n + 1);
-	for(auto x = 2; x <= n; ++ x) a[x] *= fact *= x;
-	return a;
+	for(auto x = 2; x <= n + 1; ++ x) fact *= x;
+	B[n] = fact = 1 / fact;
+	for(auto x = n - 1; x >= 0; -- x) B[x] = fact *= x + 2;
+	B.inplace_inverse(n + 1);
+	for(auto x = 2; x <= n; ++ x) B[x] *= fact *= x;
+	return B;
 }
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->

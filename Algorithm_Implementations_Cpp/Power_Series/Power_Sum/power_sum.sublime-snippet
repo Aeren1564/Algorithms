@@ -1,0 +1,31 @@
+<snippet>
+	<content><![CDATA[
+// O(n + inverse_in_T())
+// Returns 0^n + ... + (base-1)^n
+template<class T>
+T power_sum(T base, int n){
+	assert(n >= 0);
+	vector<T> value(n + 2), fact(n + 2, 1), invfact(n + 2, 1), pref(n + 3, 1), suff(n + 3, 1);
+	for(auto x = 0; x <= n; ++ x){
+		T temp = x;
+		value[x + 1] = 1;
+		for(auto e = n; e; e >>= 1, temp *= temp) if(e & 1) value[x + 1] *= temp;
+		value[x + 1] += value[x];
+		fact[x + 1] = fact[x] * (x + 1);
+		pref[x + 1] *= pref[x] * (base - x);
+	}
+	invfact[n + 1] = 1 / fact[n + 1];
+	for(auto x = n; x >= 2; -- x) invfact[x] = invfact[x + 1] * (x + 1);
+	for(auto x = n + 1; x >= 0; -- x) suff[x] = suff[x + 1] * (base - x);
+	T res = 0;
+	for(auto x = 0; x <= n + 1; ++ x){
+		res += value[x] * pref[x] * suff[x + 1] * invfact[x] * invfact[n + 1 - x] * (n + 1 - x & 1 ? -1 : 1);
+	}
+	return res;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>power_sum</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
