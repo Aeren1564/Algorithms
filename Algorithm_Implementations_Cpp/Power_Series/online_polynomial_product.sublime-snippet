@@ -1,26 +1,26 @@
 <snippet>
 	<content><![CDATA[
-// Requires polynomial
-template<class T>
+// Requires modular and number_theoric_transform
+template<class T, class FFT = ntt>
 struct online_polynomial_product{
 	const vector<T> a;
-	vector<T> b, c;
+	vector<T> b, a_times_b;
 	online_polynomial_product(const vector<T> &a): a(a){ }
+	// Insert value at the end of b
+	// Returns (a * b)[deg(b)]
 	T add(const T &val){
 		int i = (int)b.size();
 		b.push_back(val);
-		if((int)c.size() <= i) c.resize(i + 1);
-		c[i] += a[0] * b[i];
-		int z = 1;
-		while((i & z - 1) == z - 1 && (int)a.size() > z){
+		if((int)a_times_b.size() <= i) a_times_b.resize(i + 1);
+		a_times_b[i] += a[0] * b[i];
+		for(auto z = 1; (i & z - 1) == z - 1 && (int)a.size() > z; z <<= 1){
 			vector<T> a_mul(a.begin() + z, a.begin() + min(z << 1, (int)a.size()));
 			vector<T> b_mul(b.end() - z, b.end());
-			vector<T> c_mul = a_mul * b_mul;
-			if((int)c.size() <= i + (int)c_mul.size()) c.resize(i + c_mul.size() + 1);
-			for(auto j = 0; j < (int)c_mul.size(); ++ j) c[i + 1 + j] += c_mul[j];
-			z <<= 1;
+			vector<T> c_mul = FFT::convolute(a_mul, b_mul);
+			if((int)a_times_b.size() <= i + (int)c_mul.size()) a_times_b.resize(i + c_mul.size() + 1);
+			for(auto j = 0; j < (int)c_mul.size(); ++ j) a_times_b[i + 1 + j] += c_mul[j];
 		}
-		return c[i];
+		return a_times_b[i];
 	}
 };
 ]]></content>
