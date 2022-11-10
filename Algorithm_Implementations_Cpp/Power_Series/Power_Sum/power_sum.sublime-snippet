@@ -1,7 +1,7 @@
 <snippet>
 	<content><![CDATA[
-// O(n * log(n) + inverse_in_T())
 // Returns 0^n + ... + (base-1)^n
+// O(n * log(n) + inverse_in_T())
 template<class T>
 T power_sum(T base, int n){
 	assert(n >= 0);
