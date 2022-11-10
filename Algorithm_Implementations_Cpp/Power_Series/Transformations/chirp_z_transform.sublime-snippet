@@ -1,10 +1,10 @@
 <snippet>
 	<content><![CDATA[
 // Returns {p[base^0], p[base^2], ..., p[base^2(n-1)]}
-// O(max(deg(p), n) log max(deg(p), n))
-// Requires polynomial
+// O(max(deg(p), n) * log(max(deg(p), n)))
+// Requires modular
 template<class T>
-vector<T> chirp_z_transform_even(const vector<T> &p, int n, T base){
+vector<T> chirp_z_transform_even(const vector<T> &p, T base, int n){
 	if(p.empty() || all_of(p.begin(), p.end(), [&](auto x){ return !x; })) return vector<T>(n, 0);
 	auto augment_sq = [&](const vector<T> &p, T base)->vector<T>{
 		T cur = base, tot = 1, sqbase = base * base;
@@ -25,19 +25,19 @@ vector<T> chirp_z_transform_even(const vector<T> &p, int n, T base){
 	res.resize(n);
 	return res;
 }
-// returns {p[base^0], p[base^1], ..., p[base^(n-1)]}
-// O(max(deg(p), n) log max(deg(p), n))
-// Requires polynomial
+// Returns {p[base^0], p[base^1], ..., p[base^(n-1)]}
+// O(max(deg(p), n) * log(max(deg(p), n)))
+// Requires modular
 template<class T>
-vector<T> chirp_z_transform(const vector<T> &p, int n, T base){
+vector<T> chirp_z_transform(const vector<T> &p, T base, int n){
 	auto augment = [&](const vector<T> &p, T base)->vector<T>{
 		T tot = 1;
 		auto res = p;
 		for(auto i = 0; i < (int)p.size(); ++ i) res[i] *= tot, tot *= base;
 		return res;
 	};
-	auto even = chirp_z_transform_even(p, n + 1 >> 1, base);
-	auto odd = chirp_z_transform_even(augment(p, base), n >> 1, base);
+	auto even = chirp_z_transform_even(p, base, n + 1 >> 1);
+	auto odd = chirp_z_transform_even(augment(p, base), base, n >> 1);
 	vector<T> res(n);
 	for(auto i = 0; i < n >> 1; ++ i) res[i << 1] = even[i], res[i << 1 | 1] = odd[i];
 	if(n & 1) res.back() = even.back();
