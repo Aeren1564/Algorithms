@@ -18,9 +18,7 @@ T power_sum(T base, int n){
 	for(auto x = n; x >= 2; -- x) invfact[x] = invfact[x + 1] * (x + 1);
 	for(auto x = n + 1; x >= 0; -- x) suff[x] = suff[x + 1] * (base - x);
 	T res = 0;
-	for(auto x = 0; x <= n + 1; ++ x){
-		res += value[x] * pref[x] * suff[x + 1] * invfact[x] * invfact[n + 1 - x] * (n + 1 - x & 1 ? -1 : 1);
-	}
+	for(auto x = 0; x <= n + 1; ++ x) res += value[x] * pref[x] * suff[x + 1] * invfact[x] * invfact[n + 1 - x] * (n + 1 - x & 1 ? -1 : 1);
 	return res;
 }
 ]]></content>
