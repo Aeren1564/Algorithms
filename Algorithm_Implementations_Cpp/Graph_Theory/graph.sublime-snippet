@@ -11,18 +11,18 @@ struct graph{
 	vector<vector<int>> adj;
 	function<bool(int)> ignore;
 	graph(int n = 0): n(n), adj(n){ }
-	graph(const vector<vector<int>> &adj, bool undirected = true): n(n){
+	graph(const vector<vector<int>> &adj, bool undirected = true): n((int)adj.size()), adj(n){
 		if(undirected) for(auto u = 0; u < n; ++ u) for(auto v: adj[u]) if(u < v) link(u, v);
 		else for(auto u = 0; u < n; ++ u) for(auto v: adj[u]) orient(u, v);
 	}
-	graph(const vector<vector<pair<int, T>>> &adj, bool undirected = true): n(n){
+	graph(const vector<vector<pair<int, T>>> &adj, bool undirected = true): n((int)adj.size()), adj(n){
 		if(undirected) for(auto u = 0; u < n; ++ u) for(auto [v, w]: adj[u]) if(u < v) link(u, v, w);
 		else for(auto u = 0; u < n; ++ u) for(auto [v, w]: adj[u]) orient(u, v, w);
 	}
-	graph(int n, vector<array<int, 2>> &edge, bool undirected = true): n(n){
+	graph(int n, vector<array<int, 2>> &edge, bool undirected = true): n(n), adj(n){
 		for(auto [u, v]: edge) undirected ? link(u, v) : orient(u, v);
 	}
-	graph(int n, vector<tuple<int, int, T>> &edge, bool undirected = true): n(n){
+	graph(int n, vector<tuple<int, int, T>> &edge, bool undirected = true): n(n), adj(n){
 		for(auto [u, v, w]: edge) undirected ? link(u, v, w) : orient(u, v, w);
 	}
 	int operator()(int u, int id) const{
