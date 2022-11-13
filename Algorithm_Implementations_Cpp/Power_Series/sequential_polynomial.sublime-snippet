@@ -1,6 +1,7 @@
 <snippet>
 	<content><![CDATA[
 // Returns (x - a) * (x - (a + 1)) * ... * (x - (a + n - 1))
+// O(n * log(n))
 // Requires modular, number_theoric_transform, and taylor_shift
 template<class T, class FFT = ntt>
 vector<T> sequential_polynomial(int n, T a){

@@ -137,6 +137,9 @@ struct dfs_forest{
 	void dfs_all_implicitly(auto get_deg, auto get_adj, F UT = plus<>()){
 		for(auto u = 0; u < n; ++ u) if(!~depth[u]) dfs<F>(get_deg, get_adj, u, false, UT);
 	}
+	bool ancestor_of(int u, int v) const{
+		return pos[u] <= pos[v] && end[v] <= end[u];
+	}
 };
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
