@@ -1,0 +1,80 @@
+<snippet>
+	<content><![CDATA[
+// g must be a tree
+// Given is a graph where extra cycle joining all leaves in dfs order is attached to g.
+// Returns a tree decomposition {bags, edges} where |bag| <= 4 and (# of bags) <= 4n
+// O(n)
+// Requires graph
+template<class T>
+pair<vector<vector<int>>, vector<array<int, 2>>> tree_decomposition_tree_with_cycle_on_leaves(const graph<T> &g){
+	int n = g.n;
+	if(n <= 4){
+		vector<int> bag(n);
+		iota(bag.begin(), bag.end(), 0);
+		return {{bag}, {}};
+	}
+	int root = 0;
+	while(true){
+		int deg = 0;
+		for(auto id: g.adj[root]) deg += !g.ignore || !g.ignore(id);
+		if(deg >= 2) break;
+		++ root;
+	}
+	vector<int> order, pe(n, -1);
+	vector<array<int, 2>> leaf(n, {-1, -1});
+	auto dfs = [&](auto self, int u)->void{
+		order.push_back(u);
+		int deg = 0;
+		for(auto id: g.adj[u]){
+			if(g.ignore && g.ignore(id) || id == pe[u]) continue;
+			int v = g(u, id);
+			pe[v] = id;
+			self(self, v);
+			auto [l, r] = leaf[v];
+			if(!~leaf[u][0]) leaf[u][0] = l;
+			leaf[u][1] = r;
+		}
+		if(!~leaf[u][0]) leaf[u] = {u, u};
+	};
+	dfs(dfs, root);
+	assert((int)order.size() == n);
+	vector<int> index_d(n), child;
+	vector<vector<int>> bag;
+	vector<array<int, 2>> edge;
+	bag.push_back({root, leaf[root][0], leaf[root][1]});
+	for(auto u: order){
+		auto [l, r] = leaf[u];
+		int u_d = index_d[u];
+		child.clear();
+		for(auto id: g.adj[u]){
+			if(g.ignore && g.ignore(id) || id == pe[u]) continue;
+			child.push_back(g(u, id));
+		}
+		if(child.empty()) continue;
+		for(auto i = 0; i < (int)child.size() - 1; ++ i){
+			int v = child[i], w = child[i + 1];
+			array<int, 3> v_d;
+			iota(v_d.begin(), v_d.end(), (int)bag.size());
+			index_d[v] = v_d[1];
+			bag.push_back({u, leaf[v][0], leaf[v][1], leaf[u][1]});
+			bag.push_back({u, v, leaf[v][0], leaf[v][1]});
+			bag.push_back({u, leaf[v][1], leaf[w][0], leaf[u][1]});
+			edge.push_back({u_d, v_d[0]});
+			edge.push_back({v_d[0], v_d[1]});
+			edge.push_back({v_d[0], v_d[2]});
+			u_d = v_d[2];
+		}
+		int v = child.back(), v_d = (int)bag.size();
+		index_d[v] = v_d;
+		bag.push_back({u, v, leaf[v][0], leaf[v][1]});
+		edge.push_back({u_d, v_d});
+	}
+	for(auto &b: bag) b.erase(unique(b.begin(), b.end()), b.end());
+	return {bag, edge};
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>tree_decomposition_tree_with_cycle_on_leaves</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
