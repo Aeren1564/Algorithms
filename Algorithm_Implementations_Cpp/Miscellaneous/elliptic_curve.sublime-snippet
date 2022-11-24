@@ -1,0 +1,90 @@
+<snippet>
+	<content><![CDATA[
+template<class T>
+struct elliptic_curve{
+	static bool setup_flag;
+	// Y^2 = X^3 + aX + b
+	// Assumes that the characteristic of the field T is not 2 or 3.
+	static T a, b;
+	static void setup(T _a, T _b){
+		setup_flag = true;
+		a = _a, b = _b;
+		assert(T{4} * a * a * a + T{27} * b * b != T{0});
+	}
+	static optional<elliptic_curve> make(T x = 0, T y = 1, T z = 0){
+		assert(setup_flag);
+		if((z == T{0} && (x != T{0} || y = T{0})) || x * x * x + z * (-y * y + z * (a * x + z * b)) != T{0}) return {};
+		return elliptic_curve{x, y, z};
+	}
+	T x = 0, y = 1, z = 0;
+	elliptic_curve(){ assert(setup_flag); }
+	private:
+		// use elliptic_curve<T>::make instead to construct a point
+		elliptic_curve(T x, T y, T z): x(x), y(y), z(z){ }
+	public:
+	friend ostream &operator<<(ostream &out, const elliptic_curve &p){
+		return out << "{" << p.x << ", " << p.y << ", " << p.z << "}";
+	}
+	bool operator==(const elliptic_curve &p) const{
+		return x * p.z == p.x * z && y * p.z == p.y * z;
+	}
+	// source: https://www.nayuki.io/pageelliptic-curve-point-addition-in-projective-coordinates
+	elliptic_curve &operator+=(const elliptic_curve &p){
+		if(x * p.z == p.x * z){
+			if(y * p.z + p.y * z == T{0}){
+				return *this = elliptic_curve{};
+			}
+			T t = T{3} * x * x + a * z * z, u = T{2} * y * z;
+			T v = T{2} * u * x * y, w = t * t - T{2} * v;
+			return *this = {u * w, t * (v - w) - 2 * u * u * y * y, u * u * u};
+		}
+		else{
+			T t0 = y * p.z, t1 = p.y * z, t = t0 - t1;
+			T u0 = x * p.z, u1 = p.x * z, u = u0 - u1;
+			T u2 = u * u, v = z * p.z, w = t * t * v - u2 * (u0 + u1), u3 = u * u2;
+			return *this = {u * w, t * (u0 * u2 - w) - t0 * u3, u3 * v};
+		}
+	}
+	elliptic_curve &operator-=(const elliptic_curve &p){
+		return *this += -p;
+	}
+	template<class U> elliptic_curve &operator*=(U e){
+		if(e < 0){
+			*this = -*this;
+			e = -e;
+		}
+		elliptic_curve res{};
+		for(; e; e >>= 1, *this += *this) if(e & 1) res += *this;
+		return *this = res;
+	}
+	bool operator!=(const elliptic_curve &p) const{
+		return !(*this == p);
+	}
+	elliptic_curve operator+(const elliptic_curve &p) const{
+		return elliptic_curve(*this) += p;
+	}
+	elliptic_curve operator+() const{
+		return *this;
+	}
+	elliptic_curve operator-(const elliptic_curve &p) const{
+		return elliptic_curve(*this) -= p;
+	}
+	elliptic_curve operator-() const{
+		return {x, -y, z};
+	}
+	template<class U> elliptic_curve operator*(U e) const{
+		return elliptic_curve(*this) *= e;
+	}
+	template<class U> friend elliptic_curve operator*(U e, const elliptic_curve &p){
+		return elliptic_curve(p) *= e;
+	}
+};
+template<class T> bool elliptic_curve<T>::setup_flag = false;
+template<class T> T elliptic_curve<T>::a;
+template<class T> T elliptic_curve<T>::b;
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>elliptic_curve</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
