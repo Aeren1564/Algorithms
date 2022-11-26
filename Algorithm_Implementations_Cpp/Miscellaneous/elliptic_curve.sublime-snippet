@@ -39,19 +39,25 @@ public:
 	bool operator==(const elliptic_curve &p) const{
 		return x * p.z == p.x * z && y * p.z == p.y * z;
 	}
+	elliptic_curve &double_up(){
+		T t = T{3} * x * x + a * z * z, u = T{2} * y * z;
+		T v = T{2} * u * x * y, w = t * t - T{2} * v;
+		return *this = {u * w, t * (v - w) - 2 * u * u * y * y, u * u * u};
+	}
+	elliptic_curve doubled_up() const{
+		return elliptic_curve(*this).double_up();
+	}
 	// source: https://www.nayuki.io/page/elliptic-curve-point-addition-in-projective-coordinates
 	elliptic_curve &operator+=(const elliptic_curve &p){
 		if(!p) return *this;
-		else if(!*this) return *this = p;
-		else if(x * p.z == p.x * z){
-			if(y * p.z + p.y * z == T{0}) return *this = {};
-			T t = T{3} * x * x + a * z * z, u = T{2} * y * z;
-			T v = T{2} * u * x * y, w = t * t - T{2} * v;
-			return *this = {u * w, t * (v - w) - 2 * u * u * y * y, u * u * u};
+		if(!*this) return *this = p;
+		T u0 = x * p.z, u1 = p.x * z, t0 = y * p.z, t1 = p.y * z;
+		if(u0 == u1){
+			if(t0 + t1 == T{0}) return *this = {};
+			return double_up();
 		}
 		else{
-			T t0 = y * p.z, t1 = p.y * z, t = t0 - t1;
-			T u0 = x * p.z, u1 = p.x * z, u = u0 - u1;
+			T t = t0 - t1, u = u0 - u1;
 			T u2 = u * u, v = z * p.z, w = t * t * v - u2 * (u0 + u1), u3 = u * u2;
 			return *this = {u * w, t * (u0 * u2 - w) - t0 * u3, u3 * v};
 		}
@@ -65,7 +71,7 @@ public:
 			e = -e;
 		}
 		elliptic_curve res{};
-		for(; e; e >>= 1, *this += *this) if(e & 1) res += *this;
+		for(; e; e >>= 1, this->double_up()) if(e & 1) res += *this;
 		return *this = res;
 	}
 	bool operator!=(const elliptic_curve &p) const{
