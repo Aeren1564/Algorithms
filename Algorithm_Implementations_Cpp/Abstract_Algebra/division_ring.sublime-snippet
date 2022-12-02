@@ -1,14 +1,11 @@
 <snippet>
 	<content><![CDATA[
+// Implicitly assumes that
+// 1. ring(0) is the additive identity and
+// 2. ring(1) is the multiplicative identity.
 template<class T>
 struct division_ring{
 	// Modify begin
-	static division_ring additive_identity(){
-		return 0;
-	}
-	static division_ring multiplicative_identity(){
-		return 1;
-	}
 	T data;
 	bool operator==(const division_ring &x) const{
 		return data == x.data;
@@ -47,7 +44,7 @@ struct division_ring{
 		return division_ring(*this) -= x;
 	}
 	division_ring operator-() const{
-		return division_ring::additive_identity() - *this;
+		return division_ring(0) - *this;
 	}
 	division_ring operator*(const division_ring &x) const{
 		return division_ring(*this) *= x;
@@ -56,19 +53,19 @@ struct division_ring{
 		return division_ring(*this) /= x;
 	}
 	division_ring &operator++(){
-		return *this += division_ring::multiplicative_identity();
+		return *this += division_ring(1);
 	}
 	division_ring operator++(int){
 		auto res = *this;
-		*this += division_ring::multiplicative_identity();
+		*this += division_ring(1);
 		return res;
 	}
 	division_ring &operator--(){
-		return *this -= division_ring::multiplicative_identity();
+		return *this -= division_ring(1);
 	}
 	division_ring operator--(int){
 		auto res = *this;
-		*this -= division_ring::multiplicative_identity();
+		*this -= division_ring(1);
 		return res;
 	}
 };

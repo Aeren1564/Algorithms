@@ -1,14 +1,11 @@
 <snippet>
 	<content><![CDATA[
+// Implicitly assumes that
+// 1. ring(0) is the additive identity and
+// 2. ring(1) is the multiplicative identity.
 template<class T>
 struct ring{
 	// Modify begin
-	static ring additive_identity(){
-		return 0;
-	}
-	static ring multiplicative_identity(){
-		return 1;
-	}
 	T data;
 	bool operator==(const ring &x) const{
 		return data == x.data;
@@ -42,25 +39,25 @@ struct ring{
 		return ring(*this) -= x;
 	}
 	ring operator-() const{
-		return ring::additive_identity() - *this;
+		return ring(0) - *this;
 	}
 	ring operator*(const ring &x) const{
 		return ring(*this) *= x;
 	}
 	ring &operator++(){
-		return *this += ring::multiplicative_identity();
+		return *this += ring(1);
 	}
 	ring operator++(int){
 		auto res = *this;
-		*this += ring::multiplicative_identity();
+		*this += ring(1);
 		return res;
 	}
 	ring &operator--(){
-		return *this -= ring::multiplicative_identity();
+		return *this -= ring(1);
 	}
 	ring operator--(int){
 		auto res = *this;
-		*this -= ring::multiplicative_identity();
+		*this -= ring(1);
 		return res;
 	}
 };

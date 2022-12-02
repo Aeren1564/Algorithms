@@ -1,0 +1,45 @@
+<snippet>
+	<content><![CDATA[
+// Implicitly assumes that monoid() returns the additive identity.
+template<class T>
+struct monoid{
+	// Modify begin
+	T data = 0;
+	bool operator==(const monoid &x) const{
+		return data == x.data;
+	}
+	monoid &operator+=(const monoid &x){
+		data += x.data;
+		return *this;
+	}
+	template<class U>
+	monoid &operator*=(U e){
+		assert(e >= 0);
+		monoid res{};
+		for(; e; e >>= 1, *this = *this * *this) if(e & 1) res += *this;
+		return *this = res;
+	}
+	friend ostream &operator<<(ostream &out, const monoid &x){
+		return out << x.data;
+	}
+	// Modify end
+	bool operator!=(const monoid &x) const{
+		return !(*this == x);
+	}
+	monoid operator+(const monoid &x) const{
+		return monoid(*this) += x;
+	}
+	monoid operator+() const{
+		return *this;
+	}
+	template<class U>
+	monoid operator*(U e) const{
+		return monoid(*this) *= e;
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>monoid</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
