@@ -40,6 +40,7 @@ public:
 		return x * p.z == p.x * z && y * p.z == p.y * z;
 	}
 	elliptic_curve &double_up(){
+		if(!*this) return *this;
 		T t = T{3} * x * x + a * z * z, u = T{2} * y * z;
 		T v = T{2} * u * x * y, w = t * t - T{2} * v;
 		return *this = {u * w, t * (v - w) - 2 * u * u * y * y, u * u * u};
@@ -105,6 +106,8 @@ public:
 template<class T> bool elliptic_curve<T>::setup_flag = false;
 template<class T> T elliptic_curve<T>::a;
 template<class T> T elliptic_curve<T>::b;
+
+using EC = elliptic_curve<modular>;
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
 	<tabTrigger>elliptic_curve</tabTrigger> -->

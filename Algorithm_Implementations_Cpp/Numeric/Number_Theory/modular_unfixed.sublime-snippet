@@ -10,9 +10,9 @@ struct modular_unfixed_base{
 	static void precalc_barrett(){
 		_inverse_mod = (unsigned long long)-1 / _mod + 1;
 	}
-	template<class istream = decltype(cin)>
-	static void setup(istream &in = cin){
-		in >> _mod;
+	static void setup(unsigned int mod = 0){
+		if(!mod) cin >> mod;
+		_mod = mod;
 		assert(_mod >= 1);
 		precalc_barrett();
 	}
