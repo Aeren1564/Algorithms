@@ -1,0 +1,56 @@
+<snippet>
+	<content><![CDATA[
+// Requires disjoint_set
+template<class T>
+struct potential_tracker{
+	disjoint_set<true> dsu;
+	bool globally_valid;
+	vector<int> valid;
+	vector<T> potential;
+	vector<list<int>> has;
+	potential_tracker(int n): dsu(n), potential(n), globally_valid(true), valid(n, true), has(n){
+		for(auto u = 0; u < n; ++ u) has[u].push_back(u);
+	}
+	void add_variable(){
+		dsu.make_set();
+		valid.push_back(true);
+		potential.push_back({});
+		has.push_back({(int)has.size()});
+	}
+	// Declare that value[v] - value[u] = delta
+	void set_difference(int u, int v, T delta){
+		assert(0 <= min(u, v) && max(u, v) < (int)valid.size());
+		if(!dsu.merge(u, v, [&](int x, int y, bool swapped){
+			if(!valid[x] || !valid[y]){
+				valid[x] = false;
+				has[x].splice(has[x].end(), has[y]);
+				return;
+			}
+			delta = swapped ? potential[v] - delta - potential[u] : potential[u] + delta - potential[v];
+			for(auto z: has[y]) potential[z] += delta;
+			has[x].splice(has[x].end(), has[y]);
+		}) && potential[u] + delta != potential[v]) globally_valid = valid[dsu.root(u)] = false;
+	}
+	// u and v is related iff a path
+	bool related(int u, int v){
+		assert(0 <= min(u, v) && max(u, v) < (int)valid.size());
+		return dsu.share(u, v);
+	}
+	// If u = -1, returns whether a valid assignment to all variables exists.
+	// Else, returns whether a valid assignment to all variables related to u exists.
+	bool is_valid(int u = -1){
+		assert(-1 <= u && u < (int)valid.size());
+		return ~u ? valid[dsu.root(u)] : globally_valid;
+	}
+	// Assume that u and v are related.
+	optional<T> dist(int u, int v){
+		assert(0 <= min(u, v) && max(u, v) < (int)valid.size() && dsu.share(u, v));
+		return valid[dsu.root(u)] ? potential[v] - potential[u] : optional<T>();
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>potential_tracker</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
