@@ -2,15 +2,21 @@
 	<content><![CDATA[
 template<class T>
 struct combinatorics{
+	// O(n)
+	static vector<T> precalc_fact(int n){
+		vector<T> f(n + 1, 1);
+		for(auto i = 1; i <= n; ++ i) f[i] = f[i - 1] * i;
+		return f;
+	}
+	// O(n * m)
+	static vector<vector<T>> precalc_C(int n, int m){
+		vector<vector<T>> c(n + 1, vector<T>(m + 1));
+		for(auto i = 0; i <= n; ++ i) for(auto j = 0; j <= min(i, m); ++ j) c[i][j] = i && j ? c[i - 1][j - 1] + c[i - 1][j] : T(1);
+		return c;
+	}
 	int SZ = 0;
 	vector<T> inv, fact, invfact;
 	combinatorics(){ }
-	// O(n * m)
-	vector<vector<T>> precalc_C(int n, int m) const{
-		vector<vector<T>> c(n + 1, vector<T>(m + 1));
-		for(auto i = 0; i <= n; ++ i) for(auto j = 0; j <= min(i, m); ++ j) c[i][j] = i && j ? c[i - 1][j - 1] + c[i - 1][j] : 1;
-		return c;
-	}
 	// O(SZ)
 	combinatorics(int SZ): SZ(SZ), inv(SZ + 1, 1), fact(SZ + 1, 1), invfact(SZ + 1, 1){
 		for(auto i = 1; i <= SZ; ++ i) fact[i] = fact[i - 1] * i;
