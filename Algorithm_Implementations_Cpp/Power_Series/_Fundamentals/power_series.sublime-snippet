@@ -196,15 +196,6 @@ struct power_series_base: vector<T>{
 	power_series_base inverse(int n) const{
 		assert(!data.empty() && data[0]);
 		auto inv = 1 / data[0];
-		if(data.size() <= 100){
-			power_series_base res(n);
-			for(auto i = 0; i < n; ++ i){
-				T s = 0;
-				for(auto j = max(0, i - (int)data.size() + 1); j < i; ++ j) s -= res[j] * data[i - j];
-				res[i] = (!i + s) * inv;
-			}
-			return res;
-		}
 		power_series_base res{inv};
 		for(auto s = 1; s < n; s <<= 1) inverse_doubled_up(res);
 		res.resize(n);
