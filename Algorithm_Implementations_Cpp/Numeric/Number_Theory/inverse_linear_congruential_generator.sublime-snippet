@@ -1,0 +1,21 @@
+<snippet>
+	<content><![CDATA[
+// Returns the minimum n >= 0 with s_n = obj where s_0 = s and s_{i+1} = s_i * a + b
+// O(sqrt(mod) + log(max(s, a, b)))
+// T must be of modular type
+// Requires modular and mod_log
+template<class T>
+optional<int> inverse_linear_congruential_generator(T s, T a, T b, T obj){
+	if(s == obj) return 0;
+	if(a == 1) return b ? (obj - s) / b : optional<int>{};
+	T c = b / (a - 1);
+	if(s + c == 0) return optional<int>{};
+	if(auto resptr = mod_log<T>(a, (obj + c) / (s + c))) return *resptr;
+	return {};
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>inverse_linear_congruential_generator</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
