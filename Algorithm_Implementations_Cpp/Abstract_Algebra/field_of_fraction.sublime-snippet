@@ -15,11 +15,32 @@ struct field_of_fraction{
 	field_of_fraction &operator+=(const field_of_fraction &x){
 		return *this = {n * x.d + x.n * d, d * x.d};
 	}
+	field_of_fraction &operator+=(const T &x){
+		return *this = {n + d * x, d};
+	}
 	field_of_fraction &operator-=(const field_of_fraction &x){
 		return *this = {n * x.d - x.n * d, d * x.d};
 	}
+	field_of_fraction &operator-=(const T &x){
+		return *this = {n - d * x, d};
+	}
 	field_of_fraction &operator*=(const field_of_fraction &x){
 		return *this = {n * x.n, d * x.d};
+	}
+	field_of_fraction &operator*=(const T &x){
+		return *this = {n * x, d};
+	}
+	field_of_fraction &operator/=(const field_of_fraction &x){
+		assert(x.n != T(0));
+		*this = {n * x.d, d * x.n};
+		if(d < 0) n = -n, d = -d;
+		return *this;
+	}
+	field_of_fraction &operator/=(const T &x){
+		assert(x != T(0));
+		*this = {n, d * x};
+		if(d < 0) n = -n, d = -d;
+		return *this;
 	}
 	friend ostream &operator<<(ostream &out, const field_of_fraction &x){
 		return out << x.n << "/" << x.d;
@@ -27,17 +48,44 @@ struct field_of_fraction{
 	field_of_fraction operator+(const field_of_fraction &x) const{
 		return field_of_fraction(*this) += x;
 	}
+	field_of_fraction operator+(const T &x) const{
+		return field_of_fraction(*this) += x;
+	}
+	friend field_of_fraction operator+(const T &x, const field_of_fraction &f){
+		return field_of_fraction(f) += x;
+	}
 	field_of_fraction operator+() const{
 		return *this;
 	}
 	field_of_fraction operator-(const field_of_fraction &x) const{
 		return field_of_fraction(*this) -= x;
 	}
+	field_of_fraction operator-(const T &x) const{
+		return field_of_fraction(*this) -= x;
+	}
+	friend field_of_fraction operator-(const T &x, const field_of_fraction &f){
+		return field_of_fraction(f) -= x;
+	}
 	field_of_fraction operator-() const{
 		return {-n, d};
 	}
 	field_of_fraction operator*(const field_of_fraction &x) const{
 		return field_of_fraction(*this) *= x;
+	}
+	field_of_fraction operator*(const T &x) const{
+		return field_of_fraction(*this) *= x;
+	}
+	friend field_of_fraction operator*(const T &x, const field_of_fraction &f){
+		return field_of_fraction(f) *= x;
+	}
+	field_of_fraction operator/(const field_of_fraction &x) const{
+		return field_of_fraction(*this) /= x;
+	}
+	field_of_fraction operator/(const T &x) const{
+		return field_of_fraction(*this) /= x;
+	}
+	friend field_of_fraction operator/(const T &x, const field_of_fraction &f){
+		return field_of_fraction(f) /= x;
 	}
 	field_of_fraction &operator++(){
 		n += d;
@@ -62,6 +110,19 @@ bool operator c(const field_of_fraction &x) const{\
 	return n * x.d c x.n * d;\
 }
 OP(==) OP(!=) OP(<) OP(<=) OP(>) OP(>=)
+#undef OP
+#define OP(c)\
+bool operator c(const T &x) const{\
+	return n c d * x;\
+}
+OP(==) OP(!=) OP(<) OP(<=) OP(>) OP(>=)
+#undef OP
+#define OP(c)\
+friend bool operator c(const T &x, const field_of_fraction &f){\
+	return f.d * x c f.n;\
+}
+OP(==) OP(!=) OP(<) OP(<=) OP(>) OP(>=)
+#undef OP
 };
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->

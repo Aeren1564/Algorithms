@@ -1,11 +1,13 @@
 <snippet>
 	<content><![CDATA[
 template<class T, bool GET_MAX = false>
-vector<T> monotone_queue_dp(int n, const vector<T> &init, auto cost){
-	assert((int)init.size() == n + 1);
+pair<vector<T>, vector<int>> monotone_queue_optimization(const vector<T> &init, auto cost){
+	assert(!init.empty());
+	int n = (int)init.size();
 	vector<T> dp = init;
+	vector<int> prev(n, -1);
 	auto cross = [&](int i, int j){
-		int l = j, r = n + 1;
+		int l = j, r = n;
 		while(r - l > 1){
 			int mid = l + r >> 1;
 			if constexpr(GET_MAX) dp[i] + cost(i, mid) >= dp[j] + cost(j, mid) ? l = mid : r = mid;
@@ -14,18 +16,29 @@ vector<T> monotone_queue_dp(int n, const vector<T> &init, auto cost){
 		return l;
 	};
 	deque<int> q{0};
-	for(auto i = 1; i <= n; ++ i){
-		while(q.size() > 1 && compare(dp[q[0]] + cost(q[0], i), dp[q[1]] + cost(q[1], i))) q.pop_front();
-		if constexpr(GET_MAX) dp[i] = max(dp[i], dp[q.front()] + cost(q.front(), i));
-		else dp[i] = min(dp[i], dp[q.front()] + cost(q.front(), i));
+	for(auto i = 1; i < n; ++ i){
+		while(q.size() > 1 && dp[q[0]] + cost(q[0], i) > dp[q[1]] + cost(q[1], i)) q.pop_front();
+		auto x = cost(q.front(), i);
+		if constexpr(GET_MAX){
+			if(dp[i] < dp[q.front()] + x){
+				dp[i] = dp[q.front()] + x;
+				prev[i] = q.front();
+			}
+		}
+		else{
+			if(dp[i] > dp[q.front()] + x){
+				dp[i] = dp[q.front()] + x;
+				prev[i] = q.front();
+			}
+		}
 		while(int(q.size()) > 1 && cross(*next(q.rbegin()), *q.rbegin()) >= cross(*q.rbegin(), i)) q.pop_back();
 		q.push_back(i);
 	}
-	return dp;
+	return {dp, prev};
 }
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
-	<tabTrigger>monotone_queue_dp</tabTrigger> -->
+	<tabTrigger>monotone_queue_optimization</tabTrigger> -->
 	<!-- Optional: Set a scope to limit where the snippet will trigger -->
 	<scope>source.c++</scope> -->
 </snippet>
