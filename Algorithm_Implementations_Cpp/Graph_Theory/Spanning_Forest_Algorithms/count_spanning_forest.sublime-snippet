@@ -1,0 +1,48 @@
+<snippet>
+	<content><![CDATA[
+template<class T, class U>
+T count_spanning_forest(const graph<U> &g){
+	int n = g.n;
+	vector<int> vis(n);
+	T res = 1;
+	for(auto u = 0; u < n; ++ u){
+		if(vis[u]) continue;
+		vector<int> comp;
+		auto dfs = [&](auto self, int u)->void{
+			vis[u] = true;
+			comp.push_back(u);
+			for(auto id: g.adj[u]){
+				if(g.ignore && g.ignore(id)) continue;
+				int v = g(u, id);
+				if(!vis[v]) self(self, v);
+			}
+		};
+		dfs(dfs, u);
+		sort(comp.begin(), comp.end());
+		vector<vector<T>> mat((int)comp.size() - 1, vector<T>((int)comp.size() - 1));
+		for(auto i = 0; i < (int)comp.size(); ++ i){
+			int u = comp[i];
+			for(auto id: g.adj[u]){
+				if(g.ignore && g.ignore(id)) continue;
+				int v = g(u, id);
+				if(u < v){
+					int j = lower_bound(comp.begin(), comp.end(), v) - comp.begin();
+					++ mat[i][i];
+					if(j < (int)comp.size() - 1){
+						++ mat[j][j];
+						mat[i][j] -= g.edge[id].cost;
+						mat[j][i] -= g.edge[id].cost;
+					}
+				}
+			}
+		}
+		res *= determinant_integral(mat);
+	}
+	return res;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>count_spanning_forest</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
