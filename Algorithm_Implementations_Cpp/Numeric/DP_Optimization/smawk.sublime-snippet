@@ -1,14 +1,32 @@
 <snippet>
 	<content><![CDATA[
 // http://web.cs.unlv.edu/larmore/Courses/CSC477/monge.pdf
-// Find the row minima in O(n + m)
-// The matrix has to be monotonic (for all i<j and k<l, a[j][k] = a[j][l] -> a[i][k] <= a[i][l] and a[j][k] < a[j][l] -> a[i][k] < a[i][l])
+// The matrix has to be monotonic:
+//	For all i<j and k<l,
+//   f[j][k] = f[j][l] -> f[i][k] <= f[i][l] and
+//   f[j][k] < f[j][l] -> f[i][k] < f[i][l]
+//  where all comparisons are done by cmp
+// O(n + m)
 // Returns the indices of minimum column for each row
-template<class M, class T, class Compare = less<>>
-vector<int> smawk(M matrix, int n, int m, Compare comp = less<>()){
+template<class T, bool GET_MAX = false, class Compare = less<>>
+vector<int> smawk(int n, int m, auto _f, Compare cmp = less<>()){
 	if(!n) return {};
+	auto f = [&](int i, int j){ return GET_MAX ? -_f(i, m - 1 - j) : _f(i, j); };
+	if(n >= 2 && m >= 2){
+		#ifdef LOCAL
+		// Verify monotonosity
+		mt19937 rng(1564);
+		for(auto rep = 3; rep; -- rep){
+			int i1 = rng() % (n - 1), i2 = rng() % (n - i1 - 1) + i1 + 1;
+			int j1 = rng() % (m - 1), j2 = rng() % (n - j1 - 1) + j1 + 1;
+			T a = f(i1, j1), b = f(i1, j2), c = f(i2, j1), d = f(i2, j2);
+			if(cmp(c, d)) assert(cmp(a, b));
+			else if(!cmp(d, c)) assert(!cmp(b, a));
+		}
+		#endif
+	}
 	auto solve = [&](auto self, const vector<int> &row, const vector<int> &col)->vector<int>{
-		if((int)row.size() == 1) return vector<int>{*min_element(col.begin(), col.end(), [&](int j, int k){ return comp(matrix(row[0], j), matrix(row[0], k)); })};
+		if((int)row.size() == 1) return vector<int>{*min_element(col.begin(), col.end(), [&](int j, int k){ return cmp(f(row[0], j), f(row[0], k)); })};
 		if(row.size() < col.size()){ // Reduce
 			vector<array<int, 2>> s; // its head(position in row arrow), active column
 			for(auto j: col){
@@ -18,7 +36,7 @@ vector<int> smawk(M matrix, int n, int m, Compare comp = less<>()){
 						break;
 					}
 					auto [i, last] = s.back();
-					if(!comp(matrix(row[i], last), matrix(row[i], j))) s.pop_back();
+					if(!cmp(f(row[i], last), f(row[i], j))) s.pop_back();
 					else{
 						++ i;
 						if(i < (int)row.size()) s.push_back({i, j});
@@ -39,7 +57,7 @@ vector<int> smawk(M matrix, int n, int m, Compare comp = less<>()){
 					int last = i < (int)row.size() - 1 ? reduced_res[i >> 1] : col.back(), mincol = col[it];
 					while(col[it] < last){
 						++ it;
-						if(comp(matrix(row[i], col[it]), matrix(row[i], mincol))) mincol = col[it];
+						if(cmp(f(row[i], col[it]), f(row[i], mincol))) mincol = col[it];
 					}
 					res[i] = mincol;
 				}
@@ -50,7 +68,9 @@ vector<int> smawk(M matrix, int n, int m, Compare comp = less<>()){
 	};
 	vector<int> row(n), col(m);
 	iota(row.begin(), row.end(), 0), iota(col.begin(), col.end(), 0);
-	return solve(solve, row, col);
+	auto res = solve(solve, row, col);
+	if(GET_MAX) for(auto &j: res) j = m - 1 - j;
+	return res;
 }
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
