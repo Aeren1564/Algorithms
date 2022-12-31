@@ -2,7 +2,7 @@
 	<content><![CDATA[
 struct number_theory{
 	int SZ;
-	vector<int> lpf, prime; // least prime factor, primes, mobius function, totient function, number of multiples
+	vector<int> lpf, prime;
 	number_theory(int SZ): SZ(SZ), lpf(SZ + 1){ // O(SZ)
 		lpf[0] = lpf[1] = numeric_limits<int>::max() / 2;
 		for(auto i = 2; i <= SZ; ++ i){
@@ -25,6 +25,13 @@ struct number_theory{
 			else phi[i] = phi[i / lpf[i]] * lpf[i];
 		}
 		return phi;
+	}
+	// Returns {gcd(0, n), ..., gcd(SZ, n)}
+	vector<int> precalc_gcd(int n) const{
+		vector<int> res(SZ + 1, 1);
+		res[0] = n;
+		for(auto x = 2; x <= SZ; ++ x) res[x] = n % (lpf[x] * res[x / lpf[x]]) ? res[x / lpf[x]] : lpf[x] * res[x / lpf[x]];
+		return res;
 	}
 	bool is_prime(int x) const{
 		assert(0 <= x && x <= SZ);
@@ -49,9 +56,9 @@ struct number_theory{
 		return res;
 	}
 	// returns an array is_prime of length high-low where is_prime[i] = [low+i is a prime]
-	vector<bool> sieve(long long low, long long high) const{
+	vector<int> sieve(long long low, long long high) const{
 		assert(high - 1 <= 1LL * SZ * SZ);
-		vector<bool> is_prime(high - low, true);
+		vector<int> is_prime(high - low, true);
 		for(auto p: prime) for(auto x = max(1LL * p, (low + p - 1) / p) * p; x < high; x += p) is_prime[x - low] = false;
 		for(auto x = 1; x >= low; -- x) is_prime[x - low] = false;
 		return is_prime;

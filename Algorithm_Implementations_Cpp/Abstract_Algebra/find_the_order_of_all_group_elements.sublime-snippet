@@ -1,0 +1,48 @@
+<snippet>
+	<content><![CDATA[
+// Source: "Linear time algorithms for Abelian group isomorphism and related problems" by T. Kavitha
+// op: {0, ..., n-1}^2 -> {0, ..., n-1} must define a group
+// Less than 2n op() calls
+vector<int> find_the_order_of_all_group_elements(int n, auto op){
+	assert(1 <= n);
+	vector<int> d{1}, map_to_d(n + 1), prime, lpf(n + 1), g(n + 1, 1), square(n), order(n), path;
+	for(auto x = 2; x <= n; ++ x){
+		if(n % x == 0){
+			map_to_d[x] = (int)d.size();
+			d.push_back(x);
+		}
+		if(!lpf[x]){
+			prime.push_back(x);
+			lpf[x] = x;
+		}
+		for(auto i = 0; i < (int)prime.size() && prime[i] <= lpf[x] && prime[i] * x <= n; ++ i) lpf[prime[i] * x] = prime[i];
+	}
+	vector<vector<int>> l((int)d.size(), vector<int>((int)d.size()));
+	for(auto i = 0; i < (int)d.size(); ++ i) for(auto j = i; j < (int)d.size(); ++ j) l[i][j] = l[j][i] = lcm(d[i], d[j]);
+	for(auto x = 0; x < n; ++ x) if(x == (square[x] = op(x, x))) order[x] = 1;
+	for(auto x = 0; x < n; ++ x){
+		if(order[x]) continue;
+		int p1 = x, p2 = square[x], e = 2;
+		path.clear();
+		while((!order[p1] || !order[p2]) && order[p2] != 1){
+			path.push_back(p2);
+			p1 = p2;
+			p2 = op(p2, x);
+			++ e;
+		}
+		if(!order[p1] && !order[p2]) order[x] = l[map_to_d[order[p1]]][map_to_d[order[p2]]], -- e;
+		else order[x] = e;
+		for(auto i = 2; i < e; ++ i){
+			auto p = lpf[i];
+			g[i] = order[x] % (p * g[i / p]) ? g[i / p] : p * g[i / p];
+			order[path[i - 2]] = order[x] / g[i];
+		}
+	}
+	return order;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>find_the_order_of_all_group_elements</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

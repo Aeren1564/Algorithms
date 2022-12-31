@@ -1,0 +1,79 @@
+<snippet>
+	<content><![CDATA[
+// Source: "Linear and sublinear time algorithms for the basis of abelian groups" by Li Chen and Bin Fu
+// op: {0, ..., n-1}^2 -> {0, ..., n-1} must define a commutative group.
+// Returns {list of {prime p dividing n, a basis for the Sylow p-group}, the array of element orders}
+// Less than 4n + log(n)^2 op() calls.
+// Requires find_the_order_of_all_group_elements
+pair<vector<pair<int, vector<int>>>, vector<int>> find_a_commutative_group_basis(int n, auto op){
+	assert(1 <= n);
+	auto order = find_the_order_of_all_group_elements(n, op);
+	int id = find(order.begin(), order.end(), 1) - order.begin();
+	vector<vector<int>> has(n + 1);
+	for(auto x = 0; x < n; ++ x) has[order[x]].push_back(x);
+	// x^p, x^order(x)/p, log_p(order(x))
+	vector<int> lift(n, -1), root(n, -1), log(n, -1), path;
+	vector<pair<int, vector<int>>> res;
+	vector<vector<int>> inv_root(n);
+	vector<list<int>::iterator> pos(n);
+	for(auto m = n, p = 2; p <= m; ++ p){
+		if(m % p) continue;
+		list<int> psubgroup;
+		int exp = 1;
+		for(auto power = p; m % p == 0; m /= p, power *= p, ++ exp) psubgroup.insert(psubgroup.end(), has[power].begin(), has[power].end());
+		for(auto it = psubgroup.begin(); it != psubgroup.end(); ++ it) pos[*it] = it;
+		lift[id] = id;
+		for(auto x: psubgroup){
+			if(~lift[x]) continue;
+			lift[x] = id;
+			for(auto base = x, e = p; e; base = op(base, base), e >>= 1) if(e & 1) lift[x] = op(lift[x], base);
+			auto power = lift[x];
+			for(auto y = op(x, x); y != id; y = op(y, x)){
+				power = op(power, lift[x]);
+				lift[y] = power;
+			}
+		}
+		root[id] = id;
+		log[id] = 0;
+		for(auto x: psubgroup){
+			if(~log[x]) continue;
+			path.clear();
+			for(auto y = x; ; y = lift[y]){
+				path.push_back(y);
+				if(~log[y]) break;
+			}
+			for(auto i = (int)path.size() - 2; i >= 0; -- i){
+				root[path[i]] = path[i + 1] == id ? path[i] : root[path[i + 1]];
+				log[path[i]] = log[path[i + 1]] + 1;
+			}
+		}
+		inv_root[id].clear();
+		for(auto x: psubgroup) inv_root[root[x]].push_back(x);
+		vector<int> span, basis;
+		for(auto sum = 0; sum != exp; ){
+			assert(!psubgroup.empty());
+			int x = psubgroup.back();
+			psubgroup.pop_back();
+			basis.push_back(x);
+			sum += log[x];
+			int size = (int)span.size();
+			for(auto y = root[x]; y != id; y = op(y, root[x])){
+				psubgroup.erase(pos[y]);
+				span.push_back(y);
+				for(auto i = 0; i < size; ++ i){
+					int z = op(y, span[i]);
+					psubgroup.erase(pos[z]);
+					span.push_back(z);
+				}
+			}
+		}
+		res.push_back({p, basis});
+	}
+	return {res, order};
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>find_a_commutative_group_basis</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

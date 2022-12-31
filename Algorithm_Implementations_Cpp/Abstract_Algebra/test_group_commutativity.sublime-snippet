@@ -1,0 +1,27 @@
+<snippet>
+	<content><![CDATA[
+// Source: "Linear time algorithms for Abelian group isomorphism and related problems" by T. Kavitha
+// op: {0, ..., n-1}^2 -> {0, ..., n-1} must define a group.
+// Less than 3n + log(n)^2 op() calls.
+bool test_group_commutativity(int n, auto op){
+	assert(1 <= n);
+	vector<int> square(n), g, in_s(n), s;
+	for(auto x = 0; x < n; ++ x) if(x == (square[x] = op(x, x))) s.push_back(x), in_s[x] = true;
+	for(auto x = 0; x < n; ++ x){
+		if(in_s[x]) continue;
+		for(auto y: g) if(op(x, y) != op(y, x)) return false;
+		g.push_back(x);
+		int size = (int)s.size();
+		for(auto y = x, z = square[x]; ; y = z, z = op(y, x)){
+			for(auto i = 0; i < size; ++ i) s.push_back(op(y, s[i])), in_s[s.back()] = true;
+			if(in_s[z]) break;
+		}
+	}
+	return true;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>test_group_commutativity</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
