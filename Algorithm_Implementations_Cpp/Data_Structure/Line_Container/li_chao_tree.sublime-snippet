@@ -1,43 +1,72 @@
 <snippet>
 	<content><![CDATA[
-struct line_type{
-	long long d, k;
-	line_type(long long d = 0, long long k = numeric_limits<long long>::min() / 2): d(d), k(k){ }
-	long long eval(long long x){ return d * x + k; }
-	bool majorize(line_type X, long long L, long long R){ return eval(L) >= X.eval(L) && eval(R) >= X.eval(R); }
-};
-template<bool GET_MAX = true>
-struct lichao{
-	lichao *l = 0, *r = 0;
-	line_type S;
-	lichao(): S(line_type()){ }
-	~lichao(){
-		delete l;
-		delete r;
+// Data structure maintaining functions [l,r]->X such that
+// any two functions f and g has a point p \in F satisfying
+// either
+// (f(x) <= g(x) for all x<=p and f(y) >= g(y) for all p<=y) or
+// (f(x) >= g(x) for all x<=p and f(y) <= g(y) for all p<=y).
+template<class T, class X, class F, class Compare = less<>>
+struct li_chao_tree{
+	vector<array<int, 2>> child{{-1, -1}};
+	vector<int> data{-1}; // -1 is the auxiliary function which is equal or smaller than all other functions.
+	F evaluate; // evaluate(i, p): value of function i at p
+	T l, r;
+	Compare cmp;
+	li_chao_tree(T l, T r, F evaluate, X _type_deducer, Compare cmp = less<>()): l(l), r(r), evaluate(evaluate), cmp(cmp){ }
+	// function i is equal or higher than j on [l, r]
+	bool majorize(int i, int j, T l, T r) const{
+		if(!~j) return true;
+		if(!~i) return false;
+		return !cmp(evaluate(i, l), evaluate(j, l)) && !cmp(evaluate(i, r), evaluate(j, r));
 	}
-	void mc(int i){
-		if(i){ if(!r) r = new lichao(); }
-		else{ if(!l) l = new lichao(); }
+	void insert(int i){
+		assert(i >= 0);
+		auto recurse = [&](auto self, int u, T l, T r)->void{
+			if(majorize(i, data[u], l, r)) swap(i, data[u]);
+			if(majorize(data[u], i, l, r)) return;
+			if(cmp(evaluate(data[u], l), evaluate(i, l))) swap(i, data[u]);
+			T m = (l + r) / 2;
+			if(cmp(evaluate(data[u], m), evaluate(i, m))){
+				swap(i, data[u]);
+				if(!~child[u][0]){
+					child[u][0] = (int)child.size();
+					child.push_back({-1, -1});
+					data.push_back(-1);
+				}
+				self(self, child[u][0], l, m);
+			}
+			else{
+				if(!~child[u][1]){
+					child[u][1] = (int)child.size();
+					child.push_back({-1, -1});
+					data.push_back(-1);
+				}
+				self(self, child[u][1], m, r);
+			}
+		};
+		recurse(recurse, 0, l, r);
 	}
-	long long pq(long long X, long long L, long long R){
-		long long ans = S.eval(X), M = L + R >> 1;
-		if(X < M) return max(ans, l ? l->pq(X, L, M) : -(long long)9e18);
-		else return max(ans, r ? r->pq(X, M, R) : -(long long)9e18);
-	}
-	long long query(long long X, long long L, long long R){
-		return pq(X, L, R) * (GET_MAX ? 1 : -1);
-	}
-	void pp(line_type X, long long L, long long R){
-		if(X.majorize(S, L, R)) swap(X, S);
-		if(S.majorize(X, L, R)) return;
-		if(S.eval(L) < X.eval(L)) swap(X, S);
-		long long M = L + R >> 1;
-		if(X.eval(M) > S.eval(M)) swap(X, S), mc(0), l->pp(X, L, M);
-		else mc(1), r->pp(X, M, R);
-	}
-	void push(line_type X, long long L, long long R){
-		if(!GET_MAX) X.d = -X.d, X.k = -X.k;
-		pp(X, L, R);
+	pair<X, int> query_max(T p) const{
+		assert(l <= p && p <= r);
+		auto recurse = [&](auto self, int u, T l, T r)->pair<X, int>{
+			pair<X, int> res{{}, -1};
+			if(~data[u]) res = {evaluate(data[u], p), data[u]};
+			T m = (l + r) / 2;
+			if(p < m){
+				if(~child[u][0]){
+					auto res2 = self(self, child[u][0], l, m);
+					if(!~res.second || cmp(res.first, res2.first)) res = res2;
+				}
+			}
+			else{
+				if(~child[u][1]){
+					auto res2 = self(self, child[u][1], m, r);
+					if(!~res.second || cmp(res.first, res2.first)) res = res2;
+				}
+			}
+			return res;
+		};
+		return recurse(recurse, 0, l, r);
 	}
 };
 ]]></content>
