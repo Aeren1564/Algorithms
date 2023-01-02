@@ -1,0 +1,18 @@
+<snippet>
+	<content><![CDATA[
+vector<vector<int>> direct_product(const vector<vector<int>> &g, const vector<vector<int>> &h, bool shuffle_order = false;){
+	int n = (int)g.size(), m = (int)h.size();
+	assert(0 <= min(n, m));
+	vector<int> order(n * m);
+	iota(order.begin(), order.end(), 0);
+	if(shuffle_order) shuffle(order.begin(), order.end(), mt9937(1564));
+	vector<vector<int>> res(n * m, vector<int>(n * m));
+	for(auto x0 = 0; x0 < n; ++ x0) for(auto y0 = 0; y0 < m; ++ y0) for(auto x1 = 0; x1 < n; ++ x1) for(auto y1 = 0; y1 < m; ++ y1) res[order[x0 * m + y0]][order[x1 * m + y1]] = g[x0][x1] * m + h[y0][y1];
+	return res;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>direct_product</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

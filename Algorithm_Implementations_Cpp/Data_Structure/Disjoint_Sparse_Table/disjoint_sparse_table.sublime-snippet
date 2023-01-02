@@ -4,9 +4,9 @@ template<class T, class F>
 struct disjoint_sparse_table{
 	int n, size, log;
 	vector<vector<T>> data;
-	F TT;
-	T T_id;
-	// O(n log n) time and space
+	F TT; // monoid operation (always adjacent)
+	T T_id; // monoid identity
+	// O(n * log(n)) time and space
 	disjoint_sparse_table(const vector<T> &a, F TT, T T_id): n((int)a.size()), TT(TT), T_id(T_id){
 		log = __lg(max(n - 1, 1)) + 1, size = 1 << log;
 		data.assign(log + 1, vector<T>(size, T_id));
@@ -17,7 +17,8 @@ struct disjoint_sparse_table{
 			for(auto i = m + 1; i < m + half; ++ i) data[h][i] = TT(data[h][i - 1], data[0][i]);
 		}
 	}
-	// O(1), returns sum{i in [ql,qr)}( a[i] )
+	// Returns the sum of a[i] over i \in [ql, qr)
+	// O(1)
 	T query(int ql, int qr) const{
 		if(ql >= qr) return T_id;
 		if(qr - ql == 1) return data[0][ql];

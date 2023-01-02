@@ -1,10 +1,9 @@
 <snippet>
 	<content><![CDATA[
 // Data structure maintaining functions [l,r]->X such that
-// any two functions f and g has a point p \in F satisfying
-// either
-// (f(x) <= g(x) for all x<=p and f(y) >= g(y) for all p<=y) or
-// (f(x) >= g(x) for all x<=p and f(y) <= g(y) for all p<=y).
+// any two functions f and g are either equal or has a point p \in [l, r] satisfying either
+// (f(x) < g(x) for all x<p, f(p) = g(p), and f(y) > g(y) for all p<=y) or
+// (f(x) > g(x) for all x<p, f(p) = g(p), and f(y) < g(y) for all p<=y).
 template<class T, class X, class F, class Compare = less<>>
 struct li_chao_tree{
 	vector<array<int, 2>> child{{-1, -1}};
@@ -19,6 +18,8 @@ struct li_chao_tree{
 		if(!~i) return false;
 		return !cmp(evaluate(i, l), evaluate(j, l)) && !cmp(evaluate(i, r), evaluate(j, r));
 	}
+	// Insert the function i.
+	// O(log(n))
 	void insert(int i){
 		assert(i >= 0);
 		auto recurse = [&](auto self, int u, T l, T r)->void{
@@ -46,7 +47,9 @@ struct li_chao_tree{
 		};
 		recurse(recurse, 0, l, r);
 	}
-	pair<X, int> query_max(T p) const{
+	// Return the pair {evaluate(i, p), i} where i achieves the maximum evaluation at p among all other functions in the data structure.
+	// O(log(n))
+	pair<X, int> query(T p) const{
 		assert(l <= p && p <= r);
 		auto recurse = [&](auto self, int u, T l, T r)->pair<X, int>{
 			pair<X, int> res{{}, -1};
