@@ -1,0 +1,25 @@
+<snippet>
+	<content><![CDATA[
+bool test_group_axioms(const vector<vector<int>> &g){
+	int n = (int)g.size();
+	assert(n >= 1);
+	int id = -1;
+	for(auto x = 0; x < n; ++ x) for(auto y = 0; y < n; ++ y){
+		assert(0 <= g[x][y] && g[x][y] < n);
+		if(g[x][y] == y) id = x;
+	}
+	if(!~id) return false;
+	vector<int> inv(n, -1);
+	for(auto x = 0; x < n; ++ x) for(auto y = 0; y < n; ++ y){
+		if(g[x][y] == id) inv[x] = y;
+		for(auto z = 0; z < n; ++ z) if(g[x][g[y][z]] != g[g[x][y]][z]) return false;
+	}
+	if(!~*min_element(inv.begin(), inv.end())) return false;
+	return true;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>test_group_axioms</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

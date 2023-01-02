@@ -1,0 +1,92 @@
+<snippet>
+	<content><![CDATA[
+struct group_generator{
+	static mt19937 _group_rng;
+	static vector<vector<int>> shuffle_group_elements(const vector<vector<int>> &g){
+		int n = (int)g.size();
+		assert(n >= 1);
+		vector<int> map(n);
+		iota(map.begin(), map.end(), 0);
+		shuffle(map.begin(), map.end(), _group_rng);
+		vector<vector<int>> res(n, vector<int>(n));
+		for(auto x = 0; x < n; ++ x) for(auto y = 0; y < n; ++ y) res[map[x]][map[y]] = map[g[x][y]];
+		return res;
+	}
+	static vector<vector<int>> direct_product(const vector<vector<int>> &g, const vector<vector<int>> &h, bool shuffle_order = false){
+		int n = (int)g.size(), m = (int)h.size();
+		assert(0 <= min(n, m));
+		vector<int> map(n * m);
+		iota(map.begin(), map.end(), 0);
+		if(shuffle_order) shuffle(map.begin(), map.end(), _group_rng);
+		vector<vector<int>> res(n * m, vector<int>(n * m));
+		for(auto x0 = 0; x0 < n; ++ x0) for(auto y0 = 0; y0 < m; ++ y0) for(auto x1 = 0; x1 < n; ++ x1) for(auto y1 = 0; y1 < m; ++ y1) res[map[x0 * m + y0]][map[x1 * m + y1]] = map[g[x0][x1] * m + h[y0][y1]];
+		return res;
+	}
+	// F:g->Aut(h) must be a homomorphism.
+	static vector<vector<int>> semidirect_product(const vector<vector<int>> &g, const vector<vector<int>> &h, auto F, bool shuffle_order = false){
+		int n = (int)g.size(), m = (int)h.size();
+		assert(min(n, m) >= 0);
+		vector<vector<int>> res(n * m, vector<int>(n * m));
+		for(auto x0 = 0; x0 < n; ++ x0) for(auto y0 = 0; y0 < m; ++ y0) for(auto x1 = 0; x1 < n; ++ x1) for(auto y1 = 0; y1 < m; ++ y1) res[x0 * m + y0][x1 * m + y1] = g[x0][F(x1, y0)] * m + h[y0][y1];
+		return res;
+	}
+	static vector<vector<int>> generate_cyclic_group(int n){
+		assert(n >= 1);
+		vector<vector<int>> res(n, vector<int>(n));
+		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < n; ++ j) res[i][j] = (i + j) % n;
+		return res;
+	}
+	static vector<vector<int>> generate_commutative_group(int n){
+		assert(n >= 1);
+		vector<vector<int>> res{{0}};
+		for(auto p = 2; p <= n; ++ p){
+			if(n % p) continue;
+			int e = 0;
+			for(; n % p == 0; n /= p) ++ e;
+			while(e){
+				-- e;
+				int factor = p;
+				while(e && _group_rng() & 1){
+					-- e;
+					factor *= p;
+				}
+				res = direct_product(res, generate_cyclic_group(factor));
+			}
+		}
+		return res;
+	}
+	// The symmetry group of a regular n-gon.
+	static vector<vector<int>> generate_dihedral_group(int n){
+		assert(n >= 1);
+		vector<vector<int>> res(n << 1, vector<int>(n << 1));
+		for(auto x0 = 0; x0 < n; ++ x0) for(auto y0 = 0; y0 < 2; ++ y0) for(auto x1 = 0; x1 < n; ++ x1) for(auto y1 = 0; y1 < 2; ++ y1) res[x0 + n * y0][x1 + n * y1] = (x0 + (y0 ? n - x1 : x1)) % n + n * (y0 ^ y1);
+		return res;
+	}
+	// https://en.wikipedia.org/wiki/Quaternion_group#Generalized_quaternion_group
+	// Note that it has order 4n
+	static vector<vector<int>> generate_generalized_quaternion_group(int n = 2){
+		assert(n >= 1);
+		vector<vector<int>> res(n << 2, vector<int>(n << 2));
+		for(auto x0 = 0; x0 < n << 1; ++ x0) for(auto y0 = 0; y0 < 2; ++ y0) for(auto x1 = 0; x1 < n << 1; ++ x1) for(auto y1 = 0; y1 < 2; ++ y1) res[x0 + n * 2 * y0][x1 + n * 2 * y1] = (x0 + (y0 ? n * 2 - x1 : x1) + n * (y0 && y1)) % (n * 2) + n * 2 * (y0 ^ y1);
+		return res;
+	}
+	static vector<vector<int>> generate_dedekind_group(int n){
+		vector<vector<int>> res;
+		if(n % 8 == 0 && _group_rng() & 1){
+			res = generate_generalized_quaternion_group(2);
+			n >>= 3;
+			for(; ~n & 1; n >>= 1) res = direct_product(res, {{0, 1}, {1, 0}});
+			res = direct_product(res, generate_commutative_group(n));
+		}
+		else res = generate_commutative_group(n);
+		return res;
+	}
+};
+mt19937 group_generator::_group_rng(chrono::high_resolution_clock::now().time_since_epoch().count());
+using GG = group_generator;
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>group_generator</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
