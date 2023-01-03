@@ -1,0 +1,31 @@
+<snippet>
+	<content><![CDATA[
+// Assumes s is a normal subgroup.
+// Returns {quotient group operation, cosets}.
+array<vector<vector<int>>, 2> quotient_group(int n, auto op, const vector<int> &s){
+	vector<vector<int>> cosets{s};
+	vector<int> in_cosets(n), id(n, -1);
+	for(auto x: s) in_cosets[x] = true, id[x] = 0;
+	for(auto x = 0; x < n; ++ x) if(!in_cosets[x]){
+		cosets.emplace_back();
+		for(auto y: s){
+			int z = op(x, y);
+			assert(!in_cosets[z]);
+			cosets.back().push_back(z);
+			in_cosets[z] = true;
+			id[z] = (int)cosets.size() - 1;
+		}
+	}
+	vector<vector<int>> qop((int)cosets.size(), vector<int>((int)cosets.size()));
+	for(auto i = 0; i < (int)cosets.size(); ++ i) for(auto j = 0; j < (int)cosets.size(); ++ j) qop[i][j] = id[op(cosets[i][0], cosets[j][0])];
+	return {qop, cosets};
+}
+array<vector<vector<int>>, 2> quotient_group(const vector<vector<int>> &g, const vector<int> &s){
+	return quotient_group((int)g.size(), [&](int x, int y){ return g[x][y]; }, s);
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>quotient_group</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
