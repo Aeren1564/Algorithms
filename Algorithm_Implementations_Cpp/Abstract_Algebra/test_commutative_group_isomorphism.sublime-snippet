@@ -2,14 +2,22 @@
 	<content><![CDATA[
 // Source: "Linear time algorithms for Abelian group isomorphism and related problems" by T. Kavitha
 // op1, op2: {0, ..., n-1}^2 -> {0, ..., n-1} must define commutative groups.
-// Less than 2n op1() and op2() calls respectively
 // Requires find_the_order_of_all_group_elements
-bool test_commutative_group_isomorphism(int n, auto op1, auto op2){
+bool test_commutative_group_isomorphism(int n, auto op1, auto op2, const vector<int> &order1, const vector<int> &order2){
 	assert(1 <= n);
 	vector<int> cnt1(n), cnt2(n);
-	for(auto x: find_the_order_of_all_group_elements(n, op1)) ++ cnt1[x - 1];
-	for(auto x: find_the_order_of_all_group_elements(n, op2)) ++ cnt2[x - 1];
+	for(auto x: order1) ++ cnt1[x - 1];
+	for(auto x: order2) ++ cnt2[x - 1];
 	return cnt1 == cnt2;
+}
+// Extra 2n op() calls to find the orders.
+bool test_commutative_group_isomorphism(int n, auto op1, auto op2){
+	return test_commutative_group_isomorphism(n, op1, op2, find_the_order_of_all_group_elements(n, op1), find_the_order_of_all_group_elements(n, op2));
+}
+// Extra 2n op() calls to find the orders.
+bool test_commutative_group_isomorphism(const vector<vector<int>> &g, const vector<vector<int>> &h){
+	assert((int)g.size() == (int)h.size());
+	return test_commutative_group_isomorphism((int)g.size(), [&](int x, int y){ return g[x][y]; }, [&](int x, int y){ return h[x][y]; }, find_the_order_of_all_group_elements(g), find_the_order_of_all_group_elements(h));
 }
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->

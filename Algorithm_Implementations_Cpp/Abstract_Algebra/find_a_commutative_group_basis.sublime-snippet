@@ -2,12 +2,11 @@
 	<content><![CDATA[
 // Source: "Linear and sublinear time algorithms for the basis of abelian groups" by Li Chen and Bin Fu
 // op: {0, ..., n-1}^2 -> {0, ..., n-1} must define a commutative group.
-// Returns {list of {prime p dividing n, a basis for the Sylow p-group}, the array of element orders}
-// Less than 4n + log(n)^2 op() calls.
+// Returns the list of {prime p dividing n, a basis for the Sylow p-group}
+// Less than 2n + log(n)^2 op() calls.
 // Requires find_the_order_of_all_group_elements
-pair<vector<pair<int, vector<int>>>, vector<int>> find_a_commutative_group_basis(int n, auto op){
+vector<pair<int, vector<int>>> find_a_commutative_group_basis(int n, auto op, const vector<int> &order){
 	assert(1 <= n);
-	auto order = find_the_order_of_all_group_elements(n, op);
 	int id = find(order.begin(), order.end(), 1) - order.begin();
 	vector<vector<int>> has(n + 1);
 	for(auto x = 0; x < n; ++ x) has[order[x]].push_back(x);
@@ -19,7 +18,7 @@ pair<vector<pair<int, vector<int>>>, vector<int>> find_a_commutative_group_basis
 	for(auto m = n, p = 2; p <= m; ++ p){
 		if(m % p) continue;
 		list<int> psubgroup;
-		int exp = 1;
+		int exp = 0;
 		for(auto power = p; m % p == 0; m /= p, power *= p, ++ exp) psubgroup.insert(psubgroup.end(), has[power].begin(), has[power].end());
 		for(auto it = psubgroup.begin(); it != psubgroup.end(); ++ it) pos[*it] = it;
 		lift[id] = id;
@@ -53,23 +52,30 @@ pair<vector<pair<int, vector<int>>>, vector<int>> find_a_commutative_group_basis
 		for(auto sum = 0; sum != exp; ){
 			assert(!psubgroup.empty());
 			int x = psubgroup.back();
-			psubgroup.pop_back();
 			basis.push_back(x);
 			sum += log[x];
 			int size = (int)span.size();
 			for(auto y = root[x]; y != id; y = op(y, root[x])){
-				psubgroup.erase(pos[y]);
 				span.push_back(y);
+				for(auto w: inv_root[y]) psubgroup.erase(pos[w]);
 				for(auto i = 0; i < size; ++ i){
 					int z = op(y, span[i]);
-					psubgroup.erase(pos[z]);
 					span.push_back(z);
+					for(auto w: inv_root[z]) psubgroup.erase(pos[w]);
 				}
 			}
 		}
 		res.push_back({p, basis});
 	}
-	return {res, order};
+	return res;
+}
+// Extra 2n op() calls to find the orders.
+vector<pair<int, vector<int>>> find_a_commutative_group_basis(int n, auto op){
+	return find_a_commutative_group_basis(n, op, find_the_order_of_all_group_elements(n, op));
+}
+// Extra 2n op() calls to find the orders.
+vector<pair<int, vector<int>>> find_a_commutative_group_basis(const vector<vector<int>> &g){
+	return find_a_commutative_group_basis((int)g.size(), [&](int x, int y){ return g[x][y]; }, find_the_order_of_all_group_elements(g));
 }
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->

@@ -2,7 +2,7 @@
 	<content><![CDATA[
 struct group_generator{
 	static mt19937 _group_rng;
-	static vector<vector<int>> shuffle_group_elements(const vector<vector<int>> &g){
+	static vector<vector<int>> shuffle_elements(const vector<vector<int>> &g){
 		int n = (int)g.size();
 		assert(n >= 1);
 		vector<int> map(n);
@@ -70,9 +70,10 @@ struct group_generator{
 		for(auto x0 = 0; x0 < n << 1; ++ x0) for(auto y0 = 0; y0 < 2; ++ y0) for(auto x1 = 0; x1 < n << 1; ++ x1) for(auto y1 = 0; y1 < 2; ++ y1) res[x0 + n * 2 * y0][x1 + n * 2 * y1] = (x0 + (y0 ? n * 2 - x1 : x1) + n * (y0 && y1)) % (n * 2) + n * 2 * (y0 ^ y1);
 		return res;
 	}
-	static vector<vector<int>> generate_dedekind_group(int n){
+	static vector<vector<int>> generate_dedekind_group(int n, bool force_hamiltonian = false){
 		vector<vector<int>> res;
-		if(n % 8 == 0 && _group_rng() & 1){
+		if(force_hamiltonian || n % 8 == 0 && _group_rng() & 1){
+			assert(n % 8 == 0);
 			res = generate_generalized_quaternion_group(2);
 			n >>= 3;
 			for(; ~n & 1; n >>= 1) res = direct_product(res, {{0, 1}, {1, 0}});

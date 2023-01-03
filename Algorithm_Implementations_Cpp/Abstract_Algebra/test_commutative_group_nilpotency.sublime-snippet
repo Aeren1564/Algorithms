@@ -2,19 +2,26 @@
 	<content><![CDATA[
 // Source: "Linear time algorithms for Abelian group isomorphism and related problems" by T. Kavitha
 // op: {0, ..., n-1}^2 -> {0, ..., n-1} must define a commutative group.
-// Less than 2n op() calls.
 // Requires find_the_order_of_all_group_elements
-bool test_commutative_group_nilpotency(int n, auto op){
+bool test_commutative_group_nilpotency(int n, auto op, const vector<int> &order){
 	assert(1 <= n);
 	vector<int> cnt(n);
-	for(auto x: find_the_order_of_all_group_elements(n, op)) ++ cnt[x - 1];
+	for(auto x: order) ++ cnt[x - 1];
 	for(auto p = 2, m = n; p <= m; ++ p){
 		if(m % p) continue;
-		int power = 1, c = 0;
-		for(; m % p == 0; m /= p, power *= p) c += cnt[power - 1];
+		int power = 1, c = 1;
+		for(; m % p == 0; m /= p, power *= p) c += cnt[power * p - 1];
 		if(c != power) return false;
 	}
 	return true;
+}
+// Extra 2n op() calls to find the orders.
+bool test_commutative_group_nilpotency(int n, auto op){
+	return test_commutative_group_nilpotency(n, op, find_the_order_of_all_group_elements(n, op));
+}
+// Extra 2n op() calls to find the orders.
+bool test_commutative_group_nilpotency(const vector<vector<int>> &g){
+	return test_commutative_group_nilpotency((int)g.size(), [&](int x, int y){ return g[x][y]; }, find_the_order_of_all_group_elements(g));
 }
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->

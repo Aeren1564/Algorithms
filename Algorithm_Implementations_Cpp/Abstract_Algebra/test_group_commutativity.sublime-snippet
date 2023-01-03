@@ -19,6 +19,9 @@ bool test_group_commutativity(int n, auto op){
 	}
 	return true;
 }
+bool test_group_commutativity(const vector<vector<int>> &g){
+	return test_group_commutativity((int)g.size(), [&](int x, int y){ return g[x][y]; });
+}
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
 	<tabTrigger>test_group_commutativity</tabTrigger> -->

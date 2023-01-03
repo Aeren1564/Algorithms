@@ -1,0 +1,22 @@
+<snippet>
+	<content><![CDATA[
+// Test whether the subset s if {0, ..., n-1} is closed under op
+// In particular, it checks if s is a subgroup when op defines a group and s is non-empty.
+bool test_closedness(int n, auto op, const vector<int> &s){
+	vector<int> in_s(n);
+	for(auto x: s){
+		assert(0 <= x && x < n);
+		in_s[x] = true;
+	}
+	for(auto x: s) for(auto y: s) if(!in_s[op(x, y)]) return false;
+	return true;
+}
+bool test_closedness(const vector<vector<int>> &g, const vector<int> &s){
+	return test_closedness((int)g.size(), [&](int x, int y){ return g[x][y]; }, s);
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>test_closedness</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

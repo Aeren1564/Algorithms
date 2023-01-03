@@ -30,15 +30,18 @@ vector<int> find_the_order_of_all_group_elements(int n, auto op){
 			p2 = op(p2, x);
 			++ e;
 		}
-		if(!order[p1] && !order[p2]) order[x] = l[map_to_d[order[p1]]][map_to_d[order[p2]]], -- e;
+		if(order[p1] && order[p2]) order[x] = l[map_to_d[order[p1]]][map_to_d[order[p2]]], -- e;
 		else order[x] = e;
-		for(auto i = 2; i < e; ++ i){
-			auto p = lpf[i];
-			g[i] = order[x] % (p * g[i / p]) ? g[i / p] : p * g[i / p];
-			order[path[i - 2]] = order[x] / g[i];
+		for(auto y = 2; y < e; ++ y){
+			auto p = lpf[y];
+			g[y] = order[x] % (p * g[y / p]) ? g[y / p] : p * g[y / p];
+			order[path[y - 2]] = order[x] / g[y];
 		}
 	}
 	return order;
+}
+vector<int> find_the_order_of_all_group_elements(const vector<vector<int>> &g){
+	return find_the_order_of_all_group_elements((int)g.size(), [&](int x, int y){ return g[x][y]; });
 }
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
