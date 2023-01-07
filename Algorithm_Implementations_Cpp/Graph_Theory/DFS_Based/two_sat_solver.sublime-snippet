@@ -8,7 +8,6 @@ private:
 public:
 	vector<int> value;
 	two_sat_solver(int n = 0): n(n), adj(n << 1){ }
-	int time = 0;
 	int add_variable(){
 		adj.emplace_back();
 		adj.emplace_back();
@@ -42,6 +41,7 @@ public:
 		}
 		either(cur, ~arr[1]);
 	}
+	int time;
 	int dfs(int u){
 		int low = val[u] = ++ time, v;
 		z.push_back(u);
@@ -57,9 +57,55 @@ public:
 	}
 	// O(n)
 	bool solve(){
-		value.assign(n, -1), val.assign(2 * n, 0), comp = val;
+		value.assign(n, -1), val.assign(2 * n, 0), comp = val, time = 0;
 		for(auto u = 0; u < n << 1; ++ u) if(!comp[u]) dfs(u);
 		for(auto u = 0; u < n; ++ u) if(comp[u << 1] == comp[u << 1 ^ 1]) return false;
+		return true;
+	}
+	// Enumerate solutions while act_while() returns true.
+	bool enumerate_solutions(auto act_while){
+		if(!solve()) return false;
+		fill(value.begin(), value.end(), -1);
+		vector<int> was(n << 1, -1);
+		vector<vector<int>> has(time + 1);
+		for(auto s = 0; s < n << 1; ++ s){
+			has[comp[s]].push_back(s);
+			if(~value[s >> 1]) continue;
+			auto dfs = [&](auto self, int u)->void{
+				was[u] = s;
+				for(auto v: adj[u]) if(was[v] != s) dfs(dfs, v);
+			};
+			dfs(dfs, s);
+			if(was[s ^ 1] != s) continue;
+			value[s >> 1] = s & 1;
+			auto dfs2 = [&](auto self, int u)->void{
+				for(auto v: adj[u]) if(!~value[v >> 1]){
+					value[v >> 1] = ~v & 1;
+					self(self, v);
+				}
+			};
+			dfs2(dfs2, s ^ 1);
+		}
+		for(auto t = 0; t <= time; ++ t) assert(!has[t].empty());
+		auto push = [&](auto self, int u)->void{
+			for(auto v: adj[u]) if(!~value[v >> 1]){
+				value[v >> 1] = ~v & 1;
+				self(self, v);
+			}
+		};
+		auto dfs = [&](auto self, int t)->bool{
+			if(t == time + 1) return act_while(value);
+			int u = has[t][0];
+			if(~value[u >> 1]) return self(self, t + 1);
+			value[u >> 1] = u & 1;
+			if(!self(self, t + 1)) return false;
+			value[u >> 1] = ~u & 1;
+			push(push, u);
+			if(!self(self, t + 1)) return false;
+			value[u >> 1] = -1;
+			return true;
+		};
+		dfs(dfs, 0);
 		return true;
 	}
 };
