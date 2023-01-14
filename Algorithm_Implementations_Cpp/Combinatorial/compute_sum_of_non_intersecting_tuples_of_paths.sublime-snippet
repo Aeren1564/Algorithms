@@ -1,0 +1,30 @@
+<snippet>
+	<content><![CDATA[
+// https://en.wikipedia.org/wiki/Lindstr%C3%B6m%E2%80%93Gessel%E2%80%93Viennot_lemma
+// Returns \sum_{P:from->to, P is vertex-non-intersecting}sign(P)*\prod_{e: edge in P} w(e).
+// G must be a DAG with a valid topological order order.
+// Requires graph
+template<class T, class U, class F1 = plus<>, class F2 = multiplies<>>
+T compute_sum_of_non_intersecting_tuples_of_paths(const graph<U> &g, const vector<int> &order, const vector<int> &from, const vector<int> &to, auto determinant, T _type_deducer, F1 add = plus<>(), F2 multiply = multiplies<>()){
+	assert((int)from.size() == (int)to.size());
+	assert(g.n == (int)order.size());
+	int n = (int)from.size();
+	vector<vector<T>> M(n, vector<T>(n));
+	vector<T> dp(g.n);
+	for(auto i = 0; i < n; ++ i){
+		fill(dp.begin(), dp.end(), 0);
+		dp[from[i]] = 1;
+		for(auto u: order) for(auto id: g.adj[u]){
+			if(g.ignore && g.ignore(id)) continue;
+			dp[g(u, id)] += dp[u] * g.edge[id].cost;
+		}
+		for(auto j = 0; j < n; ++ j) M[i][j] = dp[to[j]];
+	}
+	return determinant(M);
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>hello</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
