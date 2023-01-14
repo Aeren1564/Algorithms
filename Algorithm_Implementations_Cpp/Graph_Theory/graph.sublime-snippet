@@ -5,6 +5,9 @@ struct graph{
 	struct E{
 		int from, to;
 		T cost;
+		friend ostream operator<<(ostream &out, const E &e){
+			return out << "{" << e.from << ", " << e.to << ", " << e.cost << "}";
+		}
 	};
 	int n;
 	vector<E> edge;

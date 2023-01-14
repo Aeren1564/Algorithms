@@ -12,6 +12,14 @@ struct field_of_fraction{
 	field_of_fraction(T n = 0, T d = 1): n(n), d(d){
 		if(d < 0) n = -n, d = -d;
 	}
+	field_of_fraction &reduce(){
+		T g = gcd(n, d);
+		n /= g, d /= g;
+		return *this;
+	}
+	field_of_fraction reduced() const{
+		return field_of_fraction(*this).reduce();
+	}
 	field_of_fraction &operator+=(const field_of_fraction &x){
 		return *this = {n * x.d + x.n * d, d * x.d};
 	}
