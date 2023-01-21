@@ -1,34 +1,375 @@
 <snippet>
 	<content><![CDATA[
-// Requires random, point, line, and line_intersection
-vector<point<int>> generate_simple_polygon(int n, int low, int high){
-	assert(n >= 3);
-	vector<point<int>> a(n);
-	auto rnd = randint(low, high + 1);
-	int it = 0;
-	while(true){
-		++ it;
-		for(auto &p: a) p = {rnd(rng), rnd(rng)};
-			for(auto i = 0; i < n; ++ i){
-				if(on_segment(a[i], line(a[(i + 1) % n], a[(i + 2) % n])) || on_segment(a[(i + 2) % n], line(a[i], a[(i + 1) % n]))){
-					goto NEXT;
-				}
-				for(auto j = 0; j < n; ++ j) if(i != j){
-				if(a[i] == a[j]) goto NEXT;
-				if(abs(i - j) != 1 && abs(i - j) != n - 1 && intersect_closed_segments(line(a[i], a[(i + 1) % n]), line(a[j], a[(j + 1) % n]))){
-					goto NEXT;
-				}
-			}
-		}
-		break;
-		NEXT:;
-	}
-	if(doubled_signed_area(a) < 0) reverse(a.begin(), a.end());
-	return a;
-}
+from __future__ import absolute_import
+import random
+import math
+import sys
+import string
+from enum import Enum
+
+def ati(array):
+    """ati(array) -> list
+        Convert all the elements in the array and return them in a list.
+    """
+    return [int(i) for i in array]
+
+
+def list_like(data):
+    """list_like(data) -> bool
+        Judge whether the object data is like a list or a tuple.
+        object data -> the data to judge
+    """
+    return isinstance(data, tuple) or isinstance(data, list)
+
+
+def int_like(data):
+    isint = False
+    try:
+        isint = isint or isinstance(data, long)
+    except NameError:
+        pass
+    isint = isint or isinstance(data, int)
+    return isint
+
+
+def strtolines(str):
+    lines = str.split('\n')
+    for i in range(len(lines)):
+        lines[i] = lines[i].rstrip()
+
+    while len(lines) > 0 and len(lines[len(lines) - 1]) == 0:
+        del lines[len(lines) - 1]
+    return lines
+
+
+def make_unicode(data):
+    try:
+        return unicode(data)
+    except NameError:
+        return str(data)
+
+def unpack_kwargs(funcname, kwargs, arg_pattern):
+    rv = {}
+    kwargs = kwargs.copy()
+    for tp in arg_pattern:
+        if list_like(tp):
+            k, v = tp
+            rv[k] = kwargs.get(k, v)
+            try:
+                del kwargs[k]
+            except KeyError:
+                pass
+        else:
+            error = False
+            try:
+                rv[tp] = kwargs[tp]
+                del kwargs[tp]
+            except KeyError as e:
+                error = True
+            if error:
+                raise TypeError('{}() missing 1 required keyword-only argument: \'{}\''.format(funcname, tp))
+    if kwargs:
+        raise TypeError('{}() got an unexpected keyword argument \'{}\''.format(funcname, next(iter(kwargs.items()))[0]))
+    return rv
+
+"""Constants Package.
+Constants:
+ALPHABET_SMALL -> All the lower ascii letters
+ALPHABET_CAPITAL -> All the upper ascii letters
+ALPHABET -> All the ascii letters
+NUMBERS -> All the numbers(0-9)
+SENTENCE_SEPARATORS -> Includes 70% ",", 20% ";" and 10% ":"
+SENTENCE_TERMINATORS -> Includes 80% "." and 20% "!"
+"""
+PI = math.pi
+E = math.e
+
+ALPHABET_SMALL = string.ascii_lowercase
+ALPHABET_CAPITAL = string.ascii_uppercase
+ALPHABET = ALPHABET_SMALL + ALPHABET_CAPITAL
+NUMBERS = string.digits
+SENTENCE_SEPARATORS = ',,,,,,,;;:' # 70% ',' 20% ';' 10% ':'
+SENTENCE_TERMINATORS = '....!' # 80% '.' 20% '!'
+
+DEFAULT_GRADER = "NOIPStyle"
+
+class VectorRandomMode(Enum):
+    unique = 0
+    repeatable = 1
+    float = 2
+
+
+class Vector:
+
+    @staticmethod
+    def random(num: int, position_range: list, mode: VectorRandomMode, **kwargs):
+        """
+        brief : generating n random vectors in limited space
+        param :
+            # num            : the number of vectors
+            # position_range : a list of limits for each dimension
+            #                  single number x represents range (0, x)
+            #                  list [x, y] or tuple (x, y) represents range (x, y)
+            # mode           : the mode vectors generate, see Enum Class VectorRandomMode
+        """
+        if position_range is None:
+            position_range = [10]
+
+        if num > 1000000:
+            raise Exception("num no more than 1e6")
+        if not list_like(position_range):
+            raise Exception("the 2nd param must be a list or tuple")
+
+        dimension = len(position_range)
+
+        offset = []
+        length = []
+
+        vector_space = 1
+        for i in range(0, dimension):
+            if list_like(position_range[i]):
+                if position_range[i][1] < position_range[i][0]:
+                    raise Exception("upper-bound should larger than lower-bound")
+                offset.append(position_range[i][0])
+                length.append(position_range[i][1] - position_range[i][0])
+            else:
+                offset.append(0)
+                length.append(position_range[i])
+            vector_space *= (length[i] + 1)
+
+        if mode == VectorRandomMode.unique and num > vector_space:
+            raise Exception("1st param is so large that CYaRon can not generate unique vectors")
+
+        result = []
+        if mode == VectorRandomMode.repeatable:
+            result = [[random.randint(x, y) for x, y in zip(offset, length)] for _ in range(num)]
+        elif mode == VectorRandomMode.float:
+            result = [[random.uniform(x, y) for x, y in zip(offset, length)] for _ in range(num)]
+        elif mode == VectorRandomMode.unique and vector_space > 5 * num:
+            # O(NlogN)
+            num_set = set()
+            for i in range(0, num):
+                while True:
+                    rand = random.randint(0, vector_space - 1)
+                    if rand not in num_set:
+                        break
+                num_set.add(rand)
+                tmp = Vector.get_vector(dimension, length, rand)
+                for j in range(0, dimension):
+                    tmp[j] += offset[j]
+                result.append(tmp)
+        else:
+            # generate 0~vector_space and shuffle
+            rand_arr = list(range(0, vector_space))
+            random.shuffle(rand_arr)
+            result = [Vector.get_vector(dimension, length, x) for x in rand_arr[:num]]
+
+            for x in result:
+                for i in range(dimension):
+                    x[i] += offset[i]
+
+        return result
+
+    @staticmethod
+    def get_vector(dimension: int, position_range: list, hashcode: int):
+        tmp = []
+        for i in range(0, dimension):
+            tmp.append(hashcode % (position_range[i] + 1))
+            hashcode //= (position_range[i] + 1)
+        return tmp
+
+class Polygon:
+    def __init__(self,points=[]):
+        if not list_like(points):
+            raise Exception("polygon must be constructed by a list of points")
+        self.points = points
+
+    def __str__(self):
+        buf = []
+        for point in self.points:
+            buf.append(str(point[0]) + " " + str(point[1]))
+        return '\n'.join(buf)
+
+    def perimeter(self):
+        ans = 0
+        for i in range(0, len(self.points)):
+            a = self.points[i]
+            b = self.points[(i + 1) % len(self.points)]
+            ans = ans + math.sqrt((a[0] - b[0]) * (a[0] - b[0]) +
+                                  (a[1] - b[1]) * (a[1] - b[1]))
+        return ans
+
+    def area(self):
+        ans = 0
+        for i in range(0, len(self.points)):
+            a = self.points[i]
+            b = self.points[(i + 1) % len(self.points)]
+            ans = ans + a[0] * b[1] - a[1] * b[0]
+        if ans < 0:
+            ans = -ans
+        ans = ans / 2.0
+        return ans
+
+    #generate a convex hull with n points
+    #it's possible to have even edges
+    @staticmethod
+    def convex_hull(n, **kwargs):
+        # fx, fy are functions which map [0,1] to int or float
+        fx = kwargs.get("fx", lambda x: x)
+        fy = kwargs.get("fy", lambda x: x)
+        strict = kwargs.get("strict", False)
+        sz = n * 2
+        result = []
+        while len(result) < n:
+            points = []
+            # about 10 points will be randomized
+            randomize_prob = int(sz / 10) + 1
+            if randomize_prob < 10:
+                randomize_prob = 10
+            for i in range(0, sz):
+                angle = random.uniform(0, 2 * PI)
+                x = 0.5 + math.cos(angle) * 0.48
+                y = 0.5 + math.sin(angle) * 0.48
+                if random.randint(0, randomize_prob) == 0:
+                    x = x + random.uniform(-0.005, 0.005)
+                    y = y + random.uniform(-0.005, 0.005)
+                points.append([fx(x), fy(y)])
+            # compute convex hull for points and store in rst
+            points = sorted(points)
+            # unique
+            tmp = []
+            for i in range(0, len(points)):
+                if i == 0 or points[i - 1] != points[i]:
+                    tmp.append(points[i])
+            points = tmp
+            st = []  # stack
+            for i in range(0, len(points)):
+                while len(st) >= 2:
+                    a = st[len(st) - 1]
+                    b = points[i]
+                    o = st[len(st) - 2]
+                    tmp = (a[0] - o[0]) * (b[1] - o[1]) - \
+                            (a[1] - o[1]) * (b[0] - o[0])
+                    if tmp > 0 or (tmp == 0 and not strict):
+                        break
+                    st.pop()
+                st.append(points[i])
+            g = len(st) + 1
+            for i in range(0, len(points) - 1)[::-1]:
+                while len(st) >= g:
+                    a = st[len(st) - 1]
+                    b = points[i]
+                    o = st[len(st) - 2]
+                    tmp = (a[0] - o[0]) * (b[1] - o[1]) - \
+                            (a[1] - o[1]) * (b[0] - o[0])
+                    if tmp > 0 or (tmp == 0 and not strict):
+                        break
+                    st.pop()
+                st.append(points[i])
+            st.pop()
+            result = st
+            sz = int(sz * 1.7) + 3  # if failed, increase size and try again
+        ids = [i for i in range(0, len(result))]
+        random.shuffle(ids)
+        ids = ids[0:n]
+        ids = sorted(ids)
+        output = [result[ids[i]] for i in range(0, n)]
+        poly = Polygon(output)
+        return poly
+
+    # find a path from points[0] to points[1] and cross all points in [points]
+    @staticmethod
+    def __conquer(points):
+        if len(points) <= 2:
+            return points
+        if len(points) == 3:
+            (points[1],points[2])=(points[2],points[1])
+            return points
+        divide_id = random.randint(2, len(points) - 1)
+        divide_point1 = points[divide_id]
+        divide_k = random.uniform(0.01, 0.99)
+        divide_point2 = [divide_k * (points[1][0] - points[0][0]) + points[0][0],
+                         divide_k * (points[1][1] - points[0][1]) + points[0][1]]
+        # path: points[0]->points[divide]->points[1]
+        # dividing line in the form Ax+By+C=0
+        divide_line = [divide_point2[1] - divide_point1[1],
+                       divide_point1[0] - divide_point2[0],
+                       -divide_point1[0] * divide_point2[1]
+                       + divide_point1[1] * divide_point2[0]]
+        p0 = (divide_line[0] * points[0][0] + divide_line[1] * points[0][1] + divide_line[2] >= 0)
+        p1 = (divide_line[0] * points[1][0] + divide_line[1] * points[1][1] + divide_line[2] >= 0)
+        if p0 == p1:  # the divide point isn't good enough...
+            return Polygon.__conquer(points)
+        s = [[], []]
+        s[p0].append(points[0])
+        s[p0].append(divide_point1)
+        s[not p0].append(divide_point1)
+        s[not p0].append(points[1])
+        for i in range(2, len(points)):
+            if i == divide_id:
+                continue
+            pt = (divide_line[0] * points[i][0] + divide_line[1] * points[i][1] + divide_line[2] >= 0)
+            s[pt].append(points[i])
+        pa = Polygon.__conquer(s[p0])
+        pb = Polygon.__conquer(s[not p0])
+        pb.pop(0)
+        return pa + pb
+
+    # generate simple polygon from given points (int[2] or float[2])
+    # O(nlogn)~O(n^2)
+    @staticmethod
+    def simple_polygon(points):
+        if not list_like(points):
+            raise Exception("source point is not a list")
+        random.shuffle(points)
+        if len(points) <= 3:
+            return Polygon(points)
+        # divide by points[0], points[1]
+        divide_line = [points[1][1] - points[0][1],
+                       points[0][0] - points[1][0],
+                       -points[0][0] * points[1][1]
+                       + points[0][1] * points[1][0]]
+        s = [[], []]
+        s[0].append(points[0])
+        s[0].append(points[1])
+        s[1].append(points[1])
+        s[1].append(points[0])
+        for i in range(2, len(points)):
+            pt = (divide_line[0] * points[i][0] + divide_line[1] * points[i][1] + divide_line[2] >= 0)
+            s[pt].append(points[i])
+        pa = Polygon.__conquer(s[0])
+        pb = Polygon.__conquer(s[1])
+        pa.pop(0)
+        pb.pop(0)
+        poly = Polygon(pa + pb)
+        return poly
+
+# Source: https://github.com/Aeren1564/cyaron/blob/master/cyaron/polygon.py
+# Warning: it may generate a wrong polygon
+# "gen.py n x y seed" generates a polygon with n vertices whose coordinate range is ([0, x], [0, y])
+def main():
+    x = len(sys.argv)
+    i = 0
+    base1 = 1234
+    base2 = 564569
+    mod = 1000000007
+    for s in sys.argv:
+        i = i + 1
+        cur = 0
+        for c in s:
+            cur = (cur * base1 + ord(c)) % mod
+        x = (x * base2 + cur + i) % mod
+    random.seed(x);
+    n = int(sys.argv[1])
+    xmax = int(sys.argv[2])
+    ymax = int(sys.argv[3])
+    print(n);
+    while True:
+        poly = Polygon.simple_polygon(Vector.random(n, [xmax, ymax], 1)).points
+main()
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
-	<tabTrigger>generate_simple_polygon</tabTrigger> -->
+	<tabTrigger>generate_polygon</tabTrigger> -->
 	<!-- Optional: Set a scope to limit where the snippet will trigger -->
-	<scope>source.c++</scope> -->
+	<scope>source.python</scope> -->
 </snippet>
