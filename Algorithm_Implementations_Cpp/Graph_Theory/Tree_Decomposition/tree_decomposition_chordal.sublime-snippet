@@ -5,8 +5,9 @@ template<class T>
 pair<vector<vector<int>>, vector<array<int, 2>>> // bags, edges
 tree_decomposition_chordal(const graph<T> &g){
 	int n = g.n;
-	auto [chordal, order] = recognize_chordal_graphs(g);
-	assert(chordal);
+	auto orderptr = recognize_chordal_graphs(g);
+	assert(orderptr);
+	auto order = *orderptr;
 	vector<int> pos(n);
 	for(auto i = 0; i < n; ++ i) pos[order[i]] = i;
 	vector<vector<int>> bags;
