@@ -10,13 +10,9 @@ bool recognize_cographs(const graph<T> &g){
 	lbf.bfs(g);
 	// check NSP
 	vector<list<int>> adj(n); // sorted adj list
-	for(auto u: lbf.order){
-		for(auto id: g.adj[u]){
-			if(g.ignore && g.ignore(id)) continue;
-			auto &e = g.edge[id];
-			int v = u ^ e.from ^ e.to;
-			adj[v].push_back(u);
-		}
+	for(auto u: lbf.order) for(auto id: g.adj[u]){
+		if(g.ignore && g.ignore(id)) continue;
+		adj[g(u, id)].push_back(u);
 	}
 	for(auto u: lbf.order){
 		// S(u) = order[pos[u], pos[u] + slice_size[u])
@@ -47,12 +43,8 @@ bool recognize_cographs(const graph<T> &g){
 			}
 			int t = 0;
 			for(auto y: B){
-				while(t < (int)A.size() && A[t] != y){
-					++ t;
-				}
-				if(t == (int)A.size()){
-					return false;
-				}
+				while(t < (int)A.size() && A[t] != y) ++ t;
+				if(t == (int)A.size()) return false;
 			}
 			i = j, A = B;
 		}

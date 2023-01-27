@@ -19,8 +19,7 @@ tree_decomposition_chordal(const graph<T> &g){
 		vector<int> bag{u};
 		for(auto id: g.adj[u]){
 			if(g.ignore && g.ignore(id)) continue;
-			auto &e = g.edge[id];
-			int v = u ^ e.from ^ e.to;
+			int v = g(u, id);
 			if(pos[u] < pos[v]) bag.push_back(v);
 		}
 		if((int)bag.size() >= 2) edge.push_back({i, label[*min_element(bag.begin() + 1, bag.end(), [&](int u, int v){ return pos[u] < pos[v]; })]});

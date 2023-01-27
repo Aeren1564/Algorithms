@@ -6,7 +6,7 @@
 // O(n)
 // Requires graph
 template<class T>
-pair<vector<vector<int>>, vector<array<int, 2>>> tree_decomposition_tree_with_cycle_on_leaves(const graph<T> &g){
+pair<vector<vector<int>>, vector<array<int, 2>>> tree_decomposition_halin_graph(const graph<T> &g){
 	int n = g.n;
 	if(n <= 4){
 		vector<int> bag(n);
@@ -74,7 +74,7 @@ pair<vector<vector<int>>, vector<array<int, 2>>> tree_decomposition_tree_with_cy
 }
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
-	<tabTrigger>tree_decomposition_tree_with_cycle_on_leaves</tabTrigger> -->
+	<tabTrigger>tree_decomposition_halin_graph</tabTrigger> -->
 	<!-- Optional: Set a scope to limit where the snippet will trigger -->
 	<scope>source.c++</scope> -->
 </snippet>

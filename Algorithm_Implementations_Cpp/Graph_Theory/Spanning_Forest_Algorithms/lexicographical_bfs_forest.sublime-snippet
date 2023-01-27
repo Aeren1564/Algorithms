@@ -29,9 +29,7 @@ struct lexicographical_bfs_forest{
 		vector<vector<int>> adj(n); // adj list sorted by the initial ordering
 		for(auto u: initial_order) for(auto id: g.adj[u]){
 			if(g.ignore && g.ignore(id)) continue;
-			auto &e = g.edge[id];
-			int v = u ^ e.from ^ e.to;
-			adj[v].push_back(u);
+			adj[g(u, id)].push_back(u);
 		}
 		int n = g.n;
 		using set_type = pair<list<int>, int>;

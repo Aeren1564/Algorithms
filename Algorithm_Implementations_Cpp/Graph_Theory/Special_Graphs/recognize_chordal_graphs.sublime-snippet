@@ -1,18 +1,13 @@
 <snippet>
 	<content><![CDATA[
-// returns {true, perfect elimination ordering} or {false, induced cycle of length >= 4}
-// O((|V| + |E|) log |E|)
+// Returns {true, perfect elimination ordering} or {false, induced cycle of length >= 4}
+// O(n + m)
 // Requires graph and lexicographical_bfs_forest
 template<class T>
-pair<bool, vector<int>> recognize_chordal_graphs(const graph<T> &g){
+optional<vector<int>> recognize_chordal_graphs(const graph<T> &g){
 	int n = g.n;
 	vector<vector<int>> adj(n);
-	for(auto id = 0; id < (int)g.edge.size(); ++ id){
-		if(g.ignore && g.ignore(id)) continue;
-		auto [u, v, ignore] = g.edge[id];
-		adj[u].push_back(v), adj[v].push_back(u);
-	}
-	for(auto u = 0; u < n; ++ u) sort(adj[u].begin(), adj[u].end());
+	for(auto u = 0; u < n; ++ u) for(auto id: g.adj[u]) if(!g.ignore || !g.ignore(id)) adj[g(u, id)].push_back(u);
 	lexicographical_bfs_forest lbf(n);
 	lbf.bfs(g);
 	for(auto u = 0; u < n; ++ u){
