@@ -1,0 +1,37 @@
+<snippet>
+	<content><![CDATA[
+vector<array<int, 2>> generate_chordal_graph(auto &&rng, int n){
+	vector<vector<int>> adj(n);
+	for(auto [u, v]: generate_tree(rng, n)){
+		adj[u].push_back(v);
+		adj[v].push_back(u);
+	}
+	int it = 0;
+	vector<int> pos(n), end(n);
+	auto dfs = [&](auto self, int u, int p)->void{
+		pos[u] = it ++;
+		for(auto v: adj[u]) if(v != p) self(self, v, u);
+		end[u] = it;
+	};
+	dfs(dfs, 0, -1);
+	vector<vector<int>> insert(n), erase(n + 1);
+	for(auto i = 0; i < n; ++ i){
+		int u = rng() % n;
+		insert[pos[u]].push_back(i);
+		erase[end[u]].push_back(i);
+	}
+	set<int> state;
+	vector<array<int, 2>> res;
+	for(auto t = 0; t < n; ++ t){
+		for(auto u: insert[t]) state.insert(u);
+		for(auto u: erase[t]) state.erase(u);
+		for(auto beg = state.begin(); beg != state.end(); ++ beg) for(auto end = next(beg); end != state.end(); ++ end) res.push_back({*beg, *end});
+	}
+	return res;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>generate_chordal_graph</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
