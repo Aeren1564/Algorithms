@@ -29,13 +29,13 @@ optional<vector<int>> recognize_chordal_graphs(const graph<T> &g){
 				}
 				vector<int> cycle{w, u};
 				for(auto x = v; x != w; x = par[x]) cycle.push_back(x);
-				return {false, cycle};
+				return {};
 			}
 		}
 	}
 	auto order = lbf.order;
 	reverse(order.begin(), order.end());
-	return {true, order};
+	return order;
 }
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
