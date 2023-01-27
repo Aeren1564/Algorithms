@@ -54,17 +54,18 @@ vector<point<T>> generate_simple_polygon(int n, T low, T high, auto rng){
 	}
 	for(bool changed = true; changed; ){
 		changed = false;
-		for(auto u = 0; u < n - 2; ++ u){
-			if((order[u + 1] - order[u] ^ order[u + 2] - order[u + 1]) == 0 && (order[u + 1] - order[u]) * (order[u + 2] - order[u + 1]) < 0){
+		for(auto u = 0; u < n; ++ u){
+		    int v = (u + 1) % n, w = (u + 2) % n;
+			if((order[v] - order[u] ^ order[w] - order[v]) == 0 && (order[v] - order[u]) * (order[w] - order[v]) < 0){
 				changed = true;
-				if((order[u + 2] - order[u]) * (order[u + 1] - order[u + 2]) > 0){
-					swap(order[u + 1], order[u + 2]);
+				if((order[w] - order[u]) * (order[v] - order[w]) > 0){
+					swap(order[v], order[w]);
 				}
 				else{
-					swap(order[u], order[u + 1]);
+					swap(order[u], order[v]);
 				}
 			}
-			line<T> L(order[u], order[u + 1]);
+			line<T> L(order[u], order[v]);
 			for(auto v = u + 2; v < n - !u; ++ v){
 				if(intersect_closed_segments(L, line<T>(order[v], order[(v + 1) % n]))){
 					changed = true;
