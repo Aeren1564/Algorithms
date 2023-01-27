@@ -5,6 +5,7 @@ vector<array<int, 2>> generate_tree(auto &&rng, int n){
 	if(n <= 3 || rng() & 1){
 		vector<int> order(n);
 		iota(order.begin(), order.end(), 0);
+		shuffle(order.begin(), order.end(), rng);
 		for(auto u = 1; u < n; ++ u) res.push_back({order[rng() % u], order[u]});
 		shuffle(res.begin(), res.end(), rng);
 	}
