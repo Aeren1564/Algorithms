@@ -1,7 +1,7 @@
 <snippet>
 	<content><![CDATA[
-// Requires random, point, line, and line_intersection
-pair<vector<array<int, 2>>, vector<pointll>> generate_planar_graph(int n, int m_max, int max_c = 1000000000){
+// Requires point, line, and line_intersection
+pair<vector<array<int, 2>>, vector<pointll>> generate_planar_graph(auto &&rng, int n, int m_max, int max_c = 1000000000){
 	assert(0 <= n);
 	vector<pointll> embedding(n);
 	for(auto u = 0; u < n; ++ u){

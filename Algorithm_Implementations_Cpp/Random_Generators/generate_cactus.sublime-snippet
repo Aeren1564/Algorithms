@@ -1,8 +1,7 @@
 <snippet>
 	<content><![CDATA[
 // s: size of seed tree
-// Requires random
-pair<int, vector<array<int, 2>>> generate_cactus(int s, int cycle_size_bound = 4, double edge_to_cycle_p = 0, double vertex_to_cycle_p = 0.2){
+pair<int, vector<array<int, 2>>> generate_cactus(auto &&rng, int s, int cycle_size_bound = 4, double edge_to_cycle_p = 0, double vertex_to_cycle_p = 0.2){
 	vector<vector<int>> bag(s);
 	int n = 0;
 	vector<array<int, 2>> res;

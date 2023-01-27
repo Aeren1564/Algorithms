@@ -1,7 +1,7 @@
 <snippet>
 	<content><![CDATA[
-// Requires random and points
-vector<point<int>> generate_colinear_points(int n, int low, int high){
+// Requires points
+vector<point<int>> generate_colinear_points(auto &&rng, int n, int low, int high){
 	vector<point<int>> a(n);
 	while(true){
 		for(auto &[x, y]: a) x = randint(low, high + 1)(rng), y = randint(low, high + 1)(rng);

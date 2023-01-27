@@ -1,9 +1,9 @@
 <snippet>
 	<content><![CDATA[
-// Requires random, point, line, and line_intersection
 // Vertices 0 ~ n_l-1 lie on x=0 with increasing y coordinate
 // Vertices n_l ~ n_l+n_r-1 lie on x = max_c with increasing y coordinate (can be decreasing if can_be_reversed = true)
-pair<vector<array<int, 2>>, vector<pointll>> generate_parallel_planar_graph(int n, int n_l, int n_r, int m_max, bool can_be_reversed = false, int max_c = 1000000000){
+// Requires point, line, and line_intersection
+pair<vector<array<int, 2>>, vector<pointll>> generate_parallel_planar_graph(auto &&rng, int n, int n_l, int n_r, int m_max, bool can_be_reversed = false, int max_c = 1000000000){
 	assert(0 <= min(n_l, n_r) && n_l + n_r <= n);
 	vector<pointll> embedding(n);
 	for(auto u = 0; u < n; ++ u){

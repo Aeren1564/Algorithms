@@ -3,7 +3,7 @@
 // T_large must be able to hold max_coordiate^4
 // Requires point, line, line_intersection, quad_edge, delaunay_triangulation, and disjoint_set
 template<class T, class T_large>
-vector<point<T>> generate_simple_polygon(int n, T low, T high, auto rng){
+vector<point<T>> generate_simple_polygon(auto &&rng, int n, T low, T high){
 	assert(n >= 3 && low < high);
 	vector<point<T>> order;
 	while(true){

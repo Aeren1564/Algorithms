@@ -1,7 +1,7 @@
 <snippet>
 	<content><![CDATA[
-// Requires random
-vector<array<int, 2>> generate_simple_graph(int n, int m){
+vector<array<int, 2>> generate_simple_graph(auto &&rng, int n, int m){
+	assert(1 <= n && 0 <= m && m <= 1LL * n * (n - 1) / 2);
 	vector<array<int, 2>> res(m);
 	set<array<int, 2>> s;
 	for(auto &[u, v]: res){

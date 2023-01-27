@@ -1,9 +1,27 @@
 <snippet>
 	<content><![CDATA[
-// Requires random
-vector<array<int, 2>> generate_tree(int n){
+vector<array<int, 2>> generate_tree(auto &&rng, int n){
 	vector<array<int, 2>> res;
-	for(auto u = 1; u < n; ++ u) res.push_back({u, rng() % u});
+	if(n <= 3 || rng() & 1){
+		vector<int> order(n);
+		iota(order.begin(), order.end(), 0);
+		for(auto u = 1; u < n; ++ u) res.push_back({order[rng() % u], order[u]});
+		shuffle(res.begin(), res.end(), rng);
+	}
+	else{
+		vector<int> prufer(n - 2), deg(n, 1);
+		for(auto &u: prufer) ++ deg[u = rng() % n];
+		int leaf = find_if(deg.begin(), deg.end(), [&](int x){ return x != 1; }) - deg.begin(), u = leaf;
+		for(auto v: prufer){
+			res.push_back({min(leaf, v), max(leaf, v)});
+			if(-- deg[v] == 1 && v < u) leaf = v;
+			else{
+				u = find_if(deg.begin() + u + 1, deg.end(), [&](int x){ return x != 1; }) - deg.begin();
+				leaf = u;
+			}
+		}
+		res.push_back({leaf, n - 1});
+	}
 	return res;
 }
 ]]></content>
