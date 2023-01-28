@@ -3,7 +3,7 @@
 // Requires graph, lexicographical_bfs_forest, and recognize_chordal_graphs
 template<class T>
 pair<vector<vector<int>>, vector<array<int, 2>>> // bags, edges
-tree_decomposition_chordal(const graph<T> &g){
+tree_decomposition_chordal_graph(const graph<T> &g){
 	int n = g.n;
 	auto orderptr = recognize_chordal_graphs(g);
 	assert(orderptr);
@@ -31,7 +31,7 @@ tree_decomposition_chordal(const graph<T> &g){
 }
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
-	<tabTrigger>tree_decomposition_chordal</tabTrigger> -->
+	<tabTrigger>tree_decomposition_chordal_graph</tabTrigger> -->
 	<!-- Optional: Set a scope to limit where the snippet will trigger -->
 	<scope>source.c++</scope> -->
 </snippet>
