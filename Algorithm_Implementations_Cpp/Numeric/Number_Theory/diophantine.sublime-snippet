@@ -10,7 +10,7 @@ array<T, 6> solve_linear_diophantine(T a, T b, T c, T xlow, T xhigh, T ylow, T y
 	array<T, 6> no_sol{0, 0, 0, 0, 0, g};
 	if(a == 0 && b == 0){
 		if(c) return no_sol;
-		else return {(xhigh - xlow) * (yhigh - ylow), xlow, ylow, xhigh, yhigh, 0};
+		else return {(xhigh - xlow) * (yhigh - ylow), xlow, ylow, xhigh - 1, yhigh - 1, 0};
 	}
 	-- xhigh, -- yhigh;
 	if(c % g) return no_sol;
