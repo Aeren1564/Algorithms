@@ -23,9 +23,11 @@ vector<array<int, 2>> generate_chordal_graph(auto &&rng, int n){
 	set<int> state;
 	vector<array<int, 2>> res;
 	for(auto t = 0; t < n; ++ t){
-		for(auto u: insert[t]) state.insert(u);
 		for(auto u: erase[t]) state.erase(u);
-		for(auto beg = state.begin(); beg != state.end(); ++ beg) for(auto end = next(beg); end != state.end(); ++ end) res.push_back({*beg, *end});
+		for(auto u: insert[t]){
+			for(auto v: state) res.push_back({u, v});
+			state.insert(u);
+		}
 	}
 	return res;
 }
