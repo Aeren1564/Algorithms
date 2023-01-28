@@ -1,24 +1,18 @@
 <snippet>
 	<content><![CDATA[
-// g must be a tree
-// Given is a graph where extra cycle joining all leaves in dfs order is attached to g.
-// Returns a tree decomposition {bags, edges} where |bag| <= 4 and (# of bags) <= 4n
+// g must be a tree rooted at 0 where deg(0) >= 2
+// Given is a graph where a cycle joining all leaves in dfs tree is attached to g.
+// Returns a tree decomposition {bags, edges} where |bag| <= 4 and (# of bags) <= 4*n
 // O(n)
 // Requires graph
 template<class T>
 pair<vector<vector<int>>, vector<array<int, 2>>> tree_decomposition_halin_graph(const graph<T> &g){
+	assert(g.degree(0) >= 2);
 	int n = g.n;
 	if(n <= 4){
 		vector<int> bag(n);
 		iota(bag.begin(), bag.end(), 0);
 		return {{bag}, {}};
-	}
-	int root = 0;
-	while(true){
-		int deg = 0;
-		for(auto id: g.adj[root]) deg += !g.ignore || !g.ignore(id);
-		if(deg >= 2) break;
-		++ root;
 	}
 	vector<int> order, pe(n, -1);
 	vector<array<int, 2>> leaf(n, {-1, -1});
@@ -36,12 +30,12 @@ pair<vector<vector<int>>, vector<array<int, 2>>> tree_decomposition_halin_graph(
 		}
 		if(!~leaf[u][0]) leaf[u] = {u, u};
 	};
-	dfs(dfs, root);
+	dfs(dfs, 0);
 	assert((int)order.size() == n);
 	vector<int> index_d(n), child;
 	vector<vector<int>> bag;
 	vector<array<int, 2>> edge;
-	bag.push_back({root, leaf[root][0], leaf[root][1]});
+	bag.push_back({0, leaf[0][0], leaf[0][1]});
 	for(auto u: order){
 		auto [l, r] = leaf[u];
 		int u_d = index_d[u];
