@@ -18,7 +18,6 @@ pair<vector<vector<int>>, vector<array<int, 2>>> tree_decomposition_halin_graph(
 	vector<array<int, 2>> leaf(n, {-1, -1});
 	auto dfs = [&](auto self, int u)->void{
 		order.push_back(u);
-		int deg = 0;
 		for(auto id: g.adj[u]){
 			if(g.ignore && g.ignore(id) || id == pe[u]) continue;
 			int v = g(u, id);
