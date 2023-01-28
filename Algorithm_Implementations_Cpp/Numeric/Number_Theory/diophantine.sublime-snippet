@@ -5,6 +5,7 @@
 // cnt, leftsol, rightsol, gcd of a and b
 template<class T>
 array<T, 6> solve_linear_diophantine(T a, T b, T c, T xlow, T xhigh, T ylow, T yhigh){
+	if(a == 0 && b == 0) return {(xhigh - xlow + 1) * (yhigh - ylow + 1), xlow, ylow, xhigh, yhigh, 0};
 	T x, y, g = euclid(a >= 0 ? a : -a, b >= 0 ? b : -b, x, y);
 	array<T, 6> no_sol{0, 0, 0, 0, 0, g};
 	if(c % g) return no_sol;
