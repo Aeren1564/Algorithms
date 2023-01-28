@@ -5,9 +5,6 @@ struct graph{
 	struct E{
 		int from, to;
 		T cost;
-		friend ostream operator<<(ostream &out, const E &e){
-			return out << "{" << e.from << ", " << e.to << ", " << e.cost << "}";
-		}
 	};
 	int n;
 	vector<E> edge;
@@ -58,13 +55,12 @@ struct graph{
 	int degree(int u) const{ // the degree (outdegree if directed) of u (without the ignoration rule)
 		return (int)adj[u].size();
 	}
+	// The adjacency list is sorted for each vertex.
 	vector<vector<int>> get_adjacency_list() const{
 		vector<vector<int>> res(n);
 		for(auto u = 0; u < n; ++ u) for(auto id: adj[u]){
 			if(ignore && ignore(id)) continue;
-			auto &e = edge[id];
-			int v = u ^ e.from ^ e.to;
-			res[u].push_back(v);
+			res[(*this)(u, id)].push_back(u);
 		}
 		return res;
 	}
