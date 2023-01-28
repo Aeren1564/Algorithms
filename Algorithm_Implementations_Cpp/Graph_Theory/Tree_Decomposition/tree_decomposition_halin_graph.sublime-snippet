@@ -69,7 +69,10 @@ pair<vector<vector<int>>, vector<array<int, 2>>> tree_decomposition_halin_graph(
 		bag.push_back({u, v, leaf[v][0], leaf[v][1]});
 		edge.push_back({u_d, v_d});
 	}
-	for(auto &b: bag) b.erase(unique(b.begin(), b.end()), b.end());
+	for(auto &b: bag){
+		sort(b.begin(), b.end());
+		b.erase(unique(b.begin(), b.end()), b.end());
+	}
 	return {bag, edge};
 }
 ]]></content>
