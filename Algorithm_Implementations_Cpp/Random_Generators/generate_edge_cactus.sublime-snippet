@@ -1,0 +1,45 @@
+<snippet>
+	<content><![CDATA[
+// Requires generate_tree
+vector<array<int, 2>> generate_edge_cactus(auto &&rng, int n, double cycle_extension_prob = 0.8){
+	uniform_real_distribution<double> genp(0, 1);
+	vector<vector<int>> adj(n);
+	vector<array<int, 2>> res;
+	for(auto [u, v]: generate_tree(rng, n)){
+		res.push_back({u, v});
+		adj[u].push_back(v), adj[v].push_back(u);
+	}
+	vector<int> order, pv(n, -1), depth(n);
+	auto dfs = [&](auto self, int u, int p)->void{
+		order.push_back(u);
+		pv[u] = p;
+		for(auto v: adj[u]) if(v != p){
+			depth[v] = depth[u] + 1;
+			self(self, v, u);
+		}
+	};
+	dfs(dfs, 0, -1);
+	vector<int> covered(n);
+	for(auto i = n - 1; i >= 0; -- i){
+		int u = order[i];
+		if(depth[u] <= 1 || covered[u] || covered[pv[u]]){
+			continue;
+		}
+		if(genp(rng) <= cycle_extension_prob){
+			covered[u] = covered[pv[u]] = true;
+			int v = pv[pv[u]];
+			while(v && !covered[v] && genp(rng) <= cycle_extension_prob){
+				covered[v] = true;
+				v = pv[v];
+			}
+			res.push_back({u, v});
+		}
+	}
+	return res;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>generate_edge_cactus</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
