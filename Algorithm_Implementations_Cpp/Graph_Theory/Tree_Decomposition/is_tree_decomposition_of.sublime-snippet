@@ -1,0 +1,62 @@
+<snippet>
+	<content><![CDATA[
+// O(n * w^2) where w is the width of the decomposition
+// Requires graph and disjoint_set
+template<class T>
+bool is_tree_decomposition_of(const graph<T> &g, const vector<vector<int>> &bag, const vector<array<int, 2>> &edge){
+	if(bag.empty()) return false;
+	int n = g.n;
+	for(auto b: bag){
+		if(b.empty() || !is_sorted(b.begin(), b.end())) return false;
+		int s = (int)b.size();
+		b.erase(unique(b.begin(), b.end()), b.end());
+		if((int)b.size() != s) return false;
+		if(b.front() < 0 || n <= b.back()) return false;
+	}
+	if((int)edge.size() != (int)bag.size() - 1) return false;
+	disjoint_set dsu((int)bag.size());
+	vector<vector<int>> adj((int)bag.size());
+	for(auto [u, v]: edge){
+		if(min(u, v) < 0 || (int)bag.size() <= max(u, v) || u == v) return false;
+		if(!dsu.merge(u, v)) return false;
+		adj[u].push_back(v);
+		adj[v].push_back(u);
+	}
+	vector<vector<int>> belong(n);
+	for(auto i = 0; i < (int)bag.size(); ++ i) for(auto u: bag[i]) belong[u].push_back(i);
+	dsu.clear();
+	vector<int> flag((int)bag.size(), -1);
+	for(auto u = 0; u < n; ++ u){
+		for(auto i: belong[u]) flag[i] = u;
+		for(auto i: belong[u]) for(auto j: adj[i]) if(flag[j] == u) dsu.merge(i, j);
+		if(dsu.size(belong[u][0]) != (int)belong[u].size()){
+			return false;
+		}
+		for(auto i: belong[u]) dsu.p[i] = -1;
+		dsu._classes = n;
+	}
+	auto gadj = g.get_adjacency_list();
+	vector<vector<int>> check(n);
+	for(auto u = 0; u < n; ++ u){
+		gadj[u].erase(unique(gadj[u].begin(), gadj[u].end()), gadj[u].end());
+		check[u].resize((int)gadj[u].size());
+	}
+	for(auto b: bag) for(auto i = 0; i < (int)b.size(); ++ i){
+		int u = b[i];
+		for(auto j = i + 1; j < (int)b.size(); ++ j){
+			int v = b[j];
+			if(binary_search(gadj[u].begin(), gadj[u].end(), v)){
+				check[u][lower_bound(gadj[u].begin(), gadj[u].end(), v) - gadj[u].begin()] = true;
+				check[v][lower_bound(gadj[v].begin(), gadj[v].end(), u) - gadj[v].begin()] = true;
+			}
+		}
+	}
+	for(auto u = 0; u < n; ++ u) if(find(check[u].begin(), check[u].end(), false) != check[u].end()) return false;
+	return true;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>is_tree_decomposition_of</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
