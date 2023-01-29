@@ -1,9 +1,9 @@
 <snippet>
 	<content><![CDATA[
 // Requires generate_tree
-vector<array<int, 2>> generate_simply_connected_graph(int n, int m, auto &&rng){
+vector<array<int, 2>> generate_simply_connected_graph(auto &&rng, int n, int m){
 	assert(n - 1 <= m && m <= 1LL * n * (n - 1) / 2);
-	auto res = generate_tree(n, rng);
+	auto res = generate_tree(rng, n);
 	set<array<int, 2>> s;
 	for(auto [u, v]: res) s.insert({u, v}), s.insert({v, u});
 	for(auto rep = n - 1; rep < m; ++ rep){
