@@ -24,10 +24,10 @@ struct circle{
 	U square(U x) const{
 		return x * x;
 	}
-	bool contains(const point<T> &p) const{
+	bool contains(const point<T> &p = {}) const{
 		return squared_distance(center, p) <= square(radius);
 	}
-	bool strictly_contains(const point<T> &p) const{
+	bool strictly_contains(const point<T> &p = {}) const{
 		return squared_distance(center, p) < square(radius);
 	}
 	bool contains(const circle &c) const{
@@ -49,7 +49,7 @@ struct circle{
 		return square(radius - c.radius) < d && d < square(radius + c.radius);
 	}
 	// In case of returning two points, center->list forms a positive orientation
-	vector<point<double>> tangent_points(const point<T> &p) const{
+	vector<point<double>> tangent_points(const point<T> &p = {}) const{
 		auto d = squared_distance(center, p);
 		if(d < radius * radius) return {};
 		if(d == radius * radius) return {p};
@@ -59,7 +59,7 @@ struct circle{
 		return {mid - h, mid + h};
 	}
 	// In case of returning two points, center->list forms a positive orientation
-	vector<point<long double>> tangent_pointsl(const point<T> &p) const{
+	vector<point<long double>> tangent_pointsl(const point<T> &p = {}) const{
 		auto d = squared_distance(center, p);
 		if(d < radius * radius) return {};
 		if(d == radius * radius) return {p};
