@@ -10,7 +10,7 @@ struct line{
 	template<class U, class V>
 	line(const point<U> &p, const point<V> &q, bool Two_Points = true): p(p), d(Two_Points ? q - p : q){ }
 	line(const point<T> &d): p(), d(d){ }
-	line(T a, T b, T c): p(a ? -c / a : 0, !a && b ? -c / b : 0), d(-b, a){ }
+	line(T a, T b, T c): p(abs(a) > T(1e-9) ? -c / a : 0, abs(a) <= T(1e-9) && abs(b) > T(1e-9) ? -c / b : 0), d(-b, a){ }
 	point<T> q() const{
 		return p + d;
 	}
