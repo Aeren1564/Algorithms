@@ -1,0 +1,59 @@
+<snippet>
+	<content><![CDATA[
+// As a directed line, c is on the left
+// Requires point, line, and circle
+template<class T>
+vector<lined> circle_common_tangents(const circle<T> &c, const circle<T> &d){
+	assert(c != d);
+	if(abs(c.radius) <= T(1e-9) && abs(d.radius) <= T(1e-9)) return {lined(c.center, d.center)};
+	if(c.strictly_contains(d) || d.strictly_contains(c)) return {};
+	if(c.contains(d) || d.contains(c)) return {lined((-d.radius * pointd(c.center) + c.radius * pointd(d.center)) / (c.radius - d.radius), (c.contains(d) ? d.center - c.center : c.center - d.center).perp(), false)};
+	double xdif = d.center.x - c.center.x;
+	double ydif = d.center.y - c.center.y;
+	double rdif = c.radius - d.radius;
+	double sqdist = xdif * xdif + ydif * ydif;
+	double sqrtdet = sqrt(sqdist - rdif * rdif);
+	vector<lined> res = {
+		lined(
+			(rdif * xdif - ydif * sqrtdet) / sqdist,
+			(rdif * ydif + xdif * sqrtdet) / sqdist,
+			-c.radius
+		),
+		lined(
+			(rdif * xdif + ydif * sqrtdet) / sqdist,
+			(rdif * ydif - xdif * sqrtdet) / sqdist,
+			-c.radius
+		)
+	};
+	res[0].p += c.center;
+	res[1].p += c.center;
+	if(abs(c.radius) <= T(1e-9) || abs(d.radius) <= T(1e-9) || c.intersect_at_two_points(d));
+	else if(c.intersect_at_one_point(d)) res.push_back(lined((d.radius * pointd(c.center) + c.radius * pointd(d.center)) / (c.radius + d.radius), (d.center - c.center).perp(), false));
+	else{
+		double rsum = c.radius + d.radius;
+		double sqrtdet = sqrt(sqdist - rsum * rsum);
+		res.push_back(
+			lined(
+				(rsum * xdif + ydif * sqrtdet) / sqdist,
+				(rsum * ydif - xdif * sqrtdet) / sqdist,
+				-c.radius
+			)
+		);
+		res.push_back(
+			lined(
+				(rsum * xdif - ydif * sqrtdet) / sqdist,
+				(rsum * ydif + xdif * sqrtdet) / sqdist,
+				-c.radius
+			)
+		);
+		res[2].p += c.center;
+		res[3].p += c.center;
+	}
+	return res;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>circle_common_tangents</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
