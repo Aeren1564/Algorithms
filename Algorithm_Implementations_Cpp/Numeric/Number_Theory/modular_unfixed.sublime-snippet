@@ -64,7 +64,7 @@ struct modular_unfixed_base{
 		if(_mod == 1) return 0;
 		assert(_inverse_mod);
 		int sign = x >= 0 ? 1 : -1;
-		unsigned int v = _mod <= sign * x ? sign * x - ((unsigned __int128)(sign * x) * _inverse_mod >> 64) * _mod : sign * x;
+		unsigned int v = _mod <= sign * x ? sign * x - ((__uint128_t)(sign * x) * _inverse_mod >> 64) * _mod : sign * x;
 		if(v >= _mod) v += _mod;
 		if(sign == -1 && v) v = _mod - v;
 		return v;
