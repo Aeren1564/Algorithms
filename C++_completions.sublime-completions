@@ -100,7 +100,7 @@
         { "trigger": "vvalues", "contents": "ranges::views::values"},
 
         { "trigger": "input", "contents": "copy_n(istream_iterator<${1:int}>(cin), ${2:n}, $3.begin())"},
-        { "trigger": "output", "contents": "ranges::copy($1, ostream_iterator<${2:int}>(${3:cout}, ${4:\" \"}))"},
+        { "trigger": "output", "contents": "copy($1.begin(), $1.end(), ostream_iterator<${2:int}>(${3:cout}, ${4:\" \"}))"},
 
         { "trigger": "rall_of", "contents": "ranges::all_of($1, ${2:identity()})"},
         { "trigger": "rany_of", "contents": "ranges::any_of($1, ${2:identity()})"},
