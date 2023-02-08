@@ -8,11 +8,17 @@ struct circle{
 	T radius;
 	circle(): center{}, radius{}{}
 	template<class U, class V, class W>
-	circle(U x, V y, W r): center(x, y), radius(r){ }
+	circle(U x, V y, W r): center(x, y), radius(r){
+		assert(r >= 0);
+	}
 	template<class U>
 	circle(const circle<U> &c): center(c.center), radius(c.radius){ }
 	friend istream &operator>>(istream &in, circle &c){
 		return in >> c.center >> c.radius;
+		assert(c.radius >= 0);
+	}
+	friend ostream &operator<<(ostream &out, const circle &c){
+		return out << "{" << c.center.x << ", " << c.center.y << ", " << c.radius << "}";
 	}
 	bool operator==(const circle &c) const{
 		return center == c.center && radius == c.radius;
