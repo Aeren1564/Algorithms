@@ -168,6 +168,14 @@ bool colinear(const vector<point<T>> &a){
 	for(auto j = i + 1; j < (int)a.size(); ++ j) if(!colinear(a[0], a[i], a[j])) return false;
 	return true;
 }
+point<double> polar(double x, double theta){
+	assert(x >= 0);
+	return {x * cos(theta), x * sin(theta)};
+}
+point<long double> polarl(long double x, long double theta){
+	assert(x >= 0);
+	return {x * cosl(theta), x * sinl(theta)};
+}
 
 using pointint = point<int>;
 using pointll = point<long long>;
