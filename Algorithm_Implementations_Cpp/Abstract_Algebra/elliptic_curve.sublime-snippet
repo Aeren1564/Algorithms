@@ -17,6 +17,14 @@ struct elliptic_curve{
 		if(z < T{0}) x = -x, y = -y, z = -z;
 		return elliptic_curve{x, y, z};
 	}
+	// Assumes T is of modular type
+	static elliptic_curve sample(auto &&rng, auto optional_sqrt){
+		assert(setup_flag);
+		while(true){
+			T x = rng();
+			if(auto yptr = optional_sqrt(x * x * x + a * x + b)) return elliptic_curve(x, *yptr * (rng() & 1 ? 1 : -1), 1);
+		}
+	}
 	T x = 0, y = 1, z = 0;
 	elliptic_curve(){ assert(setup_flag); }
 private:
