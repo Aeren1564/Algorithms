@@ -17,12 +17,25 @@ struct elliptic_curve{
 		if(z < T{0}) x = -x, y = -y, z = -z;
 		return elliptic_curve{x, y, z};
 	}
+	static optional<elliptic_curve> make(const array<T, 3> &a = {0, 1, 0}){
+		return make(a[0], a[1], a[2]);
+	}
 	// Assumes T is of modular type
-	static elliptic_curve sample(auto &&rng, auto optional_sqrt){
+	template<class U>
+	static elliptic_curve sample(auto &&rng, U low, U high, auto optional_sqrt){
 		assert(setup_flag);
+		assert(low < high);
+		uniform_int_distribution<U> rint(low, high - 1);
 		while(true){
-			T x = rng();
-			if(auto yptr = optional_sqrt(x * x * x + a * x + b)) return elliptic_curve(x, *yptr * (rng() & 1 ? 1 : -1), 1);
+			T x = rint(rng);
+			if(auto yptr = optional_sqrt(x * x * x + a * x + b)){
+				T y = *yptr;
+				if(y == 0){
+					if(rng() & 1) return elliptic_curve();
+					else return elliptic_curve(x, y, 1);
+				}
+				else return elliptic_curve(x, y * (rng() & 1 ? 1 : -1), 1);
+			}
 		}
 	}
 	T x = 0, y = 1, z = 0;
