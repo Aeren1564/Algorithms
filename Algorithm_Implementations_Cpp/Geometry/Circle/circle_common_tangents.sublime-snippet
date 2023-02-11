@@ -1,6 +1,9 @@
 <snippet>
 	<content><![CDATA[
-// As a directed line, c is on the left
+// As a directed line, it touches c first
+// First L(resp. R) denotes that c lies on the left(resp. right)
+// Second L(resp. R) denotes that d lies on the left(resp. right)
+// Order of lines: LL, RR, LR, RL
 // Requires point, line, and circle
 template<class T>
 vector<lined> circle_common_tangents(const circle<T> &c, const circle<T> &d){
@@ -15,13 +18,13 @@ vector<lined> circle_common_tangents(const circle<T> &c, const circle<T> &d){
 	double sqrtdet = sqrt(max(sqdist - rdif * rdif, 0.0));
 	vector<lined> res = {
 		lined(
-			(rdif * xdif - ydif * sqrtdet) / sqdist,
-			(rdif * ydif + xdif * sqrtdet) / sqdist,
+			(rdif * xdif + ydif * sqrtdet) / sqdist,
+			(rdif * ydif - xdif * sqrtdet) / sqdist,
 			-c.radius
 		),
 		lined(
-			(rdif * xdif + ydif * sqrtdet) / sqdist,
-			(rdif * ydif - xdif * sqrtdet) / sqdist,
+			(rdif * xdif - ydif * sqrtdet) / sqdist,
+			(rdif * ydif + xdif * sqrtdet) / sqdist,
 			-c.radius
 		)
 	};
@@ -49,6 +52,8 @@ vector<lined> circle_common_tangents(const circle<T> &c, const circle<T> &d){
 		res[2].p += c.center;
 		res[3].p += c.center;
 	}
+	if((int)res.size() >= 2) for(auto i = 0; i < 2; ++ i) res[i] = {res[i].projection(c.center), res[i].projection(d.center)};
+	if((int)res.size() >= 4) for(auto i = 2; i < 4; ++ i) res[i] = {res[i].projection(c.center), res[i].projection(d.center)};
 	return res;
 }
 ]]></content>
