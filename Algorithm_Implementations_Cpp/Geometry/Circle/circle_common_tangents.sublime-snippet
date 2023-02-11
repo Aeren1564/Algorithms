@@ -12,7 +12,7 @@ vector<lined> circle_common_tangents(const circle<T> &c, const circle<T> &d){
 	double ydif = d.center.y - c.center.y;
 	double rdif = c.radius - d.radius;
 	double sqdist = xdif * xdif + ydif * ydif;
-	double sqrtdet = sqrt(sqdist - rdif * rdif);
+	double sqrtdet = sqrt(max(sqdist - rdif * rdif, 0.0));
 	vector<lined> res = {
 		lined(
 			(rdif * xdif - ydif * sqrtdet) / sqdist,
@@ -31,7 +31,7 @@ vector<lined> circle_common_tangents(const circle<T> &c, const circle<T> &d){
 	else if(c.intersect_at_one_point(d)) res.push_back(lined((d.radius * pointd(c.center) + c.radius * pointd(d.center)) / (c.radius + d.radius), (d.center - c.center).perp(), false));
 	else{
 		double rsum = c.radius + d.radius;
-		double sqrtdet = sqrt(sqdist - rsum * rsum);
+		double sqrtdet = sqrt(max(sqdist - rsum * rsum, 0.0));
 		res.push_back(
 			lined(
 				(rsum * xdif + ydif * sqrtdet) / sqdist,
