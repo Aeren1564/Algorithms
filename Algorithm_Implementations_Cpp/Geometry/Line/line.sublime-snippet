@@ -11,9 +11,17 @@ struct line{
 	line(const point<U> &p, const point<V> &q, bool Two_Points = true): p(p), d(Two_Points ? q - p : q){ }
 	line(const point<T> &d): p(), d(d){ }
 	line(T a, T b, T c): p(abs(a) > T(1e-9) ? -c / a : 0, abs(a) <= T(1e-9) && abs(b) > T(1e-9) ? -c / b : 0), d(-b, a){ }
+	friend istream &operator>>(istream &in, line<T> &l){
+		in >> l.p >> l.d, l.d -= l.p;
+		return in;
+	}
+	friend ostream &operator<<(ostream &out, const line<T> &l){
+		return out << "{" << l.p << " -> " << l.q() << "}";
+	}
 	point<T> q() const{
 		return p + d;
 	}
+	// Check degeneracy(vanishing direction vector)
 	operator bool() const{
 		return abs(d.x) > 1e-9 || abs(d.y) > 1e-9;
 	}
@@ -21,8 +29,8 @@ struct line{
 	tuple<T, T, T> coef() const{
 		return {d.y, -d.x, d.perp() * p};
 	}
-	bool operator||(const line<T> &L) const{
-		return d || L.d;
+	bool parallel_to(const line<T> &L) const{
+		return abs(d ^ L.d) <= 1e-9;
 	}
 	line<double> translate(T x) const{
 		auto dir = d.perp();
@@ -32,78 +40,87 @@ struct line{
 		auto dir = d.perp();
 		return {point<long double>(p) + dir.unitl() * x, d, false};
 	}
+	bool on_left(const point<T> &r) const{
+		assert(*this);
+		return (r - p ^ d) < 0;
+	}
+	bool on_right(const point<T> &r) const{
+		assert(*this);
+		return (r - p ^ d) > 0;
+	}
+	bool on_line(const point<T> &r) const{
+		assert(*this);
+		return abs(r - p ^ d) <= 1e-9;
+	}
+	bool on_ray(const point<T> &r) const{
+		assert(*this);
+		return abs(r - p ^ d) <= 1e-9 && (r - p) * d >= 0;
+	}
+	bool on_segment(const point<T> &r) const{
+		assert(*this);
+		if(abs(r - p ^ d) > 1e-9) return false;
+		auto x = (r - p) * d;
+		return 0 <= x && x <= d.squared_norm();
+	}
+	bool on_open_segment(const point<T> &r) const{
+		assert(*this);
+		if(abs(r - p ^ d) > 1e-9) return false;
+		auto x = (r - p) * d;
+		return 0 < x && x < d.squared_norm();
+	}
+	double distance_to_line(const point<T> &r) const{
+		assert(*this);
+		return abs(r - p ^ d) / d.norm();
+	}
+	long double distance_to_linel(const point<T> &r) const{
+		assert(*this);
+		return abs(r - p ^ d) / d.norml();
+	}
+	double distance_to_ray(const point<T> &r) const{
+		assert(*this);
+		return (r - p) * d <= 0 ? distance(p, r) : distance_to_line(r);
+	}
+	long double distance_to_rayl(const point<T> &r) const{
+		assert(*this);
+		return (r - p) * d <= 0 ? distancel(p, r) : distance_to_linel(r);
+	}
+	double distance_to_segment(const point<T> &r) const{
+		assert(*this);
+		auto x = (r - p) * d;
+		return x <= 0 ? distance(p, r) : x >= d.squared_norm() >= 0 ? distance(q(), r) : distance_to_line(r);
+	}
+	long double distance_to_segmentl(const point<T> &r) const{
+		assert(*this);
+		auto x = (r - p) * d;
+		return x <= 0 ? distancel(p, r) : x >= d.squared_norm() ? distancel(q(), r) : distance_to_linel(r);
+	}
+	point<double> projection(const point<T> &r) const{
+		assert(*this);
+		return point<double>(p) + (r - p) * d / d.squared_norm() * point<double>(d);
+	}
+	point<long double> projectionl(const point<T> &r) const{
+		assert(*this);
+		return point<long double>(p) + (r - p) * d / d.squared_norml() * point<long double>(d);
+	}
+	point<double> reflection(const point<T> &r) const{
+		assert(*this);
+		return 2.0 * projection(r) - point<double>(r);
+	}
+	point<long double> reflectionl(const point<T> &r) const{
+		assert(*this);
+		return 2.0l * projectionl(r) - point<long double>(r);
+	}
+	point<double> closest_point_on_segment(const point<T> &r) const{
+		assert(*this);
+		auto x = (r - p) * d;
+		return x <= 0 ? point<double>(p) : x >= d.squared_norm() ? point<double>(q()) : projection(r);
+	}
+	point<double> closest_point_on_segmentl(const point<T> &r) const{
+		assert(*this);
+		auto x = (r - p) * d;
+		return x <= 0 ? point<long double>(p) : x >= d.squared_norml() ? point<long double>(q()) : projectionl(r);
+	}
 };
-template<class T> istream &operator>>(istream &in, line<T> &l){
-	in >> l.p >> l.d, l.d -= l.p;
-	return in;
-}
-template<class T> ostream &operator<<(ostream &out, const line<T> &l){
-	return out << "{" << l.p << " -> " << l.q() << "}";
-}
-template<class T>
-bool on_line(const point<T> &p, const line<T> &L){
-	return L ? p - L.p || L.d : p == L.p;
-}
-template<class T>
-bool on_ray(const point<T> &p, const line<T> &L){
-	return L ? (L.p - p || L.q() - p) && (L.p - p) * L.d <= 0 : p == L.p;
-}
-template<class T>
-bool on_segment(const point<T> &p, const line<T> &L){
-	return L ? (L.p - p || L.q() - p) && (L.p - p) * (L.q() - p) <= 0 : p == L.p;
-}
-template<class T>
-bool on_open_segment(const point<T> &p, const line<T> &L){
-	return L ? (L.p - p || L.q() - p) && (L.p - p) * (L.q() - p) < 0 : p == L.p;
-}
-template<class T>
-double distance_to_line(const point<T> &p, const line<T> &L){
-	return L ? abs(p - L.p ^ L.d) / L.d.norm() : distance(p, L.p);
-}
-template<class T>
-long double distance_to_linel(const point<T> &p, const line<T> &L){
-	return L ? abs(p - L.p ^ L.d) / L.d.norml() : distancel(p, L.p);
-}
-template<class T>
-double distance_to_ray(const point<T> &p, const line<T> &L){
-	return (p - L.p) * L.d <= 0 ? distance(p, L.p) : distance_to_line(p, L);
-}
-template<class T>
-long double distance_to_rayl(const point<T> &p, const line<T> &L){
-	return (p - L.p) * L.d <= 0 ? distancel(p, L.p) : distance_to_linel(p, L);
-}
-template<class T>
-double distance_to_segment(const point<T> &p, const line<T> &L){
-	return (p - L.p) * L.d <= 0 ? distance(p, L.p) : (p - L.q()) * L.d >= 0 ? distance(p, L.q()) : distance_to_line(p, L);
-}
-template<class T>
-long double distance_to_segmentl(const point<T> &p, const line<T> &L){
-	return (p - L.p) * L.d <= 0 ? distancel(p, L.p) : (p - L.q()) * L.d >= 0 ? distancel(p, L.q()) : distance_to_linel(p, L);
-}
-template<class T>
-point<double> projection(const point<T> &p, const line<T> &L){
-	return point<double>(L.p) + (L ? (p - L.p) * L.d / L.d.squared_norm() * point<double>(L.d) : point<double>());
-}
-template<class T>
-point<long double> projectionl(const point<T> &p, const line<T> &L){
-	return point<long double>(L.p) + (L ? (p - L.p) * L.d / L.d.squared_norml() * point<long double>(L.d) : point<long double>());
-}
-template<class T>
-point<double> reflection(const point<T> &p, const line<T> &L){
-	return 2.0 * projection(p, L) - point<double>(p);
-}
-template<class T>
-point<long double> reflectionl(const point<T> &p, const line<T> &L){
-	return 2.0l * projectionl(p, L) - point<long double>(p);
-}
-template<class T>
-point<double> closest_point_on_segment(const point<T> &p, const line<T> &L){
-	return (p - L.p) * L.d <= 0 ? point<double>(L.p) : ((p - L.q()) * L.d >= 0 ? point<double>(L.q()) : projection(p, L));
-}
-template<class T>
-point<double> closest_point_on_segmentl(const point<T> &p, const line<T> &L){
-	return (p - L.p) * L.d <= 0 ? point<long double>(L.p) : ((p - L.q()) * L.d >= 0 ? point<long double>(L.q()) : projectionl(p, L));
-}
 
 using lineint = line<int>;
 using linell = line<long long>;
