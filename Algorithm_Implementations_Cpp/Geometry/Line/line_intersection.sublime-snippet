@@ -1,81 +1,58 @@
 <snippet>
 	<content><![CDATA[
+// endpoint type: 0(ray), 1(closed end), 2(open end)
+// type_mask % 3 for the left endpoint type of L
+// type_mask / 3 % 3 for the right endpoint type of L
+// type_mask / 9 % 3 for the left endpoint type of R
+// type_mask / 27 for the right endpoint type of R
 // Requires point and line
-template<int TYPE>
-struct EndpointChecker{ };
-// For rays
-template<>
-struct EndpointChecker<0>{
-	template<class T>
-	bool operator()(const T& a, const T& b) const{
-		return true;
-	}
-};
-// For closed end
-template<>
-struct EndpointChecker<1>{
-	template<class T>
-	bool operator()(const T& a, const T& b) const{
-		return a <= b;
-	}
-};
-// For open end
-template<>
-struct EndpointChecker<2>{
-	template<class T>
-	bool operator()(const T& a, const T& b) const{
-		return a < b;
-	}
-};
+#define CHECK(type, x, y) (type == 0 || x < y || x == y && type == 1)
 // Assumes parallel lines do not intersect
-template<int LA, int LB, int RA, int RB, class T>
-optional<point<double>> intersect_no_parallel_overlap(const line<T> &L, const line<T> &M){
-	auto s = L.d ^ M.d;
+template<class T>
+optional<pointd> intersect_no_parallel_overlap(int type_mask, const line<T> &L, const line<T> &M){
+	assert(0 <= type_mask && type_mask < 81);
+	T s = L.d ^ M.d;
 	if(s == 0) return {};
-	auto ls = M.p - L.p ^ M.d, rs = M.p - L.p ^ L.d;
+	T ls = M.p - L.p ^ M.d, rs = M.p - L.p ^ L.d;
 	if(s < 0) s = -s, ls = -ls, rs = -rs;
-	if(EndpointChecker<LA>()(decltype(ls)(0), ls) && EndpointChecker<LB>()(ls, s) &&
-	EndpointChecker<RA>()(decltype(rs)(0), rs) && EndpointChecker<RB>()(rs, s)){
-		return point<double>(L.p) + 1.0 * ls / s * point<double>(L.d);
-	}
-	else return {};
-}
-// Assumes parallel lines do not intersect
-template<int LA, int LB, int RA, int RB, class T>
-optional<point<long double>> intersect_no_parallel_overlapl(const line<T> &L, const line<T> &M){
-	auto s = L.d ^ M.d;
-	if(s == 0) return {};
-	auto ls = M.p - L.p ^ M.d, rs = M.p - L.p ^ L.d;
-	if(s < 0) s = -s, ls = -ls, rs = -rs;
-	if(EndpointChecker<LA>()(decltype(ls)(0), ls) && EndpointChecker<LB>()(ls, s) &&
-	EndpointChecker<RA>()(decltype(rs)(0), rs) && EndpointChecker<RB>()(rs, s)){
-		return point<long double>(L.p) + 1.0l * ls / s * point<long double>(L.d);
-	}
+	if(CHECK(type_mask % 3, 0, ls) && CHECK(type_mask / 3 % 3, ls, s) && CHECK(type_mask / 9 % 3, 0, rs) && CHECK(type_mask / 27, rs, s)) return pointd(L.p) + 1.0 * ls / s * pointd(L.d);
 	else return {};
 }
 // Assumes parallel lines do not intersect
 template<class T>
-optional<point<double>> intersect_closed_segments_no_parallel_overlap(const line<T> &L, const line<T> &M){
-	return intersect_no_parallel_overlap<1, 1, 1, 1, T>(L, M);
+optional<pointld> intersect_no_parallel_overlapl(int type_mask, const line<T> &L, const line<T> &M){
+	assert(0 <= type_mask && type_mask < 81);
+	T s = L.d ^ M.d;
+	if(s == 0) return {};
+	T ls = M.p - L.p ^ M.d, rs = M.p - L.p ^ L.d;
+	if(s < 0) s = -s, ls = -ls, rs = -rs;
+	if(CHECK(type_mask % 3, 0, ls) && CHECK(type_mask / 3 % 3, ls, s) && CHECK(type_mask / 9 % 3, 0, rs) && CHECK(type_mask / 27, rs, s)) return pointld(L.p) + 1.0L * ls / s * pointld(L.d);
+	else return {};
+}
+#undef CHECK
+// Assumes parallel lines do not intersect
+template<class T>
+optional<pointd> intersect_closed_segments_no_parallel_overlap(const line<T> &L, const line<T> &M){
+	return intersect_no_parallel_overlap<T>(1 + 3 * 1 + 9 * 1 + 27 * 1, L, M);
 }
 // Assumes parallel lines do not intersect
 template<class T>
-optional<point<long double>> intersect_closed_segments_no_parallel_overlapl(const line<T> &L, const line<T> &M){
-	return intersect_no_parallel_overlapl<1, 1, 1, 1, T>(L, M);
+optional<pointld> intersect_closed_segments_no_parallel_overlapl(const line<T> &L, const line<T> &M){
+	return intersect_no_parallel_overlapl<T>(1 + 3 * 1 + 9 * 1 + 27 * 1, L, M);
 }
 // Assumes parallel lines do not intersect
 template<class T>
-optional<point<double>> intersect_open_segments_no_parallel_overlap(const line<T> &L, const line<T> &M){
-	return intersect_no_parallel_overlap<2, 2, 2, 2, T>(L, M);
+optional<pointd> intersect_open_segments_no_parallel_overlap(const line<T> &L, const line<T> &M){
+	return intersect_no_parallel_overlap<T>(2 + 3 * 2 + 9 * 2 + 27 * 2, L, M);
 }
 // Assumes parallel lines do not intersect
 template<class T>
-optional<point<long double>> intersect_open_segments_no_parallel_overlapl(const line<T> &L, const line<T> &M){
-	return intersect_no_parallel_overlapl<2, 2, 2, 2, T>(L, M);
+optional<pointld> intersect_open_segments_no_parallel_overlapl(const line<T> &L, const line<T> &M){
+	return intersect_no_parallel_overlapl<T>(2 + 3 * 2 + 9 * 2 + 27 * 2, L, M);
 }
 // Assumes nothing
 template<class T>
-optional<line<double>> intersect_closed_segments(const line<T> &L, const line<T> &M){
+optional<lined> intersect_closed_segments(const line<T> &L, const line<T> &M){
 	auto s = L.d ^ M.d, ls = M.p - L.p ^ M.d;
 	if(!s){
 		if(ls) return {};
@@ -83,17 +60,17 @@ optional<line<double>> intersect_closed_segments(const line<T> &L, const line<T>
 		if(Lp > Lq) swap(Lp, Lq);
 		if(Mp > Mq) swap(Mp, Mq);
 		line<T> res(max(Lp, Mp), min(Lq, Mq));
-		if(res.d >= point<T>()) return line<double>(res);
+		if(res.d >= point<T>()) return lined(res);
 		return {};
 	}
 	auto rs = M.p - L.p ^ L.d;
 	if(s < 0) s = -s, ls = -ls, rs = -rs;
-	if(0 <= ls && ls <= s && 0 <= rs && rs <= s) return line<double>(point<double>(L.p) + 1.0 * ls / s * point<double>(L.d), point<double>());
+	if(0 <= ls && ls <= s && 0 <= rs && rs <= s) return lined(pointd(L.p) + 1.0 * ls / s * pointd(L.d), pointd());
 	else return {};
 }
 // Assumes nothing
 template<class T>
-optional<line<long double>> intersect_closed_segmentsl(const line<T> &L, const line<T> &M){
+optional<lineld> intersect_closed_segmentsl(const line<T> &L, const line<T> &M){
 	auto s = L.d ^ M.d, ls = M.p - L.p ^ M.d;
 	if(!s){
 		if(ls) return {};
@@ -101,17 +78,17 @@ optional<line<long double>> intersect_closed_segmentsl(const line<T> &L, const l
 		if(Lp > Lq) swap(Lp, Lq);
 		if(Mp > Mq) swap(Mp, Mq);
 		line<T> res(max(Lp, Mp), min(Lq, Mq));
-		if(res.d >= point<T>()) return line<long double>(res);
+		if(res.d >= point<T>()) return lineld(res);
 		return {};
 	}
 	auto rs = M.p - L.p ^ L.d;
 	if(s < 0) s = -s, ls = -ls, rs = -rs;
-	if(0 <= ls && ls <= s && 0 <= rs && rs <= s) return line<long double>(point<long double>(L.p) + 1.0l * ls / s * point<long double>(L.d), point<long double>());
+	if(0 <= ls && ls <= s && 0 <= rs && rs <= s) return lineld(pointld(L.p) + 1.0L * ls / s * pointld(L.d), pointld());
 	else return {};
 }
 // Assumes nothing
 template<class T>
-optional<line<double>> intersect_open_segments(const line<T> &L, const line<T> &M){
+optional<lined> intersect_open_segments(const line<T> &L, const line<T> &M){
 	auto s = L.d ^ M.d, ls = M.p - L.p ^ M.d;
 	if(!s){
 		if(ls) return {};
@@ -119,17 +96,17 @@ optional<line<double>> intersect_open_segments(const line<T> &L, const line<T> &
 		if(Lp > Lq) swap(Lp, Lq);
 		if(Mp > Mq) swap(Mp, Mq);
 		line<T> res(max(Lp, Mp), min(Lq, Mq));
-		if(res.d > point<T>()) return line<double>(res);
+		if(res.d > point<T>()) return lined(res);
 		return {};
 	}
 	auto rs = (M.p - L.p) ^ L.d;
 	if(s < 0) s = -s, ls = -ls, rs = -rs;
-	if(0 < ls && ls < s && 0 < rs && rs < s) return line<double>(point<double>(L.p) + 1.0 * ls / s * point<double>(L.d), point<double>());
+	if(0 < ls && ls < s && 0 < rs && rs < s) return lined(pointd(L.p) + 1.0 * ls / s * pointd(L.d), pointd());
 	else return {};
 }
 // Assumes nothing
 template<class T>
-optional<line<long double>> intersect_open_segmentsl(const line<T> &L, const line<T> &M){
+optional<lineld> intersect_open_segmentsl(const line<T> &L, const line<T> &M){
 	auto s = L.d ^ M.d, ls = M.p - L.p ^ M.d;
 	if(!s){
 		if(ls) return {};
@@ -137,12 +114,12 @@ optional<line<long double>> intersect_open_segmentsl(const line<T> &L, const lin
 		if(Lp > Lq) swap(Lp, Lq);
 		if(Mp > Mq) swap(Mp, Mq);
 		line<T> res(max(Lp, Mp), min(Lq, Mq));
-		if(res.d > point<T>()) return line<long double>(res);
+		if(res.d > point<T>()) return lineld(res);
 		return {};
 	}
 	auto rs = (M.p - L.p) ^ L.d;
 	if(s < 0) s = -s, ls = -ls, rs = -rs;
-	if(0 < ls && ls < s && 0 < rs && rs < s) return line<long double>(point<long double>(L.p) + 1.0l * ls / s * point<long double>(L.d), point<long double>());
+	if(0 < ls && ls < s && 0 < rs && rs < s) return lineld(pointld(L.p) + 1.0L * ls / s * pointld(L.d), pointld());
 	else return {};
 }
 ]]></content>
