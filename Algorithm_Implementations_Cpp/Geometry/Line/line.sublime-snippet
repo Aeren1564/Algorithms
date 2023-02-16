@@ -22,6 +22,14 @@ struct line{
 	point<T> q() const{
 		return p + d;
 	}
+	line &flip(){
+		p += d;
+		d = -d;
+		return *this;
+	}
+	line flipped() const{
+		return line(*this).flip();
+	}
 	// d.y * (X - p.x) - d.x * (Y - p.y) = 0
 	tuple<T, T, T> coef() const{
 		return {d.y, -d.x, d.perp() * p};
