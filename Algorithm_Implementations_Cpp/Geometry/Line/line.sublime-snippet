@@ -1,16 +1,17 @@
 <snippet>
 	<content><![CDATA[
+// Does not allow degenerate line (vanishing direction vector)
 // Requires point
 template<class T>
 struct line{
-	point<T> p{}, d{}; // p + d*t
+	point<T> p{}, d{1, 0}; // p + d*t
 	line(){ }
 	template<class U>
-	line(const line<U> &l): p(l.p), d(l.d){ }
+	line(const line<U> &l): p(l.p), d(l.d){ assert(d != point<T>()); }
 	template<class U, class V>
-	line(const point<U> &p, const point<V> &q, bool Two_Points = true): p(p), d(Two_Points ? q - p : q){ }
-	line(const point<T> &d): p(), d(d){ }
-	line(T a, T b, T c): p(abs(a) > T(1e-9) ? -c / a : 0, abs(a) <= T(1e-9) && abs(b) > T(1e-9) ? -c / b : 0), d(-b, a){ }
+	line(const point<U> &p, const point<V> &q, bool Two_Points = true): p(p), d(Two_Points ? q - p : q){ assert(d != point<T>()); }
+	line(const point<T> &d): p(), d(d){ assert(d != point<T>()); }
+	line(T a, T b, T c): p(abs(a) > T(1e-9) ? -c / a : 0, abs(a) <= T(1e-9) && abs(b) > T(1e-9) ? -c / b : 0), d(-b, a){ assert(d != point<T>()); }
 	friend istream &operator>>(istream &in, line<T> &l){
 		in >> l.p >> l.d, l.d -= l.p;
 		return in;
@@ -20,10 +21,6 @@ struct line{
 	}
 	point<T> q() const{
 		return p + d;
-	}
-	// Check degeneracy(vanishing direction vector)
-	operator bool() const{
-		return abs(d.x) > 1e-9 || abs(d.y) > 1e-9;
 	}
 	// d.y * (X - p.x) - d.x * (Y - p.y) = 0
 	tuple<T, T, T> coef() const{
@@ -41,82 +38,64 @@ struct line{
 		return {point<long double>(p) + dir.unitl() * x, d, false};
 	}
 	bool on_left(const point<T> &r) const{
-		assert(*this);
 		return (r - p ^ d) < 0;
 	}
 	bool on_right(const point<T> &r) const{
-		assert(*this);
 		return (r - p ^ d) > 0;
 	}
 	bool on_line(const point<T> &r) const{
-		assert(*this);
 		return abs(r - p ^ d) <= 1e-9;
 	}
 	bool on_ray(const point<T> &r) const{
-		assert(*this);
 		return abs(r - p ^ d) <= 1e-9 && (r - p) * d >= 0;
 	}
 	bool on_segment(const point<T> &r) const{
-		assert(*this);
 		if(abs(r - p ^ d) > 1e-9) return false;
 		auto x = (r - p) * d;
 		return 0 <= x && x <= d.squared_norm();
 	}
 	bool on_open_segment(const point<T> &r) const{
-		assert(*this);
 		if(abs(r - p ^ d) > 1e-9) return false;
 		auto x = (r - p) * d;
 		return 0 < x && x < d.squared_norm();
 	}
 	double distance_to_line(const point<T> &r) const{
-		assert(*this);
 		return abs(r - p ^ d) / d.norm();
 	}
 	long double distance_to_linel(const point<T> &r) const{
-		assert(*this);
 		return abs(r - p ^ d) / d.norml();
 	}
 	double distance_to_ray(const point<T> &r) const{
-		assert(*this);
 		return (r - p) * d <= 0 ? distance(p, r) : distance_to_line(r);
 	}
 	long double distance_to_rayl(const point<T> &r) const{
-		assert(*this);
 		return (r - p) * d <= 0 ? distancel(p, r) : distance_to_linel(r);
 	}
 	double distance_to_segment(const point<T> &r) const{
-		assert(*this);
 		auto x = (r - p) * d;
 		return x <= 0 ? distance(p, r) : x >= d.squared_norm() >= 0 ? distance(q(), r) : distance_to_line(r);
 	}
 	long double distance_to_segmentl(const point<T> &r) const{
-		assert(*this);
 		auto x = (r - p) * d;
 		return x <= 0 ? distancel(p, r) : x >= d.squared_norm() ? distancel(q(), r) : distance_to_linel(r);
 	}
 	point<double> projection(const point<T> &r) const{
-		assert(*this);
 		return point<double>(p) + (r - p) * d / d.squared_norm() * point<double>(d);
 	}
 	point<long double> projectionl(const point<T> &r) const{
-		assert(*this);
 		return point<long double>(p) + (r - p) * d / d.squared_norml() * point<long double>(d);
 	}
 	point<double> reflection(const point<T> &r) const{
-		assert(*this);
 		return 2.0 * projection(r) - point<double>(r);
 	}
 	point<long double> reflectionl(const point<T> &r) const{
-		assert(*this);
 		return 2.0l * projectionl(r) - point<long double>(r);
 	}
 	point<double> closest_point_on_segment(const point<T> &r) const{
-		assert(*this);
 		auto x = (r - p) * d;
 		return x <= 0 ? point<double>(p) : x >= d.squared_norm() ? point<double>(q()) : projection(r);
 	}
 	point<double> closest_point_on_segmentl(const point<T> &r) const{
-		assert(*this);
 		auto x = (r - p) * d;
 		return x <= 0 ? point<long double>(p) : x >= d.squared_norml() ? point<long double>(q()) : projectionl(r);
 	}
