@@ -52,7 +52,7 @@ optional<pointld> intersect_open_segments_no_parallel_overlapl(const line<T> &L,
 }
 // Assumes nothing
 template<class T>
-optional<array<pointd, 2>> intersect_closed_segments(const line<T> &L, const line<T> &M){
+optional<pair<pointd, pointd>> intersect_closed_segments(const line<T> &L, const line<T> &M){
 	auto s = L.d ^ M.d, ls = M.p - L.p ^ M.d;
 	if(!s){
 		if(ls) return {};
@@ -60,20 +60,20 @@ optional<array<pointd, 2>> intersect_closed_segments(const line<T> &L, const lin
 		if(Lp > Lq) swap(Lp, Lq);
 		if(Mp > Mq) swap(Mp, Mq);
 		point<T> p = max(Lp, Mp), q = min(Lq, Mq);
-		if(p <= q) return array<pointd, 2>{p, q};
+		if(p <= q) return pair<pointd, pointd>{p, q};
 		return {};
 	}
 	auto rs = M.p - L.p ^ L.d;
 	if(s < 0) s = -s, ls = -ls, rs = -rs;
 	if(0 <= ls && ls <= s && 0 <= rs && rs <= s){
 		auto p = pointd(L.p) + 1.0 * ls / s * pointd(L.d);
-		return array<pointd, 2>{p, p};
+		return pair<pointd, pointd>{p, p};
 	}
 	else return {};
 }
 // Assumes nothing
 template<class T>
-optional<array<pointld, 2>> intersect_closed_segmentsl(const line<T> &L, const line<T> &M){
+optional<pair<pointld, pointld>> intersect_closed_segmentsl(const line<T> &L, const line<T> &M){
 	auto s = L.d ^ M.d, ls = M.p - L.p ^ M.d;
 	if(!s){
 		if(ls) return {};
@@ -81,20 +81,20 @@ optional<array<pointld, 2>> intersect_closed_segmentsl(const line<T> &L, const l
 		if(Lp > Lq) swap(Lp, Lq);
 		if(Mp > Mq) swap(Mp, Mq);
 		point<T> p = max(Lp, Mp), q = min(Lq, Mq);
-		if(p <= q) return array<pointld, 2>{p, q};
+		if(p <= q) return pair<pointld, pointld>{p, q};
 		return {};
 	}
 	auto rs = M.p - L.p ^ L.d;
 	if(s < 0) s = -s, ls = -ls, rs = -rs;
 	if(0 <= ls && ls <= s && 0 <= rs && rs <= s){
 		auto p = pointld(L.p) + 1.0L * ls / s * pointld(L.d);
-		return array<pointld, 2>{p, p};
+		return pair<pointld, pointld>{p, p};
 	}
 	else return {};
 }
 // Assumes nothing
 template<class T>
-optional<array<pointd, 2>> intersect_open_segments(const line<T> &L, const line<T> &M){
+optional<pair<pointd, pointd>> intersect_open_segments(const line<T> &L, const line<T> &M){
 	auto s = L.d ^ M.d, ls = M.p - L.p ^ M.d;
 	if(!s){
 		if(ls) return {};
@@ -102,20 +102,20 @@ optional<array<pointd, 2>> intersect_open_segments(const line<T> &L, const line<
 		if(Lp > Lq) swap(Lp, Lq);
 		if(Mp > Mq) swap(Mp, Mq);
 		point<T> p = max(Lp, Mp), q = min(Lq, Mq);
-		if(p < q) return array<pointd, 2>{p, q};
+		if(p < q) return pair<pointd, pointd>{p, q};
 		return {};
 	}
 	auto rs = (M.p - L.p) ^ L.d;
 	if(s < 0) s = -s, ls = -ls, rs = -rs;
 	if(0 < ls && ls < s && 0 < rs && rs < s){
 		auto p = pointd(L.p) + 1.0 * ls / s * pointd(L.d);
-		return array<pointd, 2>{p, p};
+		return pair<pointd, pointd>{p, p};
 	}
 	else return {};
 }
 // Assumes nothing
 template<class T>
-optional<array<pointld, 2>> intersect_open_segmentsl(const line<T> &L, const line<T> &M){
+optional<pair<pointld, pointld>> intersect_open_segmentsl(const line<T> &L, const line<T> &M){
 	auto s = L.d ^ M.d, ls = M.p - L.p ^ M.d;
 	if(!s){
 		if(ls) return {};
@@ -123,14 +123,14 @@ optional<array<pointld, 2>> intersect_open_segmentsl(const line<T> &L, const lin
 		if(Lp > Lq) swap(Lp, Lq);
 		if(Mp > Mq) swap(Mp, Mq);
 		point<T> p = max(Lp, Mp), q = min(Lq, Mq);
-		if(p < q) return array<pointld, 2>{p, q};
+		if(p < q) return pair<pointld, pointld>{p, q};
 		return {};
 	}
 	auto rs = (M.p - L.p) ^ L.d;
 	if(s < 0) s = -s, ls = -ls, rs = -rs;
 	if(0 < ls && ls < s && 0 < rs && rs < s){
 		auto p = pointld(L.p) + 1.0L * ls / s * pointld(L.d);
-		return array<pointld, 2>{p, p};
+		return pair<pointld, pointld>{p, p};
 	}
 	else return {};
 }
