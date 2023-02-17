@@ -1,0 +1,93 @@
+<snippet>
+	<content><![CDATA[
+// act_while(i, j): line i and j intersects where i were below j before the intersection
+// Each intersections are visited in increasing order of x-coordinate
+// Assumes that after extending each segments by 1e-5, no endpoint of a line lies on another line.
+// Requires point, line, and line_intersection
+template<class T>
+void find_closed_lines_intersections(vector<line<T>> L, auto act_while){
+	int n = (int)L.size();
+	using pq_type = pair<pointd, array<int, 2>>;
+	auto cmp = [&](const pq_type &x, const pq_type &y)->bool{
+		if(distance(x.first, y.first) > 1e-9) return x.first > y.first;
+		if(x.second[0] >= n || y.second[0] >= n) return x.second > y.second;
+		auto prod = L[x.second[0]].d ^ L[y.second[0]].d;
+		if(abs(prod) > 1e-9) return prod > 0;
+		if(x.second[0] != y.second[0]) return x.second[0] > y.second[0];
+		return (L[x.second[1]].d ^ L[y.second[1]].d) > 0;
+	};
+	priority_queue<pq_type, vector<pq_type>, decltype(cmp)> event(cmp);
+	for(auto i = 0; i < n; ++ i){
+		if(L[i].d < point<T>()) L[i].flip();
+		event.push({pointd(L[i].p) - 1e-5 * L[i].d.unit(), {n + 1, i}});
+		event.push({pointd(L[i].q()) + 1e-5 * L[i].d.unit(), {n, i}});
+	}
+	static pointd pos;
+	struct key_type{
+		line<T> l;
+		int id;
+		bool operator<(const key_type &x) const{
+			line<T> r = x.l;
+			double yi, yj;
+			yi = l.d.x == 0 ? pos.y : l.p.y + (pos.x - l.p.x) / l.d.x * l.d.y;
+			yj = r.d.x == 0 ? pos.y : r.p.y + (pos.x - r.p.x) / r.d.x * r.d.y;
+			return abs(yi - yj) <= 1e-9 ? false : yi < yj;
+		}
+	};
+	multiset<key_type> sweepline;
+	vector<typename multiset<key_type>::iterator> where(n);
+	set<array<int, 2>> matched;
+	auto check = [&](int i, int j)->bool{
+		return !matched.count({min(i, j), max(i, j)});
+	};
+	auto insert = [&](int i, int j)->void{
+		matched.insert({min(i, j), max(i, j)});
+	};
+	while(!event.empty()){
+		auto [p, _info] = event.top();
+		event.pop();
+		pos = p;
+		auto [i, j] = _info;
+		if(i == n + 1){
+			i = j;
+			auto it = where[i] = sweepline.insert({L[i], i});
+			if(it != sweepline.begin() && check(prev(it)->id, i)) if(auto ptr = intersect_closed_segments(L[prev(it)->id], L[i])){
+				insert(prev(it)->id, i);
+				event.push({ptr->first, {prev(it)->id, i}});
+			}
+			if(next(it) != sweepline.end() && check(i, next(it)->id)) if(auto ptr = intersect_closed_segments(L[i], L[next(it)->id])){
+				insert(i, next(it)->id);
+				event.push({ptr->first, {i, next(it)->id}});
+			}
+		}
+		else if(i == n){
+			i = j;
+			auto it = where[i];
+			if(it != sweepline.begin() && next(it) != sweepline.end() && check(prev(it)->id, next(it)->id)) if(auto ptr = intersect_closed_segments(L[prev(it)->id], L[next(it)->id])){
+				insert(prev(it)->id, next(it)->id);
+				event.push({ptr->first, {prev(it)->id, next(it)->id}});
+			}
+			sweepline.erase(where[i]);
+		}
+		else{
+			if(!act_while(i, j)) return;
+			auto iti = where[i];
+			sweepline.erase(where[j]);
+			auto itj = where[j] = sweepline.insert(iti, {L[j], j});
+			if(itj != sweepline.begin() && check(prev(itj)->id, j)) if(auto ptr = intersect_closed_segments(L[prev(itj)->id], L[j])){
+				insert(prev(itj)->id, j);
+				event.push({ptr->first, {prev(itj)->id, j}});
+			}
+			if(next(iti) != sweepline.end() && check(i, next(iti)->id)) if(auto ptr = intersect_closed_segments(L[i], L[next(iti)->id])){
+				insert(i, next(iti)->id);
+				event.push({ptr->first, {i, next(iti)->id}});
+			}
+		}
+	}
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>find_closed_lines_intersections</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
