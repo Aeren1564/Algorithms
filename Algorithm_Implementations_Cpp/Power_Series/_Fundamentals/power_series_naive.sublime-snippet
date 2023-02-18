@@ -1,0 +1,198 @@
+<snippet>
+	<content><![CDATA[
+// T must support *=, *, +=, -=, and -
+// T{} should return the additive identity
+// Requires modular and fast_fourier_transform
+template<class T, class FFT>
+struct power_series_naive_base: vector<T>{
+#define data (*this)
+	template<class ...Args>
+	power_series_naive_base(Args... args): vector<T>(args...){}
+	power_series_naive_base(initializer_list<T> init): vector<T>(init){}
+	template<class U>
+	static T &_inplace_power(T &res, U e){
+		assert(e >= 0);
+		T base = res;
+		res = 1;
+		for(; e; e >>= 1, base *= base) if(e & 1) res *= base;
+		return res;
+	}
+	template<class U>
+	static T _power(T base, U e){
+		return power_series_naive_base::_inplace_power(base, e);
+	}
+	int degree() const{
+		return data.empty() ? numeric_limits<int>::max() : data.size() - 1;
+	}
+	friend ostream &operator<<(ostream &out, const power_series_naive_base &p){
+		if(p.empty()){
+			return out << "{}";
+		}
+		else{
+			out << "{";
+			for(auto i = 0; i < (int)p.size(); ++ i){
+				out << p[i];
+				i + 1 < (int)p.size() ? out << ", " : out << "}";
+			}
+			return out;
+		}
+	}
+	power_series_naive_base prefix(int n) const{
+		auto res = vector<T>(data.begin(), data.begin() + min(n, (int)data.size()));
+		res.resize(n);
+		return res;
+	}
+	power_series_naive_base &inplace_reverse(int n){
+		data.resize(max(n, (int)data.size()));
+		std::reverse(data.begin(), data.begin() + n);
+		return *this;
+	}
+	power_series_naive_base reverse(int n) const{
+		return power_series_naive_base(*this).inplace_reverse(n);
+	}
+	T evaluate(T x) const{
+		T res = {};
+		for(auto i = (int)data.size() - 1; i >= 0; -- i) res = res * x + data[i];
+		return res;
+	}
+	power_series_naive_base operator*(const power_series_naive_base &p) const{
+		return FFT::arbitrarily_convolute(data, p);
+	}
+	power_series_naive_base &operator*=(const power_series_naive_base &p){
+		return *this = *this * p;
+	}
+	template<class U>
+	power_series_naive_base &operator*=(U x){
+		for(auto &c: data) c *= x;
+		return *this;
+	}
+	template<class U>
+	power_series_naive_base operator*(U x) const{
+		return power_series_naive_base(*this) *= x;
+	}
+	template<class U>
+	friend power_series_naive_base operator*(U x, power_series_naive_base p){
+		for(auto &c: p) c = x * c;
+		return p;
+	}
+	power_series_naive_base &operator^=(int e){
+		return power_up(data, e);
+	}
+	power_series_naive_base operator^=(int e) const{
+		return power_series_naive_base(*this) ^= e;
+	}
+	power_series_naive_base &operator+=(const power_series_naive_base &p){
+		resize(max(data.size(), p.size()));
+		for(auto i = 0; i < (int)p.size(); ++ i) data[i] += p[i];
+		return *this;
+	}
+	power_series_naive_base operator+(const power_series_naive_base &p) const{
+		return power_series_naive_base(*this) += p;
+	}
+	template<class U>
+	power_series_naive_base &operator+=(const U &x){
+		if(data.empty()) data.emplace_back();
+		data[0] += x;
+		return *this;
+	}
+	template<class U>
+	power_series_naive_base operator+(const U &x) const{
+		return power_series_naive_base(*this) += x;
+	}
+	template<class U>
+	friend power_series_naive_base operator+(const U &x, const power_series_naive_base &p){
+		return p + x;
+	}
+	power_series_naive_base &operator-=(const power_series_naive_base &p){
+		data.resize(max(data.size(), p.size()));
+		for(auto i = 0; i < (int)p.size(); ++ i) data[i] -= p[i];
+		return *this;
+	}
+	power_series_naive_base operator-(const power_series_naive_base &p) const{
+		return power_series_naive_base(*this) -= p;
+	}
+	template<class U>
+	power_series_naive_base &operator-=(const U &x){
+		if(data.empty()) data.emplace_back();
+		data[0] -= x;
+		return *this;
+	}
+	template<class U>
+	power_series_naive_base operator-(const U &x) const{
+		return power_series_naive_base(*this) -= x;
+	}
+	template<class U>
+	friend power_series_naive_base operator-(const U &x, const power_series_naive_base &p){
+		return -p + x;
+	}
+	power_series_naive_base operator-() const{
+		power_series_naive_base res = *this;
+		for(auto i = 0; i < data.size(); ++ i) res[i] = T{} - res[i];
+		return res;
+	}
+	power_series_naive_base &operator++(){
+		if(data.empty()) data.push_back(1);
+		else ++ data[0];
+		return *this;
+	}
+	power_series_naive_base &operator--(){
+		if(data.empty()) data.push_back(-1);
+		else -- data[0];
+		return *this;
+	}
+	power_series_naive_base operator++(int){
+		power_series_naive_base result(*this);
+		if(data.empty()) data.push_back(1);
+		else ++ data[0];
+		return result;
+	}
+	power_series_naive_base operator--(int){
+		power_series_naive_base result(*this);
+		if(data.empty()) data.push_back(-1);
+		else -- data[0];
+		return result;
+	}
+	power_series_naive_base &clear_range(int l, int r){
+		assert(0 <= l && l <= r && r <= data.size());
+		for(auto i = l; i < r; ++ i) data[i] = 0;
+		return *this;
+	}
+	power_series_naive_base &inplace_dot_product(const power_series_naive_base &p){
+		for(auto i = 0; i < min(data.size(), p.size()); ++ i) data[i] *= p[i];
+		return *this;
+	}
+	power_series_naive_base dot_product(const power_series_naive_base &p) const{
+		return power_series_naive_base(*this).inplace_power_series_product(p);
+	}
+	// Returns the first n terms of the inverse series
+	// O(n * log(n))
+	power_series_naive_base inverse(int n) const{
+		assert(!data.empty() && data[0]);
+		auto inv = 1 / data[0];
+		power_series_naive_base res{inv};
+		for(auto s = 1; s < n; s <<= 1){
+			res = res * (2 - res * prefix(s << 1));
+		}
+		res.resize(n);
+		return res;
+	}
+	static power_series_naive_base multiply_all(const vector<power_series_naive_base> &a){
+		if(a.empty()) return {1};
+		auto solve = [&](auto self, int l, int r)->power_series_naive_base{
+			if(r - l == 1) return a[l];
+			int m = l + (r - l >> 1);
+			return self(self, l, m) * self(self, m, r);
+		};
+		return solve(solve, 0, (int)a.size());
+	}
+#undef data
+};
+// TODO: add more operations
+
+using power_series_naive = power_series_naive_base<modular, ntt>;
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>power_series_naive</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
