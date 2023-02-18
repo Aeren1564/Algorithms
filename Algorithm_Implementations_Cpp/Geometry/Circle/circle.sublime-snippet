@@ -8,17 +8,11 @@ struct circle{
 	T radius;
 	circle(): center{}, radius{}{}
 	template<class U, class V, class W>
-	circle(U x, V y, W r): center(x, y), radius(r){
-		assert(r >= 0);
-	}
+	circle(U x, V y, W r): center(x, y), radius(r){ }
 	template<class U>
 	circle(const circle<U> &c): center(c.center), radius(c.radius){ }
 	friend istream &operator>>(istream &in, circle &c){
 		return in >> c.center >> c.radius;
-		assert(c.radius >= 0);
-	}
-	friend ostream &operator<<(ostream &out, const circle &c){
-		return out << "{" << c.center.x << ", " << c.center.y << ", " << c.radius << "}";
 	}
 	bool operator==(const circle &c) const{
 		return center == c.center && radius == c.radius;
@@ -56,6 +50,8 @@ struct circle{
 	}
 	// In case of returning two points, center->list forms a positive orientation
 	vector<point<double>> tangent_points(const point<T> &p = {}) const{
+		assert(p != center || abs(radius) > T(1e-9));
+		if(abs(radius) <= T(1e-9)) return {center};
 		auto d = squared_distance(center, p);
 		if(d < radius * radius) return {};
 		if(d == radius * radius) return {p};
@@ -66,6 +62,8 @@ struct circle{
 	}
 	// In case of returning two points, center->list forms a positive orientation
 	vector<point<long double>> tangent_pointsl(const point<T> &p = {}) const{
+		assert(p != center || abs(radius) > T(1e-9));
+		if(abs(radius) <= T(1e-9)) return {center};
 		auto d = squared_distance(center, p);
 		if(d < radius * radius) return {};
 		if(d == radius * radius) return {p};
