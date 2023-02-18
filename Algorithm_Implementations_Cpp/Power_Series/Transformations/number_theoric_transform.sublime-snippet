@@ -80,6 +80,43 @@ struct number_theoric_transform_wrapper{
 		transform(buffer1, true);
 		return vector<T>(buffer1.begin(), buffer1.begin() + m);
 	}
+	// O((n + m) * log(n + m))
+	static vector<T> arbitrarily_convolute(const vector<T> &p, const vector<T> &q){
+		using modular0 = modular_fixed_base<1045430273>;
+		using modular1 = modular_fixed_base<1051721729>;
+		using modular2 = modular_fixed_base<1053818881>;
+		using ntt0 = number_theoric_transform_wrapper<modular0>;
+		using ntt1 = number_theoric_transform_wrapper<modular1>;
+		using ntt2 = number_theoric_transform_wrapper<modular2>;
+		vector<modular0> p0((int)p.size()), q0((int)q.size());
+		for(auto i = 0; i < (int)p.size(); ++ i) p0[i] = p[i].data;
+		for(auto i = 0; i < (int)q.size(); ++ i) q0[i] = q[i].data;
+		auto xy0 = ntt0::convolute(p0, q0);
+		vector<modular1> p1((int)p.size()), q1((int)q.size());
+		for(auto i = 0; i < (int)p.size(); ++ i) p1[i] = p[i].data;
+		for(auto i = 0; i < (int)q.size(); ++ i) q1[i] = q[i].data;
+		auto xy1 = ntt1::convolute(p1, q1);
+		vector<modular2> p2((int)p.size()), q2((int)q.size());
+		for(auto i = 0; i < (int)p.size(); ++ i) p2[i] = p[i].data;
+		for(auto i = 0; i < (int)q.size(); ++ i) q2[i] = q[i].data;
+		auto xy2 = ntt2::convolute(p2, q2);
+		static const modular1 r01 = 1 / modular1(modular0::mod());
+		static const modular2 r02 = 1 / modular2(modular0::mod());
+		static const modular2 r12 = 1 / modular2(modular1::mod());
+		static const modular2 r02r12 = r02 * r12;
+		static const T w1 = modular0::mod();
+		static const T w2 = w1 * modular1::mod();
+		int n = (int)p.size() + (int)q.size() - 1;
+		vector<T> res(n);
+		for(auto i = 0; i < n; ++ i){
+			using ull = unsigned long long;
+			ull a = xy0[i].data;
+			ull b = (xy1[i].data + modular1::mod() - a) * r01.data % modular1::mod();
+			ull c = ((xy2[i].data + modular2::mod() - a) * r02r12.data + (modular2::mod() - b) * r12.data) % modular2::mod();
+			res[i] = xy0[i].data + w1 * b + w2 * c;
+		}
+		return res;
+	}
 };
 template<class T> vector<T> number_theoric_transform_wrapper<T>::root;
 template<class T> vector<T> number_theoric_transform_wrapper<T>::buffer1;
