@@ -79,10 +79,17 @@ public:
 		vector<vector<int>> has(comp_cnt);
 		vector<bitset<S>> reachable(n << 1);
 		for(auto u = 0; u < n << 1; ++ u) has[comp[u]].push_back(u);
+		vector<int> vis(comp_cnt, -1);
 		for(auto t = 0; t < comp_cnt; ++ t){
 			int u = has[t][0];
-			for(auto v: has[t]) reachable[u].set(v);
-			for(auto v: adj[u]) reachable[u] |= reachable[v];
+			vis[t] = t;
+			for(auto v: has[t]){
+				reachable[u].set(v);
+				for(auto w: adj[v]) if(vis[comp[w]] != t){
+					vis[comp[w]] = t;
+					reachable[u] |= reachable[w];
+				}
+			}
 			for(auto v: has[t]) reachable[v] = reachable[u];
 		}
 		for(auto u = 0; u < n << 1; ++ u){
