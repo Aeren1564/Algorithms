@@ -10,7 +10,7 @@ struct field_of_fraction{
 	}
 	T n, d;
 	field_of_fraction(T n = 0, T d = 1): n(n), d(d){
-		if(d < 0) n = -n, d = -d;
+		if(d < 0) this->n = -n, this->d = -d;
 	}
 	field_of_fraction &reduce(){
 		T g = gcd(n, d);
@@ -40,15 +40,11 @@ struct field_of_fraction{
 	}
 	field_of_fraction &operator/=(const field_of_fraction &x){
 		assert(x.n != T(0));
-		*this = {n * x.d, d * x.n};
-		if(d < 0) n = -n, d = -d;
-		return *this;
+		return *this = {n * x.d, d * x.n};
 	}
 	field_of_fraction &operator/=(const T &x){
 		assert(x != T(0));
-		*this = {n, d * x};
-		if(d < 0) n = -n, d = -d;
-		return *this;
+		return *this = {n, d * x};
 	}
 	friend ostream &operator<<(ostream &out, const field_of_fraction &x){
 		return out << x.n << "/" << x.d;
@@ -72,7 +68,7 @@ struct field_of_fraction{
 		return field_of_fraction(*this) -= x;
 	}
 	friend field_of_fraction operator-(const T &x, const field_of_fraction &f){
-		return field_of_fraction(f) -= x;
+		return {x * f.d - f.n, f.d};
 	}
 	field_of_fraction operator-() const{
 		return {-n, d};
@@ -93,7 +89,7 @@ struct field_of_fraction{
 		return field_of_fraction(*this) /= x;
 	}
 	friend field_of_fraction operator/(const T &x, const field_of_fraction &f){
-		return field_of_fraction(f) /= x;
+		return field_of_fraction(x * f.d, f.n);
 	}
 	field_of_fraction &operator++(){
 		n += d;
