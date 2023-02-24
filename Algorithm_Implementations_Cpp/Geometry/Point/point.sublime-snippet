@@ -50,10 +50,10 @@ struct point{
 #undef scalarapply
 #undef compareop
 	double norm() const{
-		return hypot(x, y);
+		return sqrt(1.0 * x * x + 1.0 * y * y);
 	}
 	long double norml() const{
-		return hypotl(x, y);
+		return sqrtl(1.0L * x * x + 1.0L * y * y);
 	}
 	T squared_norm() const{
 		return x * x + y * y;
