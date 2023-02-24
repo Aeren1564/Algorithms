@@ -55,15 +55,11 @@ vector<point<T>> generate_simple_polygon(auto &&rng, int n, T low, T high){
 	for(bool changed = true; changed; ){
 		changed = false;
 		for(auto u = 0; u < n; ++ u){
-		    int v = (u + 1) % n, w = (u + 2) % n;
+			int v = (u + 1) % n, w = (u + 2) % n;
 			if((order[v] - order[u] ^ order[w] - order[v]) == 0 && (order[v] - order[u]) * (order[w] - order[v]) < 0){
 				changed = true;
-				if((order[w] - order[u]) * (order[v] - order[w]) > 0){
-					swap(order[v], order[w]);
-				}
-				else{
-					swap(order[u], order[v]);
-				}
+				if((order[w] - order[u]) * (order[v] - order[w]) > 0) swap(order[v], order[w]);
+				else swap(order[u], order[v]);
 			}
 			line<T> L(order[u], order[v]);
 			for(auto v = u + 2; v < n - !u; ++ v){
