@@ -14,7 +14,7 @@ vector<line<T>> half_planes_intersection(vector<line<T>> a, bool is_sorted = fal
 	};
 	if(!is_sorted){
 		stable_sort(a.begin(), a.end(), [&](const line<T> &l, const line<T> &m){
-			return sign(l) != sign(m) ? sign(l) < sign(m) : l.d || m.d ? (l.d ^ m.p - l.p) < 0 : (l.d ^ m.d) > 0;
+			return sign(l) != sign(m) ? sign(l) < sign(m) : l.parallel_to(m) ? (l.d ^ m.p - l.p) < 0 : (l.d ^ m.d) > 0;
 		});
 	}
 	deque<line<T>> dq;
@@ -25,7 +25,7 @@ vector<line<T>> half_planes_intersection(vector<line<T>> a, bool is_sorted = fal
 		return s > 0 ? p <= eps : p >= -eps;
 	};
 	for(auto p: a){
-		if(!dq.empty() && (dq.back() || p)) continue;
+		if(!dq.empty() && dq.back().parallel_to(p)) continue;
 		while((int)dq.size() >= 2 && bad(dq[(int)dq.size() - 2], dq.back(), p)) dq.pop_back();
 		while((int)dq.size() >= 2 && bad(dq[0], dq[1], p)) dq.pop_front();
 		if((int)dq.size() < 2 || !bad(dq.back(), p, dq.front())) dq.push_back(p);
