@@ -55,7 +55,6 @@ struct admissible_graph{
 		return res;
 	}
 	// tr must be a tree
-	// tr_size[u]: size of the subtree of u
 	// Returns an embedding E such that G - E(tr) is admissible.
 	// O(n^2 + m^2)
 	vector<int> embed(vector<vector<int>> tree){
