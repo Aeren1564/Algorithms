@@ -1,0 +1,196 @@
+<snippet>
+	<content><![CDATA[
+struct binary_string{
+	string data;
+	binary_string(){ }
+	// Decode
+	binary_string(string s, int base = 2){
+		if(base == -1){
+			// Byte string
+			for(auto c: s){
+				int x = c;
+				for(auto i = 7; i >= 0; -- i) data.push_back('0' + (x >> i & 1));
+			}
+		}
+		else if(base == 2 || base == 4 || base == 8){
+			int w = __lg(base);
+			for(auto c: s){
+				assert('0' <= c && c < '0' + base);
+				int x = c - '0';
+				for(auto i = w - 1; i >= 0; -- i) data.push_back('0' + (x >> i & 1));
+			}
+		}
+		else if(base == 10){
+			for(auto c: s) assert('0' <= c && c <= '9');
+			while(!s.empty()){
+				data.push_back('0' + (s.back() - '0' & 1));
+				for(auto i = 0, carry = 0; i < (int)s.size(); ++ i){
+					int x = s[i] - '0' + carry;
+					s[i] = '0' + x / 2;
+					carry = 10 * (x & 1);
+				}
+				s.erase(s.begin(), find_if(s.begin(), s.end(), [&](auto c){ return c != '0'; }));
+			}
+			reverse(data.begin(), data.end());
+		}
+		else if(base == 16){
+			// Hexadecimal String
+			// '0'-'9': [0, 10)
+			// 'A'-'F': [10, 16)
+			// 'a'-'f': [10, 16)
+			for(auto c: s){
+				int x;
+				if(isdigit(c)) x = c - '0';
+				else if(isupper(c)) x = c - 'A' + 10;
+				else if(islower(c)) x = c - 'a' + 10;
+				else assert(false);
+				for(auto i = 3; i >= 0; -- i) data.push_back('0' + (x >> i & 1));
+			}
+		}
+		else if(base == 64){
+			// Base64 encoding
+			// 'A'-'Z': [0, 26)
+			// 'a'-'z': [26, 52)
+			// '0'-'9': [52, 62)
+			// '+'    : 62
+			// '/'    : 63
+			for(auto c: s){
+				int x;
+				if(isupper(c)) x = c - 'A';
+				else if(islower(c)) x = 26 + c - 'a';
+				else if(isdigit(c)) x = 52 + c - '0';
+				else if(c == '+') x = 62;
+				else if(c == '/') x = 63;
+				else assert(false);
+				for(auto i = 5; i >= 0; -- i) data.push_back('0' + (x >> i & 1));
+			}
+		}
+		else assert(false);
+	}
+	size_t size() const{
+		return (int)data.size();
+	}
+	char &operator[](int i){
+		return data[i];
+	}
+	char operator[](int i) const{
+		return data[i];
+	}
+	friend istream &operator>>(istream &in, binary_string &s){
+		return in >> s.data;
+	}
+	friend ostream &operator<<(ostream &out, const binary_string &s){
+		return out << s.data;
+	}
+#define applyop(x) \
+binary_string &operator x(const binary_string &s){\
+	data.resize(max(size(), s.size()), '0');\
+	for(auto i = 0; i < (int)s.size(); ++ i) if(s[i] == '1') data[size() - (s.size() - i)] ^= '0' ^ '1';\
+	return *this;\
+}
+#define op(x, y) \
+binary_string operator x(const binary_string &s) const{\
+	return binary_string(*this) y s;\
+}
+applyop(&=) applyop(^=) applyop(|=)
+op(&, &=) op(^, ^=) op(|, |=)
+#undef applyop
+#undef op
+	string encode(int base = 2, bool upper = false) const{
+		string res;
+		if(base == -1){
+			// Byte string
+			int w = 8;
+			for(auto i = (int)size(); i > 0; ){
+				int x = 0;
+				for(auto j = 0; j < w && i > 0; ++ j){
+					-- i;
+					x |= data[i] - '0' << j;
+				}
+				res.push_back(x);
+			}
+			reverse(res.begin(), res.end());
+		}
+		else if(base == 2) return data;
+		else if(base == 4 || base == 8){
+			int w = __lg(base);
+			assert((int)size() % w == 0);
+			for(auto i = (int)size(); i > 0; ){
+				int x = 0;
+				for(auto j = 0; j < w && i > 0; ++ j){
+					-- i;
+					x |= data[i] - '0' << j;
+				}
+				res.push_back('0' + x);
+			}
+			reverse(res.begin(), res.end());
+		}
+		else if(base == 10){
+			for(auto c: data){
+				int carry = 0;
+				for(auto &c: res){
+					int x = c - '0' << 1 | carry;
+					if(x >= 10){
+						x -= 10;
+						carry = 1;
+					}
+					else carry = 0;
+					c = '0' + x;
+				}
+				if(carry) res.insert(res.begin(), '1');
+				if(c == '1'){
+					if(res.empty()) res.push_back('1');
+					else ++ res.back();
+				}
+			}
+		}
+		else if(base == 16){
+			// Hexadecimal String
+			// '0'-'9': [0, 10)
+			// 'A'-'F': [10, 16)
+			// 'a'-'f': [10, 16)
+			int w = 4;
+			for(auto i = (int)size(); i > 0; ){
+				int x = 0;
+				for(auto j = 0; j < w && i > 0; ++ j){
+					-- i;
+					x |= data[i] - '0' << j;
+				}
+				if(x < 10) res.push_back('0' + x);
+				else if(upper) res.push_back('A' + x - 10);
+				else res.push_back('a' + x - 10);
+			}
+			reverse(res.begin(), res.end());
+		}
+		else if(base == 64){
+			// Base64 encoding
+			// 'A'-'Z': [0, 26)
+			// 'a'-'z': [26, 52)
+			// '0'-'9': [52, 62)
+			// '+'    : 62
+			// '/'    : 63
+			int w = 6;
+			for(auto i = (int)size(); i > 0; ){
+				int x = 0;
+				for(auto j = 0; j < w && i > 0; ++ j){
+					-- i;
+					x |= data[i] - '0' << j;
+				}
+				if(x < 26) res.push_back('A' + x);
+				else if(x < 52) res.push_back('a' + x - 26);
+				else if(x < 62) res.push_back('0' + x - 52);
+				else if(x == 62) res.push_back('+');
+				else res.push_back('/');
+			}
+			reverse(res.begin(), res.end());
+		}
+		else assert(false);
+		return res;
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>binary_string</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
