@@ -16,7 +16,7 @@ void find_3_cycles(int n, const vector<array<int, 2>> &edge, auto process){
 	}
 	for(auto u = 0; u < n; ++ u) for(auto v: adj[u]) if(u < v){
 		for(auto i = 0, j = 0; i < (int)found[u].size() && j < (int)found[v].size(); ){
-			if(found[u][i] == found[v][i]){
+			if(found[u][i] == found[v][j]){
 				process(order[u], order[v], order[found[u][i]]);
 				++ i, ++ j;
 			}
