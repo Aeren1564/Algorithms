@@ -187,6 +187,18 @@ op(&, &=) op(^, ^=) op(|, |=)
 		else assert(false);
 		return res;
 	}
+	bool is_printable_bytestring() const{
+		int w = 8;
+		for(auto i = (int)size(); i > 0; ){
+			int x = 0;
+			for(auto j = 0; j < w && i > 0; ++ j){
+				-- i;
+				x |= data[i] - '0' << j;
+			}
+			if(x <= 31 || x >= 127) return false;
+		}
+		return true;
+	}
 };
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
