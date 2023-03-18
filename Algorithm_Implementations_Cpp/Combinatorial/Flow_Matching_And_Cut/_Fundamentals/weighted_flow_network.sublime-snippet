@@ -10,6 +10,7 @@ struct weighted_flow_network{
 	vector<vector<int>> adj;
 	vector<E> edge;
 	int n;
+	C cost = 0;
 	weighted_flow_network(int n): n(n), adj(n){ }
 	void clear_flow(){
 		for(auto &e: edge) e.flow = 0;
