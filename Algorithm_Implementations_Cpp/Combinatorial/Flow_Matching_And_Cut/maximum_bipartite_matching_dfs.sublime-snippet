@@ -1,7 +1,7 @@
 <snippet>
 	<content><![CDATA[
 struct maximum_bipartite_matching_dfs{
-	int n, m, matching = 0;
+	int n, m;
 	vector<vector<int>> adj;
 	vector<int> pu, pv; // u is matched with pu[u] and v with pv[v], -1 if no match
 	maximum_bipartite_matching_dfs(int n, int m): n(n), m(m), pu(n, -1), pv(m, -1), cur(n), adj(n){ }
@@ -27,6 +27,7 @@ struct maximum_bipartite_matching_dfs{
 	int maximum_matching(){
 		mt19937 rng(1564);
 		for(auto u = 0; u < n; ++ u) shuffle(adj[u].begin(), adj[u].end(), rng);
+		int matching = 0;
 		while(true){
 			int augment = 0;
 			++ id;
