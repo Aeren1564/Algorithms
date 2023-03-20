@@ -1,0 +1,74 @@
+<snippet>
+	<content><![CDATA[
+#include <netdb.h>
+#include <arpa/inet.h>
+struct network_communication_manager{
+	string host, port;
+	struct addrinfo hints, *serverinfo;
+	int sockfd;
+	void init(){
+		memset(&hints, 0, sizeof hints); // make sure the struct is empty
+		hints.ai_family = AF_UNSPEC;     // don't care IPv4 or IPv6
+		hints.ai_socktype = SOCK_STREAM; // TCP stream sockets
+		hints.ai_flags = AI_PASSIVE;     // fill in my IP for me
+	}
+	// get sockaddr, IPv4 or IPv6:
+	void *get_in_addr(struct sockaddr *sa){
+		if(sa->sa_family == AF_INET) return &(((struct sockaddr_in*)sa)->sin_addr);
+		return &(((struct sockaddr_in6*)sa)->sin6_addr);
+	}
+	network_communication_manager(string host, string port): host(host), port(port){
+		init();
+		if(auto status = getaddrinfo(host.c_str(), port.c_str(), &hints, &serverinfo)){
+			cerr << "getaddrinfo error: " << gai_strerror(status) << endl;
+			exit(1);
+		}
+		 // loop through all the results and connect to the first we can
+		struct addrinfo *p;
+		for(p = serverinfo; p; p = p->ai_next){
+			if(!~(sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol))){
+				perror("client: socket");
+				continue;
+			}
+			if(!~connect(sockfd, p->ai_addr, p->ai_addrlen)){
+				close(sockfd);
+				perror("client: connect");
+				continue;
+			}
+			break;
+		}
+		if(!p){
+			cerr << "client: failed to connect" << endl;
+			exit(2);
+		}
+		char s[INET6_ADDRSTRLEN];
+		inet_ntop(p->ai_family, get_in_addr((struct sockaddr *)p->ai_addr), s, sizeof s);
+		cerr << "client: connecting to " << s << endl;
+	}
+	~network_communication_manager(){
+		freeaddrinfo(serverinfo);
+		close(sockfd);
+	}
+	void send(string message) const{
+		::send(sockfd, message.c_str(), (int)message.size(), 0);
+	}
+	string receive(char delim = '\n') const{
+		string message;
+		while(true){
+			char s[2];
+			if(!~(recv(sockfd, s, 1, 0))){
+				perror("receive");
+				exit(1);
+			}
+			if(s[0] == delim) break;
+			message.push_back(s[0]);
+		}
+		return message;
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>network_communication_manager</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
