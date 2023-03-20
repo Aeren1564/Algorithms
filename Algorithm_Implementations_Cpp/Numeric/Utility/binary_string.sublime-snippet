@@ -4,23 +4,23 @@ struct binary_string{
 	string data;
 	binary_string(){ }
 	// Decode
-	binary_string(string s, int base = 2){
-		if(base == -1){
+	binary_string(string s, string encoding = "utf-8"){
+		if(encoding == "utf-8"){
 			// Byte string
 			for(auto c: s){
 				int x = c;
 				for(auto i = 7; i >= 0; -- i) data.push_back('0' + (x >> i & 1));
 			}
 		}
-		else if(base == 2 || base == 4 || base == 8){
-			int w = __lg(base);
+		else if(encoding == "2" || encoding == "4" || encoding == "8"){
+			int w = __lg(encoding[0] - '0');
 			for(auto c: s){
-				assert('0' <= c && c < '0' + base);
+				assert('0' <= c && c < encoding[0]);
 				int x = c - '0';
 				for(auto i = w - 1; i >= 0; -- i) data.push_back('0' + (x >> i & 1));
 			}
 		}
-		else if(base == 10){
+		else if(encoding == "10"){
 			for(auto c: s) assert('0' <= c && c <= '9');
 			while(!s.empty()){
 				data.push_back('0' + (s.back() - '0' & 1));
@@ -33,11 +33,12 @@ struct binary_string{
 			}
 			reverse(data.begin(), data.end());
 		}
-		else if(base == 16){
+		else if(encoding == "16" || encoding == "hex" || encoding == "bigint" && s.substr(0, 2) == "0x"){
 			// Hexadecimal String
 			// '0'-'9': [0, 10)
 			// 'A'-'F': [10, 16)
 			// 'a'-'f': [10, 16)
+			if(encoding == "bigint") s = s.substr(2);
 			for(auto c: s){
 				int x;
 				if(isdigit(c)) x = c - '0';
@@ -47,7 +48,7 @@ struct binary_string{
 				for(auto i = 3; i >= 0; -- i) data.push_back('0' + (x >> i & 1));
 			}
 		}
-		else if(base == 64){
+		else if(encoding == "64" || encoding == "base64"){
 			// Base64 encoding
 			// 'A'-'Z': [0, 26)
 			// 'a'-'z': [26, 52)
@@ -61,8 +62,21 @@ struct binary_string{
 				else if(isdigit(c)) x = 52 + c - '0';
 				else if(c == '+') x = 62;
 				else if(c == '/') x = 63;
+				else if(c == '=') break;
 				else assert(false);
 				for(auto i = 5; i >= 0; -- i) data.push_back('0' + (x >> i & 1));
+			}
+			data.resize(((int)data.size() + 7) / 8 * 8, '0');
+		}
+		else if(encoding.substr(0, 3) == "rot"){
+			// Caesar-Cypher encryption
+			int shift = (26 - stoi(encoding.substr(3)) % 26) % 26;
+			for(auto c: s){
+				int x;
+				if(!isalpha(c)) x = c;
+				else if(islower(c)) x = c + shift <= 'z' ? c + shift : c + shift - 26;
+				else x = c + shift <= 'Z' ? c + shift : c + shift - 26;
+				for(auto i = 7; i >= 0; -- i) data.push_back('0' + (x >> i & 1));
 			}
 		}
 		else assert(false);
@@ -96,9 +110,9 @@ applyop(&=) applyop(^=) applyop(|=)
 op(&, &=) op(^, ^=) op(|, |=)
 #undef applyop
 #undef op
-	string encode(int base = 2, bool upper = false) const{
+	string encode(string encoding = "utf-8", bool upper = false) const{
 		string res;
-		if(base == -1){
+		if(encoding == "utf-8"){
 			// Byte string
 			int w = 8;
 			for(auto i = (int)size(); i > 0; ){
@@ -107,13 +121,13 @@ op(&, &=) op(^, ^=) op(|, |=)
 					-- i;
 					x |= data[i] - '0' << j;
 				}
-				res.push_back(x);
+				if(x) res.push_back(x);
 			}
 			reverse(res.begin(), res.end());
 		}
-		else if(base == 2) return data;
-		else if(base == 4 || base == 8){
-			int w = __lg(base);
+		else if(encoding == "2") return data;
+		else if(encoding == "4" || encoding == "8"){
+			int w = __lg(encoding[0] - '0');
 			assert((int)size() % w == 0);
 			for(auto i = (int)size(); i > 0; ){
 				int x = 0;
@@ -125,7 +139,7 @@ op(&, &=) op(^, ^=) op(|, |=)
 			}
 			reverse(res.begin(), res.end());
 		}
-		else if(base == 10){
+		else if(encoding == "10"){
 			for(auto c: data){
 				int carry = 0;
 				for(auto &c: res){
@@ -144,7 +158,7 @@ op(&, &=) op(^, ^=) op(|, |=)
 				}
 			}
 		}
-		else if(base == 16){
+		else if(encoding == "16" || encoding == "hex"){
 			// Hexadecimal String
 			// '0'-'9': [0, 10)
 			// 'A'-'F': [10, 16)
@@ -162,7 +176,7 @@ op(&, &=) op(^, ^=) op(|, |=)
 			}
 			reverse(res.begin(), res.end());
 		}
-		else if(base == 64){
+		else if(encoding == "64" || encoding == "base64"){
 			// Base64 encoding
 			// 'A'-'Z': [0, 26)
 			// 'a'-'z': [26, 52)
@@ -181,6 +195,24 @@ op(&, &=) op(^, ^=) op(|, |=)
 				else if(x < 62) res.push_back('0' + x - 52);
 				else if(x == 62) res.push_back('+');
 				else res.push_back('/');
+			}
+			reverse(res.begin(), res.end());
+			int rem = (4 - (int)res.size() % 4) % 4;
+			res += string(rem, '=');
+		}
+		else if(encoding.substr(0, 3) == "rot"){
+			// Caesar-Cypher encryption
+			int w = 8, shift = (26 + stoi(encoding.substr(3)) % 26) % 26;
+			for(auto i = (int)size(); i > 0; ){
+				char c = 0;
+				for(auto j = 0; j < w && i > 0; ++ j){
+					-- i;
+					c |= data[i] - '0' << j;
+				}
+				if(!isalpha(c)) res.push_back(c);
+				else if(islower(c)) res.push_back(c + shift <= 'z' ? c + shift : c + shift - 26);
+				else res.push_back(c + shift <= 'Z' ? c + shift : c + shift - 26);
+				res.push_back(c);
 			}
 			reverse(res.begin(), res.end());
 		}
