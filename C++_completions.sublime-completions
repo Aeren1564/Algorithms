@@ -318,6 +318,7 @@
         { "trigger": "local", "contents": "#ifdef LOCAL\n$0\n#else\n\n#endif"},
         { "trigger": "mt19937", "contents": "mt19937(chrono::high_resolution_clock().now().time_since_epoch().count())"},
         { "trigger": "mt19937_64", "contents": "mt19937_64(chrono::high_resolution_clock().now().time_since_epoch().count())"},
-        { "trigger": "pragma", "contents": "#pragma GCC optimize(\"Ofast,unroll-loops\")\n#pragma GCC target(\"avx2,popcnt,lzcnt,abm,bmi,bmi2\")\n// #pragma GCC target(\"sse,sse2,sse3,sse4,sse4.1,sse4.2,tune=native,popcnt,lzcnt,abm,bmi,bmi2\")"}
+        { "trigger": "pragma", "contents": "#pragma GCC optimize(\"Ofast,unroll-loops\")\n#pragma GCC target(\"avx2,popcnt,lzcnt,abm,bmi,bmi2\")\n// #pragma GCC target(\"sse,sse2,sse3,sse4,sse4.1,sse4.2,tune=native,popcnt,lzcnt,abm,bmi,bmi2\")"},
+        { "trigger": "json", "contents": "#include \"json.hpp\"\nusing json = nlohmann::json;"},
     ]
 }
