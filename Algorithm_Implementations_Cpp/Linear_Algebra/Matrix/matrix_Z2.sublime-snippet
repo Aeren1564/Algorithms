@@ -13,19 +13,27 @@ struct matrix_Z2_base{
 	}
 	int n, m;
 	vector<bitset<SZ>> data;
-	bitset<SZ> &operator[](int i){
+	bitset<SZ> &operator()(int i){
 		assert(0 <= i && i < n);
 		return data[i];
 	}
-	const bitset<SZ> &operator[](int i) const{
+	const bitset<SZ> &operator()(int i) const{
 		assert(0 <= i && i < n);
 		return data[i];
 	}
-	bool operator==(const matrix_base &a) const{
+	bitset<SZ>::reference operator()(int i, int j){
+		assert(0 <= i && i < n && 0 <= j && j < m);
+		return data[i][j];
+	}
+	bool operator()(int i, int j) const{
+		assert(0 <= i && i < n && 0 <= j && j < m);
+		return data[i][j];
+	}
+	bool operator==(const matrix_Z2_base &a) const{
 		assert(n == a.n && m == a.m);
 		return data == a.data;
 	}
-	bool operator!=(const matrix_base &a) const{
+	bool operator!=(const matrix_Z2_base &a) const{
 		assert(n == a.n && m == a.m);
 		return data != a.data;
 	}
@@ -69,15 +77,16 @@ struct matrix_Z2_base{
 		matrix_Z2_base res(data, n, m);
 		return res *= c;
 	}
-	matrix_Z2_base &operator^=(long long e){
+	template<class T, typename enable_if<is_integral<T>::value>::type* = nullptr>
+	matrix_Z2_base &inplace_power(T e){
+		assert(n == m);
 		matrix_Z2_base res(n, n, true);
 		for(; e; *this *= *this, e >>= 1) if(e & 1) res *= *this;
 		return *this = res;
 	}
-	matrix_Z2_base operator^(long long e) const{
-		assert(n == m);
-		matrix_Z2_base res(data, n, m);
-		return res ^= e;
+	template<class T>
+	matrix_Z2_base power(T e) const{
+		return matrix_Z2_base(*this).inplace_power(e);
 	}
 	matrix_Z2_base transposed() const{
 		matrix_Z2_base res(m, n);
@@ -123,7 +132,7 @@ struct matrix_Z2_base{
 		return true;
 	}
 	template<class output_stream>
-	friend output_stream &operator<<(output_stream &out, const matrix_base &a){
+	friend output_stream &operator<<(output_stream &out, const matrix_Z2_base &a){
 		out << "\n";
 		for(auto i = 0; i < a.n; ++ i){
 			for(auto j = 0; j < a.m; ++ j){

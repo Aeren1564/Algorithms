@@ -1,7 +1,7 @@
 <snippet>
 	<content><![CDATA[
 template<size_t SZ>
-struct matrix_OR_AND_base: vector<bitset<SZ>>{
+struct matrix_OR_AND_base{
 	using ring_t = bool;
 	using domain_t = bitset<SZ>;
 	using range_t = bitset<SZ>;
@@ -13,19 +13,27 @@ struct matrix_OR_AND_base: vector<bitset<SZ>>{
 	}
 	int n, m;
 	vector<bitset<SZ>> data;
-	bitset<SZ> &operator[](int i){
+	bitset<SZ> &operator()(int i){
 		assert(0 <= i && i < n);
 		return data[i];
 	}
-	const bitset<SZ> &operator[](int i) const{
+	const bitset<SZ> &operator()(int i) const{
 		assert(0 <= i && i < n);
 		return data[i];
 	}
-	bool operator==(const matrix_base &a) const{
+	bitset<SZ>::reference operator()(int i, int j){
+		assert(0 <= i && i < n && 0 <= j && j < m);
+		return data[i][j];
+	}
+	bool operator()(int i, int j) const{
+		assert(0 <= i && i < n && 0 <= j && j < m);
+		return data[i][j];
+	}
+	bool operator==(const matrix_OR_AND_base &a) const{
 		assert(n == a.n && m == a.m);
 		return data == a.data;
 	}
-	bool operator!=(const matrix_base &a) const{
+	bool operator!=(const matrix_OR_AND_base &a) const{
 		assert(n == a.n && m == a.m);
 		return data != a.data;
 	}
@@ -58,17 +66,16 @@ struct matrix_OR_AND_base: vector<bitset<SZ>>{
 		matrix_OR_AND_base res(data, n, m);
 		return res *= c;
 	}
-	template<class U>
-	matrix_OR_AND_base &operator^=(U e){
+	template<class T, typename enable_if<is_integral<T>::value>::type* = nullptr>
+	matrix_OR_AND_base &inplace_power(T e){
+		assert(n == m);
 		matrix_OR_AND_base res(n, n, true);
 		for(; e; *this *= *this, e >>= 1) if(e & 1) res *= *this;
 		return *this = res;
 	}
-	template<class U>
-	matrix_OR_AND_base operator^(U e) const{
-		assert(n == m);
-		matrix_OR_AND_base res(data, n, m);
-		return res ^= e;
+	template<class T>
+	matrix_OR_AND_base power(T e) const{
+		return matrix_OR_AND_base(*this).inplace_power(e);
 	}
 	matrix_OR_AND_base transposed() const{
 		matrix_OR_AND_base res(m, n);
@@ -85,7 +92,7 @@ struct matrix_OR_AND_base: vector<bitset<SZ>>{
 		return res;
 	}
 	template<class output_stream>
-	friend output_stream &operator<<(output_stream &out, const matrix_base &a){
+	friend output_stream &operator<<(output_stream &out, const matrix_OR_AND_base &a){
 		out << "\n";
 		for(auto i = 0; i < a.n; ++ i){
 			for(auto j = 0; j < a.m; ++ j){

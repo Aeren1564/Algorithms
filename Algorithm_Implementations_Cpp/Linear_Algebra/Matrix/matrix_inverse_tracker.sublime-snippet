@@ -28,9 +28,9 @@ struct matrix_inverse_tracker{
 	// One find_inverse() call along with O(n^2) operations on T
 	bool update(const M::domain_t &u, const M::range_t &v){
 		auto au = inverse_matrix * u;
-		T c = M::get_one();
+		T c = T(1);
 		for(auto i = 0; i < n; ++ i) c += v[i] * au[i];
-		if(c == M::get_zero()) return false;
+		if(c == T(0)) return false;
 		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < n; ++ j) matrix[i][j] += u[i] * v[j];
 		determinant *= c;
 		inverse_determinant *= c = *find_inverse(c);
