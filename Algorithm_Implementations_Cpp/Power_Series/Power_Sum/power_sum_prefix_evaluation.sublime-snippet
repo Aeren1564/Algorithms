@@ -4,12 +4,12 @@
 // Returns f[0], f[1], ..., f[n-1]
 // O(polymul(n))
 // Requires modular, number_theoric_transform, and power_series
-template<class T, class FFT = ntt>
+template<class T, class FFT>
 vector<T> power_sum_prefix_evaluation(T base, int n){
 	assert(n >= 0);
 	if(!n) return {};
 	if(!base) return vector<T>(n, T());
-	T invfact = 1, pow = base ^ n, temp, invbase = 1 / base;
+	T invfact = 1, pow = base.power(n), temp, invbase = 1 / base;
 	for(auto i = 2; i <= n; ++ i) invfact *= i;
 	invfact = 1 / invfact;
 	power_series_base<T, FFT> p(n), q(n);

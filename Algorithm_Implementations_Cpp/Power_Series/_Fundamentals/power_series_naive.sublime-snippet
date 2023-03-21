@@ -9,18 +9,6 @@ struct power_series_naive_base: vector<T>{
 	template<class ...Args>
 	power_series_naive_base(Args... args): vector<T>(args...){}
 	power_series_naive_base(initializer_list<T> init): vector<T>(init){}
-	template<class U>
-	static T &_inplace_power(T &res, U e){
-		assert(e >= 0);
-		T base = res;
-		res = 1;
-		for(; e; e >>= 1, base *= base) if(e & 1) res *= base;
-		return res;
-	}
-	template<class U>
-	static T _power(T base, U e){
-		return power_series_naive_base::_inplace_power(base, e);
-	}
 	int degree() const{
 		return data.empty() ? numeric_limits<int>::max() : data.size() - 1;
 	}
@@ -74,12 +62,6 @@ struct power_series_naive_base: vector<T>{
 	friend power_series_naive_base operator*(U x, power_series_naive_base p){
 		for(auto &c: p) c = x * c;
 		return p;
-	}
-	power_series_naive_base &operator^=(int e){
-		return power_up(data, e);
-	}
-	power_series_naive_base operator^=(int e) const{
-		return power_series_naive_base(*this) ^= e;
 	}
 	power_series_naive_base &operator+=(const power_series_naive_base &p){
 		resize(max(data.size(), p.size()));

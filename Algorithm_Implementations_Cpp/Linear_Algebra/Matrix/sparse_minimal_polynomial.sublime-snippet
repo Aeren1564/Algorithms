@@ -2,7 +2,7 @@
 	<content><![CDATA[
 // Calculate the minimal polynomial of the sparse matrix
 // Reads dimension n and its elements in form tuple{row, column, value}
-// O(n * (n + |a|) + |a| log mod)
+// O(n * (n + |a|) + |a| * log(mod))
 // T must be of modular type
 // Requires linear_recurrence_solver
 template<class T>

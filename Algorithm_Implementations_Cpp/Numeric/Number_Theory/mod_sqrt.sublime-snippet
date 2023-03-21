@@ -7,19 +7,19 @@ template<class T>
 optional<T> mod_sqrt(T a){
 	int p = T().mod();
 	if(a == 0) return 0;
-	if((a ^ (p - 1) / 2) != 1) return {};
-	if(p % 4 == 3) return a ^ (p + 1) / 4;
+	if((a.power((p - 1) / 2)) != 1) return {};
+	if(p % 4 == 3) return a.power((p + 1) / 4);
 	// a^(n+3)/8 or 2^(n+3)/8 * 2^(n-1)/4 works if p % 8 == 5
 	int s = p - 1, r = 0, m;
 	while(s % 2 == 0) ++ r, s /= 2;
 	T n = 2;
-	while((n ^ (p - 1) / 2) != p - 1) ++ n;
-	T x = a ^ (s + 1) / 2, b = a ^ s, g = n ^ s;
+	while(n.power((p - 1) / 2) != p - 1) ++ n;
+	T x = a.power((s + 1) / 2), b = a.power(s), g = n.power(s);
 	for( ; ; r = m){
 		T t = b;
 		for(m = 0; m < r && t != 1; ++ m) t *= t;
 		if(m == 0) return x;
-		T gs = g ^ 1LL << r - m - 1;
+		T gs = g.power(1LL << r - m - 1);
 		g = gs * gs, x = x * gs, b = b * g;
 	}
 }

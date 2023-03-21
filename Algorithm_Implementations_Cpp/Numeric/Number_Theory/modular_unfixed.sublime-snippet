@@ -48,7 +48,7 @@ struct modular_unfixed_base{
 		for(auto g = 2; ; ++ g){
 			bool ok = true;
 			for(auto i = 0; i < cnt; ++ i){
-				if((modular_unfixed_base(g) ^ (_mod - 1) / divs[i]) == 1){
+				if((modular_unfixed_base(g).power((_mod - 1) / divs[i])) == 1){
 					ok = false;
 					break;
 				}
@@ -85,15 +85,15 @@ struct modular_unfixed_base{
 		return *this;
 	}
 	template<class T, typename enable_if<is_integral<T>::value>::type* = nullptr>
-	modular_unfixed_base &operator^=(T e){
+	modular_unfixed_base &inplace_power(T e){
 		if(e < 0) *this = 1 / *this, e = -e;
 		modular_unfixed_base res = 1;
 		for(; e; *this *= *this, e >>= 1) if(e & 1) res *= *this;
 		return *this = res;
 	}
 	template<class T, typename enable_if<is_integral<T>::value>::type* = nullptr>
-	modular_unfixed_base operator^(T e) const{
-		return modular_unfixed_base(*this) ^= e;
+	modular_unfixed_base power(T e) const{
+		return modular_unfixed_base(*this).inplace_power(e);
 	}
 	modular_unfixed_base &operator/=(const modular_unfixed_base &otr){
 		int a = otr.data, m = _mod, u = 0, v = 1;

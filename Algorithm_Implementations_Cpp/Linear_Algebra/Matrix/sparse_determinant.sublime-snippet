@@ -3,7 +3,7 @@
 // Calculate the determinant of the sparse matrix
 // Reads dimension n and its elements in form tuple{row, column, value}
 // T must be of modular type
-// O(n * (n + |a|) + |a| log mod)
+// O(n * (n + |a|) + |a| * log(mod))
 // Requires linear_recurrence_solver, and sparse_minimal_polynomial
 template<class T> // calculate the determinant of the sparse matrix
 T sparse_determinant(auto &&rng, int n, vector<tuple<int, int, T>> a){

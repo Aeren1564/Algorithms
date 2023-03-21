@@ -11,7 +11,7 @@ struct number_theoric_transform_wrapper{
 		if(root.empty()) root = {1, 1};
 		for(auto k = (int)root.size(); k < n; k <<= 1){
 			root.resize(n, 1);
-			T w = T::primitive_root() ^ (T::mod() - 1) / (k << 1);
+			T w = T::primitive_root().power((T::mod() - 1) / (k << 1));
 			for(auto i = k; i < k << 1; ++ i) root[i] = i & 1 ? root[i >> 1] * w : root[i >> 1];
 		}
 	}
