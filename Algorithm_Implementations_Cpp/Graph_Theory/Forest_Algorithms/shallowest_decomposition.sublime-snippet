@@ -16,7 +16,7 @@ struct shallowest_decomposition{
 	// g must be a tree
 	// O(n)
 	template<class T>
-	shallowest_decomposition(const graph<T> &g): n(g.n), abr(n), pv(n, -1), pe(n, -1), pos(n, -1), end(n, -1), size(n), depth(n), pos_as_child(n, -1){
+	shallowest_decomposition(const graph<T> &g): n(g.n), abr(n), pv(n, -1), pe(n, -1), pos(n, -1), end(n, -1), size(n, 1), depth(n), pos_as_child(n, -1){
 		assert(n);
 		vector<int> dp(n);
 		vector<vector<int>> stacks(__lg(n) + 1);
