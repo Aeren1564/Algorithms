@@ -26,10 +26,6 @@ template<class T> ostream &operator<<(class enable_if<!is_same<T, string>::value
 	}
 	return out;
 }
-template<size_t S> ostream &operator<<(ostream &out, const bitset<S> &b){
-	for(auto i = 0; i < S; ++ i) out << b[i];
-	return out;
-}
 ostream &operator<<(ostream &out, const _Bit_reference &bit){
 	return out << bool(bit);
 }
