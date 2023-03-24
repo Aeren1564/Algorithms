@@ -1,0 +1,314 @@
+<snippet>
+	<content><![CDATA[
+// T should be able to hold 2^(width+1)-1
+// T_large should be able to hold the square of that
+// Internally, the numbers are stored in binary with LSB first.
+template<class T, class T_large, signed int width>
+struct bigint_base{
+	int sign = 0; // -1 (negative), 0 (zero), 1 (positive)
+	vector<T> data;
+	void trim(){
+		while(!data.empty() && !data.back()) data.pop_back();
+		if(data.empty()) sign = 0;
+	}
+	size_t size() const{ return (int)data.size(); }
+	bool _is_valid() const{
+		static constexpr T base = T(1) << width;
+		for(auto x: data) assert(0 <= x && x < base);
+		return sign ? !data.empty() && data.back() : data.empty();
+	}
+	bigint_base(){ }
+	// Only accepts base 2
+	bigint_base(const string &s, unsigned int base = 2){
+		if(base == 2){
+			int pos = 0;
+			sign = 1;
+			while(pos < (int)s.size() && (s[pos] == '-' || s[pos] == '+')){
+				if(s[pos] == '-') sign = -sign;
+				++ pos;
+			}
+			for(auto i = (int)s.size() - 1; i >= pos; i -= width){
+				T x = 0;
+				for(auto j = max(pos, i - width + 1); j <= i; ++ j){
+					assert('0' <= s[j] && s[j] <= '1');
+					x = x << 1 | s[j] - '0';
+				}
+				data.push_back(x);
+			}
+			trim();
+		}
+		else assert(false);
+		assert(_is_valid());
+	}
+	template<class U, typename enable_if<is_integral<U>::value>::type* = nullptr>
+	bigint_base(U x){
+		int sign = x < 0 ? -1 : 1;
+		x = abs(x);
+		string s;
+		while(x){
+			s.push_back((x & 1) + '0');
+			x >>= 1;
+		}
+		if(sign == -1) s.push_back('-');
+		reverse(s.begin(), s.end());
+		*this = bigint_base(s);
+	}
+	friend ostream &operator<<(ostream &out, const bigint_base &x){
+		if(!x) return out << '0';
+		if(x.sign < 0) out << '-';
+		assert(x.data.back());
+		for(int i = __lg(x.data.back()); i >= 0; -- i) out << (x.data.back() >> i & 1);
+		for(auto i = (int)x.size() - 2; i >= 0; -- i) out << bitset<width>(x.data[i]);
+		return out;
+	}
+	// TODO: Implement Schoenhage
+	friend string to_string(const bigint_base &x, unsigned int base = 2){
+		if(base == 2){
+			stringstream ss;
+			ss << x;
+			string s;
+			ss >> s;
+			return s;
+		}
+		else assert(false);
+	}
+	operator bool() const{
+		return sign;
+	}
+	template<class U, typename enable_if<is_integral<U>::value && !is_same<U, bool>::value>::type* = nullptr>
+	operator U() const{
+		U x = 0;
+		for(auto i = (int)size() - 1; i >= 0; -- i) x = x << width | data[i];
+		if(sign < 0) x = -x;
+		return x;
+	}
+	bool operator==(const bigint_base &x) const{ return sign == x.sign && data == x.data; }
+	bool operator!=(const bigint_base &x) const{ return !(*this == x); }
+	bool operator<(const bigint_base &x) const{
+		if(sign != x.sign) return sign < x.sign;
+		if(!*this) return false;
+		if(size() != x.size()) return size() < x.size() ^ sign < 0;
+		for(auto i = (int)size() - 1; i >= 0; -- i) if(data[i] != x.data[i]) return data[i] < x.data[i] ^ sign < 0;
+		return false;
+	}
+	bool operator<=(const bigint_base &x) const{ return !(x < *this); }
+	bool operator>=(const bigint_base &x) const{ return !(*this < x); }
+	bool operator>(const bigint_base &x) const{ return x < *this; }
+	friend bigint_base abs(bigint_base x){
+		x.sign = abs(x.sign);
+		return x;
+	}
+	// TODO: bitwise operators: &, |, ^, &=, |=, ^=
+	bigint_base operator+() const{
+		return bigint_base(*this);
+	}
+	bigint_base operator-() const{
+		bigint_base x(*this);
+		x.sign = -x.sign;
+		return x;
+	}
+	static void _add_apply(vector<T> &x, const vector<T> &y){
+		static constexpr T base = T(1) << width;
+		if(x.size() < y.size()) x.resize(y.size());
+		T carry = 0;
+		for(auto i = 0; i < (int)y.size(); ++ i){
+			x[i] += y[i] + carry;
+			if(carry = x[i] >= base) x[i] -= base;
+		}
+		if(carry){
+			if(x.size() == y.size()) x.resize(y.size() + 1);
+			++ x[y.size()];
+		}
+	}
+	// Assumes x is equal or greater than y.
+	static void _subtract_apply(vector<T> &x, const vector<T> &y){
+		static constexpr T base = T(1) << width;
+		T carry = 0, temp;
+		int i = 0;
+		for(auto i = 0; i < (int)y.size() || carry; ++ i){
+			temp = i < (int)y.size() ? y[i] + carry : carry;
+			if(carry = x[i] < temp) x[i] += base;
+			x[i] -= temp;
+		}
+	}
+	static vector<T> _naive_multiplication(const vector<T> &x, const vector<T> &y){
+		static constexpr T cut = (T(1) << width) - 1;
+		if(x.empty() || y.empty()) return {};
+		vector<T> z(x.size() + y.size() - 1);
+		for(auto i = 0; i < (int)x.size(); ++ i) for(auto j = 0; j < (int)y.size(); ++ j){
+			T_large rem = (T_large)x[i] * y[j];
+			for(auto k = i + j; rem; ++ k){
+				if((int)z.size() <= k) z.push_back(0);
+				rem += z[k];
+				z[k] = rem & cut;
+				rem >>= width;
+			}
+		}
+		return z;
+	}
+	// TODO: implement Karatsuba, Toom-Cook, Schönhage–Strassen, and FFT
+	static void _multiply_apply(vector<T> &x, const vector<T> &y){
+		x = _naive_multiplication(x, y);
+	}
+	// TODO: specialize +, -, *, /, %, +=, -=, *=, /=, %= for small integers
+	bigint_base &operator+=(const bigint_base &x){
+		if(!x) return *this;
+		if(!*this) return *this = x;
+		if(sign == x.sign) _add_apply(data, x.data);
+		else{
+			bool negate = false;
+			if(size() < x.size()) negate = true;
+			else if(size() == x.size()){
+				int i = size() - 1;
+				while(i >= 0 && data[i] == x.data[i]) -- i;
+				if(i == -1) return *this = bigint_base();
+				if(data[i] < x.data[i]) negate = true;
+			}
+			if(negate){
+				sign = -sign;
+				auto temp = data;
+				data = x.data;
+				_subtract_apply(data, temp);
+			}
+			else _subtract_apply(data, x.data);
+			trim();
+		}
+		return *this;
+	}
+	bigint_base operator+(const bigint_base &x) const{
+		return bigint_base(*this) += x;
+	}
+	bigint_base &operator-=(const bigint_base &x){
+		if(!x) return *this;
+		if(!*this) return *this = -x;
+		if(sign != x.sign) _add_apply(data, x.data);
+		else{
+			bool negate = false;
+			if(size() < x.size()) negate = true;
+			else if(size() == x.size()){
+				int i = size() - 1;
+				while(i >= 0 && data[i] == x.data[i]) -- i;
+				if(i == -1) return *this = bigint_base();
+				if(data[i] < x.data[i]) negate = true;
+			}
+			if(negate){
+				sign = -sign;
+				auto temp = data;
+				data = x.data;
+				_subtract_apply(data, temp);
+			}
+			else _subtract_apply(data, x.data);
+			trim();
+		}
+		return *this;
+	}
+	bigint_base operator-(const bigint_base &x) const{
+		return bigint_base(*this) -= x;
+	}
+	bigint_base &operator++(){
+		static constexpr T cut = (T(1) << width) - 1;
+		if(!*this){
+			sign = 1;
+			data = {1};
+			return *this;
+		}
+		if(sign > 0){
+			int i = 0;
+			while(i < size() && data[i] == cut) data[i ++] = 0;
+			if(i == size()) data.push_back(1);
+			else ++ data[i];
+		}
+		else{
+			int i = 0;
+			while(i < size() && data[i] == 0) data[i ++] = cut;
+			assert(i < size());
+			-- data[i];
+			trim();
+		}
+		return *this;
+	}
+	bigint_base operator++(int){
+		bigint_base x = *this;
+		++ *this;
+		return x;
+	}
+	bigint_base &operator--(){
+		static constexpr T cut = (T(1) << width) - 1;
+		if(!*this){
+			sign = -1;
+			data = {1};
+			return *this;
+		}
+		if(sign < 0){
+			int i = 0;
+			while(i < size() && data[i] == cut) data[i ++] = 0;
+			if(i == size()) data.push_back(1);
+			else ++ data[i];
+		}
+		else{
+			int i = 0;
+			while(i < size() && data[i] == 0) data[i ++] = cut;
+			assert(i < size());
+			-- data[i];
+			trim();
+		}
+		return *this;
+	}
+	bigint_base operator--(int){
+		bigint_base x = *this;
+		-- *this;
+		return x;
+	}
+	bigint_base operator*=(const bigint_base &x){
+		if(!*this || !x) *this = bigint_base();
+		sign *= x.sign;
+		_multiply_apply(data, x.data);
+		return *this;
+	}
+	bigint_base operator*(const bigint_base &x) const{
+		return bigint_base(*this) *= x;
+	}
+	template<class U, typename enable_if<is_integral<U>::value>::type* = nullptr>
+	bigint_base &inplace_power(U e){
+		assert(e >= 0);
+		bigint_base res(1);
+		for(; e; e >>= 1, *this *= *this) if(e & 1) res *= *this;
+		return *this = res;
+	}
+	template<class U, typename enable_if<is_integral<U>::value>::type* = nullptr>
+	bigint_base power(U e) const{
+		return bigint_base(*this).inplace_power(e);
+	}
+	// Todo: Implement Knuth and Burnikel-Ziegler
+	friend pair<bigint_base, bigint_base> div(const bigint_base &x, const bigint_base &y){
+		// TODO
+		return {};
+	}
+	bigint_base &operator/=(const bigint_base &x){
+		// TODO
+		return *this;
+	}
+	bigint_base operator/(const bigint_base &x) const{
+		return bigint_base(*this) /= x;
+	}
+	bigint_base &operator%=(const bigint_base &x){
+		// TODO
+		return *this;
+	}
+	bigint_base operator%(const bigint_base &x) const{
+		return bigint_base(*this) %= x;
+	}
+	friend bigint_base gcd(const bigint_base &x, const bigint_base &y){
+		return y ? gcd(y, x % y) : x;
+	}
+	friend bigint_base lcm(const bigint_base &x, const bigint_base &y){
+		return x / gcd(x, y) * y;
+	}
+};
+using bigint = bigint_base<unsigned long long, __uint128_t, 63>;
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>bigint</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
