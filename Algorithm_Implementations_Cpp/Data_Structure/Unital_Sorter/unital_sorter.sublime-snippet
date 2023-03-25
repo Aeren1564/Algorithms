@@ -4,7 +4,7 @@ struct unital_sorter{
 	// n: # of items
 	// m: maximum possible freq
 	// order: list of items sorted by freq (tie broken arbitrarily)
-	// pos[x]: position of the item x in order
+	// pos[x]: position of the item x in the list
 	// freq[x]: frequency of the item x
 	// fpos[f]: starting position of items for freqeuncy f
 	int n, m;
@@ -42,6 +42,10 @@ struct unital_sorter{
 		swap(pos[x], pos[y]);
 		swap(order[pos[x]], order[pos[y]]);
 		++ fpos[freq[x] --];
+	}
+	// O(1)
+	int maximum_frequency() const{
+		return freq[order.back()];
 	}
 };
 ]]></content>
