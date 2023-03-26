@@ -303,22 +303,22 @@ COMPARE_OP(==) COMPARE_OP(!=) COMPARE_OP(<) COMPARE_OP(<=) COMPARE_OP(>=) COMPAR
 			return {q, {r}};
 		}
 		vector<T> q(m - n + 1), r(n), xn(m + 1), yn(n);
-		T_large qhat, rhat;
+		T_large qhat, rhat, p;
 		int s = __builtin_clzll(y[n - 1]);
 		for(auto i = n - 1; i > 0; -- i) yn[i] = y[i] << s | (T_large)y[i - 1] >> width - s;
 		yn[0] = y[0] << s;
 		xn[m] = (T_large)x[m - 1] >> width;
 		for(auto i = m - 1; i > 0; -- i) xn[i] = x[i] << s | (T_large)x[i - 1] >> width - s;
 		xn[0] = x[0] << s;
-		__int128_t p, t, k;
-		static const T_large base = ~T(0);
+		__int128_t t, k;
+		static const T_large base = T_large(1) << width;
 		for(auto j = m - n; j >= 0; -- j){
 			qhat = (xn[j + n] * base + xn[j + n - 1]) / yn[n - 1];
 			rhat = (xn[j + n] * base + xn[j + n - 1]) - qhat * yn[n - 1];
 			FLAG:
 			if(qhat >= base || qhat * yn[n - 2] > base * rhat + xn[j + n - 2]){
-				qhat = qhat - 1;
-				rhat = rhat + yn[n - 1];
+				-- qhat;
+				rhat += yn[n - 1];
 				if(rhat < base) goto FLAG;
 			}
 			k = 0;
@@ -332,14 +332,14 @@ COMPARE_OP(==) COMPARE_OP(!=) COMPARE_OP(<) COMPARE_OP(<=) COMPARE_OP(>=) COMPAR
 			xn[j + n] = t;
 			q[j] = qhat;
 			if(t < 0){
-				q[j] = q[j] - 1;
+				-- q[j];
 				k = 0;
 				for(auto i = 0; i < n; ++ i){
 					t = (T_large)xn[i + j] + yn[i] + k;
 					xn[i + j] = t;
 					k = t >> width;
 				}
-				xn[j + n] = xn[j + n] + k;
+				xn[j + n] += k;
 			}
 		}
 		if(!r.empty()){
