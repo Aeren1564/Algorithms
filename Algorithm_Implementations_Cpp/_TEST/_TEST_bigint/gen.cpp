@@ -26,8 +26,7 @@ int main(){
 	cin.tie(0)->sync_with_stdio(0);
 	cin.exceptions(ios::badbit | ios::failbit);
 	auto gen_len = [&]()->int{
-		// return rng() % 3 == 0 ? rng() % 5 + 1 : rng() % 2 == 0 ? rng() % 128 + 1 : rng() % 100000 + 1;
-		return rng() % 128 + 1;
+		return rng() % 3 == 0 ? rng() % 5 + 1 : rng() % 2 == 0 ? rng() % 128 + 1 : rng() % 1000 + 1;
 	};
 	for(auto i = 0; i < 2; ++ i){
 		if(rng() % 3){
