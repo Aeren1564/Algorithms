@@ -307,23 +307,23 @@ COMPARE_OP(==) COMPARE_OP(!=) COMPARE_OP(<) COMPARE_OP(<=) COMPARE_OP(>=) COMPAR
 		int s = __builtin_clzll(y[n - 1]);
 		for(auto i = n - 1; i > 0; -- i) yn[i] = y[i] << s | (T_large)y[i - 1] >> width - s;
 		yn[0] = y[0] << s;
-		xn[m] = (T_large)x[m - 1] >> width;
+		xn[m] = (T_large)x[m - 1] >> width - s;
 		for(auto i = m - 1; i > 0; -- i) xn[i] = x[i] << s | (T_large)x[i - 1] >> width - s;
 		xn[0] = x[0] << s;
 		__int128_t t, k;
 		static const T_large base = T_large(1) << width;
 		for(auto j = m - n; j >= 0; -- j){
 			qhat = (xn[j + n] * base + xn[j + n - 1]) / yn[n - 1];
-			rhat = (xn[j + n] * base + xn[j + n - 1]) - qhat * yn[n - 1];
+			rhat = (xn[j + n] * base + xn[j + n - 1]) % yn[n - 1];
 			FLAG:
-			if(qhat >= base || qhat * yn[n - 2] > base * rhat + xn[j + n - 2]){
+			if(qhat >= base || (T)qhat * (T_large)yn[n - 2] > base * rhat + xn[j + n - 2]){
 				-- qhat;
 				rhat += yn[n - 1];
 				if(rhat < base) goto FLAG;
 			}
 			k = 0;
 			for(auto i = 0; i < n; ++ i){
-				p = qhat * yn[i];
+				p = (T)qhat * (T_large)yn[i];
 				t = xn[i + j] - k - (p & base - 1);
 				xn[i + j] = t;
 				k = (p >> width) - (t >> width);
@@ -396,11 +396,49 @@ friend bigint operator OP(U x, const bigint &y){\
 BINARY_OP(&=, &) BINARY_OP(|=, |) BINARY_OP(^=, ^) BINARY_OP(+=, +) BINARY_OP(-=, -) BINARY_OP(*=, *) BINARY_OP(/=, /) BINARY_OP(%=, %)
 #undef BINARY_OP
 	friend bigint gcd(const bigint &x, const bigint &y){
+		if(x.sign || y.sign) return gcd(abs(x), abs(y));
 		return y ? gcd(y, x % y) : x;
 	}
 	friend bigint lcm(const bigint &x, const bigint &y){
+		if(x.sign || y.sign) return lcm(abs(x), abs(y));
 		return x / gcd(x, y) * y;
 	}
+	template<class Iter>
+	static bigint sum(Iter begin, Iter end){
+		int n = end - begin;
+		vector<bigint> temp(n << 1);
+		for(auto i = 0; i < n; ++ i) temp[n + i] = *(begin + i);
+		for(auto i = n - 1; i >= 1; -- i) temp[i] = temp[i << 1] + temp[i << 1 | 1];
+		bigint res = 0;
+		for(auto l = n, r = n << 1; l < r; l >>= 1, r >>= 1){
+			if(l & 1) res += temp[l ++];
+			if(r & 1) res += temp[-- r];
+		}
+		return res;
+	}
+	template<class Iter>
+	static bigint product(Iter begin, Iter end){
+		int n = end - begin;
+		vector<bigint> temp(n << 1);
+		for(auto i = 0; i < n; ++ i) temp[n + i] = *(begin + i);
+		for(auto i = n - 1; i >= 1; -- i) temp[i] = temp[i << 1] * temp[i << 1 | 1];
+		bigint res = 1;
+		for(auto l = n, r = n << 1; l < r; l >>= 1, r >>= 1){
+			if(l & 1) res *= temp[l ++];
+			if(r & 1) res *= temp[-- r];
+		}
+		return res;
+	}
+#if __cplusplus > 201703L
+	template<ranges::random_access_range R>
+	static bigint sum(R &&r){
+		return sum(r.begin(), r.end());
+	}
+	template<ranges::random_access_range R>
+	static bigint product(R &&r){
+		return product(r.begin(), r.end());
+	}
+#endif
 };
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
