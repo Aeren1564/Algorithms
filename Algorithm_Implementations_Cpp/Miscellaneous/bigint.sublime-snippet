@@ -26,6 +26,7 @@ struct bigint{
 		else ++ x[i];
 	}
 	static void _add_apply(bool &xsign, vector<T> &x, bool ysign, const vector<T> &y){
+		if(!ysign && y.empty()) return;
 		if(x.size() < y.size()) x.resize(y.size(), pad[xsign]);
 		unsigned char carry = 0;
 		for(auto i = 0; i < (int)y.size(); ++ i) carry = _addcarry_u64(carry, x[i], y[i], &x[i]);
@@ -36,6 +37,7 @@ struct bigint{
 		}
 	}
 	static void _subtract_apply(bool &xsign, vector<T> &x, bool ysign, const vector<T> &y){
+		if(!ysign && y.empty()) return;
 		if(x.size() < y.size()) x.resize(y.size(), pad[xsign]);
 		unsigned char borrow = 0;
 		for(auto i = 0; i < (int)y.size(); ++ i) borrow = _subborrow_u64(borrow, x[i], y[i], &x[i]);
@@ -60,9 +62,30 @@ struct bigint{
 		}
 		return z;
 	}
-	// TODO: implement Karatsuba, Toom-Cook, and Schönhage–Strassen
+	template<int karatsuba_threshold = 90>
+	static vector<T> _karatsuba_multiplication(const vector<T> &x, const vector<T> &y){
+		int n = (int)x.size(), m = (int)y.size();
+		if(min(n, m) <= karatsuba_threshold) return _naive_multiplication(x, y);
+		int split = min(max(n, m) >> 1, min(n, m));
+		vector<T> x0(x.begin(), x.begin() + split), x1(x.begin() + split, x.end());
+		vector<T> y0(y.begin(), y.begin() + split), y1(y.begin() + split, y.end());
+		auto z0 = _karatsuba_multiplication(x0, y0);
+		auto z2 = _karatsuba_multiplication(x1, y1);
+		bool temp = 0;
+		_add_apply(temp, x0, temp, x1);
+		_add_apply(temp, y0, temp, y1);
+		auto z1 = _karatsuba_multiplication(x0, y0);
+		_subtract_apply(temp, z1, temp, z0);
+		_subtract_apply(temp, z1, temp, z2);
+		z1.insert(z1.begin(), split, 0);
+		z2.insert(z2.begin(), split << 1, 0);
+		_add_apply(temp, z2, temp, z1);
+		_add_apply(temp, z2, temp, z0);
+		return z2;
+	}
+	// TODO: implement Toom-Cook, and Schönhage–Strassen
 	static vector<T> _multiply(const vector<T> &x, const vector<T> &y){
-		return _naive_multiplication(x, y);
+		return _karatsuba_multiplication(x, y);
 	}
 	bigint(){ }
 	bigint(const string &s, unsigned int base = 2){
@@ -159,6 +182,7 @@ template<class U, typename enable_if<is_integral<U>::value>::type* = nullptr>\
 friend bool operator OP(U x, const bigint &y){\
 	return bigint(x) OP y;\
 }
+// TODO: Make this more efficient
 COMPARE_OP(==) COMPARE_OP(!=) COMPARE_OP(<) COMPARE_OP(<=) COMPARE_OP(>=) COMPARE_OP(>)
 #undef COMPARE_OP
 	bigint &operator&=(const bigint &x){
@@ -393,6 +417,7 @@ template<class U, typename enable_if<is_integral<U>::value>::type* = nullptr>\
 friend bigint operator OP(U x, const bigint &y){\
 	return bigint(y) APPLY_OP bigint(x);\
 }
+// TODO: Make this more efficient
 BINARY_OP(&=, &) BINARY_OP(|=, |) BINARY_OP(^=, ^) BINARY_OP(+=, +) BINARY_OP(-=, -) BINARY_OP(*=, *) BINARY_OP(/=, /) BINARY_OP(%=, %)
 #undef BINARY_OP
 	friend bigint gcd(const bigint &x, const bigint &y){
