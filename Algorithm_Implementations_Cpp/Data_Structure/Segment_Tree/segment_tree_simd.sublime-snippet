@@ -1,0 +1,75 @@
+<snippet>
+	<content><![CDATA[
+// Very fast segtree from https://en.algorithmica.org/hpc/data-structures/segment-trees/
+// Currently only supports addition (I think)
+#pragma GCC optimize("O3,unroll-all-loops")
+#pragma GCC target("avx,avx2,bmi,bmi2,popcnt,lzcnt")
+template<int size, class T, class F>
+struct segment_tree_simd{
+	static_assert(size > 0 && __builtin_popcount(size) == 1);
+	static constexpr int cache_size = 64;
+	static constexpr int reg_size = 32;
+	static constexpr int reg_count = cache_size / reg_size;
+	static constexpr int branching = cache_size / sizeof(T);
+	static constexpr int branching_bits = __lg(branching);
+	typedef T __attribute__((vector_size(reg_size))) vec;
+	struct Precalc{
+		alignas(cache_size) T mask[branching][branching];
+		constexpr Precalc(): mask{}{
+			for(auto i = 0; i < branching; ++ i)
+			for(auto j = 0; j < branching; ++ j) mask[i][j] = (i < j ? -1 : 0);
+		}
+	};
+	static constexpr Precalc precalc{};
+	static constexpr int calc_height(int n){
+		return (n <= branching ? 1 : calc_height(n / branching) + 1);
+	}
+	static constexpr int calc_offset(int h){
+		int s = 0, n = size;
+		while(h --){
+			s += (n + branching - 1) / branching * branching;
+			n /= branching;
+		}
+		return s;
+	}
+	static constexpr int round(int k){
+		return k & ~(branching - 1);  // = k / branching * branching
+	}
+	static constexpr int H = calc_height(size);
+	template<size_t ... indices>
+	static constexpr array<int, H + 1> calc_offsets(index_sequence<indices...>){
+		return {calc_offset(indices)...};
+	}
+	static constexpr auto offset = calc_offsets(make_index_sequence<H+1>());
+	alignas(cache_size) T values[offset[H]]{};
+	F TT;
+	segment_tree_simd(F TT) : TT(TT){ }
+	void update(int p, T x){
+		vec v = x + vec{};
+		for(auto h = 0; h != H; ++ h){
+			auto a = (vec *)&values[offset[h] + round(p)];
+			const auto m = (const vec *)&precalc.mask[p % branching];
+			for(auto i = 0; i != reg_count; ++ i) a[i] = TT(a[i], v & m[i]);
+			p >>= branching_bits;
+		}
+	}
+	T query(int i) const{
+		T res = 0;
+		for(auto h = 0; h != H; ++ h, i >>= branching_bits) res = TT(res, values[offset[h] + i]);
+		return res;
+	}
+	T query(int i, int j) const{
+		T res = 0;
+		for(auto h = 0; h != H; ++ h, i >>= branching_bits, j >>= branching_bits){
+			res = TT(res, -values[offset[h] + i]);
+			res = TT(res, +values[offset[h] + j]);
+		}
+		return res;
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>segment_tree_simd</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
