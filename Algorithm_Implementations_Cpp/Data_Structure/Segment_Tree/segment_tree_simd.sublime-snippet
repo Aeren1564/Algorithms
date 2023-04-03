@@ -46,11 +46,10 @@ struct segment_tree_simd{
 	segment_tree_simd(F TT) : TT(TT){ }
 	void update(int p, T x){
 		vec v = x + vec{};
-		for(auto h = 0; h != H; ++ h){
+		for(auto h = 0; h != H; ++ h, p >>= branching_bits){
 			auto a = (vec *)&values[offset[h] + round(p)];
 			const auto m = (const vec *)&precalc.mask[p % branching];
 			for(auto i = 0; i != reg_count; ++ i) a[i] = TT(a[i], v & m[i]);
-			p >>= branching_bits;
 		}
 	}
 	T query(int i) const{
