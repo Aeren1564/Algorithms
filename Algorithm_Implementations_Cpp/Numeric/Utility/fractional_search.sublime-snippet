@@ -1,0 +1,37 @@
+<snippet>
+	<content><![CDATA[
+// Among all irreducible fractions with numerator <= th_n and denominator <= th_d, find
+// 1. the first fraction x in range [ql, qr) such that f(x) is false, return qr if none exists, if obj = false, and
+// 2. the last fraction x in range (ql, qr] such that f(x) is true, return ql if none exists, otherwise.
+// Set qr=1/0(=inf) to search for all such fractions.
+// The range must be partitioned as if std::partition has been applied.
+// O(th_n + th_d) applications of f
+template<class T = int, class T_large = long long, bool obj = false>
+array<T, 2> fraction_search(const array<T, 2> &ql, const array<T, 2> &qr, T th_n, T th_d, auto f){
+	assert(ql[0] >= 0 && ql[1] > 0 || ql[0] > 0 && ql[1] >= 0);
+	assert(qr[0] >= 0 && qr[1] > 0 || qr[0] > 0 && qr[1] >= 0);
+	assert(gcd(ql[0], ql[1]) == 1 && gcd(qr[0], qr[1]) == 1);
+	auto cmp = [&](const array<T, 2> &x, const array<T, 2> &y)->bool{
+		return (T_large)x[0] * y[1] < (T_large)x[1] * y[0];
+	};
+	assert(!cmp(qr, ql));
+	assert(th_n >= 1 && th_d >= 1);
+	if(ql == qr) return qr;
+	auto recurse = [&](auto self, const array<T, 2> &l, const array<T, 2> &r)->array<T, 2>{
+		array<T, 2> m = {l[0] + r[0], l[1] + r[1]};
+		if(m[0] > th_n || m[1] > th_d) return obj ? l : r;
+		if constexpr(obj){
+			return cmp(qr, m) || cmp(ql, m) && !f(m) ? self(self, l, m) : self(self(m, r));
+		}
+		else{
+			return cmp(m, ql) || cmp(m, qr) && f(m) ? self(self, m, r) : self(self, l, m);
+		}
+	};
+	return recurse(recurse, {0, 1}, {1, 0});
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>fractional_search</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
