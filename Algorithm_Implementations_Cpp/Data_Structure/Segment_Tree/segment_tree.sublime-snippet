@@ -7,13 +7,38 @@ struct segment_tree{
 	F TT; // monoid operation (always adjacent)
 	T T_id; // monoid identity
 	// O(n)
-	segment_tree(int n, F TT, T T_id): segment_tree(vector<T>(n, T_id), TT, T_id){}
+	segment_tree(int n, F TT, T T_id): TT(TT), T_id(T_id){
+		init(n);
+	}
 	// O(n)
-	segment_tree(int n, T init, F TT, T T_id): segment_tree(vector<T>(n, init), TT, T_id){}
+	segment_tree(int n, T x, F TT, T T_id): TT(TT), T_id(T_id){
+		init(n, x);
+	}
 	// O(n)
-	segment_tree(const vector<T> &a, F TT, T T_id): n((int)a.size()), TT(TT), T_id(T_id){ // O(n)
-		log = __lg(max(n - 1, 1)) + 1, size = 1 << log;
-		data = vector<T>(size << 1, T_id);
+	segment_tree(const vector<T> &a, F TT, T T_id): TT(TT), T_id(T_id){
+		init(a);
+	}
+	// O(n)
+	void init(int n){
+		init(n, T_id);
+	}
+	// O(n)
+	void init(int n, T x){
+		this->n = n;
+		size = 1;
+		while(size < n) size <<= 1;
+		log = __lg(size);
+		data.assign(size << 1, T_id);
+		fill(data.begin() + size, data.begin() + size + n, x);
+		for(auto i = size - 1; i >= 1; -- i) refresh(i);
+	}
+	// O(n)
+	void init(const vector<T> &a){
+		n = (int)a.size();
+		size = 1;
+		while(size < n) size <<= 1;
+		log = __lg(size);
+		data.assign(size << 1, T_id);
 		copy(a.begin(), a.end(), data.begin() + size);
 		for(auto i = size - 1; i >= 1; -- i) refresh(i);
 	}
@@ -21,13 +46,13 @@ struct segment_tree{
 	void refresh(int i){
 		data[i] = TT(data[i << 1], data[i << 1 | 1]);
 	}
-	// O(log n)
+	// O(log(n))
 	void set(int p, T x){
 		assert(0 <= p && p < n);
 		data[p += size] = x;
 		for(auto i = 1; i <= log; ++ i) refresh(p >> i);
 	}
-	// O(log n)
+	// O(log(n))
 	void update(int p, T x){
 		assert(0 <= p && p < n);
 		p += size;
@@ -39,7 +64,7 @@ struct segment_tree{
 		assert(0 <= p && p < n);
 		return data[p + size];
 	}
-	// O(log n)
+	// O(log(n))
 	T query(int l, int r) const{
 		assert(0 <= l && l <= r && r <= n);
 		T res_left = T_id, res_right = T_id;
@@ -55,7 +80,7 @@ struct segment_tree{
 	}
 	// pred(sum[l, r)) is T, T, ..., T, F, F, ..., F
 	// Returns max r with T
-	// O(log n)
+	// O(log(n))
 	int max_pref(int l, auto pred) const{
 		assert(0 <= l && l <= n && pred(T_id));
 		if(l == n) return n;
@@ -76,7 +101,7 @@ struct segment_tree{
 	}
 	// pred(sum[l, r)) is F, F, ..., F, T, T, ..., T
 	// Returns min l with T
-	// O(log n)
+	// O(log(n))
 	int min_suff(int r, auto pred) const{
 		assert(0 <= r && r <= n && pred(T_id));
 		if(r == 0) return 0;
