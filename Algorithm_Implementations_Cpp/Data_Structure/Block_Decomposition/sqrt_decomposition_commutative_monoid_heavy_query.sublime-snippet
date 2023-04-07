@@ -1,0 +1,68 @@
+<snippet>
+	<content><![CDATA[
+template<int B, class T, class F>
+struct sqrt_decomposition_commutative_monoid_heavy_query{
+	int n, nB;
+	vector<T> data, dataB;
+	F TT; // commutative monoid operation
+	T T_id; // commutative monoid identity
+	// O(n)
+	sqrt_decomposition_commutative_monoid_heavy_query(int n, F TT, T T_id): TT(TT), T_id(T_id){
+		init(n);
+	}
+	// O(n)
+	sqrt_decomposition_commutative_monoid_heavy_query(int n, T x, F TT, T T_id): TT(TT), T_id(T_id){
+		init(n, x);
+	}
+	// O(n)
+	sqrt_decomposition_commutative_monoid_heavy_query(const vector<T> &a, F TT, T T_id): TT(TT), T_id(T_id){
+		init(a);
+	}
+	// O(n)
+	void init(int n){
+		init(n, T_id);
+	}
+	// O(n)
+	void init(int n, T x){
+		this->n = n;
+		nB = (n + B - 1) / B;
+		data.assign(n, x);
+		dataB.assign(nB, T_id);
+		for(auto iB = 0; iB < nB; ++ iB) for(auto i = B * iB; i < min(n, B * (iB + 1)); ++ i) dataB[iB] = TT(dataB[iB], data[i]);
+	}
+	// O(n)
+	void init(const vector<T> &a){
+		n = (int)a.size();
+		nB = (n + B - 1) / B;
+		data = a;
+		dataB.assign(nB, T_id);
+		for(auto iB = 0; iB < nB; ++ iB) for(auto i = B * iB; i < min(n, B * (iB + 1)); ++ i) dataB[iB] = TT(dataB[iB], data[i]);
+	}
+	// O(1)
+	void update(int p, T x){
+		assert(0 <= p && p < n);
+		data[p] = TT(data[p], x);
+		int pB = (p + B - 1) / B;
+		data[pB] = TT(data[pB], x);
+	}
+	// O(B + n/B)
+	T query(int l, int r) const{
+		assert(0 <= l && l <= r && r <= n);
+		if(l == r) return T_id;
+		int lB = (l + B - 1) / B, rB = (r + B - 2) / B;
+		T res = T_id;
+		if(lB == rB) for(auto i = l; i < r; ++ i) res = TT(res, data[i]);
+		else{
+			for(auto i = l; i < B * (lB + 1); ++ i) res = TT(res, data[i]);
+			for(auto iB = lB + 1; iB < rB; ++ iB) res = TT(res, dataB[iB]);
+			for(auto i = B * rB; i < r; ++ i) res = TT(res, data[i]);
+		}
+		return res;
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>sqrt_decomposition_commutative_monoid_heavy_query</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
