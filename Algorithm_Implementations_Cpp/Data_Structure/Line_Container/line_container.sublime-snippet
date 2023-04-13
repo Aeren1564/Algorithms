@@ -38,7 +38,10 @@ struct line_container{
 	bool empty() const{
 		return data.empty();
 	}
-	// O(log n)
+	void clear(){
+		data.clear();
+	}
+	// O(log(n))
 	void push(line_type L){
 		if(!GET_MAX){
 			L.d = -L.d;
@@ -50,7 +53,7 @@ struct line_container{
 		if(x != data.begin() && isect(-- x, y)) isect(x, y = data.erase(y));
 		while((y = x) != data.begin() && (-- x)->p >= y->p) isect(x, data.erase(y));
 	}
-	// O(log n)
+	// O(log(n))
 	T query(T x){
 		assert(!data.empty());
 		auto l = *data.lower_bound(x);
