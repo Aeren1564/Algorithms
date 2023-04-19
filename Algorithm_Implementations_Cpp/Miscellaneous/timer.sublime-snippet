@@ -1,24 +1,52 @@
 <snippet>
 	<content><![CDATA[
 struct timer{
+	using T = long double;
+	enum class unit{
+		s, ms, us, ns
+	};
+	int multiplier;
+	string suffix;
+	timer(int _unit = 0): timer(unit(_unit)){
+		assert(0 <= _unit && _unit < 4);
+	}
+	timer(unit _unit){
+		multiplier = array<int, 4>{1, 1'000, 1'000'000, 1'000'000'000}[(int)_unit];
+		suffix = array<string, 4>{"s", "ms", "us", "ns"}[(int)_unit];
+	}
+	template<int iter = 100>
+	T measure(auto f){
+		static_assert(iter >= 1);
+		f(); // Get rid of cold-cache effect
+		auto start = chrono::high_resolution_clock::now();
+		for(auto i = 0; i < iter; ++ i) f();
+		auto end = chrono::high_resolution_clock::now();
+		auto x = chrono::duration<T>(end - start).count() * multiplier / iter;
+		#ifdef LOCAL
+		cerr << "Time Passed: " << x << suffix << endl;
+		#else
+		
+		#endif
+		return x;
+	}
 	chrono::time_point<chrono::high_resolution_clock> init = chrono::high_resolution_clock::now(), current = chrono::high_resolution_clock::now();
 	void refresh(){
 		current = chrono::high_resolution_clock::now();
 	}
 	// Measures time from last measure() call(construction if no such call)
-	double measure(){
-		double x = chrono::duration<double>(chrono::high_resolution_clock::now() - current).count();
+	T measure(){
+		T x = chrono::duration<T>(chrono::high_resolution_clock::now() - current).count() * multiplier;
 		#ifdef LOCAL
-		cerr << "Time Passed: " << x << endl;
+		cerr << "Time Passed: " << x << suffix << endl;
 		current = chrono::high_resolution_clock::now();
 		#endif
 		return x;
 	}
 	// Measures time from the construction
-	double measure_from_start(){
-		double x = chrono::duration<double>(chrono::high_resolution_clock::now() - init).count();
+	T measure_from_start(){
+		T x = chrono::duration<T>(chrono::high_resolution_clock::now() - init).count() * multiplier;
 		#ifdef LOCAL
-		cerr << "Time Since Epoch: " << x << endl;
+		cerr << "Time Since Epoch: " << x << suffix << endl;
 		#endif
 		return x;
 	}
