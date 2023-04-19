@@ -1,6 +1,7 @@
 <snippet>
 	<content><![CDATA[
 #include "testlib.h"
+#include <x86intrin.h>
 #include <bits/stdc++.h>
 using namespace std;
 #if __cplusplus > 201703L
