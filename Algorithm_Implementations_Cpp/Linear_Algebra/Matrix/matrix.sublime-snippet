@@ -18,11 +18,11 @@ struct matrix{
 	}
 	T &operator()(int i, int j){
 		assert(0 <= i && i < n && 0 <= j && j < m);
-		return data[i];
+		return data[i][j];
 	}
 	const T &operator()(int i, int j) const{
 		assert(0 <= i && i < n && 0 <= j && j < m);
-		return data[i];
+		return data[i][j];
 	}
 	bool operator==(const matrix &a) const{
 		assert(n == a.n && m == a.m);
@@ -106,7 +106,7 @@ struct matrix{
 			}
 			if(!~pivot) return T(0);
 			swap(a[j], a[pivot]);
-			res *= a[j][j];
+			res *= a[j][j] * (j != pivot ? -1 : 1);
 			auto invp = find_inverse(a[j][j]);
 			assert(invp);
 			T inv = *invp;
