@@ -110,7 +110,7 @@ struct matrix_fixed{
 			}
 			if(!~pivot) return T(0);
 			swap(a[j], a[pivot]);
-			res *= a[j][j];
+			res *= a[j][j] * (j != pivot ? -1 : 1);
 			auto invp = find_inverse(a[j][j]);
 			assert(invp);
 			T inv = *invp;
