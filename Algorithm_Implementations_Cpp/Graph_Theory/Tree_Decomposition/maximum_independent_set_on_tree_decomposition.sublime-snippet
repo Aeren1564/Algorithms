@@ -1,0 +1,106 @@
+<snippet>
+	<content><![CDATA[
+// O(n * 2^w * w) where w is the treewidth
+// Requires graph
+template<class T, class U>
+pair<T, vector<int>> maximum_independent_set_on_tree_decomposition(const graph<U> &g, const vector<vector<int>> &Dbag, const vector<array<int, 2>> &Dedge, vector<T> w = {}){
+	if(w.empty()) w.assign(g.n, T(1));
+	for(auto &b: Dbag){
+		assert((int)b.size() <= 30);
+		assert(is_sorted(b.begin(), b.end()));
+	}
+	auto adj = g.get_adjacency_list();
+	vector<vector<int>> Dadj((int)Dbag.size());
+	for(auto &[Du, Dv]: Dedge) Dadj[Du].push_back(Dv), Dadj[Dv].push_back(Du);
+	// mask of nodes not on its decomp parent
+	vector<int> difference_mask((int)Dbag.size());
+	vector<vector<int>> local_adj((int)Dbag.size());
+	vector<vector<int>> mapper((int)Dbag.size());
+	vector<vector<T>> dp((int)Dbag.size());
+	vector<int> Dvis((int)Dbag.size());
+	auto dfs = [&](auto self, int Du)->void{
+		Dvis[Du] = true;
+		int s = (int)Dbag[Du].size();
+		difference_mask[Du] = (1 << s) - 1;
+		local_adj[Du].resize(s);
+		for(auto i = 0; i < s; ++ i){
+			int u = Dbag[Du][i];
+			for(auto j = i; j < s; ++ j){
+				int v = Dbag[Du][j];
+				if(binary_search(adj[u].begin(), adj[u].end(), v)){
+					local_adj[Du][i] |= 1 << j;
+					local_adj[Du][j] |= 1 << i;
+				}
+			}
+		}
+		dp[Du].resize(1 << s);
+		T sum = 0;
+		for(auto mask = 1; mask < 1 << s; ++ mask){
+			for(auto i = 0; i < s; ++ i){
+				if(mask & 1 << i){
+					sum += w[Dbag[Du][i]];
+					break;
+				}
+				sum -= w[Dbag[Du][i]];
+			}
+			dp[Du][mask] = sum;
+		}
+		for(auto t = 0; t < (int)Dadj[Du].size(); ++ t){
+			int Dv = Dadj[Du][t];
+			Dadj[Dv].erase(find(Dadj[Dv].begin(), Dadj[Dv].end(), Du));
+			self(self, Dv);
+			mapper[Dv].resize(s, -1);
+			for(auto i = 0; i < (int)Dbag[Dv].size(); ++ i){
+				int u = Dbag[Dv][i];
+				if(binary_search(Dbag[Du].begin(), Dbag[Du].end(), u)) difference_mask[Dv] ^= 1 << i;
+			}
+			for(auto i = 0; i < s; ++ i){
+				int u = Dbag[Du][i];
+				auto it = lower_bound(Dbag[Dv].begin(), Dbag[Dv].end(), u);
+				if(it != Dbag[Dv].end() && *it == u) mapper[Dv][i] = it - Dbag[Dv].begin();
+			}
+			for(auto mask = 0; mask < 1 << s; ++ mask){
+				int nmask = difference_mask[Dv];
+				T common = 0;
+				for(auto i = 0; i < s; ++ i) if(mask & 1 << i && ~mapper[Dv][i]){
+					nmask |= 1 << mapper[Dv][i];
+					common += w[Dbag[Du][i]];
+				}
+				dp[Du][mask] += dp[Dv][nmask] - common;
+			}
+		}
+		for(auto mask = 0; mask < 1 << s; ++ mask){
+			int adjmask = 0;
+			for(auto i = 0; i < s; ++ i) if(mask & 1 << i) adjmask |= local_adj[Du][i];
+			if(mask & adjmask) dp[Du][mask] = 0;
+			for(auto i = 0; i < s; ++ i) if(mask & difference_mask[Du] & 1 << i) dp[Du][mask] = max(dp[Du][mask], dp[Du][mask ^ 1 << i]);
+		}
+	};
+	for(auto Du = 0; Du < (int)Dbag.size(); ++ Du) if(!Dvis[Du]) dfs(dfs, Du);
+	vector<int> iset;
+	auto recover = [&](auto self, int Du, int mask)->void{
+		Dvis[Du] = true;
+		int s = (int)Dbag[Du].size();
+		for(auto i = 0; i < s; ++ i) if(mask & difference_mask[Du] & 1 << i && dp[Du][mask] == dp[Du][mask ^ 1 << i]) mask ^= 1 << i;
+		for(auto i = 0; i < s; ++ i) if(mask & difference_mask[Du] & 1 << i) iset.push_back(Dbag[Du][i]);
+		for(auto Dv: Dadj[Du]){
+			int nmask = difference_mask[Dv];
+			for(auto i = 0; i < s; ++ i) if(mask & 1 << i && ~mapper[Dv][i]) nmask |= 1 << mapper[Dv][i];
+			self(self, Dv, nmask);
+		}
+	};
+	fill(Dvis.begin(), Dvis.end(), false);
+	T res = 0;
+	for(auto Du = 0; Du < (int)Dbag.size(); ++ Du) if(!Dvis[Du]){
+		int mask = max_element(dp[Du].begin(), dp[Du].end()) - dp[Du].begin();
+		res += dp[Du][mask];
+		recover(recover, Du, mask);
+	}
+	return {res, iset};
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>maximum_independent_set_on_tree_decomposition</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
