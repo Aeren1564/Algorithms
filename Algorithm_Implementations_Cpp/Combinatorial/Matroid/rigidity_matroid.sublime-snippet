@@ -1,0 +1,69 @@
+<snippet>
+	<content><![CDATA[
+// Implementation of "An Algorithm for Two-Dimensional Rigidity Percolation: The Pebble Game" by Donald J. Jacobs and Bruce Hendrickson
+struct rigidity_matroid{
+	vector<array<int, 2>> edge, pebble, pebble_from;
+	rigidity_matroid(int n, const vector<array<int, 2>> &edge): edge(edge), pebble(n, {-1, -1}), pebble_from((int)edge.size(), {-1, -1}), q(n), was(n), prev(n){ }
+	int it = 0;
+	vector<array<int, 2>> q;
+	vector<int> was, prev;
+	bool push(int u, int t){
+		if(!~pebble[u][t]) return true;
+		++ it;
+		prev[u] = -1;
+		int id = pebble[u][t];
+		was[u] = was[u ^ edge[id][0] ^ edge[id][1]] = it;
+		q[0] = {u, t};
+		for(auto beg = 0, end = 1; beg < end; ++ beg){
+			auto [u, t] = q[beg];
+			int id = pebble[u][t];
+			int v = u ^ edge[id][0] ^ edge[id][1];
+			prev[v] = id;
+			was[v] = it;
+			for(auto tt = 0; tt < 2; ++ tt){
+				if(!~pebble[v][tt]){
+					for(auto u = v, t = tt; ~prev[u]; ){
+						int id = prev[u];
+						auto [v, tt] = pebble_from[id];
+						pebble[u][t] = id;
+						pebble_from[id] = {u, t};
+						u = v, t = tt;
+					}
+					return true;
+				}
+				id = pebble[v][tt];
+				int w = v ^ edge[id][0] ^ edge[id][1];
+				if(was[w] == it) continue;
+				was[w] = it;
+				q[end ++] = {v, tt};
+			}
+		}
+		return false;
+	}
+	// O(n)
+	bool check(int i){
+		if(edge[i][0] == edge[i][1]) return false;
+		for(auto s = 0; s < 2; ++ s){
+			int u = edge[i][s];
+			for(auto t = 0; t < 2; ++ t) if(!push(u, t)) return false;
+		}
+		return true;
+	}
+	// O(n)
+	void insert(int i){
+		int u = edge[i][0];
+		assert(push(u, 0));
+		pebble[u][0] = i;
+		pebble_from[i] = {u, 0};
+	}
+	void clear(){
+		fill(pebble.begin(), pebble.end(), array{-1, -1});
+		fill(pebble_from.begin(), pebble_from.end(), array{-1, -1});
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>rigidity_matroid</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
