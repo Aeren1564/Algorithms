@@ -1,0 +1,43 @@
+<snippet>
+	<content><![CDATA[
+// Source: "THE COMPLEXITY OF SATISFIABILITY PROBLEMS" by Thomas J. Schaefer.
+// Given a set S of distinct binarty strings, return a 2-SAT formula S with it's solution set equal to S.
+// Variable for literal x is floor(x/2) and is positive iff x%2=1.
+// O(n * m^2 / w)
+template<size_t S>
+optional<vector<array<int, 2>>> recover_two_sat(int n, int m, vector<string> a){
+	assert(0 <= min(n, m) && n == (int)a.size() && S >= m << 1);
+	for(auto s: a){
+		assert(m == (int)s.size());
+		assert(!m || *min_element(s.begin(), s.end()) >= '0' && *max_element(s.begin(), s.end()) <= '1');
+	}
+	unordered_set<bitset<S>> pool;
+	vector<bitset<S>> s(n);
+	bitset<S> consistent;
+	for(auto i = 0; i < n; ++ i){
+		for(auto j = 0; j < m; ++ j) s[i].set(j << 1 | a[i][j] - '0');
+		assert(pool.insert(s[i]).second);
+		consistent |= s[i];
+	}
+	vector<bitset<S>> implies(m << 1);
+	for(auto j = 0; j < m << 1; ++ j){
+		implies[j].set();
+		for(auto i = 0; i < n; ++ i) if(s[i][j]) implies[j] &= s[i];
+	}
+	array<bitset<S>, 2> vmask;
+	for(auto j = 0; j < m << 1; ++ j) vmask[j & 1].set(j);
+	for(auto j = 0; j < m << 1; ++ j) if(consistent[j]) for(auto i = 0; i < n; ++ i){
+		auto alter = (s[i] ^ implies[j]) & implies[j];
+		auto even = alter & vmask[0], odd = alter & vmask[1];
+		if(!pool.count(s[i] ^ (even | even << 1 | odd | odd >> 1))) return {};
+	}
+	vector<array<int, 2>> res;
+	for(auto j = 0; j < m << 1; ++ j) for(auto k = j; k < m << 1; ++ k) if(j ^ k ^ 1 && implies[j ^ 1][k]) res.push_back({j, k});
+	return res;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>recover_two_sat</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
