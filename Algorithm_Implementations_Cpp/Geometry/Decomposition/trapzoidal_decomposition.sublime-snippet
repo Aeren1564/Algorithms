@@ -1,0 +1,108 @@
+<snippet>
+	<content><![CDATA[
+// Given a polygonal region bounded by outer polygon and a set of inner polygonal holes strictly contained in the outer polygon, where none of the polygons intersect, find all trapzoids in the vertical trapzoidal decomposition.
+// The outer polygon is given in CCW while the inner ones are in CW.
+// Returns {
+//  list of trapzoids in increasing order of x-coordinates,
+//  list of adjacency info
+// }
+// where a trapzoid given by the tuple (xl, xr, {i0, j0}, {i1, j1}) is defined by the lines X=xl, X=xr, segment(i0, j0), and segment(i1, j1) where segment(i, j) is the next edge of the j-th vertex of the i-th polygon (i=0 denotes the outer one), and
+// an adjacency info given by the tuple (i, j) is that the i-th trapzoid and the j-th trapzoids are adjacent with i-th one on the left.
+// O(n * log(n)) where n is the total number of vertices
+// Requires point
+template<class T>
+pair<
+	vector<tuple<T, T, array<int, 2>, array<int, 2>>>,
+	vector<array<int, 2>>
+>
+trapzoidal_decomposition(const vector<vector<point<T>>> &a){
+	assert(!a.empty());
+	assert(doubled_signed_area(a[0]) >= 0);
+	for(auto i = 1; i < (int)a.size(); ++ i) assert(doubled_signed_area(a[i]) <= 0);
+	assert(!a.empty());
+	assert(doubled_signed_area(a[0]) >= 0);
+	for(auto i = 1; i < (int)a.size(); ++ i) assert(doubled_signed_area(a[i]) <= 0);
+	vector<array<int, 2>> order;
+	for(auto i = 0; i < (int)a.size(); ++ i) for(auto j = 0; j < (int)a[i].size(); ++ j) order.push_back({i, j});
+	sort(order.begin(), order.end(), [&](auto i, auto j){ return a[i[0]][i[1]] < a[j[0]][j[1]]; });
+	T sweep;
+	struct key_type{ // stores the line p-q
+		mutable point<T> p, q;
+	};
+	auto cmp = [&](const key_type &a, const key_type &b)->bool{
+		auto ya = a.p.x == a.q.x ? array{max(a.p.y, a.q.y), T(1)} : array{a.p.y * (a.q.x - sweep) + a.q.y * (sweep - a.p.x), a.q.x - a.p.x};
+		auto yb = b.p.x == b.q.x ? array{min(b.p.y, b.q.y), T(1)} : array{b.p.y * (b.q.x - sweep) + b.q.y * (sweep - b.p.x), b.q.x - b.p.x};
+		if(ya[1] < 0) ya = {-ya[0], -ya[1]};
+		if(yb[1] < 0) yb = {-yb[0], -yb[1]};
+		return ya[0] * yb[1] < yb[0] * ya[1];
+	};
+	map<key_type, int, decltype(cmp)> events(cmp);
+	vector<tuple<T, T, array<int, 2>, array<int, 2>>> trapzoid;
+	vector<array<int, 2>> edge;
+	for(auto [i, j]: order){
+		auto &b = a[i];
+		sweep = b[j].x;
+		int pj = (j + (int)b.size() - 1) % (int)b.size();
+		int nj = (j + 1) % (int)b.size();
+		if(b[j] < b[pj] && b[j] < b[nj]){
+			if(doubled_signed_area(b[pj], b[j], b[nj]) > 0){ // Start
+				int u = (int)trapzoid.size();
+				trapzoid.push_back({sweep, {}, {i, j}, {i, pj}});
+				events.insert({{b[j], b[pj]}, u});
+			}
+			else{ // Split
+				auto it = events.lower_bound({b[j], b[j]});
+				get<1>(trapzoid[it->second]) = sweep;
+				int u = (int)trapzoid.size();
+				trapzoid.push_back({sweep, {}, get<2>(trapzoid[it->second]), {i, pj}});
+				edge.push_back({it->second, u});
+				int v = (int)trapzoid.size();
+				trapzoid.push_back({sweep, {}, {i, j}, {get<3>(trapzoid[it->second])}});
+				edge.push_back({it->second, v});
+				it->second = v;
+				events.insert(it, {{b[j], b[pj]}, u});
+			}
+		}
+		else if(b[j] > b[pj] && b[j] > b[nj]){ 
+			if(doubled_signed_area(b[pj], b[j], b[nj]) > 0){ // End
+				auto it = events.lower_bound({b[j], b[j]});
+				get<1>(trapzoid[it->second]) = sweep;
+				events.erase(it);
+			}
+			else{ // Merge
+				auto l = events.lower_bound({b[j], b[j]}), r = std::next(l);
+				get<1>(trapzoid[l->second]) = get<1>(trapzoid[r->second]) = sweep;
+				int u = (int)trapzoid.size();
+				trapzoid.push_back({sweep, {}, get<2>(trapzoid[l->second]), get<3>(trapzoid[r->second])});
+				edge.push_back({l->second, u});
+				edge.push_back({r->second, u});
+				r->second = u;
+				events.erase(l);
+			}
+		}
+		else{ // Regular
+			auto it = events.lower_bound({b[j], b[j]});
+			get<1>(trapzoid[it->second]) = sweep;
+			int u = (int)trapzoid.size();
+			if(b[pj] < b[j]){ // Left
+				trapzoid.push_back({sweep, {}, {i, j}, get<3>(trapzoid[it->second])});
+				edge.push_back({it->second, u});
+				it->second = u;
+			}
+			else{ // Right
+				trapzoid.push_back({sweep, {}, {get<2>(trapzoid[it->second])}, {i, pj}});
+				edge.push_back({it->second, u});
+				it->first.p = it->first.q;
+				it->first.q = b[pj];
+				it->second = u;
+			}
+		}
+	}
+	return {trapzoid, edge};
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>trapzoidal_decomposition</tabTrigger>
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
