@@ -30,7 +30,7 @@ vector<line<T>> half_planes_intersection(vector<line<T>> a, bool is_sorted = fal
 		while((int)dq.size() >= 2 && bad(dq[0], dq[1], p)) dq.pop_front();
 		if((int)dq.size() < 2 || !bad(dq.back(), p, dq.front())) dq.push_back(p);
 	}
-	if((int)dq.size() < 3) dq.clear();
+	if((int)dq.size() < 3 || (dq.front().d ^ dq.back().d) >= 0) dq.clear();
 	return {dq.begin(), dq.end()};
 }
 ]]></content>
