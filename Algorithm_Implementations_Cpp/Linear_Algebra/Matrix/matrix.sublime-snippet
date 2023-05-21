@@ -34,7 +34,7 @@ struct matrix{
 	}
 	matrix &operator+=(const matrix &a){
 		assert(n == a.n && m == a.m);
-		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) data[i][j] += a[i][j];
+		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) data[i][j] += a(i, j);
 		return *this;
 	}
 	matrix operator+(const matrix &a) const{
@@ -42,17 +42,17 @@ struct matrix{
 	}
 	matrix &operator-=(const matrix &a){
 		assert(n == a.n && m == a.m);
-		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) data[i][j] -= a[i][j];
+		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) data[i][j] -= a(i, j);
 		return *this;
 	}
 	matrix operator-(const matrix &a) const{
 		return matrix(*this) -= a;
 	}
-	matrix operator*=(const matrix &a) const{
+	matrix operator*=(const matrix &a){
 		assert(m == a.n);
 		int l = a.m;
 		matrix res(n, l);
-		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) for(auto k = 0; k < l; ++ k) res[i][k] += data[i][j] * a[j][k];
+		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) for(auto k = 0; k < l; ++ k) res(i, k) += data[i][j] * a(j, k);
 		return *this = res;
 	}
 	matrix &operator*(const matrix &a){
@@ -78,7 +78,7 @@ struct matrix{
 	}
 	matrix transposed() const{
 		matrix res(m, n);
-		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) res[j][i] = data[i][j];
+		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) res(j, i) = data[i][j];
 		return res;
 	}
 	matrix &transpose(){
@@ -150,7 +150,7 @@ struct matrix{
 		out << "\n";
 		for(auto i = 0; i < a.n; ++ i){
 			for(auto j = 0; j < a.m; ++ j){
-				out << a[i][j] << " ";
+				out << a(i, j) << " ";
 			}
 			out << "\n";
 		}
@@ -164,7 +164,7 @@ struct matrix{
 };
 template<class T>
 matrix<T> operator*(T c, matrix<T> a){
-	for(auto i = 0; i < a.n; ++ i) for(auto j = 0; j < a.m; ++ j) a[i][j] = c * a[i][j];
+	for(auto i = 0; i < a.n; ++ i) for(auto j = 0; j < a.m; ++ j) a(i, j) = c * a(i, j);
 	return a;
 }
 // Multiply a row vector v on the left
@@ -172,7 +172,7 @@ template<class T>
 matrix<T>::domain_t operator*(const typename matrix<T>::range_t &v, const matrix<T> &a){
 	assert(a.n == (int)size(v));
 	typename matrix<T>::domain_t res(a.m, T(0));
-	for(auto i = 0; i < a.n; ++ i) for(auto j = 0; j < a.m; ++ j) res[j] += v[i] * a[i][j];
+	for(auto i = 0; i < a.n; ++ i) for(auto j = 0; j < a.m; ++ j) res[j] += v[i] * a(i, j);
 	return res;
 }
 ]]></content>
