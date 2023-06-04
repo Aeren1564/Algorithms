@@ -1,7 +1,6 @@
 <snippet>
 	<content><![CDATA[
 // Requires graph
-template<int VALS_IN_EDGES = 0>
 struct heavy_light_decomposition{
 	int n;
 	vector<vector<int>> adj; // stores edge ids
@@ -58,6 +57,10 @@ struct heavy_light_decomposition{
 		};
 		for(auto r: roots) assert(!~pv[r]), dfs_init(dfs_init, r, r), dfs_hld(dfs_hld, r);
 	}
+	// O(1)
+	bool ancestor_of(int u, int v) const{
+		return pos[u] <= pos[v] && end[v] <= end[u];
+	}
 	int lca(int u, int v) const{
 		for(; next[u] != next[v]; v = pv[next[v]]) if(depth[next[u]] > depth[next[v]]) swap(u, v);
 		return depth[u] < depth[v] ? u : v;
@@ -71,11 +74,13 @@ struct heavy_light_decomposition{
 		f(pos[u]);
 	}
 	// One application of f
+	template<int VALS_IN_EDGES = 0>
 	void access_subtree(int u, auto f) const{
 		f(pos[u] + VALS_IN_EDGES, end[u]);
 	}
 	// f(left, right, (left->right ?))
 	// O(log n) applications of f
+	template<int VALS_IN_EDGES = 0>
 	void access_path(int u, int v, auto f) const{
 		bool dir = true;
 		for(; next[u] != next[v]; v = pv[next[v]]){
