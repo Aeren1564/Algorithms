@@ -2,19 +2,21 @@
 	<content><![CDATA[
 // Source: https://codeforces.com/blog/entry/83248
 // T must be a commutative ring
-// Given some function op:\mathbb{Z}^2->T, with f(i,j)=f(j,i),
+// Given some function op:\mathbb{Z}^2->T,
 // each query asks for \sum_{l<=i<j<r} op(i,j)
 //
 // solve() initializes a multiset S to be empty.
 // Each insert(x) call should insert x to S.
-// Each query(x) call should return \sum_{y \in S} op(x, y).
+// Each query_left(x) should return \sum_{y \in S} op(y, x).
+// Each query_right(x) should return \sum_{y \in S} op(x, y).
 //
-// O(n) insert() calls, and
-// O(n + qn*BX + n^2/BX) query() calls.
+// O(n) insert() calls
+// O(n + qn*BX) query_left() calls, and
+// O(n + n^2/BX) query_right() calls.
 //
 // Set BX = n/sqrt(qn) to achieve
 // O(n) insert() calls, and
-// O(n * sqrt(qn)) query() calls.
+// O(n * sqrt(qn)) query_left() and query_right() calls.
 template<int BX, class T, class F = plus<>, class I = minus<>>
 struct mo_sweepline_base{
 	int n;
@@ -27,17 +29,17 @@ struct mo_sweepline_base{
 		assert(0 <= ql && ql <= qr && qr <= n);
 		q.push_back({ql, qr, qi});
 	}
-	vector<T> solve(auto insert, auto query){
+	vector<T> solve(auto insert, auto query_left, auto query_right){
 		sort(q.begin(), q.end(), [&](auto x, auto y){ return x[0] / BX != y[0] / BX ? x[0] < y[0] : x[0] / BX & 1 ? x[1] > y[1] : x[1] < y[1]; });
 		vector<vector<array<int, 4>>> update(n + 1);
 		int l = 0, r = 0;
 		for(auto [ql, qr, qi]: q){
 			if(ql < l){
-				update[r].push_back({ql, l, -1, qi});
+				update[r].push_back({ql, l, 3, qi});
 				l = ql;
 			}
 			if(r < qr){
-				update[l].push_back({r, qr, 1, qi});
+				update[l].push_back({r, qr, 0, qi});
 				r = qr;
 			}
 			if(l < ql){
@@ -45,31 +47,31 @@ struct mo_sweepline_base{
 				l = ql;
 			}
 			if(qr < r){
-				update[l].push_back({qr, r, -1, qi});
+				update[l].push_back({qr, r, 2, qi});
 				r = qr;
 			}
 		}
-		vector<T> pref_inc(n + 1), pref_exc(n + 1);
-		// pref_inc[r] = \sum_{0<=i<=j<r} op(i,j)
+		vector<T> pref_exc(n + 1), pref_inc(n + 1);
 		// pref_exc[r] = \sum_{0<=i< j<r} op(i,j)
+		// pref_inc[r] = \sum_{0<=i<=j<r} op(j,i)
 		int qn = (int)q.size();
 		vector<T> res(qn, T_id);
 		for(auto x = 0; x <= n; ++ x){
 			if(x < n){
-				pref_exc[x + 1] = TT(pref_exc[x], query(x));
+				pref_exc[x + 1] = TT(pref_exc[x], query_right(x));
 				insert(x);
-				pref_inc[x + 1] = TT(pref_inc[x], query(x));
+				pref_inc[x + 1] = TT(pref_inc[x], query_left(x));
 			}
 			for(auto [from, to, coef, qi]: update[x]){
 				T sum = T_id;
-				for(auto i = from; i < to; ++ i) sum = TT(sum, query(i));
-				res[qi] = coef == 1 ? TT(res[qi], sum) : TinvT(res[qi], sum);
+				if(coef & 1) for(auto i = from; i < to; ++ i) sum = TT(sum, query_right(i));
+				else for(auto i = from; i < to; ++ i) sum = TT(sum, query_left(i));
+				res[qi] = coef & 2 ? TinvT(res[qi], sum) : TT(res[qi], sum);
 			}
 		}
-		T aux = T_id;
-		// aux =
-		//  \sum_{0<=i<=j<l} op(i,j) +
+		//  \sum_{0<=i<=j<l} op(j,i) +
 		//  \sum_{0<=i<l,i<j<r} op(i,j)
+		T aux = T_id;
 		for(auto [ql, qr, qi]: q){
 			aux = TT(aux, res[qi]);
 			res[qi] = TinvT(TT(pref_inc[ql], pref_exc[qr]), aux);
