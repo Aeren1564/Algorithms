@@ -1,21 +1,21 @@
 <snippet>
 	<content><![CDATA[
 template<int B, class T, class F>
-struct sqrt_decomposition_commutative_monoid_heavy_query{
+struct sqrt_decomposition_light_point_update_heavy_range_query_commutative_monoid{
 	int n, nB;
 	vector<T> data, dataB;
 	F TT; // commutative monoid operation
 	T T_id; // commutative monoid identity
 	// O(n)
-	sqrt_decomposition_commutative_monoid_heavy_query(int n, F TT, T T_id): TT(TT), T_id(T_id){
+	sqrt_decomposition_light_point_update_heavy_range_query_commutative_monoid(int n, F TT, T T_id): TT(TT), T_id(T_id){
 		init(n);
 	}
 	// O(n)
-	sqrt_decomposition_commutative_monoid_heavy_query(int n, T x, F TT, T T_id): TT(TT), T_id(T_id){
+	sqrt_decomposition_light_point_update_heavy_range_query_commutative_monoid(int n, T x, F TT, T T_id): TT(TT), T_id(T_id){
 		init(n, x);
 	}
 	// O(n)
-	sqrt_decomposition_commutative_monoid_heavy_query(const vector<T> &a, F TT, T T_id): TT(TT), T_id(T_id){
+	sqrt_decomposition_light_point_update_heavy_range_query_commutative_monoid(const vector<T> &a, F TT, T T_id): TT(TT), T_id(T_id){
 		init(a);
 	}
 	// O(n)
@@ -62,7 +62,7 @@ struct sqrt_decomposition_commutative_monoid_heavy_query{
 };
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
-	<tabTrigger>sqrt_decomposition_commutative_monoid_heavy_query</tabTrigger> -->
+	<tabTrigger>sqrt_decomposition_light_point_update_heavy_range_query_commutative_monoid</tabTrigger> -->
 	<!-- Optional: Set a scope to limit where the snippet will trigger -->
 	<scope>source.c++</scope> -->
 </snippet>
