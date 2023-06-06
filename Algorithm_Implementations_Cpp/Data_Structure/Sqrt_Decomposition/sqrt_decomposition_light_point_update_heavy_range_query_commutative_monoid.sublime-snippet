@@ -42,14 +42,14 @@ struct sqrt_decomposition_light_point_update_heavy_range_query_commutative_monoi
 	void update(int p, T x){
 		assert(0 <= p && p < n);
 		data[p] = TT(data[p], x);
-		int pB = (p + B - 1) / B;
-		data[pB] = TT(data[pB], x);
+		int pB = p / B;
+		dataB[pB] = TT(dataB[pB], x);
 	}
 	// O(B + n/B)
 	T query(int l, int r) const{
 		assert(0 <= l && l <= r && r <= n);
 		if(l == r) return T_id;
-		int lB = (l + B - 1) / B, rB = (r + B - 2) / B;
+		int lB = l / B, rB = (r - 1) / B;
 		T res = T_id;
 		if(lB == rB) for(auto i = l; i < r; ++ i) res = TT(res, data[i]);
 		else{
@@ -60,6 +60,9 @@ struct sqrt_decomposition_light_point_update_heavy_range_query_commutative_monoi
 		return res;
 	}
 };
+
+template<class T, class F>
+using sqrt_decomposition = sqrt_decomposition_light_point_update_heavy_range_query_commutative_monoid<320, T, F>;
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
 	<tabTrigger>sqrt_decomposition_light_point_update_heavy_range_query_commutative_monoid</tabTrigger> -->
