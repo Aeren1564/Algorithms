@@ -7,8 +7,8 @@
 //
 // solve() initializes a multiset S to be empty.
 // Each insert(x) call should insert x to S.
-// Each query_left(x) should return \sum_{y \in S} op(y, x).
-// Each query_right(x) should return \sum_{y \in S} op(x, y).
+// Each query_left(x) should return \sum_{y \in S} op(x, y).
+// Each query_right(x) should return \sum_{y \in S} op(y, x).
 //
 // O(n) insert() calls
 // O(n + qn*BX) query_left() calls, and
@@ -20,7 +20,7 @@
 template<int BX, class T, class F = plus<>, class I = minus<>>
 struct mo_sweepline_base{
 	int n;
-	vector<array<int, 3>> q;
+	mutable vector<array<int, 3>> q;
 	F TT;
 	T T_id;
 	I TinvT;
@@ -29,7 +29,7 @@ struct mo_sweepline_base{
 		assert(0 <= ql && ql <= qr && qr <= n);
 		q.push_back({ql, qr, qi});
 	}
-	vector<T> solve(auto insert, auto query_left, auto query_right){
+	vector<T> solve(auto insert, auto query_left, auto query_right) const{
 		sort(q.begin(), q.end(), [&](auto x, auto y){ return x[0] / BX != y[0] / BX ? x[0] < y[0] : x[0] / BX & 1 ? x[1] > y[1] : x[1] < y[1]; });
 		vector<vector<array<int, 4>>> update(n + 1);
 		int l = 0, r = 0;
