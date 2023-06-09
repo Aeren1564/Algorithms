@@ -1,0 +1,54 @@
+<snippet>
+	<content><![CDATA[
+template<int BX>
+struct distinct_value_query_solve_online_cubic_root{
+	int n;
+	vector<int> prev, next;
+	vector<vector<int>> prefix;
+	// O(n + n^2/BX^2) time and memory
+	// O(n + n^2/3 * qn^2/3) for BX = n^2/3 / qn^1/3
+	template<class T, class Compare = less<>>
+	distinct_value_query_solve_online_cubic_root(const vector<T> &a, Compare cmp = less<>()): n((int)a.size()), prev(n), next(n), prefix(n / BX + 2, vector<int>(n / BX + 2)){
+		int nB = n / BX;
+		vector<T> temp = a;
+		sort(temp.begin(), temp.end(), cmp);
+		vector<int> b(n), seen(n, -1);
+		for(auto iB = 0; iB <= nB + 1; ++ iB) prefix[iB].resize(iB + 1);
+		for(auto i = 0; i < n; ++ i){
+			b[i] = lower_bound(temp.begin(), temp.end(), a[i], cmp) - temp.begin();
+			prev[i] = seen[b[i]];
+			seen[b[i]] = i;
+			++ prefix[i / BX + 1][~prev[i] ? prev[i] / BX + 1 : 0];
+		}
+		fill(seen.begin(), seen.end(), n);
+		for(auto i = n - 1; i >= 0; -- i){
+			next[i] = seen[b[i]];
+			seen[b[i]] = i;
+		}
+		for(auto i = 0; i <= nB + 1; ++ i) for(auto j = 1; j <= i; ++ j) prefix[i][j] += prefix[i][j - 1];
+		for(auto i = 1; i <= nB + 1; ++ i) for(auto j = 0; j <= i; ++ j) prefix[i][j] += prefix[i - 1][j];
+	}
+	// O(BX)
+	// O(n^2/3 / qn^1/3) for BX = n^2/3 / qn^1/3
+	int query(int ql, int qr) const{
+		assert(0 <= ql && ql <= qr && qr <= n);
+		if(ql == qr) return 0;
+		int qlB = ql / BX, qrB = (qr - 1) / BX, res = 0;
+		if(qlB == qrB){
+			for(auto i = ql; i < qr; ++ i) res += prev[i] < ql;
+		}
+		else{
+			res = prefix[qrB][qlB + 1] - prefix[qlB + 1][qlB + 1];
+			int thL = BX * (qlB + 1), thR = BX * qrB;
+			for(auto i = ql; i < thL; ++ i) res += next[i] >= thR;
+			for(auto i = thR; i < qr; ++ i) res += prev[i] < ql;
+		}
+		return res;
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>distinct_value_query_solve_online_cubic_root</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
