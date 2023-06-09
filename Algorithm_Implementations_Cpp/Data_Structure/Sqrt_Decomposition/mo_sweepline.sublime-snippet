@@ -33,21 +33,23 @@ struct mo_sweepline_base{
 		sort(q.begin(), q.end(), [&](auto x, auto y){ return x[0] / BX != y[0] / BX ? x[0] < y[0] : x[0] / BX & 1 ? x[1] > y[1] : x[1] < y[1]; });
 		vector<vector<array<int, 4>>> update(n + 1);
 		int l = 0, r = 0;
+		// [0-bit] 0: query_left, 1: query_right
+		// [1-bit] 0: add       , 1: subtract
 		for(auto [ql, qr, qi]: q){
 			if(ql < l){
-				update[r].push_back({ql, l, 3, qi});
+				update[r].push_back({ql, l, 2, qi});
 				l = ql;
 			}
 			if(r < qr){
-				update[l].push_back({r, qr, 0, qi});
+				update[l].push_back({r, qr, 1, qi});
 				r = qr;
 			}
 			if(l < ql){
-				update[r].push_back({l, ql, 1, qi});
+				update[r].push_back({l, ql, 0, qi});
 				l = ql;
 			}
 			if(qr < r){
-				update[l].push_back({qr, r, 2, qi});
+				update[l].push_back({qr, r, 3, qi});
 				r = qr;
 			}
 		}
@@ -57,16 +59,16 @@ struct mo_sweepline_base{
 		int qn = (int)q.size();
 		vector<T> res(qn, T_id);
 		for(auto x = 0; x <= n; ++ x){
-			if(x < n){
-				pref_exc[x + 1] = TT(pref_exc[x], query_right(x));
-				insert(x);
-				pref_inc[x + 1] = TT(pref_inc[x], query_left(x));
-			}
 			for(auto [from, to, coef, qi]: update[x]){
 				T sum = T_id;
 				if(coef & 1) for(auto i = from; i < to; ++ i) sum = TT(sum, query_right(i));
 				else for(auto i = from; i < to; ++ i) sum = TT(sum, query_left(i));
 				res[qi] = coef & 2 ? TinvT(res[qi], sum) : TT(res[qi], sum);
+			}
+			if(x < n){
+				pref_exc[x + 1] = TT(pref_exc[x], query_right(x));
+				insert(x);
+				pref_inc[x + 1] = TT(pref_inc[x], query_left(x));
 			}
 		}
 		//  \sum_{0<=i<=j<l} op(j,i) +
