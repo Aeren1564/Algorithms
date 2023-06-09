@@ -59,6 +59,10 @@ struct sqrt_decomposition_light_point_update_heavy_range_query_commutative_monoi
 		}
 		return res;
 	}
+	friend ostream &operator<<(ostraem &out, const sqrt_decomposition_light_point_update_heavy_range_query_commutative_monoid<B, T, F> &sqrt_decomp){
+		for(auto i = 0; i < sqrt_decomp.n; ++ i) out << sqrt_decomp.data[i] << " ";
+		return out << "\n";
+	}
 };
 
 template<class T, class F>
