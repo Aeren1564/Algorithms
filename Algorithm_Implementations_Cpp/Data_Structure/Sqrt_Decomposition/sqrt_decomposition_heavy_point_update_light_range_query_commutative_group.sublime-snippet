@@ -63,6 +63,10 @@ struct sqrt_decomposition_heavy_point_update_light_range_query_commutative_group
 		assert(l <= r);
 		return TinvT(prefix(r), prefix(l));
 	}
+	friend ostream &operator<<(ostream &out, const sqrt_decomposition_heavy_point_update_light_range_query_commutative_group<B, T, F, I> &sqrt_decomp){
+		for(auto i = 0; i < sqrt_decomp.n; ++ i) out << sqrt_decomp.query(i, i + 1) << " ";
+		return out << "\n";
+	}
 };
 
 template<class T, class F, class I>
