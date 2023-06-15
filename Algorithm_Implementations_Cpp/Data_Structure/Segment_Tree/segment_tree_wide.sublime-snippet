@@ -67,7 +67,7 @@ struct segment_tree_wide_base{
 	void _build(int n){
 		for(auto h = 1; h < H; ++ h)
 			for(auto i = 0; i < ceil(n >> branching_bits * h); ++ i)
-				for(auto j = i << branching_bits; j < i + 1 << branching_bits; ++ j)
+				for(auto j = i << branching_bits, r = min(ceil(n >> branching_bits * (h - 1)), i + 1 << branching_bits); j < r; ++ j)
 					data[offset[h] + i] = TT(data[offset[h] + i], data[offset[h - 1] + j]);
 		for(auto h = 0; h < H; ++ h){
 			T sum;
