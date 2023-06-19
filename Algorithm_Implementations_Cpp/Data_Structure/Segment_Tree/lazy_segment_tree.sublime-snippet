@@ -1,37 +1,32 @@
 <snippet>
 	<content><![CDATA[
-template<class T, class U, class F1, class F2, class F3, class F4>
+template<class T, class U, class F1, class F2, class F3>
 struct lazy_segment_tree{
 	int n, size, log;
 	vector<T> data;
 	vector<U> updates;
 	F1 TT; // monoid operation (always adjacent)
 	T T_id; // monoid identity
-	F2 UU; // semigroup operation (superset, subset)
-	F3 U_init; // semigroup default element for the interval [l, r)
-	F4 UT; // action of U on T (superset, subset)
+	F2 UU; // monoid operation (superset, subset)
+	U U_id; // monoid identity
+	F3 UT; // action of U on T (superset, subset)
 	// O(n)
-	template<bool NON_TRIVIAL_UPDATE = false>
-	lazy_segment_tree(int n, F1 TT, T T_id, F2 UU, F3 U_init, F4 UT, U _type_deducer): TT(TT), T_id(T_id), UU(UU), U_init(U_init), UT(UT){
-		init<NON_TRIVIAL_UPDATE>(n, T_id);
+	lazy_segment_tree(int n, F1 TT, T T_id, F2 UU, U U_id, F3 UT): TT(TT), T_id(T_id), UU(UU), U_id(U_id), UT(UT){
+		init(n, T_id);
 	}
 	// O(n)
-	template<bool NON_TRIVIAL_UPDATE = false>
-	lazy_segment_tree(int n, T x, F1 TT, T T_id, F2 UU, F3 U_init, F4 UT, U _type_deducer): TT(TT), T_id(T_id), UU(UU), U_init(U_init), UT(UT){
-		init<NON_TRIVIAL_UPDATE>(n, x);
+	lazy_segment_tree(int n, T x, F1 TT, T T_id, F2 UU, U U_id, F3 UT): TT(TT), T_id(T_id), UU(UU), U_id(U_id), UT(UT){
+		init(n, x);
 	}
 	// O(n)
-	template<bool NON_TRIVIAL_UPDATE = false>
-	lazy_segment_tree(const vector<T> &a, F1 TT, T T_id, F2 UU, F3 U_init, F4 UT, U): TT(TT), T_id(T_id), UU(UU), U_init(U_init), UT(UT){
-		init<NON_TRIVIAL_UPDATE>(a);
+	lazy_segment_tree(const vector<T> &a, F1 TT, T T_id, F2 UU, U U_id, F3 UT): TT(TT), T_id(T_id), UU(UU), U_id(U_id), UT(UT){
+		init(a);
 	}
 	// O(n)
-	template<bool NON_TRIVIAL_UPDATE = false>
 	void init(int n){
 		init(n, T_id);
 	}
 	// O(n)
-	template<bool NON_TRIVIAL_UPDATE = false>
 	void init(int n, T x){
 		this->n = n;
 		size = 1;
@@ -40,16 +35,9 @@ struct lazy_segment_tree{
 		data.assign(size << 1, T_id);
 		fill(data.begin() + size, data.begin() + size + n, x);
 		for(auto i = size - 1; i >= 1; -- i) refresh(i);
-		updates.assign(size, U_init(0, n));
-		if constexpr(NON_TRIVIAL_UPDATE){
-			for(auto i = 1; i < size; ++ i){
-				int h = log - __lg(i);
-				updates[i] = U_init((i << h) - size, (i + 1 << h) - size);
-			}
-		}
+		updates.assign(size, U_id);
 	}
 	// O(n)
-	template<bool NON_TRIVIAL_UPDATE = false>
 	void init(const vector<T> &a){
 		n = (int)a.size();
 		size = 1;
@@ -58,13 +46,7 @@ struct lazy_segment_tree{
 		data.assign(size << 1, T_id);
 		copy(a.begin(), a.end(), data.begin() + size);
 		for(auto i = size - 1; i >= 1; -- i) refresh(i);
-		updates.assign(size, U_init(0, n));
-		if constexpr(NON_TRIVIAL_UPDATE){
-			for(auto i = 1; i < size; ++ i){
-				int h = log - __lg(i);
-				updates[i] = U_init((i << h) - size, (i + 1 << h) - size);
-			}
-		}
+		updates.assign(size, U_id);
 	}
 	void refresh(int i){
 		data[i] = TT(data[i << 1], data[i << 1 | 1]);
@@ -75,8 +57,7 @@ struct lazy_segment_tree{
 	}
 	void push(int i){
 		apply(i << 1, updates[i]), apply(i << 1 | 1, updates[i]);
-		int h = log - __lg(i);
-		updates[i] = U_init((i << h) - size, (i + 1 << h) - size);
+		updates[i] = U_id;
 	}
 	// O(log(n))
 	T query(int p){
@@ -190,7 +171,7 @@ struct lazy_segment_tree{
 		return 0;
 	}
 	template<class output_stream>
-	friend output_stream &operator<<(output_stream &out, lazy_segment_tree<T, U, F1, F2, F3, F4> seg){
+	friend output_stream &operator<<(output_stream &out, lazy_segment_tree<T, U, F1, F2, F3> seg){
 		out << "[";
 		for(auto i = 0; i < seg.n; ++ i){
 			out << seg.query(i);
