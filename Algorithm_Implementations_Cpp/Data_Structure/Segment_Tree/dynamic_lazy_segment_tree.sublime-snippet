@@ -1,6 +1,6 @@
 <snippet>
 	<content><![CDATA[
-template<class B, class T, class U, class F1, class F2, class F3, class F4, class F5>
+template<class B, class T, class U, class F1, class F2, class F3, class F4>
 struct dynamic_lazy_segment_tree{
 	B n; // exclusive upper bound of coordinate
 	vector<int> left, right;
@@ -9,17 +9,17 @@ struct dynamic_lazy_segment_tree{
 	F1 TT; // monoid operation (always adjacent)
 	T T_id; // monoid identity
 	F2 T_init;
-	F3 UU; // semigroup operation (superset, subset)
-	F4 U_init; // semigroup default element for the interval [l, r)
-	F5 UT; // action of U on T (superset, subset)
-	dynamic_lazy_segment_tree(B n, F1 TT, T T_id, F2 T_init, F3 UU, F4 U_init, F5 UT, U): n(n), TT(TT), T_id(T_id), T_init(T_init), UU(UU), U_init(U_init), UT(UT){
-		new_state(-1, -1, T_init(0, n), U_init(0, n));
+	F3 UU; // monoid operation (superset, subset)
+	U U_id; // monoid identity
+	F4 UT; // action of U on T (superset, subset)
+	dynamic_lazy_segment_tree(B n, F1 TT, T T_id, F2 T_init, F3 UU, U U_id, F4 UT): n(n), TT(TT), T_id(T_id), T_init(T_init), UU(UU), U_id(U_id), UT(UT){
+		new_state(-1, -1, T_init(0, n), U_id);
 	}
 	void extend(int u, B l, B r){
 		if(!~left[u]){
 			B m = l + (r - l >> 1);
-			left[u] = new_state(-1, -1, T_init(l, m), U_init(l, m)); // Separate this on C++14 or below to avoid UB
-			right[u] = new_state(-1, -1, T_init(m, r), U_init(m, r)); // Separate this on C++14 or below to avoid UB
+			left[u] = new_state(-1, -1, T_init(l, m), U_id);
+			right[u] = new_state(-1, -1, T_init(m, r), U_id);
 		}
 	}
 	void push(int u, B l, B r){
@@ -28,7 +28,7 @@ struct dynamic_lazy_segment_tree{
 		updates[v] = UU(updates[u], updates[v]);
 		data[w] = UT(updates[u], data[w]);
 		updates[w] = UU(updates[u], updates[w]);
-		updates[u] = U_init(l, r);
+		updates[u] = U_id;
 	}
 	void refresh(int u, B l, B r){
 		data[u] = UT(updates[u], TT(data[left[u]], data[right[u]]));
@@ -113,7 +113,7 @@ struct dynamic_lazy_segment_tree{
 		return ql;
 	}
 	template<class output_stream>
-	friend output_stream &operator<<(output_stream &out, dynamic_lazy_segment_tree<B, T, U, F1, F2, F3, F4, F5> seg){
+	friend output_stream &operator<<(output_stream &out, dynamic_lazy_segment_tree<B, T, U, F1, F2, F3, F4> seg){
 		out << "[";
 		for(auto i = 0; i < seg.n; ++ i){
 			out << seg.query(i, i + 1);
