@@ -7,7 +7,6 @@ struct treap_query{
 	vector<T> data, subtr_data;
 	F TT; // monoid operation (always adjacent)
 	T T_id; // monoid identity
-	vector<int> dead_node;
 	treap_query(F TT, T T_id): TT(TT), T_id(T_id){ }
 	template<bool UPDATE_STRUCTURE = true>
 	void refresh(int u){
@@ -49,6 +48,7 @@ struct treap_query{
 		#endif
 		return out;
 	}
+	vector<int> dead_node;
 	int new_node(const T &x, int v = -1, int w = -1){
 		// Among all seeds in range [0, 1769666],
 		// 72718 has the longest sequence of unique numbers of length 362129.
@@ -109,7 +109,7 @@ struct treap_query{
 			return {a, root};
 		}
 	}
-	// Split into [0, pos), [pos, size(root))
+	// Split to [0, pos), [pos, size(root))
 	// O(log(n))
 	pair<int, int> split_by_order(int root, int pos){
 		if(!~root){
@@ -127,7 +127,7 @@ struct treap_query{
 			return {a, root};
 		}
 	}
-	// Split to [True segment], [False segment]
+	// Split to [true segment], [false segment]
 	// Data must be sorted by pred
 	// O(log(n))
 	pair<int, int> split_by_pred(int root, auto pred){
@@ -143,7 +143,7 @@ struct treap_query{
 			return {a, root};
 		}
 	}
-	// Split into [0, l), [l, r), [r, size(root))
+	// Split to [0, l), [l, r), [r, size(root))
 	// O(log(n))
 	array<int, 3> split_to_three(int root, int l, int r){
 		assert(0 <= l && l <= r && r <= size(root));
@@ -153,12 +153,12 @@ struct treap_query{
 		tie(b, c) = split_by_order(b, r - l);
 		return {a, b, c};
 	}
-	// Split into [0, pos[0]), [pos[0], pos[1]), ..., [pos[size(pos) - 1], size(root))
+	// Split to [0, pos[0]), [pos[0], pos[1]), ..., [pos[size(pos) - 1], size(root))
 	// O(size(pos) * log(n))
-	vector<int> split(int root, vector<int> pos){
+	vector<int> split(int root, const vector<int> &pos){
 		assert(is_sorted(pos.begin(), pos.end()));
 		if(pos.empty()) return {root};
-		assert(0 <= pos.front() && pos.back() < size(root));
+		assert(0 <= pos.front() && pos.back() <= size(root));
 		if(!~root) return vector<int>((int)pos.size() + 1, -1);
 		vector<int> res((int)pos.size() + 1);
 		res[0] = root;
