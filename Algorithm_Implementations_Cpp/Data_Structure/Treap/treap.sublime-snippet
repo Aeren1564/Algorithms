@@ -2,7 +2,8 @@
 	<content><![CDATA[
 template<class T>
 struct treap{
-	vector<int> pv, left, right, priority, internal_size;
+	vector<unsigned int> priority;
+	vector<int> pv, left, right, internal_size;
 	vector<T> data;
 	treap(){ }
 	void refresh(int u){
@@ -25,6 +26,44 @@ struct treap{
 			if(u != v) swap(priority[u], priority[v]), heapify(v);
 		}
 	}
+	template<class output_stream>
+	output_stream &print(output_stream &out, int root){
+		#ifdef LOCAL
+		out << "[";
+		traverse(root, [&](int root){ out << data[root] << ", "; });
+		out << "\b\b]\n";
+		#endif
+		return out;
+	}
+	vector<int> dead_node;
+	int new_node(const T &x, int v = -1, int w = -1){
+		// Among all seeds in range [0, 1769666],
+		// 72718 has the longest sequence of unique numbers of length 362129.
+		static mt19937 rng(72718);
+		int u;
+		if(dead_node.empty()){
+			u = (int)data.size();
+			pv.push_back(-1);
+			left.push_back(v);
+			right.push_back(w);
+			priority.push_back(rng());
+			internal_size.push_back(1);
+			data.push_back(x);
+		}
+		else{
+			u = dead_node.back();
+			dead_node.pop_back();
+			pv[u] = -1;
+			left[u] = v;
+			right[u] = w;
+			priority[u] = rng();
+			internal_size[u] = 1;
+			data[u] = x;
+		}
+		heapify(u);
+		refresh(u);
+		return u;
+	}
 	int size(int u) const{
 		return ~u ? internal_size[u] : 0;
 	}
@@ -37,8 +76,8 @@ struct treap{
 		assert(root == u);
 		return pos;
 	}
-	// Split into [0, x), [x, inf)
-	// Data must be sorted
+	// Split to [0, x), [x, inf)
+	// Data must be sorted by cmp
 	// O(log(n))
 	template<class Compare = less<>>
 	pair<int, int> split_by_key(int root, const T &x, Compare cmp = less<>()){
@@ -54,10 +93,13 @@ struct treap{
 			return {a, root};
 		}
 	}
-	// Split into [0, pos), [pos, inf)
+	// Split to [0, pos), [pos, size(root))
 	// O(log(n))
 	pair<int, int> split_by_order(int root, int pos){
-		if(!~root) return {-1, -1};
+		if(!~root){
+			assert(pos == 0);
+			return {-1, -1};
+		}
 		if(size(left[root]) < pos){
 			auto [a, b] = split_by_order(right[root], pos - size(left[root]) - 1);
 			right[root] = a, refresh(root);
@@ -69,8 +111,8 @@ struct treap{
 			return {a, root};
 		}
 	}
-	// Split to [True Segment], [False Segment]
-	// Data must be sorted
+	// Split to [true Segment], [false Segment]
+	// Data must be sorted by pred
 	// O(log(n))
 	pair<int, int> split_by_pred(int root, auto pred){
 		if(!~root) return {-1, -1};
@@ -85,7 +127,7 @@ struct treap{
 			return {a, root};
 		}
 	}
-	// Split into [0, l), [l, r), [r, inf)
+	// Split to [0, l), [l, r), [r, size(root))
 	// O(log(n))
 	array<int, 3> split_to_three(int root, int l, int r){
 		assert(0 <= l && l <= r && r <= size(root));
@@ -95,20 +137,17 @@ struct treap{
 		tie(b, c) = split_by_order(b, r - l);
 		return {a, b, c};
 	}
-	// Split into [0, pos[0]), [pos[0], pos[1]), ..., [pos[k - 1], inf)
-	// O(k log n)
-	template<size_t k>
-	array<int, k + 1> split(int root, array<int, k> pos){
+	// Split to [0, pos[0]), [pos[0], pos[1]), ..., [pos[k - 1], size(root))
+	// O(size(pos) * log(n))
+	vector<int> split(int root, const vector<int> &pos){
 		assert(is_sorted(pos.begin(), pos.end()));
-		if(!~root){
-			array<int, k + 1> res;
-			res.fill(-1);
-			return res;
-		}
-		array<int, k + 1> res;
+		if(pos.empty()) return {root};
+		assert(0 <= pos.front() && pos.back() <= size(root));
+		if(!~root) return vector<int>((int)pos.size() + 1, -1);
+		vector<int> res((int)pos.size() + 1);
 		res[0] = root;
 		int last = 0;
-		for(auto i = 0; i < k; ++ i){
+		for(auto i = 0, last = 0; i < (int)pos.size(); ++ i){
 			tie(res[i], res[i + 1]) = split_by_order(res[i], pos[i] - last);
 			last = pos[i];
 		}
@@ -133,38 +172,126 @@ struct treap{
 	int append(array<int, k> list){
 		return accumulate(list.begin(), list.end(), -1, [&](int u, int v){ return append(u, v); });
 	}
-	// Data must be sorted
+	// Data must be sorted by cmp
 	// O(log(n))
 	template<class Compare = less<>>
-	int insert_by_key(int root, int u, Compare cmp = less<>()){
+	int _insert_by_key(int root, int u, Compare cmp = less<>()){
 		if(!~root) return u;
+		if(priority[root] > priority[u]){
+			if(cmp(data[root], data[u])) right[root] = _insert_by_key(right[root], u, cmp);
+			else left[root] = _insert_by_key(left[root], u, cmp);
+			refresh(root);
+			return root;
+		}
 		auto [a, b] = split_by_key(root, data[u], cmp);
-		return append(append(a, u), b);
+		left[u] = a, right[u] = b;
+		refresh(u);
+		return u;
 	}
-	// O(log(n))
-	int insert_by_order(int root, int u, int pos){
-		if(!~root) return u;
-		auto [a, b] = split_by_order(root, pos);
-		return append(append(a, u), b);
-	}
-	// Erase the smallest element >= x and returns a pair of {new root, erased element}
-	// Data must be sorted
+	// Data must be sorted by cmp
 	// O(log(n))
 	template<class Compare = less<>>
-	pair<int, int> erase_by_key(int root, const T &x, Compare cmp = less<>()){
-		if(!~root) return {-1, -1};
-		int a, b, c;
-		tie(a, b) = split_by_key(root, x, cmp);
-		tie(b, c) = split_by_order(b, 1);
-		return {append(a, c), b};
+	int insert_by_key(int root, const T &x, Compare cmp = less<>()){
+		return _insert_by_key(root, new_node(x), cmp);
 	}
 	// O(log(n))
-	pair<int, int> erase_by_order(int root, int pos){
-		if(!~root) return {-1, -1};
-		auto [a, b, c] = split_to_three(root, pos, pos + 1);
-		return {append(a, c), b};
+	int _insert_by_order(int root, int u, int pos){
+		if(!~root){
+			assert(pos == 0);
+			return u;
+		}
+		if(priority[root] > priority[u]){
+			if(size(left[root]) < pos) right[root] = _insert_by_order(right[root], u, pos - size(left[root]) - 1);
+			else left[root] = _insert_by_order(left[root], u, pos);
+			refresh(root);
+			return root;
+		}
+		auto [a, b] = split_by_order(root, pos);
+		left[u] = a, right[u] = b;
+		refresh(u);
+		return u;
 	}
-	// Data must be sorted
+	// Data must be sorted by pred
+	// O(log(n))
+	int _insert_by_pred(int root, int u, auto pred){
+		if(!~root) return u;
+		if(priority[root] > priority[u]){
+			if(pred(data[root])) right[root] = _insert_by_pred(right[root], u, pred);
+			else left[root] = _insert_by_pred(left[root], u, pred);
+			refresh(root);
+			return root;
+		}
+		auto [a, b] = split_by_pred(root, pred);
+		left[u] = a, right[u] = b;
+		refresh(u);
+		return u;
+	}
+	// O(log(n))
+	int insert_by_pred(int root, const T &x, auto pred){
+		return _insert_by_pred(root, new_node(x), pred);
+	}
+	// O(log(n))
+	int insert_by_order(int root, const T &x, int pos){
+		return _insert_by_order(root, new_node(x), pos);
+	}
+	// Erase the smallest element >= x.
+	// Return -2 when no such element exists
+	// Data must be sorted by cmp
+	// O(log(n))
+	template<class Compare = less<>>
+	int erase_by_key(int root, const T &x, Compare cmp = less<>()){
+		if(!~root) return -2;
+		if(cmp(data[root], x)){
+			int u = erase_by_key(right[root], x, cmp);
+			if(u == -2) return -2;
+			right[root] = u;
+		}
+		else{
+			int u = erase_by_key(left[root], x, cmp);
+			if(u == -2){
+				dead_node.push_back(root);
+				return append(left[root], right[root]);
+			}
+			left[root] = u;
+		}
+		refresh(root);
+		return root;
+	}
+	// O(log(n))
+	int erase_by_order(int root, int pos){
+		assert(~root);
+		if(size(left[root]) == pos){
+			dead_node.push_back(root);
+			return append(left[root], right[root]);
+		}
+		if(size(left[root]) < pos) right[root] = erase_by_order(right[root], pos - size(left[root]) - 1);
+		else left[root] = erase_by_order(left[root], pos);
+		refresh(root);
+		return root;
+	}
+	// Erase the smallest element x with !pred(x)
+	// Return -2 when no such element exists
+	// Data must be sorted by pred
+	// O(log(n))
+	int erase_by_pred(int root, auto pred){
+		if(!~root) return -2;
+		if(pred(data[root])){
+			int u = erase_by_pred(right[root], pred);
+			if(u == -2) return -2;
+			right[root] = u;
+		}
+		else{
+			int u = erase_by_pred(left[root], pred);
+			if(u == -2){
+				dead_node.push_back(root);
+				return append(left[root], right[root]);
+			}
+			left[root] = u;
+		}
+		refresh(root);
+		return root;
+	}
+	// Data must be sorted by cmp
 	// O(min(size(u), size(v)) * log(size ratio))
 	template<class Compare = less<>>
 	int unite_by_key(int u, int v, Compare cmp = less<>()){
@@ -184,28 +311,6 @@ struct treap{
 			refresh(root);
 		}
 	}
-	template<class output_stream>
-	output_stream &print(output_stream &out, int root){
-		#ifdef LOCAL
-		out << "[";
-		traverse(root, [&](int root){ out << data[root] << ", "; });
-		out << "\b\b]\n";
-		#endif
-		return out;
-	}
-	int new_node(const T &x, int v = -1, int w = -1){
-		static mt19937 rng(1564);
-		int u = (int)data.size();
-		pv.push_back(-1);
-		left.push_back(v);
-		right.push_back(w);
-		priority.push_back(rng());
-		internal_size.push_back(1);
-		data.push_back(x);
-		heapify(u);
-		refresh(u);
-		return u;
-	}
 	int build(int n){
 		return build(vector<T>(n, T{}));
 	}
@@ -220,7 +325,7 @@ struct treap{
 		};
 		return recurse(recurse, 0, (int)a.size());
 	}
-	// Data must be sorted
+	// Data must be sorted by cmp
 	// O(log(n))
 	template<class Compare = less<>>
 	int order_of_key(int root, const T &x, Compare cmp = less<>()){
@@ -250,16 +355,16 @@ struct treap{
 	// O(log(n))
 	void set(int root, int p, const T &x){
 		assert(0 <= p && p < size(root));
+		int u = root;
 		while(true){
-			if(size(left[root]) == p){
-				data[root] = x;
-				refresh<false>(u);
+			if(size(left[u]) == p){
+				data[u] = x;
 				break;
 			}
-			if(size(left[root]) > p) root = left[root];
+			if(size(left[u]) > p) u = left[u];
 			else{
-				p -= size(left[root]) + 1;
-				root = right[root];
+				p -= size(left[u]) + 1;
+				u = right[u];
 			}
 		}
 	}
