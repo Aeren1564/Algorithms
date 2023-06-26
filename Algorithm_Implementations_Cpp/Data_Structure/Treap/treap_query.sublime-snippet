@@ -183,8 +183,7 @@ struct treap_query{
 	}
 	// Append treaps in order
 	// O((list length) * log(n))
-	template<size_t k>
-	int append(array<int, k> list){
+	int append(const vector<int> &list){
 		return accumulate(list.begin(), list.end(), -1, [&](int u, int v){ return append(u, v); });
 	}
 	// Data must be sorted by cmp
