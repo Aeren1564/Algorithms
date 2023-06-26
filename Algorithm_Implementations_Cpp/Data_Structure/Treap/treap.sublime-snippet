@@ -64,6 +64,7 @@ struct treap{
 		refresh(u);
 		return u;
 	}
+	// O(1)
 	int size(int u) const{
 		return ~u ? internal_size[u] : 0;
 	}
@@ -76,7 +77,7 @@ struct treap{
 		assert(root == u);
 		return pos;
 	}
-	// Split to [0, x), [x, inf)
+	// Split to [-inf, x), [x, inf)
 	// Data must be sorted by cmp
 	// O(log(n))
 	template<class Compare = less<>>
@@ -168,8 +169,7 @@ struct treap{
 	}
 	// Append treaps in order
 	// O((list length) * log(n))
-	template<size_t k>
-	int append(array<int, k> list){
+	int append(const vector<int> &list){
 		return accumulate(list.begin(), list.end(), -1, [&](int u, int v){ return append(u, v); });
 	}
 	// Data must be sorted by cmp
