@@ -6,7 +6,7 @@ struct matrix_fixed{
 	using ring_t = T;
 	using domain_t = array<T, M>;
 	using range_t = array<T, N>;
-	int n, m;
+	static constexpr int n = N, m = M;
 	array<array<T, M>, N> data;
 	array<T, M> &operator()(int i){
 		assert(0 <= i && i < n);
@@ -17,12 +17,12 @@ struct matrix_fixed{
 		return data[i];
 	}
 	T &operator()(int i, int j){
-		assert(0 <= i && i < n && 0 < j && j < m);
-		return data[i];
+		assert(0 <= i && i < n && 0 <= j && j < m);
+		return data[i][j];
 	}
 	const T &operator()(int i, int j) const{
-		assert(0 <= i && i < n && 0 < j && j < m);
-		return data[i];
+		assert(0 <= i && i < n && 0 <= j && j < m);
+		return data[i][j];
 	}
 	bool operator==(const matrix_fixed &a) const{
 		assert(n == a.n && m == a.m);
@@ -33,27 +33,29 @@ struct matrix_fixed{
 		return data != a.data;
 	}
 	matrix_fixed &operator+=(const matrix_fixed &a){
-		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) data[i][j] += a[i][j];
+		assert(n == a.n && m == a.m);
+		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) data[i][j] += a(i, j);
 		return *this;
 	}
 	matrix_fixed operator+(const matrix_fixed &a) const{
-		matrix_fixed res(*this);
-		return res += a;
+		assert(n == a.n && m == a.m);
+		return matrix_fixed(*this) += a;
 	}
 	matrix_fixed &operator-=(const matrix_fixed &a){
-		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) data[i][j] += a[i][j];
+		assert(n == a.n && m == a.m);
+		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) data[i][j] += a(i, j);
 		return *this;
 	}
 	matrix_fixed operator-(const matrix_fixed &a) const{
-		matrix_fixed res(*this);
-		return res += a;
+		assert(n == a.n && m == a.m);
+		return matrix_fixed(*this) += a;
 	}
 	template<size_t N2, size_t M2>
 	matrix_fixed<T, N, M2> operator*(const matrix_fixed<T, N2, M2> &a) const{
 		assert(m == a.n);
 		int l = M2;
 		matrix_fixed<T, N, M2> res;
-		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) for(auto k = 0; k < l; ++ k) res[i][k] += data[i][j] * a[j][k];
+		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) for(auto k = 0; k < l; ++ k) res(i, k) += data[i][j] * a(j, k);
 		return res;
 	}
 	template<size_t N2, size_t M2>
@@ -65,13 +67,12 @@ struct matrix_fixed{
 		return *this;
 	}
 	matrix_fixed operator*(T c) const{
-		matrix_fixed res(data, n, m);
-		return res *= c;
+		return matrix_fixed(*this) *= c;
 	}
 	template<class U, typename enable_if<is_integral<U>::value>::type* = nullptr>
 	matrix_fixed &inplace_power(U e){
 		assert(n == m && e >= 0);
-		matrix_fixed res(n, n, T(1));
+		matrix_fixed res(1, 0);
 		for(; e; *this *= *this, e >>= 1) if(e & 1) res *= *this;
 		return *this = res;
 	}
@@ -81,7 +82,7 @@ struct matrix_fixed{
 	}
 	matrix_fixed<T, M, N> transposed() const{
 		matrix_fixed<T, M, N> res;
-		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) res[j][i] = data[i][j];
+		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) res(j, i) = data[i][j];
 		return res;
 	}
 	matrix_fixed &transpose(){
@@ -147,28 +148,37 @@ struct matrix_fixed{
 				for(auto jj = 0; jj < n; ++ jj) a[i][jj] -= d * a[j][jj], res[i][jj] -= d * res[j][jj];
 			}
 		}
-		return res;
+		return matrix_fixed(n, n, res);
 	}
 	template<class output_stream>
 	friend output_stream &operator<<(output_stream &out, const matrix_fixed &a){
-		out << "\n";
+		out << "{";
 		for(auto i = 0; i < a.n; ++ i){
+			out << "{";
 			for(auto j = 0; j < a.m; ++ j){
-				out << a[i][j] << " ";
+				out << a(i, j);
+				if(j != a.m - 1) out << ", ";
 			}
-			out << "\n";
+			out << "}";
+			if(i != a.n - 1) out << ", ";
 		}
-		return out;
+		return out << "}";
 	}
-	matrix_fixed(int n, int m, T init_diagonal = T(0), T init_off_diagonal = T(0)): n(n), m(m){
-		assert(0 <= min(n, m) && n <= N && m <= M);
+	matrix_fixed(): matrix_fixed(T(0), T(0)){ }
+	matrix_fixed(const T &init_diagonal, const T &init_off_diagonal){
 		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) data[i][j] = i == j ? init_diagonal : init_off_diagonal;
 	}
-	matrix_fixed(const array<array<T, M>, N> &arr): n(N), m(M), data(arr){ }
+	matrix_fixed(const array<array<T, M>, N> &arr): data(arr){ }
+	static matrix_fixed additive_identity(){
+		return matrix_fixed(T(1), T(0));
+	}
+	static matrix_fixed multiplicative_identity(){
+		return matrix_fixed(T(0), T(0));
+	}
 };
 template<class T, size_t N, size_t M>
 matrix_fixed<T, N, M> operator*(T c, matrix_fixed<T, N, M> a){
-	for(auto i = 0; i < a.n; ++ i) for(auto j = 0; j < a.m; ++ j) a[i][j] = c * a[i][j];
+	for(auto i = 0; i < a.n; ++ i) for(auto j = 0; j < a.m; ++ j) a(i, j) = c * a(i, j);
 	return a;
 }
 // Multiply a row vector v on the left
@@ -176,7 +186,7 @@ template<class T, size_t N, size_t M>
 matrix_fixed<T, N, M>::domain_t operator*(const typename matrix_fixed<T, N, M>::range_t &v, const matrix_fixed<T, N, M> &a){
 	typename matrix_fixed<T, N, M>::domain_t res;
 	res.fill(T(0));
-	for(auto i = 0; i < a.n; ++ i) for(auto j = 0; j < a.m; ++ j) res[j] += v[i] * a[i][j];
+	for(auto i = 0; i < a.n; ++ i) for(auto j = 0; j < a.m; ++ j) res[j] += v[i] * a(i, j);
 	return res;
 }
 ]]></content>
