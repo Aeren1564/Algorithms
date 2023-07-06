@@ -6,7 +6,7 @@ struct mo_2d_rollback{
 	void insert(int qi, int l, int r){
 		query.push_back({l, r, qi});
 	}
-	void solve(auto insert, auto time, auto reverse_to, auto answer){
+	void solve(auto insert_left, auto insert_right, auto time, auto reverse_to, auto answer){
 		auto cmp = [&](const auto &p, const auto &q)->bool{
 			return p[0] / BX != q[0] / BX ? p < q : p[1] < q[1];
 		};
@@ -14,7 +14,7 @@ struct mo_2d_rollback{
 		int init = time();
 		for(auto [ql, qr, qi]: query){
 			if(qr - ql <= BX){
-				for(auto i = ql; i < qr; ++ i) insert(i);
+				for(auto i = ql; i < qr; ++ i) insert_right(i);
 				answer(qi);
 				reverse_to(init);
 			}
@@ -26,11 +26,12 @@ struct mo_2d_rollback{
 			if(block != last_block){
 				reverse_to(init);
 				l = (block + 1) * BX, r = qr;
-				for(auto i = l; i < r; ++ i) insert(i);
+				for(auto i = l; i < r; ++ i) insert_right(i);
+				last_block = block;
 			}
-			while(r < qr) insert(r ++);
+			while(r < qr) insert_right(r ++);
 			int t = time();
-			for(auto i = ql; i < l; ++ i) insert(i);
+			for(auto i = l - 1; i >= ql; -- i) insert_left(i);
 			answer(qi);
 			reverse_to(t);
 		}
