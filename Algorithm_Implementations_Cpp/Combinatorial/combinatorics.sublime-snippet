@@ -63,6 +63,7 @@ struct combinatorics{
 	}
 	// Number of ways to place n '('s and k ')'s starting with m copies of '(' such that in each prefix, number of '(' is equal or greater than ')'
 	// Catalan(n, n, 0): n-th catalan number
+	// Catalan(s, s+k-1, k-1): sum of products of k catalan numbers where the index of product sums up to s.
 	// O(1)
 	T Catalan(int n, int k, int m = 0) const{
 		assert(0 <= min({n, k, m}));
