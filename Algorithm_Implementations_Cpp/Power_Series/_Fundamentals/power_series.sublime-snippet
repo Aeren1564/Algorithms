@@ -12,6 +12,13 @@ struct power_series_base: vector<T>{
 	int degree() const{
 		return data.empty() ? numeric_limits<int>::max() : data.size() - 1;
 	}
+	power_series_base &reduce(){
+		while(!data.empty() && !data.back()) data.pop_back();
+		return *this;
+	}
+	power_series_base reduced() const{
+		return power_series_base(*this).reduce();
+	}
 	friend ostream &operator<<(ostream &out, const power_series_base &p){
 		if(p.empty()){
 			return out << "{}";
@@ -204,9 +211,24 @@ struct power_series_base: vector<T>{
 	// Euclidean division
 	// O(n * log(n))
 	power_series_base &operator/=(const power_series_base &p){
+		assert(!p.empty() && p.back() != T{0});
+		reduce();
 		if(data.size() < p.size()){
 			data.clear();
 			return *this;
+		}
+		if((int)p.size() - count(p.begin(), p.end(), 0) <= 100){
+			T inv = 1 / p.back();
+			static vector<int> indices;
+			for(auto i = 0; i < (int)p.size() - 1; ++ i) if(p[i]) indices.push_back(i);
+			power_series_base res((int)data.size() - (int)p.size() + 1);
+			for(auto i = (int)data.size() - 1; i >= (int)p.size() - 1; -- i) if(data[i]){
+				T x = data[i] * inv;
+				res[i - (int)p.size() + 1] = x;
+				for(auto j: indices) data[i - ((int)p.size() - 1 - j)] -= x * p[j];
+			}
+			indices.clear();
+			return *this = res;
 		}
 		power_series_base b;
 		int n = data.size() - p.size() + 1;
@@ -237,11 +259,26 @@ struct power_series_base: vector<T>{
 		while(!r.empty() && r.back() == 0) r.pop_back();
 		return {q, r};
 	}
-	power_series_base operator%(const power_series_base &p) const{
-		return this->divrem(p).second;
-	}
 	power_series_base &operator%=(const power_series_base &p){
-		return *this = *this % p;
+		assert(!p.empty() && p.back() != T{0});
+		reduce();
+		if(data.size() < p.size()) return *this;
+		if((int)p.size() - count(p.begin(), p.end(), 0) <= 100){
+			T inv = 1 / p.back();
+			static vector<int> indices;
+			for(auto i = 0; i < (int)p.size() - 1; ++ i) if(p[i]) indices.push_back(i);
+			for(auto i = (int)data.size() - 1; i >= (int)p.size() - 1; -- i) if(data[i]){
+				T x = data[i] * inv;
+				data[i] = 0;
+				for(auto j: indices) data[i - ((int)p.size() - 1 - j)] -= x * p[j];
+			}
+			indices.clear();
+			return reduce();
+		}
+		return *this = this->divrem(p).second;
+	}
+	power_series_base operator%(const power_series_base &p) const{
+		return power_series_base(*this) %= p;
 	}
 	power_series_base &inplace_derivative(){
 		if(!data.empty()){
