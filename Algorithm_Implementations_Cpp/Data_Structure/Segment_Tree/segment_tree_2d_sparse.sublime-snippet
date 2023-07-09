@@ -8,7 +8,7 @@ struct segment_tree_2d_sparse{
 	F TT; // Commutative monoid operation (always adjacent)
 	T T_id; // Commutative monoid identity
 	// Every point holds T_id except for base points
-	// O(n log^2 n)
+	// O(n * log^2(n))
 	segment_tree_2d_sparse(vector<pair<array<B, 2>, T>> init, F TT, T T_id): X(init.size()), TT(TT), T_id(T_id){
 		int n = (int)init.size();
 		sort(init.begin(), init.end());
@@ -38,7 +38,7 @@ struct segment_tree_2d_sparse{
 			for(auto y = (int)Y0.size() - 1; y; -- y) data[x][y] = TT(data[x][y << 1], data[x][y << 1 | 1]);
 		}
 	}
-	// O(n log^2 n)
+	// O(n * log^2(n))
 	segment_tree_2d_sparse(vector<array<B, 2>> base, F TT, T T_id){
 		vector<pair<array<B, 2>, T>> init(base.size());
 		for(auto i = 0; i < (int)base.size(); ++ i) init[i] = {base[i], T_id};
@@ -50,8 +50,8 @@ struct segment_tree_2d_sparse{
 		data = otr.data;
 		return *this;
 	}
-	// O(log^2 n)
-	void set(B _p, B _q, T x){
+	// O(log^2(n))
+	void set(B _p, B _q, const T &x){
 		int p = lower_bound(X.begin(), X.end(), _p) - X.begin();
 		assert(p < (int)X.size() && X[p] == _p);
 		for(p += (int)X.size(); p; p >>= 1){
@@ -59,10 +59,26 @@ struct segment_tree_2d_sparse{
 			auto &data0 = data[p];
 			int q = lower_bound(Y0.begin(), Y0.end(), array{_q, _p}) - Y0.begin();
 			assert(q < (int)Y0.size() && Y0[q][0] == _q && Y0[q][1] == _p);
-			for(data0[q += (int)Y0.size()] = x; q >>= 1; ) data0[q] = TT(data0[q << 1], data0[q << 1 | 1]);
+			q += (int)Y0.size();
+			data0[q] = x;
+			while(q >>= 1) data0[q] = TT(data0[q << 1], data0[q << 1 | 1]);
 		}
 	}
-	// O(log n)
+	// O(log^2(n))
+	void update(B _p, B _q, const T &x){
+		int p = lower_bound(X.begin(), X.end(), _p) - X.begin();
+		assert(p < (int)X.size() && X[p] == _p);
+		for(p += (int)X.size(); p; p >>= 1){
+			auto &Y0 = Y[p];
+			auto &data0 = data[p];
+			int q = lower_bound(Y0.begin(), Y0.end(), array{_q, _p}) - Y0.begin();
+			assert(q < (int)Y0.size() && Y0[q][0] == _q && Y0[q][1] == _p);
+			q += (int)Y0.size();
+			data0[q] = TT(data0[q], x);
+			while(q >>= 1) data0[q] = TT(data0[q << 1], data0[q << 1 | 1]);
+		}
+	}
+	// O(log(n))
 	T query(B _p, B _q){
 		int p = lower_bound(X.begin(), X.end(), _p) - X.begin();
 		if(p == (int)X.size() || X[p] != _p) return T_id;
@@ -71,7 +87,7 @@ struct segment_tree_2d_sparse{
 		if(q == (int)Y0.size() || Y0[q] != array{_q, _p}) return T_id;
 		return data[p + (int)X.size()][q + (int)Y0.size()];
 	}
-	// O(log^2 n)
+	// O(log^2(n))
 	T query(B _xl, B _xr, B _yl, B _yr){
 		int xl = lower_bound(X.begin(), X.end(), _xl) - X.begin();
 		int xr = lower_bound(X.begin(), X.end(), _xr) - X.begin();
