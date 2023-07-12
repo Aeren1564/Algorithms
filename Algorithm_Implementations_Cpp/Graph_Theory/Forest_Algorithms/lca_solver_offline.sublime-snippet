@@ -1,0 +1,62 @@
+<snippet>
+	<content><![CDATA[
+// Requires graph
+struct lca_solver_offline{
+	int n;
+	vector<int> p, dp;
+	vector<vector<array<int, 2>>> q;
+	lca_solver_offline(int n): n(n), p(n), dp(n), q(n), was(n){ }
+	void query(int qi, int u, int v){
+		assert(0 <= min(u, v) && max(u, v) < n);
+		q[u].push_back({v, qi});
+		q[v].push_back({u, qi});
+	}
+	int root(int u){
+		return p[u] < 0 ? u : (p[u] = root(p[u]));
+	}
+	void merge(int u, int v){
+		u = root(u);
+		v = root(v);
+		if(p[u] > p[v]) swap(u, v);
+		p[u] += p[v];
+		p[v] = u;
+	}
+	int it = 0;
+	vector<int> was;
+	// O(((# of vertices visited) + alpha(n)) * q)
+	void solve(const graph<int> &g, const vector<int> &roots, auto answer){
+		int n = g.n;
+		++ it;
+		for(auto r: roots){
+			if(was[r] == it) continue;
+			y_combinator([&](auto self, int u)->void{
+				was[u] = it;
+				p[u] = -1;
+				dp[u] = u;
+				for(auto id: g.adj[u]){
+					if(g.ignore && g.ignore(id)) continue;
+					int v = g(u, id);
+					if(was[v] == it) continue;
+					self(v);
+					merge(u, v);
+					dp[root(u)] = u;
+				}
+				for(auto [v, qi]: q[u]){
+					if(was[v] != it) continue;
+					answer(qi, dp[root(v)]);
+				}
+			})(r);
+		}
+	}
+	void solve_all(const graph<int> &g, auto answer){
+		vector<int> roots(g.n);
+		iota(roots.begin(), roots.end(), 0);
+		solve(g, roots, answer);
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>lca_solver_offline</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
