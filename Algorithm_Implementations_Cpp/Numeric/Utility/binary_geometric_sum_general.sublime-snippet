@@ -1,16 +1,23 @@
 <snippet>
 	<content><![CDATA[
-// Find 1 + b + b^2 + ... + b^(e-1) on monoid
-// O(log e) applications of add and multiply
-template<class T, class U, class F1 = plus<>, class F2 = multiplies<>>
-T binary_geometric_sum_general(T b, U e, F1 add = plus<>(), T zero = 0, F2 multiply = multiplies<>(), T one = 1){
-	if(e < 2) return e ? one : zero;
-	int lg = 0;
-	while(e >= (U)1 << lg + 1) ++ lg;
-	T res = one, p = one;
-	for(auto bit = lg - 1; bit >= 0; -- bit){
-		res = multiply(res, add(one, multiply(p, b))), p = multiply(p, multiply(p, b));
-		if(e >> bit & 1) res = add(res, p = multiply(p, b));
+// Additive monoid U acts on additive monoid T.
+// T_id: additive identity of T
+// add(T x, T y): returns x + y
+// apply(U b, T x): returns x * b
+// merge(U b, U c): returns b * b
+// Returns x + x * b + ... + x * b^(e-1)
+// O(log(e)) applications of add, apply, and merge
+template<class T, class U, class V>
+T binary_geometric_sum_general(T x, U b, V e, T T_id, auto add, auto apply, auto merge){
+	assert(e >= 0);
+	T res = T_id;
+	for(; e; e >>= 1){
+		if(e & 1){
+			res = add(x, res);
+			x = apply(b, x);
+		}
+		x = add(x, apply(b, x));
+		b = merge(b, b);
 	}
 	return res;
 }
