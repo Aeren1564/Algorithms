@@ -18,6 +18,13 @@ struct segment_tree{
 	segment_tree(const vector<T> &a, F TT, T T_id): TT(TT), T_id(T_id){
 		init(a);
 	}
+	segment_tree &operator=(const segment_tree &otr){
+		n = otr.n;
+		size = otr.size;
+		log = otr.log;
+		data = otr.data;
+		return *this;
+	}
 	// O(n)
 	void init(int n){
 		init(n, T_id);
