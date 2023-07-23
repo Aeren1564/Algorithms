@@ -71,7 +71,7 @@ struct power_series_base: vector<T>{
 		return p;
 	}
 	power_series_base &operator+=(const power_series_base &p){
-		resize(max(data.size(), p.size()));
+		data.resize(max(data.size(), p.size()));
 		for(auto i = 0; i < (int)p.size(); ++ i) data[i] += p[i];
 		return *this;
 	}
@@ -364,7 +364,8 @@ struct power_series_base: vector<T>{
 			f += z.clear_range(0, s);
 			if(s << 1 < n) f.inverse_doubled_up(g, g2);
 		}
-		return f.resize(n);
+		f.resize(n);
+		return f;
 	}
 	// O(n * log(n))
 	power_series_base &inplace_exp(int n){
