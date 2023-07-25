@@ -115,8 +115,7 @@ struct convex_polygon{
 	}
 	// O(n)
 	convex_polygon operator-() const{
-		convex_polygon res;
-		reverse(res.data.begin(), res.data.end());
+		convex_polygon res = *this;
 		for(auto &p: res.data) p = -p;
 		rotate(res.data.begin(), min_element(res.data.begin(), res.data.end()), res.data.end());
 		return res;
