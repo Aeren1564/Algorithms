@@ -7,7 +7,7 @@ struct linear_programming_solver_simplex{
 	int m, n;
 	vector<int> nn, bb;
 	vector<vector<T>> mat;
-	T eps = 1e-8, inf = 1/.0;
+	static constexpr T eps = 1e-8;
 	linear_programming_solver_simplex(const vector<vector<T>> &a, const vector<T> &b, const vector<T> &c): m((int)b.size()), n((int)c.size()), nn(n + 1), bb(m), mat(m + 2, vector<T>(n + 2)){
 		for(auto i = 0; i < m; ++ i) for(auto j = 0; j < n; ++ j) mat[i][j] = a[i][j];
 		for(auto i = 0; i < m; ++ i) bb[i] = n + i, mat[i][n] = -1, mat[i][n + 1] = b[i];
@@ -16,7 +16,7 @@ struct linear_programming_solver_simplex{
 	}
 	void pivot(int r, int s){
 		T *a = mat[r].data(), inv = 1 / a[s];
-		for(auto i = 0; i < m + 2; ++ i) if(i != r && abs(mat[i][s]) > eps) {
+		for(auto i = 0; i < m + 2; ++ i) if(i != r && abs(mat[i][s]) > eps){
 			T *b = mat[i].data(), inv2 = b[s] * inv;
 			for(auto j = 0; j < n + 2; ++ j) b[j] -= a[j] * inv2;
 			b[s] = a[s] * inv2;
@@ -41,13 +41,13 @@ struct linear_programming_solver_simplex{
 		}
 	}
 	// Returns -inf if no solution, {inf, a vector satisfying the constraints} if there are abritrarily good solutions, or {maximum c^T x, x} otherwise.
-	// O(n m (# of pivots)), O(2 ^ n) in general.
+	// O(n * m * (# of pivots)), O(2^n) in general.
 	pair<T, vector<T>> solve(){
 		int r = 0;
 		for(auto i = 1; i < m; ++ i) if(mat[i][n + 1] < mat[r][n + 1]) r = i;
 		if(mat[r][n + 1] < -eps){
 			pivot(r, n);
-			if(!simplex(2) || mat[m + 1][n + 1] < -eps) return {-inf, {}};
+			if(!simplex(2) || mat[m + 1][n + 1] < -eps) return {numeric_limits<T>::min(), {}};
 			for(auto i = 0; i < m; ++ i) if(bb[i] == -1){
 				int s = 0;
 				for(auto j = 1; j < n + 1; ++ j) if(s == -1 || pair(mat[i][j], nn[j]) < pair(mat[i][s], nn[s]));
@@ -57,7 +57,7 @@ struct linear_programming_solver_simplex{
 		bool ok = simplex(1);
 		vector<T> x(n);
 		for(auto i = 0; i < m; ++ i) if(bb[i] < n) x[bb[i]] = mat[i][n + 1];
-		return {ok ? mat[m][n + 1] : inf, x};
+		return {ok ? mat[m][n + 1] : numeric_limits<T>::max(), x};
 	}
 };
 ]]></content>
