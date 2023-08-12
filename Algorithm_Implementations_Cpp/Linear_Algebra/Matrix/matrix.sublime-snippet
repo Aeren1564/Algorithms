@@ -55,7 +55,7 @@ struct matrix{
 		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) for(auto k = 0; k < l; ++ k) res(i, k) += data[i][j] * a(j, k);
 		return *this = res;
 	}
-	matrix &operator*(const matrix &a){
+	matrix operator*(const matrix &a) const{
 		return matrix(*this) *= a;
 	}
 	matrix &operator*=(T c){
@@ -169,7 +169,7 @@ matrix<T> operator*(T c, matrix<T> a){
 }
 // Multiply a row vector v on the left
 template<class T>
-matrix<T>::domain_t operator*(const typename matrix<T>::range_t &v, const matrix<T> &a){
+typename matrix<T>::domain_t operator*(const typename matrix<T>::range_t &v, const matrix<T> &a){
 	assert(a.n == (int)size(v));
 	typename matrix<T>::domain_t res(a.m, T(0));
 	for(auto i = 0; i < a.n; ++ i) for(auto j = 0; j < a.m; ++ j) res[j] += v[i] * a(i, j);
