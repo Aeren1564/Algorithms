@@ -2,7 +2,7 @@
 	<content><![CDATA[
 // T must support +=, -=, *, *=, ==, and !=
 template<class T, size_t N, size_t M>
-struct matrix_fixed{
+struct matrix_fixed_base{
 	using ring_t = T;
 	using domain_t = array<T, M>;
 	using range_t = array<T, N>;
@@ -24,69 +24,75 @@ struct matrix_fixed{
 		assert(0 <= i && i < n && 0 <= j && j < m);
 		return data[i][j];
 	}
-	bool operator==(const matrix_fixed &a) const{
+	operator vector<vector<T>>() const{
+		return data;
+	}
+	bool operator==(const matrix_fixed_base &a) const{
 		assert(n == a.n && m == a.m);
 		return data == a.data;
 	}
-	bool operator!=(const matrix_fixed &a) const{
+	bool operator!=(const matrix_fixed_base &a) const{
 		assert(n == a.n && m == a.m);
 		return data != a.data;
 	}
-	matrix_fixed &operator+=(const matrix_fixed &a){
+	matrix_fixed_base &operator+=(const matrix_fixed_base &a){
 		assert(n == a.n && m == a.m);
 		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) data[i][j] += a(i, j);
 		return *this;
 	}
-	matrix_fixed operator+(const matrix_fixed &a) const{
+	matrix_fixed_base operator+(const matrix_fixed_base &a) const{
 		assert(n == a.n && m == a.m);
-		return matrix_fixed(*this) += a;
+		return matrix_fixed_base(*this) += a;
 	}
-	matrix_fixed &operator-=(const matrix_fixed &a){
+	matrix_fixed_base &operator-=(const matrix_fixed_base &a){
 		assert(n == a.n && m == a.m);
 		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) data[i][j] += a(i, j);
 		return *this;
 	}
-	matrix_fixed operator-(const matrix_fixed &a) const{
+	matrix_fixed_base operator-(const matrix_fixed_base &a) const{
 		assert(n == a.n && m == a.m);
-		return matrix_fixed(*this) += a;
+		return matrix_fixed_base(*this) += a;
 	}
 	template<size_t N2, size_t M2>
-	matrix_fixed<T, N, M2> operator*(const matrix_fixed<T, N2, M2> &a) const{
+	matrix_fixed_base<T, N, M2> operator*(const matrix_fixed_base<T, N2, M2> &a) const{
 		assert(m == a.n);
 		int l = M2;
-		matrix_fixed<T, N, M2> res;
+		matrix_fixed_base<T, N, M2> res;
 		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) for(auto k = 0; k < l; ++ k) res(i, k) += data[i][j] * a(j, k);
 		return res;
 	}
 	template<size_t N2, size_t M2>
-	matrix_fixed &operator*=(const matrix_fixed<T, N2, M2> &a){
+	matrix_fixed_base &operator*=(const matrix_fixed_base<T, N2, M2> &a){
 		return *this = *this * a;
 	}
-	matrix_fixed &operator*=(T c){
+	matrix_fixed_base &operator*=(T c){
 		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) data[i][j] *= c;
 		return *this;
 	}
-	matrix_fixed operator*(T c) const{
-		return matrix_fixed(*this) *= c;
+	matrix_fixed_base operator*(T c) const{
+		return matrix_fixed_base(*this) *= c;
 	}
 	template<class U, typename enable_if<is_integral<U>::value>::type* = nullptr>
-	matrix_fixed &inplace_power(U e){
+	matrix_fixed_base &inplace_power(U e){
 		assert(n == m && e >= 0);
-		matrix_fixed res(1, 0);
+		matrix_fixed_base res(1, 0);
 		for(; e; *this *= *this, e >>= 1) if(e & 1) res *= *this;
 		return *this = res;
 	}
 	template<class U>
-	matrix_fixed power(U e) const{
-		return matrix_fixed(*this).inplace_power(e);
+	matrix_fixed_base power(U e) const{
+		return matrix_fixed_base(*this).inplace_power(e);
 	}
-	matrix_fixed<T, M, N> transposed() const{
-		matrix_fixed<T, M, N> res;
+	matrix_fixed_base &inplace_transpose(){
+		assert(n == m);
+		for(auto i = 0; i < n; ++ i) for(auto j = i + 1; j < n; ++ j) swap(data[i][j], data[j][i]);
+		return *this;
+	}
+	matrix_fixed_base transpose() const{
+		if(n == m) return matrix_fixed_base(*this).inplace_transpose();
+		matrix_fixed_base<T, M, N> res;
 		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) res(j, i) = data[i][j];
 		return res;
-	}
-	matrix_fixed &transpose(){
-		return *this = transposed();
 	}
 	// Multiply a column vector v on the right
 	range_t operator*(const domain_t &v) const{
@@ -95,63 +101,156 @@ struct matrix_fixed{
 		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) res[i] += data[i][j] * v[j];
 		return res;
 	}
-	// Assumes T is a field
-	// find_inverse() must return optional<T>
-	// O(n) find_inverse() calls along with O(n^3) operations on T
-	T determinant(auto find_inverse) const{
-		assert(n == m);
-		if(n == 0) return T(1);
-		auto a = data;
-		T res = T(1);
-		for(auto j = 0; j < n; ++ j){
+	// Assumes T is either a floating, integral, or a modular type.
+	// If T is a floating type, O(n) divisions with O(n^3) additions, subtractions, and multiplications.
+	// Otherwise, O(n^2 * log(size)) divisions with O(n^3) additions, subtractions, and multiplications.
+	// Returns {REF matrix, determinant, rank}
+	tuple<matrix_fixed_base &, T, int> inplace_REF(){
+		if(n == 0) return {*this, T(1), 0};
+		T det = 1;
+		int rank = 0;
+		for(auto j = 0; j < m; ++ j){
+			if constexpr(is_floating_point_v<T>){
+				static const T eps = 1e-9;
+				int pivot = rank;
+				for(auto i = rank + 1; i < n; ++ i) if(abs(data[pivot][j]) < abs(data[i][j])) pivot = i;
+				if(rank != pivot){
+					swap(data[rank], data[pivot]);
+					det *= -1;
+				}
+				if(abs(data[rank][j]) <= eps) continue;
+				det *= data[rank][j];
+				T inv = 1 / data[rank][j];
+				for(auto i = rank + 1; i < n; ++ i) if(abs(data[i][j]) > eps){
+					T coef = data[i][j] * inv;
+					for(auto k = j; k < m; ++ k) data[i][k] -= coef * data[rank][k];
+				}
+			}
+			else{
+				for(auto i = rank + 1; i < n; ++ i) while(data[i][j]){
+					T q;
+					if constexpr(is_integral_v<T>) q = data[rank][j] / data[i][j];
+					else q = data[rank][j].data / data[i][j].data;
+					if(q) for(auto k = j; k < m; ++ k) data[rank][k] -= q * data[i][k];
+					swap(data[rank], data[i]);
+					det *= -1;
+				}
+				if(rank == j) det *= data[rank][j];
+				else det = T(0);
+				if(data[rank][j]) ++ rank;
+			}
+		}
+		return {*this, det, rank};
+	}
+	// Assumes T is either a floating, integral, or a modular type.
+	// If T is a floating type, O(n) divisions with O(n^3) additions, subtractions, and multiplications.
+	// Otherwise, O(n^2 * log(size)) divisions with O(n^3) additions, subtractions, and multiplications.
+	// Returns {REF matrix, determinant, rank}
+	tuple<matrix_fixed_base, T, int> REF() const{
+		return matrix_fixed_base(*this).inplace_REF();
+	}
+	// Assumes T is a field.
+	// O(n) divisions with O(n^3) additions, subtractions, and multiplications.
+	// Returns {REF matrix, determinant, rank}
+	tuple<matrix_fixed_base &, T, int> inplace_REF_field(){
+		if(n == 0) return {*this, T(1), 0};
+		T det = T(1);
+		int rank = 0;
+		for(auto j = 0; j < m; ++ j){
 			int pivot = -1;
-			for(auto i = j; i < n; ++ i) if(a[i][j] != T(0)){
+			for(auto i = rank; i < n; ++ i) if(data[i][j] != T(0)){
 				pivot = i;
 				break;
 			}
-			if(!~pivot) return T(0);
-			swap(a[j], a[pivot]);
-			res *= a[j][j] * (j != pivot ? -1 : 1);
-			auto invp = find_inverse(a[j][j]);
-			assert(invp);
-			T inv = *invp;
-			for(auto i = j + 1; i < n; ++ i) if(i != j && a[i][j] != T(0)){
-				T d = a[i][j] * inv;
-				for(auto jj = j; jj < n; ++ jj) a[i][jj] -= d * a[j][jj];
+			if(!~pivot){
+				det = T(0);
+				continue;
 			}
+			if(rank != pivot){
+				swap(data[rank], data[pivot]);
+				det *= -1;
+			}
+			det *= data[rank][j];
+			T inv = 1 / data[rank][j];
+			for(auto i = rank + 1; i < n; ++ i) if(data[i][j] != T(0)){
+				T coef = data[i][j] * inv;
+				for(auto k = j; k < m; ++ k) data[i][k] -= coef * data[j][k];
+			}
+			++ rank;
 		}
-		return res;
+		return {*this, det, rank};
 	}
-	// Assumes T is a field
-	// find_inverse() must return optional<T>
-	// O(n) find_inverse() calls along with O(n^3) operations on T
-	optional<matrix_fixed> inverse(auto find_inverse) const{
+	// Assumes T is a field.
+	// O(n) divisions with O(n^3) additions, subtractions, and multiplications.
+	// Returns {REF matrix, determinant, rank}
+	tuple<matrix_fixed_base, T, int> REF_field() const{
+		return matrix_fixed_base(*this).inplace_REF_field();
+	}
+	// Assumes T is a field.
+	// O(n) divisions with O(n^3) additions, subtractions, and multiplications.
+	optional<matrix_fixed_base> inverse(auto find_inverse) const{
 		assert(n == m);
 		if(n == 0) return *this;
 		auto a = data;
-		array<array<T, M>, N> res;
-		for(auto i = 0; i < n; ++ i) res[i].fill(T(0)), res[i][i] = T(1);
+		array<array<T, N>, N> res{};
+		for(auto i = 0; i < n; ++ i) res[i][i] = T(1);
 		for(auto j = 0; j < n; ++ j){
-			int pivot = -1;
-			for(auto i = j; i < n; ++ i) if(a[i][j] != T(0)){
+			int rank = j, pivot = -1;
+			for(auto i = rank; i < n; ++ i) if(a[i][j] != T(0)){
 				pivot = i;
 				break;
 			}
 			if(!~pivot) return {};
-			swap(a[j], a[pivot]), swap(res[j], res[pivot]);
-			auto invp = find_inverse(a[j][j]);
-			assert(invp);
-			T inv = *invp;
-			for(auto jj = 0; jj < n; ++ jj) a[j][jj] *= inv, res[j][jj] *= inv;
+			swap(a[rank], a[pivot]), swap(res[rank], res[pivot]);
+			T inv = 1 / a[rank][j];
+			for(auto k = j; k < n; ++ k) a[rank][k] *= inv, res[rank][k] *= inv;
 			for(auto i = 0; i < n; ++ i) if(i != j && a[i][j] != T(0)){
 				T d = a[i][j];
-				for(auto jj = 0; jj < n; ++ jj) a[i][jj] -= d * a[j][jj], res[i][jj] -= d * res[j][jj];
+				for(auto k = j; k < n; ++ k) a[i][k] -= d * a[j][k], res[i][k] -= d * res[j][k];
 			}
 		}
-		return matrix_fixed(n, n, res);
+		return res;
+	}
+	// Assumes T is either a floating, integral, or a modular type.
+	// If T is a floating type, O(n) divisions with O(n^3) additions, subtractions, and multiplications.
+	// Otherwise, O(n^2 * log(size)) divisions with O(n^3) additions, subtractions, and multiplications.
+	T determinant() const{
+		assert(n == m);
+		return get<1>(REF());
+	}
+	// Assumes T is a field.
+	// O(n) divisions with O(n^3) additions, subtractions, and multiplications.
+	T determinant_field() const{
+		assert(n == m);
+		return get<1>(REF_field());
+	}
+	// Assumes T is either a floating, integral, or a modular type.
+	// If T is a floating type, O(n) divisions with O(n^3) additions, subtractions, and multiplications.
+	// Otherwise, O(n^2 * log(size)) divisions with O(n^3) additions, subtractions, and multiplications.
+	int rank() const{
+		return get<2>(REF());
+	}
+	// Assumes T is a field.
+	// O(n) divisions with O(n^3) additions, subtractions, and multiplications.
+	int rank_field() const{
+		return get<2>(REF_field());
+	}
+	// O(n * 2^n)
+	T permanent() const{
+		static_assert(n <= 30 && n == m);
+		T perm = n ? 0 : 1;
+		array<T, N> sum{};
+		for(auto order = 1; order < 1 << n; ++ order){
+			int j = __lg(order ^ order >> 1 ^ order - 1 ^ order - 1 >> 1), sign = (order ^ order >> 1) & 1 << j ? 1 : -1;
+			T prod = order & 1 ? -1 : 1;
+			if((order ^ order >> 1) & 1 << j) for(auto i = 0; i < n; ++ i) prod *= sum[i] += data[i][j];
+			else for(auto i = 0; i < n; ++ i) prod *= sum[i] -= data[i][j];
+			perm += prod;
+		}
+		return perm * (n & 1 ? -1 : 1);
 	}
 	template<class output_stream>
-	friend output_stream &operator<<(output_stream &out, const matrix_fixed &a){
+	friend output_stream &operator<<(output_stream &out, const matrix_fixed_base &a){
 		out << "{";
 		for(auto i = 0; i < a.n; ++ i){
 			out << "{";
@@ -164,31 +263,34 @@ struct matrix_fixed{
 		}
 		return out << "}";
 	}
-	matrix_fixed(): matrix_fixed(T(0), T(0)){ }
-	matrix_fixed(const T &init_diagonal, const T &init_off_diagonal){
+	matrix_fixed_base(): matrix_fixed_base(T(0), T(0)){ }
+	matrix_fixed_base(const T &init_diagonal, const T &init_off_diagonal){
 		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) data[i][j] = i == j ? init_diagonal : init_off_diagonal;
 	}
-	matrix_fixed(const array<array<T, M>, N> &arr): data(arr){ }
-	static matrix_fixed additive_identity(){
-		return matrix_fixed(T(1), T(0));
+	matrix_fixed_base(const array<array<T, M>, N> &arr): data(arr){ }
+	static matrix_fixed_base additive_identity(){
+		return matrix_fixed_base(T(1), T(0));
 	}
-	static matrix_fixed multiplicative_identity(){
-		return matrix_fixed(T(0), T(0));
+	static matrix_fixed_base multiplicative_identity(){
+		return matrix_fixed_base(T(0), T(0));
 	}
 };
 template<class T, size_t N, size_t M>
-matrix_fixed<T, N, M> operator*(T c, matrix_fixed<T, N, M> a){
+matrix_fixed_base<T, N, M> operator*(T c, matrix_fixed_base<T, N, M> a){
 	for(auto i = 0; i < a.n; ++ i) for(auto j = 0; j < a.m; ++ j) a(i, j) = c * a(i, j);
 	return a;
 }
 // Multiply a row vector v on the left
 template<class T, size_t N, size_t M>
-matrix_fixed<T, N, M>::domain_t operator*(const typename matrix_fixed<T, N, M>::range_t &v, const matrix_fixed<T, N, M> &a){
-	typename matrix_fixed<T, N, M>::domain_t res;
+typename matrix_fixed_base<T, N, M>::domain_t operator*(const typename matrix_fixed_base<T, N, M>::range_t &v, const matrix_fixed_base<T, N, M> &a){
+	typename matrix_fixed_base<T, N, M>::domain_t res;
 	res.fill(T(0));
 	for(auto i = 0; i < a.n; ++ i) for(auto j = 0; j < a.m; ++ j) res[j] += v[i] * a(i, j);
 	return res;
 }
+
+template<class T>
+using matrix = matrix_fixed_base<T, 20, 20>;
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
 	<tabTrigger>matrix_fixed</tabTrigger> -->
