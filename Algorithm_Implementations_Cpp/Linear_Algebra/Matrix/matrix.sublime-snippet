@@ -24,6 +24,9 @@ struct matrix{
 		assert(0 <= i && i < n && 0 <= j && j < m);
 		return data[i][j];
 	}
+	operator vector<vector<T>>() const{
+		return data;
+	}
 	bool operator==(const matrix &a) const{
 		assert(n == a.n && m == a.m);
 		return data == a.data;
@@ -76,13 +79,16 @@ struct matrix{
 	matrix power(U e) const{
 		return matrix(*this).inplace_power(e);
 	}
-	matrix transposed() const{
+	matrix &inplace_transpose(){
+		assert(n == m);
+		for(auto i = 0; i < n; ++ i) for(auto j = i + 1; j < n; ++ j) swap(data[i][j], data[j][i]);
+		return *this;
+	}
+	matrix transpose() const{
+		if(n == m) return matrix(*this).inplace_transpose();
 		matrix res(m, n);
 		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) res(j, i) = data[i][j];
 		return res;
-	}
-	matrix &transpose(){
-		return *this = transposed();
 	}
 	range_t operator*(const domain_t &v) const{
 		assert(m == (int)v.size());
@@ -90,36 +96,93 @@ struct matrix{
 		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) res[i] += data[i][j] * v[j];
 		return res;
 	}
-	// Assumes T is a field
-	// find_inverse() must return optional<T>
-	// O(n) find_inverse() calls along with O(n^3) operations on T
-	T determinant(auto find_inverse) const{
-		assert(n == m);
-		if(n == 0) return T(1);
-		auto a = data;
-		T res = T(1);
-		for(auto j = 0; j < n; ++ j){
+	// Assumes T is either a floating, integral, or a modular type.
+	// If T is a floating type, O(n) divisions with O(n^3) additions, subtractions, and multiplications.
+	// Otherwise, O(n^2 * log(size)) divisions with O(n^3) additions, subtractions, and multiplications.
+	// Returns {REF matrix, determinant, rank}
+	tuple<matrix &, T, int> inplace_REF(){
+		if(n == 0) return {*this, T(1), 0};
+		T det = 1;
+		int rank = 0;
+		for(auto j = 0; j < m; ++ j){
+			if constexpr(is_floating_point_v<T>){
+				static const T eps = 1e-9;
+				int pivot = rank;
+				for(auto i = rank + 1; i < n; ++ i) if(abs(data[pivot][j]) < abs(data[i][j])) pivot = i;
+				if(rank != pivot){
+					swap(data[rank], data[pivot]);
+					det *= -1;
+				}
+				if(abs(data[rank][j]) <= eps) continue;
+				det *= data[rank][j];
+				T inv = 1 / data[rank][j];
+				for(auto i = rank + 1; i < n; ++ i) if(abs(data[i][j]) > eps){
+					T coef = data[i][j] * inv;
+					for(auto k = j; k < m; ++ k) data[i][k] -= coef * data[rank][k];
+				}
+			}
+			else{
+				for(auto i = rank + 1; i < n; ++ i) while(data[i][j]){
+					T q;
+					if constexpr(is_integral_v<T>) q = data[rank][j] / data[i][j];
+					else q = data[rank][j].data / data[i][j].data;
+					if(q) for(auto k = j; k < m; ++ k) data[rank][k] -= q * data[i][k];
+					swap(data[rank], data[i]);
+					det *= -1;
+				}
+				if(rank == j) det *= data[rank][j];
+				else det = T(0);
+				if(data[rank][j]) ++ rank;
+			}
+		}
+		return {*this, det, rank};
+	}
+	// Assumes T is either a floating, integral, or a modular type.
+	// If T is a floating type, O(n) divisions with O(n^3) additions, subtractions, and multiplications.
+	// Otherwise, O(n^2 * log(size)) divisions with O(n^3) additions, subtractions, and multiplications.
+	// Returns {REF matrix, determinant, rank}
+	tuple<matrix, T, int> REF() const{
+		return matrix(*this).inplace_REF();
+	}
+	// Assumes T is a field.
+	// O(n) divisions with O(n^3) additions, subtractions, and multiplications.
+	// Returns {REF matrix, determinant, rank}
+	tuple<matrix &, T, int> inplace_REF_field(){
+		if(n == 0) return {*this, T(1), 0};
+		T det = T(1);
+		int rank = 0;
+		for(auto j = 0; j < m; ++ j){
 			int pivot = -1;
-			for(auto i = j; i < n; ++ i) if(a[i][j] != T(0)){
+			for(auto i = rank; i < n; ++ i) if(data[i][j] != T(0)){
 				pivot = i;
 				break;
 			}
-			if(!~pivot) return T(0);
-			swap(a[j], a[pivot]);
-			res *= a[j][j] * (j != pivot ? -1 : 1);
-			auto invp = find_inverse(a[j][j]);
-			assert(invp);
-			T inv = *invp;
-			for(auto i = j + 1; i < n; ++ i) if(i != j && a[i][j] != T(0)){
-				T d = a[i][j] * inv;
-				for(auto jj = j; jj < n; ++ jj) a[i][jj] -= d * a[j][jj];
+			if(!~pivot){
+				det = T(0);
+				continue;
 			}
+			if(rank != pivot){
+				swap(data[rank], data[pivot]);
+				det *= -1;
+			}
+			det *= data[rank][j];
+			T inv = 1 / data[rank][j];
+			for(auto i = rank + 1; i < n; ++ i) if(data[i][j] != T(0)){
+				T coef = data[i][j] * inv;
+				for(auto k = j; k < m; ++ k) data[i][k] -= coef * data[j][k];
+			}
+			++ rank;
 		}
-		return res;
+		return {*this, det, rank};
 	}
-	// Assumes T is a field
-	// find_inverse() must return optional<T>
-	// O(n) find_inverse() calls along with O(n^3) operations on T
+	// Assumes T is a field.
+	// O(n) divisions with O(n^3) additions, subtractions, and multiplications.
+	// Returns {REF matrix, determinant, rank}
+	tuple<matrix, T, int> REF_field() const{
+		return matrix(*this).inplace_REF_field();
+	}
+	// Assumes T is a field.
+	// O(n) divisions with O(n^3) additions, subtractions, and multiplications.
 	optional<matrix> inverse(auto find_inverse) const{
 		assert(n == m);
 		if(n == 0) return *this;
@@ -127,23 +190,59 @@ struct matrix{
 		vector<vector<T>> res(n, vector<T>(n, T(0)));
 		for(auto i = 0; i < n; ++ i) res[i][i] = T(1);
 		for(auto j = 0; j < n; ++ j){
-			int pivot = -1;
-			for(auto i = j; i < n; ++ i) if(a[i][j] != T(0)){
+			int rank = j, pivot = -1;
+			for(auto i = rank; i < n; ++ i) if(a[i][j] != T(0)){
 				pivot = i;
 				break;
 			}
 			if(!~pivot) return {};
-			swap(a[j], a[pivot]), swap(res[j], res[pivot]);
-			auto invp = find_inverse(a[j][j]);
-			assert(invp);
-			T inv = *invp;
-			for(auto jj = 0; jj < n; ++ jj) a[j][jj] *= inv, res[j][jj] *= inv;
+			swap(a[rank], a[pivot]), swap(res[rank], res[pivot]);
+			T inv = 1 / a[rank][j];
+			for(auto k = j; k < n; ++ k) a[rank][k] *= inv, res[rank][k] *= inv;
 			for(auto i = 0; i < n; ++ i) if(i != j && a[i][j] != T(0)){
 				T d = a[i][j];
-				for(auto jj = 0; jj < n; ++ jj) a[i][jj] -= d * a[j][jj], res[i][jj] -= d * res[j][jj];
+				for(auto k = j; k < n; ++ k) a[i][k] -= d * a[j][k], res[i][k] -= d * res[j][k];
 			}
 		}
 		return res;
+	}
+	// Assumes T is either a floating, integral, or a modular type.
+	// If T is a floating type, O(n) divisions with O(n^3) additions, subtractions, and multiplications.
+	// Otherwise, O(n^2 * log(size)) divisions with O(n^3) additions, subtractions, and multiplications.
+	T determinant() const{
+		assert(n == m);
+		return get<1>(REF());
+	}
+	// Assumes T is a field.
+	// O(n) divisions with O(n^3) additions, subtractions, and multiplications.
+	T determinant_field() const{
+		assert(n == m);
+		return get<1>(REF_field());
+	}
+	// Assumes T is either a floating, integral, or a modular type.
+	// If T is a floating type, O(n) divisions with O(n^3) additions, subtractions, and multiplications.
+	// Otherwise, O(n^2 * log(size)) divisions with O(n^3) additions, subtractions, and multiplications.
+	int rank() const{
+		return get<2>(REF());
+	}
+	// Assumes T is a field.
+	// O(n) divisions with O(n^3) additions, subtractions, and multiplications.
+	int rank_field() const{
+		return get<2>(REF_field());
+	}
+	// O(n * 2^n)
+	T permanent() const{
+		assert(n <= 30 && n == m);
+		T perm = n ? 0 : 1;
+		vector<T> sum(n);
+		for(auto order = 1; order < 1 << n; ++ order){
+			int j = __lg(order ^ order >> 1 ^ order - 1 ^ order - 1 >> 1), sign = (order ^ order >> 1) & 1 << j ? 1 : -1;
+			T prod = order & 1 ? -1 : 1;
+			if((order ^ order >> 1) & 1 << j) for(auto i = 0; i < n; ++ i) prod *= sum[i] += data[i][j];
+			else for(auto i = 0; i < n; ++ i) prod *= sum[i] -= data[i][j];
+			perm += prod;
+		}
+		return perm * (n & 1 ? -1 : 1);
 	}
 	template<class output_stream>
 	friend output_stream &operator<<(output_stream &out, const matrix &a){
@@ -161,6 +260,12 @@ struct matrix{
 		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) data[i][j] = i == j ? init_diagonal : init_off_diagonal;
 	}
 	matrix(const vector<vector<T>> &arr, int _n = -1, int _m = -1): n(~_n ? _n : (int)arr.size()), m(~_m ? _m : (int)arr[0].size()), data(arr){ }
+	static matrix additive_identity(){
+		return matrix(T(1), T(0));
+	}
+	static matrix multiplicative_identity(){
+		return matrix(T(0), T(0));
+	}
 };
 template<class T>
 matrix<T> operator*(T c, matrix<T> a){
