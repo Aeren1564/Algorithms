@@ -9,7 +9,7 @@
         { "trigger": "rofi", "contents": "for(auto ${1:i} = ${2:n - 1}; $1 >= ${3:0}; ${4:-- $1}){\n\t$0\n}"},
         { "trigger": "forgeneral", "contents": "for($1; $2; $3){\n\t$0\n}"},
     	{ "trigger": "forbitset", "contents": "for(auto ${1:u} = $2._Find_first(); ${1:u} < ${3:n}; ${1:u} = $2._Find_next(${1:u})){\n\t$0\n}"},
-        { "trigger": "fordr", "contents": "for(auto [di, dj]: dr){\n\tint ni = i + di, nj = j + dj;\n\tif(0 <= min(ni, nj) && ni < h && nj < w){\n\t\t$0\n\t}\n}"},
+        { "trigger": "fordr", "contents": "for(auto [dx, dy]: dr4){\n\tint xn = x + dx, yn = y + dy;\n\tif(0 <= min(xn, yn) && xn < nr && yn < nc){\n\t\t$0\n\t}\n}"},
         { "trigger": "trav", "contents": "for(auto $1: $2){\n\t$0\n}"},
         { "trigger": "repeat", "contents": "for(auto rep = ${1:n}; rep; -- rep){\n\t$0\n}"},
     	{ "trigger": "while", "contents": "while($1){\n\t$0\n}"},
@@ -21,8 +21,9 @@
     	{ "trigger": "return", "contents": "return $1;"},
     	{ "trigger": "exit", "contents": "exit(0);"},
         { "trigger": "decltype", "contents": "decltype($1)"},
-        { "trigger": "dr4", "contents": "static const vector<pair<int, int>> dr{{1, 0}, {0, 1}, {-1, 0}, {0, -1}};"},
-        { "trigger": "dr8", "contents": "static const vector<pair<int, int>> dr{{1, 0}, {1, 1}, {0, 1}, {-1, 1}, {-1, 0}, {-1, -1}, {0, -1}, {1, -1}};"},
+        { "trigger": "dr2", "contents": "static const vector<pair<int, int>> dr4{{1, 0}, {0, 1}};"},
+        { "trigger": "dr4", "contents": "static const vector<pair<int, int>> dr4{{1, 0}, {0, 1}, {-1, 0}, {0, -1}};"},
+        { "trigger": "dr8", "contents": "static const vector<pair<int, int>> dr8{{1, 0}, {1, 1}, {0, 1}, {-1, 1}, {-1, 0}, {-1, -1}, {0, -1}, {1, -1}};"},
         
     	{ "trigger": "sort", "contents": "sort(${1:$2.begin(), $2.end()}$3)"},
     	{ "trigger": "reverse", "contents": "reverse(${1:$2.begin(), $2.end()})"},
@@ -100,7 +101,7 @@
         { "trigger": "vvalues", "contents": "ranges::views::values"},
 
         { "trigger": "input", "contents": "copy_n(istream_iterator<${1:int}>(cin), ${2:n}, $3.begin())"},
-        { "trigger": "output", "contents": "copy($1.begin(), $1.end(), ostream_iterator<${2:int}>(${3:cout}, ${4:\" \"}))"},
+        { "trigger": "output", "contents": "ranges::copy($1, ostream_iterator<${2:int}>(${3:cout}, ${4:\" \"}))"},
 
         { "trigger": "rall_of", "contents": "ranges::all_of($1, ${2:identity()})"},
         { "trigger": "rany_of", "contents": "ranges::any_of($1, ${2:identity()})"},
@@ -270,9 +271,9 @@
     	{ "trigger": "gpq", "contents": "priority_queue<$1, vector<$1>, greater<>>"},
         { "trigger": "function", "contents": "[&]($1)->${2:void}{\n\t$0\n};"},
         { "trigger": "recursion", "contents": "y_combinator([&](auto self, $1)->${2:void}{\n\t$0\n});"},
-        { "trigger": "dfs", "contents": "y_combinator([&](auto self, int u, int pe)->void{\n\tfor(auto id: g.adj[u] | ranges::views::filter([&](int id){ return !g.ignore || !g.ignore(id);})){\n\t\tif(id == pe) continue;\n\t\tauto &e = g.edge[id];\n\t\tint v = u ^ e.from ^ e.to;\n\t\tself(v, id);\n\t\t$0\n\t}\n})(0, -1);"},
-        { "trigger": "raw_dfs", "contents": "y_combinator([&](auto self, ${1:int u, int p})->${2:void}{\n\tfor(auto v: adj[u]){\n\t\tif(v == p) continue;\n\t\t$0self(v, u);\n\t}\n})(${3:0, -1});"},
-        { "trigger": "iterate_adj", "contents": "for(auto id: g.adj[u] | ranges::views::filter([&](int id){ return !g.ignore || !g.ignore(id);})){\n\tauto &e = g.edge[id];\n\tint v = u ^ e.from ^ e.to;\n\t$0\n}"},
+        { "trigger": "dfs", "contents": "y_combinator([&](auto self, int u, int _pe)->void{\n\tfor(auto id: g.adj[u] | ranges::views::filter([&](int id){ return !g.ignore || !g.ignore(id);})){\n\t\tif(id == _pe) continue;\n\t\tauto &e = g.edge[id];\n\t\tint v = g(u, id);\n\t\tself(v, id);\n\t\t$0\n\t}\n})(0, -1);"},
+        { "trigger": "raw_dfs", "contents": "y_combinator([&](auto self, ${1:int u, int _pv})->${2:void}{\n\tfor(auto v: adj[u]){\n\t\tif(v == _pv) continue;\n\t\t$0self(v, u);\n\t}\n})(${3:0, -1});"},
+        { "trigger": "iterate_adj", "contents": "for(auto id: g.adj[u] | ranges::views::filter([&](int id){ return !g.ignore || !g.ignore(id);})){\n\tauto &e = g.edge[id];\n\tint v = g(u, id);\n\t$0\n}"},
         { "trigger": "lambda", "contents": "[&]($1){ $2 }"},
         { "trigger": "unique", "contents": "$1.erase(unique($1.begin(), $1.end()), $1.end())"},
 		
