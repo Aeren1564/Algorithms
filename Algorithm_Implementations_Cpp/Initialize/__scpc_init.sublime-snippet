@@ -1,11 +1,9 @@
 <snippet>
 	<content><![CDATA[
 #include <bits/stdc++.h>
+#include <x86intrin.h>
 using namespace std;
-#if __cplusplus > 201703L
-#include <ranges>
 using namespace numbers;
-#endif
 
 
 
