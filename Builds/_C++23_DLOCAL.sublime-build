@@ -1,0 +1,12 @@
+{
+    "windows":{
+        "cmd": ["wsl.exe", "g++-13", "-Winvalid-pch", "-std=c++23", "-DLOCAL", "-I/home/aeren/Precompiled_Headers", "-Wno-narrowing", "-Wno-unused-result", "-fconcepts", "-g", "-fsanitize=address,undefined", "./${file_name}", "-o", "${file_base_name}"],
+        "working_dir":"$file_path",
+        "selector":"source.cpp"
+    },
+    "linux":{
+        "cmd": ["g++-13", "-Winvalid-pch", "-std=c++23", "-DLOCAL", "-I/home/aeren/Precompiled_Headers", "-Wno-narrowing", "-Wno-unused-result", "-fconcepts", "-g", "-fsanitize=address,undefined", "./${file_name}", "-o", "${file_base_name}"],
+        "working_dir":"$file_path",
+        "selector":"source.cpp"
+    }
+}
