@@ -125,11 +125,12 @@ struct matrix_fixed_base{
 					T coef = data[i][j] * inv;
 					for(auto k = j; k < m; ++ k) data[i][k] -= coef * data[rank][k];
 				}
+				++ rank;
 			}
 			else{
 				for(auto i = rank + 1; i < n; ++ i) while(data[i][j]){
 					T q;
-					if constexpr(is_integral_v<T>) q = data[rank][j] / data[i][j];
+					if constexpr(is_integral_v<T> || is_same_v<T, __int128_t> || is_same_v<T, __uint128_t>) q = data[rank][j] / data[i][j];
 					else q = data[rank][j].data / data[i][j].data;
 					if(q) for(auto k = j; k < m; ++ k) data[rank][k] -= q * data[i][k];
 					swap(data[rank], data[i]);
@@ -139,6 +140,7 @@ struct matrix_fixed_base{
 				else det = T(0);
 				if(data[rank][j]) ++ rank;
 			}
+			if(rank == n) break;
 		}
 		return {*this, det, rank};
 	}
@@ -177,6 +179,7 @@ struct matrix_fixed_base{
 				for(auto k = j; k < m; ++ k) data[i][k] -= coef * data[j][k];
 			}
 			++ rank;
+			if(rank == n) break;
 		}
 		return {*this, det, rank};
 	}
@@ -188,7 +191,7 @@ struct matrix_fixed_base{
 	}
 	// Assumes T is a field.
 	// O(n) divisions with O(n^3) additions, subtractions, and multiplications.
-	optional<matrix_fixed_base> inverse(auto find_inverse) const{
+	optional<matrix_fixed_base> inverse() const{
 		assert(n == m);
 		if(n == 0) return *this;
 		auto a = data;
@@ -196,17 +199,34 @@ struct matrix_fixed_base{
 		for(auto i = 0; i < n; ++ i) res[i][i] = T(1);
 		for(auto j = 0; j < n; ++ j){
 			int rank = j, pivot = -1;
-			for(auto i = rank; i < n; ++ i) if(a[i][j] != T(0)){
-				pivot = i;
-				break;
+			if(is_floating_point_v<T>){
+				static const T eps = 1e-9;
+				pivot = rank;
+				for(auto i = rank + 1; i < n; ++ i) if(abs(a[pivot][j]) < abs(a[i][j])) pivot = i;
+				if(abs(a[pivot][j]) <= eps) return {};
 			}
-			if(!~pivot) return {};
+			else{
+				for(auto i = rank; i < n; ++ i) if(a[i][j] != T(0)){
+					pivot = i;
+					break;
+				}
+				if(!~pivot) return {};
+			}
 			swap(a[rank], a[pivot]), swap(res[rank], res[pivot]);
 			T inv = 1 / a[rank][j];
-			for(auto k = j; k < n; ++ k) a[rank][k] *= inv, res[rank][k] *= inv;
-			for(auto i = 0; i < n; ++ i) if(i != j && a[i][j] != T(0)){
-				T d = a[i][j];
-				for(auto k = j; k < n; ++ k) a[i][k] -= d * a[j][k], res[i][k] -= d * res[j][k];
+			for(auto k = 0; k < n; ++ k) a[rank][k] *= inv, res[rank][k] *= inv;
+			for(auto i = 0; i < n; ++ i){
+				if constexpr(is_floating_point_v<T>){
+					static const T eps = 1e-9;
+					if(i != rank && abs(a[i][j]) > eps){
+						T d = a[i][j];
+						for(auto k = 0; k < n; ++ k) a[i][k] -= d * a[rank][k], res[i][k] -= d * res[rank][k];
+					}
+				}
+				else if(i != rank && a[i][j] != T(0)){
+					T d = a[i][j];
+					for(auto k = 0; k < n; ++ k) a[i][k] -= d * a[rank][k], res[i][k] -= d * res[rank][k];
+				}
 			}
 		}
 		return res;
@@ -269,10 +289,10 @@ struct matrix_fixed_base{
 	}
 	matrix_fixed_base(const array<array<T, M>, N> &arr): data(arr){ }
 	static matrix_fixed_base additive_identity(){
-		return matrix_fixed_base(T(1), T(0));
+		return matrix_fixed_base(T(0), T(0));
 	}
 	static matrix_fixed_base multiplicative_identity(){
-		return matrix_fixed_base(T(0), T(0));
+		return matrix_fixed_base(T(1), T(0));
 	}
 };
 template<class T, size_t N, size_t M>
