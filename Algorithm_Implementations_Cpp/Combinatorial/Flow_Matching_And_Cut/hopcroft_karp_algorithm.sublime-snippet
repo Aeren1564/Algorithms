@@ -1,0 +1,47 @@
+<snippet>
+	<content><![CDATA[
+// Requires maximum_bipartite_matching_solver
+struct hopcroft_karp_algorithm: maximum_bipartite_matching_solver{
+	hopcroft_karp_algorithm(int n, int m): a(n), p(n), q(n){
+		this->n = n;
+		this->m = m;
+		adj.assign(n, {});
+		pu.assign(n, -1);
+		pv.assign(m, -1);
+	}
+	int insert(int from, int to){
+		adj[from].push_back(to);
+		return (int)adj[from].size() - 1;
+	}
+	vector<int> a, p, q;
+	int maximum_matching(){
+		int matching = 0;
+		while(true){
+			fill(a.begin(), a.end(), -1);
+			fill(p.begin(), p.end(), -1);
+			int delta = 0, qend = 0;
+			for(auto u = 0; u < n; ++ u) if(!~pu[u]) q[qend ++] = a[u] = p[u] = u;
+			for(auto qbeg = 0; qbeg < qend; ++ qbeg){
+				int u = q[qbeg];
+				if(~pu[a[u]]) continue;
+				for(auto v: adj[u]){
+					if(!~pv[v]){
+						while(~v) pv[v] = u, swap(pu[u], v), u = p[u];
+						++ delta;
+						break;
+					}
+					if(!~p[pv[v]]) q[qend ++] = v = pv[v], p[v] = u, a[v] = a[u];
+				}
+			}
+			if(!delta) break;
+			matching += delta;
+		}
+		return matching;
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>hopcroft_karp_algorithm</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
