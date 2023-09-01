@@ -1,0 +1,50 @@
+<snippet>
+	<content><![CDATA[
+struct maximum_bipartite_matching_solver{
+	int n, m;
+	vector<vector<int>> adj;
+	vector<int> pu, pv; // u is matched with pu[u] and v with pv[v], -1 if no match
+	virtual ~maximum_bipartite_matching_solver(){ }
+	virtual int insert(int u, int v){ return -1; };
+	virtual int maximum_matching(){ return -1; };
+	tuple<int, vector<int>, vector<int>> minimum_vertex_cover(){
+		int size = maximum_matching();
+		vector<int> L, R, visL(n), visR(m);
+		auto dfs = [&](auto self, int u)->void{
+			visL[u] = true;
+			for(auto v: adj[u]) if(v != pu[u] && !visR[v]){
+				visR[v] = true, R.push_back(v);
+				if(~pv[v]) self(self, pv[v]);
+			}
+		};
+		for(auto u = 0; u < n; ++ u) if(!visL[u] && !~pu[u]) dfs(dfs, u);
+		for(auto u = 0; u < n; ++ u) if(!visL[u]) L.push_back(u);
+		assert(size == (int)L.size() + (int)R.size()); // Kőnig's theorem.
+		return {(int)L.size() + (int)R.size(), L, R};
+	}
+	tuple<int, vector<int>, vector<int>> maximum_independent_set(){
+		auto [cover_size, coverL, coverR] = minimum_vertex_cover();
+		vector<int> indepL, indepR;
+		for(auto u = 0, i = 0; u < n; ++ u){
+			while(i < (int)coverL.size() && coverL[i] < u){
+				++ i;
+				continue;
+			}
+			if(i == (int)coverL.size() || u < coverL[i]) indepL.push_back(u);
+		}
+		for(auto v = 0, j = 0; v < n; ++ v){
+			while(j < (int)coverR.size() && coverR[j] < v){
+				++ j;
+				continue;
+			}
+			if(j == (int)coverR.size() || v < coverR[j]) indepR.push_back(v);
+		}
+		return {(int)indepL.size() + (int)indepR.size(), indepL, indepR};
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>maximum_bipartite_matching_solver</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
