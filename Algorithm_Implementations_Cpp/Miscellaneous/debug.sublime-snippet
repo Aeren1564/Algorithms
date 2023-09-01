@@ -54,9 +54,9 @@ void debugbin_out(Width w, Head H, Tail... T){
 }
 enum CODE{ CCRED = 31, CCGREEN = 32, CCYELLOW = 33, CCBLUE = 34, CCDEFAULT = 39 };
 #define debug_endl() cerr << endl
-#define debug(...) cerr << "\033[" << (int)CODE(CCRED) << "m[" << #__VA_ARGS__ << "]: \033[" << (int)CODE(CCBLUE) << "m", debug_out(__VA_ARGS__), cerr << "\33[" << (int)CODE(CCDEFAULT) << "m"
-#define debug2(...) cerr << "\033[" << (int)CODE(CCRED) << "m[" << #__VA_ARGS__ << "] \033[" << (int)CODE(CCBLUE) << "m", debug2_out(__VA_ARGS__), cerr << "\33[" << (int)CODE(CCDEFAULT) << "m"
-#define debugbin(...) cerr << "\033[" << (int)CODE(CCRED) << "m[" << #__VA_ARGS__ << "] \033[" << (int)CODE(CCBLUE) << "m", debugbin_out(__VA_ARGS__), cerr << "\33[" << (int)CODE(CCDEFAULT) << "m"
+#define debug(...) cerr << "\033[" << (int)CODE(CCRED) << "mL" << setw(3) << std::left << __LINE__ << std::right << " [" << #__VA_ARGS__ << "] \033[" << (int)CODE(CCBLUE) << "m", debug_out(__VA_ARGS__), cerr << "\33[" << (int)CODE(CCDEFAULT) << "m"
+#define debug2(...) cerr << "\033[" << (int)CODE(CCRED) << "mL" << setw(3) << std::left << __LINE__ << std::right << " [" << #__VA_ARGS__ << "] \033[" << (int)CODE(CCBLUE) << "m", debug2_out(__VA_ARGS__), cerr << "\33[" << (int)CODE(CCDEFAULT) << "m"
+#define debugbin(...) cerr << "\033[" << (int)CODE(CCRED) << "mL" << setw(3) << std::left << __LINE__ << std::right << " [" << #__VA_ARGS__ << "] \033[" << (int)CODE(CCBLUE) << "m", debugbin_out(__VA_ARGS__), cerr << "\33[" << (int)CODE(CCDEFAULT) << "m"
 #else
 #define debug_endl() 42
 #define debug(...) 42
