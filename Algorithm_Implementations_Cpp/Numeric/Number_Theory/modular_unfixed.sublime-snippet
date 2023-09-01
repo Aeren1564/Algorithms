@@ -86,6 +86,9 @@ struct modular_unfixed_base{
 	}
 	template<class T, typename enable_if<is_integral<T>::value>::type* = nullptr>
 	modular_unfixed_base &inplace_power(T e){
+		if(!data) return *this = {};
+		if(data == 1) return *this;
+		if(data == mod() - 1) return e % 2 ? *this : *this = -*this;
 		if(e < 0) *this = 1 / *this, e = -e;
 		modular_unfixed_base res = 1;
 		for(; e; *this *= *this, e >>= 1) if(e & 1) res *= *this;
