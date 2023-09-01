@@ -1,0 +1,28 @@
+<snippet>
+	<content><![CDATA[
+// g must be a DAG.
+// Requires graph, maximum_bipartite_matching_solver, and hopcroft_karp_algorithm
+template<class T>
+vector<int> maximum_antichain(const graph<T> &g){
+	int n = g.n;
+	hopcroft_karp_algorithm hk(n, n);
+	for(auto id = 0; id < (int)g.edge.size(); ++ id){
+		if(g.ignore && g.ignore(id)) continue;
+		auto &e = g.edge[id];
+		hk.insert(e.from, e.to);
+	}
+	auto [size_vc, vcL, vcR] = hk.minimum_vertex_cover();
+	vector<int> antichain;
+	for(auto u = 0, i = 0, j = 0; u < n; ++ u){
+		while(i < (int)vcL.size() && vcL[i] < u) ++ i;
+		while(j < (int)vcR.size() && vcR[j] < u) ++ j;
+		if((i == (int)vcL.size() || u < vcL[i]) && (j == (int)vcR.size() || u < vcR[j])) antichain.push_back(u);
+	}
+	return antichain;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>maximum_antichain</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
