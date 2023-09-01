@@ -140,10 +140,9 @@ template<int id> istream &operator>>(istream &in, modular_unfixed_base<id> &numb
 	number.data = modular_unfixed_base<id>::normalize(x);
 	return in;
 }
-// #define _PRINT_AS_FRACTION
+// #define _SHOW_FRACTION
 template<int id> ostream &operator<<(ostream &out, const modular_unfixed_base<id> &number){
-#ifdef LOCAL
-#ifdef _PRINT_AS_FRACTION
+#if defined(LOCAL) && defined(_SHOW_FRACTION)
 	out << number();
 	cerr << "(";
 	for(auto d = 1; ; ++ d){
@@ -161,11 +160,8 @@ template<int id> ostream &operator<<(ostream &out, const modular_unfixed_base<id
 #else
 	return out << number();
 #endif
-#else
-	return out << number();
-#endif
 }
-#undef _PRINT_AS_FRACTION
+#undef _SHOW_FRACTION
 
 using modular = modular_unfixed_base<0>;
 ]]></content>
