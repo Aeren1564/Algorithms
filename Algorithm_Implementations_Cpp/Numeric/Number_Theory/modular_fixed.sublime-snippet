@@ -73,6 +73,9 @@ struct modular_fixed_base{
 	}
 	template<class T, typename enable_if<is_integral<T>::value>::type* = nullptr>
 	modular_fixed_base &inplace_power(T e){
+		if(!data) return *this = {};
+		if(data == 1) return *this;
+		if(data == mod() - 1) return e % 2 ? *this : *this = -*this;
 		if(e < 0) *this = 1 / *this, e = -e;
 		modular_fixed_base res = 1;
 		for(; e; *this *= *this, e >>= 1) if(e & 1) res *= *this;
@@ -125,9 +128,9 @@ template<uint _mod> istream &operator>>(istream &in, modular_fixed_base<_mod> &n
 	number.data = modular_fixed_base<_mod>::normalize(x);
 	return in;
 }
-// #define _SHOW_FRACTION
+#define _PRINT_AS_FRACTION
 template<uint _mod> ostream &operator<<(ostream &out, const modular_fixed_base<_mod> &number){
-#if defined(LOCAL) && defined(_SHOW_FRACTION)
+#if defined(LOCAL) && defined(_PRINT_AS_FRACTION)
 	out << number();
 	cerr << "(";
 	for(auto d = 1; ; ++ d){
@@ -146,7 +149,7 @@ template<uint _mod> ostream &operator<<(ostream &out, const modular_fixed_base<_
 	return out << number();
 #endif
 }
-#undef _SHOW_FRACTION
+#undef _PRINT_AS_FRACTION
 
 // const uint mod = 1e9 + 7; // 1000000007
 const uint mod = (119 << 23) + 1; // 998244353
