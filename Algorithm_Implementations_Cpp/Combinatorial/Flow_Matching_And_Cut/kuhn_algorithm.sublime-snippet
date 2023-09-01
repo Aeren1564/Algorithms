@@ -1,0 +1,54 @@
+<snippet>
+	<content><![CDATA[
+struct kuhn_algorithm: maximum_bipartite_matching_solver{
+	kuhn_algorithm(int n, int m): was(n){
+		this->n = n;
+		this->m = m;
+		adj.assign(n, {});
+		pu.assign(n, -1);
+		pv.assign(m, -1);
+	}
+	int insert(int from, int to){
+		adj[from].push_back(to);
+		return (int)adj[from].size() - 1;
+	}
+	int it = 0;
+	vector<int> was;
+	bool dfs(int u){
+		was[u] = it;
+		for(auto v: adj[u]) if(!~pv[v]){
+			pu[u] = v, pv[v] = u;
+			return true;
+		}
+		for(auto v: adj[u]) if(was[pv[v]] != it && dfs(pv[v])){
+			pu[u] = v, pv[v] = u;
+			return true;
+		}
+		return false;
+	}
+	// O((n + m) * (# of edges))
+	int maximum_matching(){
+		mt19937 rng(1564);
+		for(auto u = 0; u < n; ++ u) shuffle(adj[u].begin(), adj[u].end(), rng);
+		int matching = 0;
+		while(true){
+			++ it;
+			int augment = 0;
+			for(auto u = 0; u < n; ++ u) if(!~pu[u] && dfs(u)) ++ augment;
+			if(!augment) break;
+			matching += augment;
+		}
+		return matching;
+	}
+	int run_once(int u){
+		if(~pu[u]) return 0;
+		++ it;
+		return dfs(u);
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>kuhn_algorithm</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
