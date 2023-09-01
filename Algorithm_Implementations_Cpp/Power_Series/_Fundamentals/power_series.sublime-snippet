@@ -12,6 +12,31 @@ struct power_series_base: vector<T>{
 	int degree() const{
 		return data.empty() ? numeric_limits<int>::max() : data.size() - 1;
 	}
+	// Returns \sum_{i=0}^{n-1} a_i/i! * X^i
+	static power_series_base EGF(vector<T> a){
+		int n = (int)a.size();
+		T fact = 1;
+		for(auto x = 2; x < n; ++ x) fact *= x;
+		fact = 1 / fact;
+		for(auto i = n - 1; i >= 0; -- i) a[i] *= fact, fact *= i;
+		return power_series_base(a);
+	}
+	// Returns exp(coef * X).prefix(n) = \sum_{i=0}^{n-1} coef^i/i! * X^i
+	static power_series_base EGF(int n, T coef = 1){
+		vector<T> a(n, 1);
+		for(auto i = 1; i < n; ++ i) a[i] = a[i - 1] * coef;
+		return EGF(a);
+	}
+	vector<T> EGF_to_seq() const{
+		int n = (int)data.size();
+		vector<T> seq(n);
+		T fact = 1;
+		for(auto i = 0; i < n; ++ i){
+			seq[i] = data[i] * fact;
+			fact *= i + 1;
+		}
+		return seq;
+	}
 	power_series_base &reduce(){
 		while(!data.empty() && !data.back()) data.pop_back();
 		return *this;
@@ -20,9 +45,7 @@ struct power_series_base: vector<T>{
 		return power_series_base(*this).reduce();
 	}
 	friend ostream &operator<<(ostream &out, const power_series_base &p){
-		if(p.empty()){
-			return out << "{}";
-		}
+		if(p.empty()) return out << "{}";
 		else{
 			out << "{";
 			for(auto i = 0; i < (int)p.size(); ++ i){
@@ -32,10 +55,20 @@ struct power_series_base: vector<T>{
 			return out;
 		}
 	}
-	power_series_base prefix(int n) const{
-		auto res = vector<T>(data.begin(), data.begin() + min(n, (int)data.size()));
-		res.resize(n);
-		return res;
+	power_series_base &inplace_take(int n){
+		data.erase(data.begin() + min((int)data.size(), n), data.end());
+		data.resize(n, T{});
+		return *this;
+	}
+	power_series_base take(int n) const{
+		return power_series_base(*this).inplace_take(n);
+	}
+	power_series_base &inplace_drop(int n){
+		data.erase(data.begin(), data.begin() + min((int)data.size(), n));
+		return *this;
+	}
+	power_series_base drop(int n) const{
+		return power_series_base(*this).inplace_drop(n);
 	}
 	power_series_base &inplace_reverse(int n){
 		data.resize(max(n, (int)data.size()));
@@ -165,7 +198,7 @@ struct power_series_base: vector<T>{
 	power_series_base &inverse_doubled_up(power_series_base &f, const power_series_base &freq) const{
 		assert((f.size() & -f.size()) == f.size());
 		int s = f.size();
-		power_series_base buffer = prefix(s << 1);
+		power_series_base buffer = take(s << 1);
 		buffer.transform();
 		buffer.inplace_dot_product(freq);
 		buffer.transform(true);
@@ -178,7 +211,7 @@ struct power_series_base: vector<T>{
 	}
 	power_series_base &inverse_doubled_up(power_series_base &f) const{
 		assert((f.size() & -f.size()) == f.size());
-		return inverse_doubled_up(f, f.prefix(f.size() << 1).transformed());
+		return inverse_doubled_up(f, f.take(f.size() << 1).transformed());
 	}
 	// Returns the first n terms of the inverse series
 	// O(n * log(n))
@@ -340,9 +373,9 @@ struct power_series_base: vector<T>{
 		assert(data.empty() || data[0] == 0);
 		power_series_base f{1}, g{1};
 		for(auto s = 1; s < n; s <<= 1){
-			power_series_base f2 = f.prefix(s << 1).transform();
-			power_series_base g2 = g.prefix(s << 1).transform();
-			power_series_base dt = prefix(s).inplace_derivative_shift();
+			power_series_base f2 = f.take(s << 1).transform();
+			power_series_base g2 = g.take(s << 1).transform();
+			power_series_base dt = take(s).inplace_derivative_shift();
 			power_series_base w = dt;
 			w.transform();
 			for(auto i = 0; i < s; ++ i) w[i] *= f2[i << 1];
@@ -355,7 +388,7 @@ struct power_series_base: vector<T>{
 			w.resize(s);
 			w.insert(w.begin(), s, 0);
 			w -= dt;
-			power_series_base z = prefix(s << 1);
+			power_series_base z = take(s << 1);
 			z += w.inplace_shifted_antiderivative();
 			z.transform();
 			z.inplace_dot_product(f2);
