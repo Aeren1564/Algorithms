@@ -3,7 +3,6 @@
 // Internally, the numbers are stored in binary in little endian order.
 // Negative numbers are assumed to have infinite leading ones, represented in two's complement.
 // No leading ~0 allowed for negative numbers, and no leading 0 allowed for non-negative numbers. This ensures that each integer has a unique representation.
-#include <x86intrin.h>
 struct bigint{
 	using T = unsigned long long;
 	using T_large = __uint128_t;
@@ -130,26 +129,28 @@ struct bigint{
 		x = bigint(s);
 		return in;
 	}
-	friend ostream &operator<<(ostream &out, const bigint &x){
-		if(!x) return out << '0';
-		if(!x.sign){
-			assert(x.data.back());
-			for(int i = __lg(x.data.back()); i >= 0; -- i) out << (x.data.back() >> i & 1);
-			for(auto i = (int)x.data.size() - 2; i >= 0; -- i) out << bitset<width>(x.data[i]);
-			return out;
-		}
-		else return out << '-' << -x;
-	}
 	// TODO: Implement Schoenhage
 	friend string to_string(const bigint &x, unsigned int base = 2){
+		assert(base >= 2);
 		if(base == 2){
-			stringstream ss;
-			ss << x;
+			if(x < 0) return '-' + to_string(-x, base);
+			if(!x) return "0";
 			string s;
-			ss >> s;
+			for(int i = __lg(x.data.back()); i >= 0; -- i) s.push_back('0' + (x.data.back() >> i & 1));
+			for(auto i = (int)x.data.size() - 2; i >= 0; -- i) s += bitset<width>(x.data[i]).to_string();
+			return s;
+		}
+		else if(base <= 10){
+			if(x < 0) return '-' + to_string(-x, base);
+			string s;
+			for(auto y = x; y; y /= base) s.push_back('0' + int(y % base));
+			ranges::reverse(s);
 			return s;
 		}
 		else assert(false);
+	}
+	friend ostream &operator<<(ostream &out, const bigint &x){
+		return out << to_string(x, 10);
 	}
 	operator bool() const{
 		return sign || !data.empty();
@@ -157,7 +158,7 @@ struct bigint{
 	template<class U, typename enable_if<is_integral<U>::value && !is_same<U, bool>::value>::type* = nullptr>
 	operator U() const{
 		U x = 0;
-		if(!sign) for(auto i = (int)data.size() - 1; i >= 0; -- i) x = x << width | data[i];
+		if(!sign) for(auto i = (int)data.size() - 1; i >= 0; -- i) x = x << min<int>(width, sizeof(U)) | data[i];
 		else x = -U(*this);
 		return x;
 	}
