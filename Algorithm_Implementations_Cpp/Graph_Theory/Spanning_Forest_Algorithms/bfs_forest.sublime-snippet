@@ -8,6 +8,7 @@ struct bfs_forest{
 	vector<int> pe;
 	vector<int> order;
 	vector<int> pos;
+	vector<int> root_of;
 	vector<int> root;
 	vector<int> depth;
 	vector<int> was;
@@ -21,7 +22,8 @@ struct bfs_forest{
 		pe.assign(n, -1);
 		order.clear();
 		pos.assign(n, -1);
-		root.assign(n, -1);
+		root_of.assign(n, -1);
+		root.clear();
 		depth.assign(n, -1);
 		dist.assign(n, T_id);
 		was.assign(n, -1);
@@ -41,7 +43,8 @@ struct bfs_forest{
 			was[u] = attempt;
 			depth[u] = 0;
 			dist[u] = T_id;
-			root[u] = u;
+			root_of[u] = u;
+			root.push_back(u);
 			pv[u] = -1;
 			pe[u] = -1;
 		}
@@ -59,7 +62,7 @@ struct bfs_forest{
 				dist[v] = UT(e.cost, dist[u]);
 				pv[v] = u;
 				pe[v] = id;
-				root[v] = root[u];
+				root_of[v] = root_of[u];
 				q.push_back(v);
 			}
 		}
@@ -68,6 +71,7 @@ struct bfs_forest{
 	// O(n + m)
 	template<class Graph, class F = plus<>>
 	void bfs_all(const Graph &g, F UT = plus<>()){
+		root.clear();
 		for(auto u = 0; u < n; ++ u) if(!~depth[u]) bfs<Graph, F>(g, {u}, false, UT);
 	}
 	// O(n + m)
@@ -80,7 +84,8 @@ struct bfs_forest{
 			was[u] = attempt;
 			depth[u] = 0;
 			dist[u] = T_id;
-			root[u] = u;
+			root_of[u] = u;
+			root.push_back(u);
 			pv[u] = -1;
 			pe[u] = -1;
 		}
@@ -96,7 +101,7 @@ struct bfs_forest{
 				dist[v] = UT(w, dist[u]);
 				pv[v] = u;
 				pe[v] = i;
-				root[v] = root[u];
+				root_of[v] = root_of[u];
 				q.push_back(v);
 			}
 		}
@@ -105,6 +110,7 @@ struct bfs_forest{
 	// O(n + m)
 	template<class F = plus<>>
 	void bfs_all_implicitly(auto get_deg, auto get_adj, F UT = plus<>()){
+		root.clear();
 		for(auto u = 0; u < n; ++ u) if(!~depth[u]) bfs<F>(get_deg, get_adj, {u}, false, UT);
 	}
 };

@@ -10,6 +10,7 @@ struct dfs_forest{
 	vector<int> pos;
 	vector<int> end;
 	vector<int> size;
+	vector<int> root_of;
 	vector<int> root;
 	vector<int> depth;
 	vector<int> min_depth;
@@ -26,7 +27,8 @@ struct dfs_forest{
 		pos.assign(n, -1);
 		end.assign(n, -1);
 		size.assign(n, 0);
-		root.assign(n, -1);
+		root_of.assign(n, -1);
+		root.clear();
 		depth.assign(n, -1);
 		min_depth.assign(n, -1);
 		min_depth_origin.assign(n, -1);
@@ -44,7 +46,8 @@ struct dfs_forest{
 		++ attempt;
 		depth[u] = 0;
 		dist[u] = T_id;
-		root[u] = u;
+		root_of[u] = u;
+		root.push_back(u);
 		pv[u] = pe[u] = -1;
 		if(clear_order) order.clear();
 		auto recurse = [&](auto self, int u)->void{
@@ -70,7 +73,7 @@ struct dfs_forest{
 				dist[v] = UT(e.cost, dist[u]);
 				pv[v] = u;
 				pe[v] = id;
-				root[v] = root[u];
+				root_of[v] = root_of[u];
 				self(self, v);
 				size[u] += size[v];
 				if(min_depth[u] > min_depth[v]){
@@ -86,6 +89,7 @@ struct dfs_forest{
 	// O(n + m)
 	template<class Graph, class F = plus<>>
 	void dfs_all(const Graph &g, F UT = plus<>()){
+		root.clear();
 		for(auto u = 0; u < n; ++ u) if(!~depth[u]) dfs<Graph, F>(g, u, false, UT);
 	}
 	// O(n + m)
@@ -94,7 +98,8 @@ struct dfs_forest{
 		++ attempt;
 		depth[u] = 0;
 		dist[u] = T_id;
-		root[u] = u;
+		root_of[u] = u;
+		root.push_back(u);
 		pv[u] = pe[u] = -1;
 		if(clear_order) order.clear();
 		auto recurse = [&](auto self, int u)->void{
@@ -119,7 +124,7 @@ struct dfs_forest{
 				dist[v] = UT(w, dist[u]);
 				pv[v] = u;
 				pe[v] = i;
-				root[v] = root[u];
+				root_of[v] = root_of[u];
 				self(self, v);
 				size[u] += size[v];
 				if(min_depth[u] > min_depth[v]){
@@ -135,6 +140,7 @@ struct dfs_forest{
 	// O(n + m)
 	template<class F = plus<>>
 	void dfs_all_implicitly(auto get_deg, auto get_adj, F UT = plus<>()){
+		root.clear();
 		for(auto u = 0; u < n; ++ u) if(!~depth[u]) dfs<F>(get_deg, get_adj, u, false, UT);
 	}
 	bool ancestor_of(int u, int v) const{
