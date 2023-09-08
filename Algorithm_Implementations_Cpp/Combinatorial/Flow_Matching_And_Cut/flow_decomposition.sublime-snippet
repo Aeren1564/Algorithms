@@ -11,13 +11,13 @@ struct flow_decomposition{
 	flow_decomposition(flow_network<T> &F): F(F){ }
 	void decompose(int source, int sink){
 		vector<T> fs(F.edge.size());
-		for(auto i = 0; i < (int) F.edge.size(); i++) fs[i] = F.edge[i].f;
+		for(auto i = 0; i < (int)F.edge.size(); ++ i) fs[i] = F.edge[i].flow;
 		paths.clear();
 		path_flows.clear();
 		cycles.clear();
 		cycle_flows.clear();
 		int n = F.n;
-		static constexpr T eps = (T) 1e-9;
+		static constexpr T eps = (T)1e-9;
 		vector<int> ptr(n);
 		for(auto i = 0; i < n; ++ i) ptr[i] = (int)F.adj[i].size() - 1;
 		vector<int> was(n, -1);
@@ -45,7 +45,7 @@ struct flow_decomposition{
 				if(u == sink) break;
 				if(was[u] == iter){
 					bool found = false;
-					for(auto i = 0; i < (int) path.size(); ++ i){
+					for(auto i = 0; i < (int)path.size(); ++ i){
 						int id = path[i];
 						auto &e = F.edge[id];
 						if(e.from == u){
@@ -61,7 +61,7 @@ struct flow_decomposition{
 				was[u] = iter;
 				bool found = false;
 				while(ptr[u] >= 0){
-					int id = F.g[u][ptr[u]];
+					int id = F.adj[u][ptr[u]];
 					if(fs[id] > eps){
 						path.push_back(id);
 						u = F.edge[id].to;
@@ -73,9 +73,7 @@ struct flow_decomposition{
 				assert(found);
 			}
 			T path_flow = numeric_limits<T>::max();
-			for(auto id : path){
-				path_flow = min(path_flow, fs[id]);
-			}
+			for(auto id : path) path_flow = min(path_flow, fs[id]);
 			for(auto id : path){
 				fs[id] -= path_flow;
 				fs[id ^ 1] += path_flow;
@@ -89,7 +87,7 @@ struct flow_decomposition{
 				path_flows.push_back(path_flow);
 			}
 		}
-		for(const T &f: fs) assert(-eps <= f && f <= eps);
+		for(const auto &f: fs) assert(-eps <= f && f <= eps);
 	}
 };
 ]]></content>
