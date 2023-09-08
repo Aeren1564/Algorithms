@@ -1,0 +1,109 @@
+<snippet>
+	<content><![CDATA[
+// Data structure maintaining functions [th_low, th_high]->X such that
+// any two functions f and g are either equal or has a point p \in [th_low, th_high] satisfying either
+// (f(x) < g(x) for all x<p, f(p) = g(p), and f(y) > g(y) for all p<=y) or
+// (f(x) > g(x) for all x<p, f(p) = g(p), and f(y) < g(y) for all p<=y).
+template<bool COMPRESSED, class T, class X, class F, class Compare>
+struct li_chao_tree_fixed_query_base{
+	int n, size;
+	vector<T> frame;
+#define GET(x) (COMPRESSED ? frame[x] : x)
+	vector<int> data; // -1 denotes the function at -inf.
+	F evaluate; // evaluate(i, p): value of function i at p
+	Compare cmp;
+	X minf;
+	li_chao_tree_fixed_query_base(T n, F evaluate, X _type_deducer, Compare cmp, X minf): n(n), evaluate(evaluate), cmp(cmp), minf(minf){
+		static_assert(!COMPRESSED);
+		assert(n >= 1);
+		size = 1;
+		while(size < n) size <<= 1;
+		data.assign(size << 1, -1);
+	}
+	li_chao_tree_fixed_query_base(const vector<T> &frame, F evaluate, X _type_deducer, Compare cmp = less<>(), X minf = numeric_limits<X>::min()): n((int)frame.size()), frame(frame), evaluate(evaluate), cmp(cmp), minf(minf){
+		static_assert(COMPRESSED);
+		assert(!frame.empty());
+		assert(is_sorted(frame.begin(), frame.end()));
+		size = 1;
+		while(size < n) size <<= 1;
+		this->frame.resize(size, frame.back());
+		data.assign(size << 1, -1);
+	}
+	// function i is equal or higher than j on [l, r]
+	bool majorize(int i, int j, T l, T r) const{
+		return !cmp(evaluate(i, l), evaluate(j, l)) && !cmp(evaluate(i, r), evaluate(j, r));
+	}
+	// Insert the function i.
+	// O(log(n))
+	void insert(int i){
+		assert(i >= 0);
+		int u = 1, l = 0, r = size;
+		while(true){
+			if(!~data[u] || majorize(i, data[u], GET(l), GET(r - 1))) swap(i, data[u]);
+			if(!~i || majorize(data[u], i, GET(l), GET(r - 1))) break;
+			if(cmp(evaluate(data[u], GET(l)), evaluate(i, GET(l)))) swap(i, data[u]);
+			if(r - l == 1) break;
+			int m = l + r >> 1;
+			if(cmp(evaluate(data[u], GET(m)), evaluate(i, GET(m)))){
+				swap(i, data[u]);
+				u = u << 1;
+				r = m;
+			}
+			else{
+				u = u << 1 | 1;
+				l = m;
+			}
+		}
+	}
+	// Return the pair {evaluate(i, p), i} where i achieves the maximum evaluation at p among all other functions in the data structure.
+	// O(log(n))
+	pair<X, int> query_max(T x) const{
+		int p;
+		if constexpr(COMPRESSED){
+			p = lower_bound(frame.begin(), frame.end(), x) - frame.begin();
+			assert(0 <= p && p < n && frame[p] == x);
+		}
+		else{
+			p = x;
+			assert(0 <= p && p < n);
+		}
+		X optv = minf;
+		int opti = -1, u = 1, l = 0, r = size;
+		while(~data[u]){
+			if(X cv = evaluate(data[u], GET(p)); cv > optv){
+				optv = cv;
+				opti = data[u];
+			}
+			if(r - l == 1) break;
+			T m = l + r >> 1;
+			if(p < m){
+				u = u << 1;
+				r = m;
+			}
+			else{
+				u = u << 1 | 1;
+				l = m;
+			}
+		}
+		assert(~opti);
+		return {optv, opti};
+	}
+#undef GET
+};
+
+// Query coordinates are 0, ..., n-1
+template<class X, class F, class Compare = less<>>
+auto make_li_chao_tree_fixed_query(int n, F evaluate, X _type_deducer, Compare cmp = less<>(), X minf = numeric_limits<X>::min()){
+	return li_chao_tree_fixed_query_base<false, int, X, F, Compare>(n, evaluate, _type_deducer, cmp, minf);
+}
+// Query coordinates are frame[0], ..., frame[n-1]
+template<class T, class X, class F, class Compare = less<>>
+auto make_li_chao_tree_fixed_query_compressed(const vector<T> &frame, F evaluate, X _type_deducer, Compare cmp = less<>(), X minf = numeric_limits<X>::min()){
+	return li_chao_tree_fixed_query_base<true, T, X, F, Compare>(frame, evaluate, _type_deducer, cmp, minf);
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>li_chao_tree_fixed_query</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
