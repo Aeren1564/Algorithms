@@ -2,12 +2,6 @@
 	<content><![CDATA[
 template<class T>
 struct field_of_fraction{
-	static field_of_fraction limit_min(){
-		return {-1, 0};
-	}
-	static field_of_fraction limit_max(){
-		return {1, 0};
-	}
 	T n, d;
 	field_of_fraction(T n = 0, T d = 1): n(n), d(d){
 		if(d < 0) this->n = -n, this->d = -d;
@@ -128,6 +122,13 @@ friend bool operator c(const T &x, const field_of_fraction &f){\
 OP(==) OP(!=) OP(<) OP(<=) OP(>) OP(>=)
 #undef OP
 };
+namespace std{
+	template<class T>
+	struct numeric_limits<field_of_fraction<T>>{
+		static field_of_fraction<T> min(){ return {-1, 0}; };
+		static field_of_fraction<T> max(){ return {1, 0}; };
+	};
+}
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
 	<tabTrigger>field_of_fraction</tabTrigger> -->
