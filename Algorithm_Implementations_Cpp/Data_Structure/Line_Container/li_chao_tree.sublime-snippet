@@ -7,22 +7,24 @@
 template<class T, class X, class F, class Compare = less<>>
 struct li_chao_tree{
 	vector<array<int, 2>> child{{-1, -1}};
-	X minf;
 	vector<int> data{-1}; // -1 denotes the function at -inf.
 	F evaluate; // evaluate(i, p): value of function i at p
 	T th_low, th_high;
 	Compare cmp;
+	X minf;
 	li_chao_tree(T th_low, T th_high, F evaluate, X _type_deducer, Compare cmp = less<>(), X minf = numeric_limits<X>::min()): th_low(th_low), th_high(th_high), evaluate(evaluate), cmp(cmp), minf(minf){ }
 	// function i is equal or higher than j on [l, r]
 	bool majorize(int i, int j, T l, T r) const{
-		if(!~j) return true;
-		if(!~i) return false;
 		return !cmp(evaluate(i, l), evaluate(j, l)) && !cmp(evaluate(i, r), evaluate(j, r));
 	}
 	// Insert the function i.
 	// O(log(n))
 	void insert(int i){
 		assert(i >= 0);
+		if(!~data[0]){
+			data[0] = i;
+			return;
+		}
 		int u = 0;
 		T l = th_low, r = th_high;
 		while(true){
@@ -35,7 +37,8 @@ struct li_chao_tree{
 				if(!~child[u][0]){
 					child[u][0] = (int)child.size();
 					child.push_back({-1, -1});
-					data.push_back(-1);
+					data.push_back(i);
+					break;
 				}
 				u = child[u][0];
 				r = m;
@@ -44,7 +47,8 @@ struct li_chao_tree{
 				if(!~child[u][1]){
 					child[u][1] = (int)child.size();
 					child.push_back({-1, -1});
-					data.push_back(-1);
+					data.push_back(i);
+					break;
 				}
 				u = child[u][1];
 				l = m;
@@ -54,8 +58,7 @@ struct li_chao_tree{
 	// Return the pair {evaluate(i, p), i} where i achieves the maximum evaluation at p among all other functions in the data structure.
 	// O(log(n))
 	pair<X, int> query_max(T p) const{
-		assert(th_low <= p && p <= th_high);
-		if(!~data[0]) return {minf, -1};
+		assert(th_low <= p && p <= th_high && ~data[0]);
 		X optv = minf;
 		int opti = -1, u = 0;
 		T l = th_low, r = th_high;
@@ -64,7 +67,7 @@ struct li_chao_tree{
 				optv = cv;
 				opti = data[u];
 			}
-			T m = (l + r) / 2;
+			T m = l + r >> 1;
 			if(p < m){
 				if(!~child[u][0]) break;
 				u = child[u][0];
@@ -76,6 +79,7 @@ struct li_chao_tree{
 				l = m;
 			}
 		}
+		assert(~opti);
 		return {optv, opti};
 	}
 };
