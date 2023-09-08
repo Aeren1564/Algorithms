@@ -23,7 +23,7 @@ struct network_communication_manager{
 			cerr << "getaddrinfo error: " << gai_strerror(status) << endl;
 			exit(1);
 		}
-		 // loop through all the results and connect to the first we can
+		// loop through all the results and connect to the first we can
 		struct addrinfo *p;
 		for(p = serverinfo; p; p = p->ai_next){
 			if(!~(sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol))){
