@@ -1,17 +1,18 @@
 <snippet>
 	<content><![CDATA[
-// Data structure maintaining functions [l,r]->X such that
-// any two functions f and g are either equal or has a point p \in [l, r] satisfying either
+// Data structure maintaining functions [th_low, th_high]->X such that
+// any two functions f and g are either equal or has a point p \in [th_low, th_high] satisfying either
 // (f(x) < g(x) for all x<p, f(p) = g(p), and f(y) > g(y) for all p<=y) or
 // (f(x) > g(x) for all x<p, f(p) = g(p), and f(y) < g(y) for all p<=y).
 template<class T, class X, class F, class Compare = less<>>
 struct li_chao_tree{
 	vector<array<int, 2>> child{{-1, -1}};
-	vector<int> data{-1}; // -1 is the auxiliary function which is equal or smaller than all other functions.
+	X minf;
+	vector<int> data{-1}; // -1 denotes the function at -inf.
 	F evaluate; // evaluate(i, p): value of function i at p
-	T l, r;
+	T th_low, th_high;
 	Compare cmp;
-	li_chao_tree(T l, T r, F evaluate, X _type_deducer, Compare cmp = less<>()): l(l), r(r), evaluate(evaluate), cmp(cmp){ }
+	li_chao_tree(T th_low, T th_high, F evaluate, X _type_deducer, Compare cmp = less<>(), X minf = numeric_limits<X>::min()): th_low(th_low), th_high(th_high), evaluate(evaluate), cmp(cmp), minf(minf){ }
 	// function i is equal or higher than j on [l, r]
 	bool majorize(int i, int j, T l, T r) const{
 		if(!~j) return true;
@@ -22,11 +23,13 @@ struct li_chao_tree{
 	// O(log(n))
 	void insert(int i){
 		assert(i >= 0);
-		auto recurse = [&](auto self, int u, T l, T r)->void{
+		int u = 0;
+		T l = th_low, r = th_high;
+		while(true){
 			if(majorize(i, data[u], l, r)) swap(i, data[u]);
-			if(majorize(data[u], i, l, r)) return;
+			if(majorize(data[u], i, l, r)) break;
 			if(cmp(evaluate(data[u], l), evaluate(i, l))) swap(i, data[u]);
-			T m = (l + r) / 2;
+			T m = l + r >> 1;
 			if(cmp(evaluate(data[u], m), evaluate(i, m))){
 				swap(i, data[u]);
 				if(!~child[u][0]){
@@ -34,7 +37,8 @@ struct li_chao_tree{
 					child.push_back({-1, -1});
 					data.push_back(-1);
 				}
-				self(self, child[u][0], l, m);
+				u = child[u][0];
+				r = m;
 			}
 			else{
 				if(!~child[u][1]){
@@ -42,34 +46,37 @@ struct li_chao_tree{
 					child.push_back({-1, -1});
 					data.push_back(-1);
 				}
-				self(self, child[u][1], m, r);
+				u = child[u][1];
+				l = m;
 			}
-		};
-		recurse(recurse, 0, l, r);
+		}
 	}
 	// Return the pair {evaluate(i, p), i} where i achieves the maximum evaluation at p among all other functions in the data structure.
 	// O(log(n))
-	pair<X, int> query(T p) const{
-		assert(l <= p && p <= r);
-		auto recurse = [&](auto self, int u, T l, T r)->pair<X, int>{
-			pair<X, int> res{{}, -1};
-			if(~data[u]) res = {evaluate(data[u], p), data[u]};
+	pair<X, int> query_max(T p) const{
+		assert(th_low <= p && p <= th_high);
+		if(!~data[0]) return {minf, -1};
+		X optv = minf;
+		int opti = -1, u = 0;
+		T l = th_low, r = th_high;
+		while(true){
+			if(X cv = evaluate(data[u], p); cv > optv){
+				optv = cv;
+				opti = data[u];
+			}
 			T m = (l + r) / 2;
 			if(p < m){
-				if(~child[u][0]){
-					auto res2 = self(self, child[u][0], l, m);
-					if(!~res.second || cmp(res.first, res2.first)) res = res2;
-				}
+				if(!~child[u][0]) break;
+				u = child[u][0];
+				r = m;
 			}
 			else{
-				if(~child[u][1]){
-					auto res2 = self(self, child[u][1], m, r);
-					if(!~res.second || cmp(res.first, res2.first)) res = res2;
-				}
+				if(!~child[u][1]) break;
+				u = child[u][1];
+				l = m;
 			}
-			return res;
-		};
-		return recurse(recurse, 0, l, r);
+		}
+		return {optv, opti};
 	}
 };
 ]]></content>
