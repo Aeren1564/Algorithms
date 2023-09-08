@@ -128,9 +128,9 @@ template<uint _mod> istream &operator>>(istream &in, modular_fixed_base<_mod> &n
 	number.data = modular_fixed_base<_mod>::normalize(x);
 	return in;
 }
-#define _PRINT_AS_FRACTION
+// #define _SHOW_FRACTION
 template<uint _mod> ostream &operator<<(ostream &out, const modular_fixed_base<_mod> &number){
-#if defined(LOCAL) && defined(_PRINT_AS_FRACTION)
+#if defined(LOCAL) && defined(_SHOW_FRACTION)
 	out << number();
 	cerr << "(";
 	for(auto d = 1; ; ++ d){
@@ -149,7 +149,7 @@ template<uint _mod> ostream &operator<<(ostream &out, const modular_fixed_base<_
 	return out << number();
 #endif
 }
-#undef _PRINT_AS_FRACTION
+#undef _SHOW_FRACTION
 
 // const uint mod = 1e9 + 7; // 1000000007
 const uint mod = (119 << 23) + 1; // 998244353
