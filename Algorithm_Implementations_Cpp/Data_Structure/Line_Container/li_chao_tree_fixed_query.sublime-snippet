@@ -29,6 +29,12 @@ struct li_chao_tree_fixed_query_base{
 		this->frame.resize(size, frame.back());
 		data.assign(size << 1, -1);
 	}
+	li_chao_tree_fixed_query_base &operator=(const li_chao_tree_fixed_query_base &lct){
+		n = lct.n;
+		size = lct.size;
+		if constexpr(COMPRESSED) frame = lct.frame;
+		data = lct.data;
+	}
 	// function i is equal or higher than j on [l, r]
 	bool majorize(int i, int j, T l, T r) const{
 		return !cmp(evaluate(i, l), evaluate(j, l)) && !cmp(evaluate(i, r), evaluate(j, r));
@@ -87,6 +93,18 @@ struct li_chao_tree_fixed_query_base{
 		}
 		assert(~opti);
 		return {optv, opti};
+	}
+	friend ostream &operator<<(ostream &out, const li_chao_tree_fixed_query_base &lct){
+		auto recurse = [&](auto self, int u, T l, T r)->void{
+			out << "Node " << u << " for range [" << l << ", " << r << "]: ";
+			out << "{";
+			if(~lct.data[u]) out << lct.data[u] << ", " << lct.evaluate(lct.data[u], GET(l + r >> 1));
+			out << "}\n";;
+			if(~lct.child[u][0]) self(self, lct.child[u][0], l, l + r >> 1);
+			if(~lct.child[u][1]) self(self, lct.child[u][1], l + r >> 1, r);
+		};
+		recurse(recurse, 1, 0, COMPRESSED ? (int)lct.frame.size() : lct.n);
+		return out;
 	}
 #undef GET
 };
