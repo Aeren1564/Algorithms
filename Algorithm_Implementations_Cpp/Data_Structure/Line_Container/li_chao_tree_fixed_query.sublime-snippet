@@ -1,7 +1,7 @@
 <snippet>
 	<content><![CDATA[
 // Data structure maintaining functions [th_low, th_high]->X such that
-// any two functions f and g are either equal or has a point p \in [th_low, th_high] satisfying either
+// any two functions f and g are either equal, one is strictly above the other, or has a point p \in [th_low, th_high] satisfying either
 // (f(x) < g(x) for all x<p, f(p) = g(p), and f(y) > g(y) for all p<=y) or
 // (f(x) > g(x) for all x<p, f(p) = g(p), and f(y) < g(y) for all p<=y).
 template<bool COMPRESSED, class T, class X, class F, class Compare>
@@ -55,7 +55,7 @@ struct li_chao_tree_fixed_query_base{
 			}
 		}
 	}
-	// Return the pair {evaluate(i, p), i} where i achieves the maximum evaluation at p among all other functions in the data structure.
+	// Return the pair {evaluate(i, p), i} where i achieves the maximum evaluation at p among all functions in the data structure.
 	// O(log(n))
 	pair<X, int> query_max(T x) const{
 		int p;
