@@ -1,7 +1,7 @@
 <snippet>
 	<content><![CDATA[
 #include <bits/stdc++.h>
-#include <x86intrin.h>
+// #include <x86intrin.h>
 #include "testlib.h"
 using namespace std;
 using namespace numbers;
