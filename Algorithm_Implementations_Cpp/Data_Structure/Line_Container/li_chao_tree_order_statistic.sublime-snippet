@@ -22,26 +22,24 @@ struct li_chao_tree_order_statistic{
 		data = lct.data;
 	}
 	// Insert the function i.
-	// O(log(n))
+	// O(log(n) * k)
 	void insert(int i){
 		assert(i >= 0);
 		int u = 0;
 		T l = th_low, r = th_high;
 		while(true){
 			T m = l + r >> 1;
-			{
-				data[u].insert(lower_bound(data[u].begin(), data[u].end(), evaluate(i, m), [&](int j, const auto &x){ return !cmp(evaluate(j, m), x); }), i);
-			}
+			data[u].insert(lower_bound(data[u].begin(), data[u].end(), evaluate(i, m), [&](int j, const auto &x){ return !cmp(evaluate(j, m), x); }), i);
 			if((int)data[u].size() < th_order << 1) break;
 			i = data[u].back();
 			data[u].pop_back();
 			int cnt_l = 0, cnt_r = 0;
 			for(auto j: data[u]){
-				if(cmp(evaluate(i, l), evaluate(j, l))){
+				if(!cmp(evaluate(j, l), evaluate(i, l))){
 					++ cnt_l;
-					if(cmp(evaluate(i, r), evaluate(j, r))) ++ cnt_r;
+					if(!cmp(evaluate(j, r), evaluate(i, r))) ++ cnt_r;
 				}
-				else if(cmp(evaluate(i, r), evaluate(j, r))) ++ cnt_r;
+				else if(!cmp(evaluate(j, r), evaluate(i, r))) ++ cnt_r;
 			}
 			if(cnt_l < th_order){
 				if(!~child[u][0]){
@@ -67,7 +65,7 @@ struct li_chao_tree_order_statistic{
 		}
 	}
 	// Return the pair {evaluate(i, p), i} where i achieves the k-th maximum evaluation at p among all functions in the data structure.
-	// O(log(n))
+	// O(log(n) * k * log(k))
 	pair<X, int> query_max(T p, int k = 0) const{
 		assert(th_low <= p && p <= th_high && k < th_order);
 		vector<pair<X, int>> res;
