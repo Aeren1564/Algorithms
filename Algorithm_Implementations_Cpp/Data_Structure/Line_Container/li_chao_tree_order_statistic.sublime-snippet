@@ -1,0 +1,116 @@
+<snippet>
+	<content><![CDATA[
+// Data structure maintaining functions [th_low, th_high]->X such that
+// any two functions f and g are either equal, one is strictly above the other, or has a point p \in [th_low, th_high] satisfying either
+// (f(x) < g(x) for all x<p, f(p) = g(p), and f(y) > g(y) for all p<=y) or
+// (f(x) > g(x) for all x<p, f(p) = g(p), and f(y) < g(y) for all p<=y).
+template<class T, class X, class F, class Compare = less<>>
+struct li_chao_tree_order_statistic{
+	T th_low, th_high;
+	int th_order;
+	vector<array<int, 2>> child{{-1, -1}};
+	vector<vector<int>> data{{}};
+	F evaluate; // evaluate(i, p): value of function i at p
+	Compare cmp;
+	X minf;
+	li_chao_tree_order_statistic(T th_low, T th_high, int th_order, F evaluate, X _type_deducer, Compare cmp = less<>(), X minf = numeric_limits<X>::min()): th_low(th_low), th_high(th_high), th_order(th_order), evaluate(evaluate), cmp(cmp), minf(minf){ assert(th_order > 0); }
+	li_chao_tree_order_statistic &operator=(const li_chao_tree_order_statistic &lct){
+		th_low = lct.th_low;
+		th_high = lct.th_high;
+		th_order = lct.th_order;
+		child = lct.child;
+		data = lct.data;
+	}
+	// Insert the function i.
+	// O(log(n))
+	void insert(int i){
+		assert(i >= 0);
+		int u = 0;
+		T l = th_low, r = th_high;
+		while(true){
+			T m = l + r >> 1;
+			{
+				data[u].insert(lower_bound(data[u].begin(), data[u].end(), evaluate(i, m), [&](int j, const auto &x){ return !cmp(evaluate(j, m), x); }), i);
+			}
+			if((int)data[u].size() < th_order << 1) break;
+			i = data[u].back();
+			data[u].pop_back();
+			int cnt_l = 0, cnt_r = 0;
+			for(auto j: data[u]){
+				if(cmp(evaluate(i, l), evaluate(j, l))){
+					++ cnt_l;
+					if(cmp(evaluate(i, r), evaluate(j, r))) ++ cnt_r;
+				}
+				else if(cmp(evaluate(i, r), evaluate(j, r))) ++ cnt_r;
+			}
+			if(cnt_l < th_order){
+				if(!~child[u][0]){
+					child[u][0] = (int)child.size();
+					child.push_back({-1, -1});
+					data.push_back({i});
+					break;
+				}
+				u = child[u][0];
+				r = m;
+			}
+			else if(cnt_r < th_order){
+				if(!~child[u][1]){
+					child[u][1] = (int)child.size();
+					child.push_back({-1, -1});
+					data.push_back({i});
+					break;
+				}
+				u = child[u][1];
+				l = m;
+			}
+			else break;
+		}
+	}
+	// Return the pair {evaluate(i, p), i} where i achieves the k-th maximum evaluation at p among all functions in the data structure.
+	// O(log(n))
+	pair<X, int> query_max(T p, int k = 0) const{
+		assert(th_low <= p && p <= th_high && k < th_order);
+		vector<pair<X, int>> res;
+		int u = 0;
+		T l = th_low, r = th_high;
+		while(true){
+			for(auto i: data[u]) res.push_back({evaluate(i, p), i});
+			sort(res.rbegin(), res.rend(), [&](const auto &x, const auto &y){ return cmp(x.first, y.first); });
+			res.resize(min((int)res.size(), k + 1));
+			T m = l + r >> 1;
+			if(p < m){
+				if(!~child[u][0]) break;
+				u = child[u][0];
+				r = m;
+			}
+			else{
+				if(!~child[u][1]) break;
+				u = child[u][1];
+				l = m;
+			}
+		}
+		assert((int)res.size() == k + 1);
+		return res[k];
+	}
+	friend ostream &operator<<(ostream &out, const li_chao_tree_order_statistic &lct){
+		auto recurse = [&](auto self, int u, T l, T r)->void{
+			out << "Node " << u << " for range [" << l << ", " << r << "]: ";
+			out << "{";
+			for(auto t = 0; t < (int)lct.data[u].size(); ++ t){
+				out << "{" << lct.data[u][t] << ", " << lct.evaluate(lct.data[u][t], l + r >> 1) << "}";
+				if(t + 1 < (int)lct.data[u].size()) out << ", ";
+			}
+			out << "}\n";
+			if(~lct.child[u][0]) self(self, lct.child[u][0], l, l + r >> 1);
+			if(~lct.child[u][1]) self(self, lct.child[u][1], l + r >> 1, r);
+		};
+		recurse(recurse, 0, lct.th_low, lct.th_high);
+		return out;
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>li_chao_tree_order_statistic</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
