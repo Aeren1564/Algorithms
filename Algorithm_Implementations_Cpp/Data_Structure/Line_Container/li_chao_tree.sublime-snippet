@@ -13,6 +13,12 @@ struct li_chao_tree{
 	Compare cmp;
 	X minf;
 	li_chao_tree(T th_low, T th_high, F evaluate, X _type_deducer, Compare cmp = less<>(), X minf = numeric_limits<X>::min()): th_low(th_low), th_high(th_high), evaluate(evaluate), cmp(cmp), minf(minf){ }
+	li_chao_tree &operator=(const li_chao_tree &lct){
+		th_low = lct.th_low;
+		th_high = lct.th_high;
+		child = lct.child;
+		data = lct.data;
+	}
 	// function i is equal or higher than j on [l, r]
 	bool majorize(int i, int j, T l, T r) const{
 		return !cmp(evaluate(i, l), evaluate(j, l)) && !cmp(evaluate(i, r), evaluate(j, r));
@@ -81,6 +87,18 @@ struct li_chao_tree{
 		}
 		assert(~opti);
 		return {optv, opti};
+	}
+	friend ostream &operator<<(ostream &out, const li_chao_tree &lct){
+		auto recurse = [&](auto self, int u, T l, T r)->void{
+			out << "Node " << u << " for range [" << l << ", " << r << "]: ";
+			out << "{";
+			if(~lct.data[u]) out << lct.data[u] << ", " << lct.evaluate(lct.data[u], l + r >> 1);
+			out << "}\n";;
+			if(~lct.child[u][0]) self(self, lct.child[u][0], l, l + r >> 1);
+			if(~lct.child[u][1]) self(self, lct.child[u][1], l + r >> 1, r);
+		};
+		recurse(recurse, 0, lct.th_low, lct.th_high);
+		return out;
 	}
 };
 ]]></content>
