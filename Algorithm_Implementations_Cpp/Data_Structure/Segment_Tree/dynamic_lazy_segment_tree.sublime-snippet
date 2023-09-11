@@ -113,7 +113,7 @@ struct dynamic_lazy_segment_tree{
 		return ql;
 	}
 	template<class output_stream>
-	friend output_stream &operator<<(output_stream &out, dynamic_lazy_segment_tree<B, T, U, F1, F2, F3, F4> seg){
+	friend output_stream &operator<<(output_stream &out, dynamic_lazy_segment_tree seg){
 		out << "[";
 		for(auto i = 0; i < seg.n; ++ i){
 			out << seg.query(i, i + 1);

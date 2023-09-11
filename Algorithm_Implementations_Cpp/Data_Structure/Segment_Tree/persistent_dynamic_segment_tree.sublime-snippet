@@ -33,8 +33,8 @@ struct persistent_dynamic_segment_tree{
 	void extend(int u, B l, B r){
 		if(!~left[u]){
 			B m = l + (r - l >> 1);
-			left[u] = new_state(-1, -1, T_init(l, m)); // Separate this on C++14 or below to avoid UB
-			right[u] = new_state(-1, -1, T_init(m, r)); // Separate this on C++14 or below to avoid UB
+			left[u] = new_state(-1, -1, T_init(l, m));
+			right[u] = new_state(-1, -1, T_init(m, r));
 		}
 	}
 	int set(int u, B p, T x){ // set v[p] = x at state u, O(log n)
@@ -49,7 +49,8 @@ struct persistent_dynamic_segment_tree{
 		};
 		return recurse(u, 0, n);
 	}
-	T query(int u, B ql, B qr){ // find sum{ql<=i<qr}(v[i]) at state u, O(log n)
+	// find sum{ql<=i<qr}(v[i]) at state u, O(log n)
+	T query(int u, B ql, B qr){
 		function<T(int, B, B)> recurse = [&](int u, B l, B r){
 			if(qr <= l || r <= ql) return T_id;
 			if(ql <= l && r <= qr) return data[u];

@@ -8,7 +8,7 @@ struct mergesort_tree_point_update{
 	Compare cmp;
 	vector<T> a;
 	vector<order_statistic_set<T, Compare>> data;
-	// O(n log^2 n)
+	// O(n * log^2(n))
 	mergesort_tree_point_update(const vector<T> &a, Compare cmp = less<>()): n((int)a.size()), a(a), data(n << 1, order_statistic_set<T, Compare>(cmp)), cmp(cmp){
 		for(auto i = n; i < n << 1; ++ i) data[i].insert(a[i - n]);
 		for(auto i = n - 1; i > 0; -- i){
@@ -16,12 +16,12 @@ struct mergesort_tree_point_update{
 			for(auto x: data[i << 1 | 1]) data[i].insert(x);
 		}
 	}
-	// O(log^2 n)
+	// O(log^2(n))
 	void set(int p, T x){
 		for(auto q = p + n; q; q >>= 1) data[q].erase(a[p]), data[q].insert(x);
 		a[p] = x;
 	}
-	// O(log^2 n)
+	// O(log^2(n))
 	int count_less(int l, int r, T k) const{
 		assert(0 <= l && l <= r && r <= n);
 		int res = 0;
@@ -31,7 +31,7 @@ struct mergesort_tree_point_update{
 		}
 		return res;
 	}
-	// O(log^2 n)
+	// O(log^2(n))
 	int count_equal_or_greater(int l, int r, T k) const{
 		assert(0 <= l && l <= r && r <= n);
 		int res = 0;
@@ -41,7 +41,7 @@ struct mergesort_tree_point_update{
 		}
 		return res;
 	}
-	// O(log^2 n)
+	// O(log^2(n))
 	int count_within(int l, int r, T kl, T kr) const{
 		assert(0 <= l && l <= r && r <= n);
 		int res = 0;
@@ -51,7 +51,7 @@ struct mergesort_tree_point_update{
 		}
 		return res;
 	}
-	// O(SZ log n) where SZ is the size of the answer
+	// O(SZ * log(n)) where SZ is the size of the answer
 	vector<T> get_sorted_list(int l, int r) const{
 		assert(0 <= l && l <= r && r <= n);
 		vector<T> res;

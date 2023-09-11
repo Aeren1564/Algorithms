@@ -1,16 +1,16 @@
 <snippet>
 	<content><![CDATA[
 template<class T>
-struct range_add_range_sum_query_solver_2d{
+struct range_add_query_sum_solver_2d{
 	int n, m;
 	vector<vector<T>> data0, data1, data2, data3;
-	range_add_range_sum_query_solver_2d(){ }
+	range_add_query_sum_solver_2d(){ }
 	// O(n * m)
-	range_add_range_sum_query_solver_2d(int n, int m): n(n), m(m), data0(n, vector<T>(m)), data1(n, vector<T>(m)), data2(n, vector<T>(m)), data3(n, vector<T>(m)){ }
+	range_add_query_sum_solver_2d(int n, int m): n(n), m(m), data0(n, vector<T>(m)), data1(n, vector<T>(m)), data2(n, vector<T>(m)), data3(n, vector<T>(m)){ }
 	// O(n * m)
-	range_add_range_sum_query_solver_2d(int n, int m, T init): range_add_range_sum_query_solver_2d(vector<vector<T>>(n, vector<T>(m, init))){ }
+	range_add_query_sum_solver_2d(int n, int m, T init): range_add_query_sum_solver_2d(vector<vector<T>>(n, vector<T>(m, init))){ }
 	// O(n * m)
-	range_add_range_sum_query_solver_2d(const vector<vector<T>> &v): n((int)v.size()), m((int)v[0].size()), data0(n, vector<T>(m)), data1(n, vector<T>(m)), data2(n, vector<T>(m)), data3(v){
+	range_add_query_sum_solver_2d(const vector<vector<T>> &v): n((int)v.size()), m((int)v[0].size()), data0(n, vector<T>(m)), data1(n, vector<T>(m)), data2(n, vector<T>(m)), data3(v){
 		for(auto i = 1; i <= n; ++ i) if(i + (i & -i) <= n) for(auto j = 0; j < m; ++ j) data3[i + (i & -i) - 1][j] += data3[i - 1][j];
 		for(auto i = 0; i < n; ++ i) for(auto j = 1; j <= m; ++ j) if(j + (j & -j) <= m) data3[i][j + (j & -j) - 1] += data3[i][j - 1];
 	}
@@ -65,7 +65,7 @@ struct range_add_range_sum_query_solver_2d{
 		return pref(xl, yl) - pref(xl, yr) - pref(xr, yl) + pref(xr, yr);
 	}
 	template<class output_stream>
-	friend output_stream &operator<<(output_stream &out, const range_add_range_sum_query_solver_2d<T> &solver){
+	friend output_stream &operator<<(output_stream &out, const range_add_query_sum_solver_2d &solver){
 		for(auto i = 0; i < solver.n; ++ i){
 			out << "\n[";
 			for(auto j = 0; j < solver.m; ++ j){
@@ -79,7 +79,7 @@ struct range_add_range_sum_query_solver_2d{
 };
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
-	<tabTrigger>range_add_range_sum_query_solver_2d</tabTrigger> -->
+	<tabTrigger>range_add_query_sum_solver_2d</tabTrigger> -->
 	<!-- Optional: Set a scope to limit where the snippet will trigger -->
 	<scope>source.c++</scope> -->
 </snippet>

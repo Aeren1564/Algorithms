@@ -1,16 +1,16 @@
 <snippet>
 	<content><![CDATA[
 template<class T>
-struct range_add_range_sum_query_solver{
+struct range_add_query_sum_solver{
 	int n;
 	vector<T> data0, data1;
-	range_add_range_sum_query_solver(){ }
+	range_add_query_sum_solver(){ }
 	// O(n)
-	range_add_range_sum_query_solver(int n): n(n), data0(n), data1(n){ }
+	range_add_query_sum_solver(int n): n(n), data0(n), data1(n){ }
 	// O(n)
-	range_add_range_sum_query_solver(int n, T init): range_add_range_sum_query_solver(vector<T>(n, init)){ }
+	range_add_query_sum_solver(int n, T init): range_add_query_sum_solver(vector<T>(n, init)){ }
 	// O(n)
-	range_add_range_sum_query_solver(const vector<T> &v): n((int)v.size()), data0(n), data1(v){
+	range_add_query_sum_solver(const vector<T> &v): n((int)v.size()), data0(n), data1(v){
 		for(auto i = 1; i <= n; ++ i) if(i + (i & -i) <= n) data1[i + (i & -i) - 1] += data1[i - 1];
 	}
 	void update(int ql, int qr, T x){
@@ -30,7 +30,7 @@ struct range_add_range_sum_query_solver{
 		return pref(r) - pref(l);
 	}
 	template<class output_stream>
-	friend output_stream &operator<<(output_stream &out, const range_add_range_sum_query_solver<T> &solver){
+	friend output_stream &operator<<(output_stream &out, const range_add_query_sum_solver &solver){
 		out << "[";
 		for(auto i = 0; i < solver.n; ++ i){
 			out << solver.query(i, i + 1);
@@ -41,7 +41,7 @@ struct range_add_range_sum_query_solver{
 };
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
-	<tabTrigger>range_add_range_sum_query_solver</tabTrigger> -->
+	<tabTrigger>range_add_query_sum_solver</tabTrigger> -->
 	<!-- Optional: Set a scope to limit where the snippet will trigger -->
 	<scope>source.c++</scope> -->
 </snippet>

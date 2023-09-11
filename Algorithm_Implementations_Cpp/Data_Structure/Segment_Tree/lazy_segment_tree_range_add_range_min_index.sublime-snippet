@@ -138,7 +138,7 @@ struct lazy_segment_tree_range_add_range_min_index{
 		return 0;
 	}
 	template<class output_stream>
-	friend output_stream &operator<<(output_stream &out, lazy_segment_tree_range_add_range_min_index<T, U> seg){
+	friend output_stream &operator<<(output_stream &out, lazy_segment_tree_range_add_range_min_index seg){
 		out << "[";
 		for(auto i = 0; i < seg.n; ++ i){
 			auto x = seg.query(i);

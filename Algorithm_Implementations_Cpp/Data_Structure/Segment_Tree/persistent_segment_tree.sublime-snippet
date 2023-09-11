@@ -44,7 +44,7 @@ struct persistent_segment_tree{
 		return recurse(recurse, 0, (int)a.size());
 	}
 	// Assumes u represents an interval of size n
-	// O(log n)
+	// O(log(n))
 	int set(int u, int p, T x){
 		assert(0 <= p && p < n);
 		auto recurse = [&](auto self, int u, int l, int r)->int{
@@ -57,7 +57,7 @@ struct persistent_segment_tree{
 		return recurse(recurse, u, 0, n);
 	}
 	// Assumes u represents an interval of size n
-	// O(log n)
+	// O(log(n))
 	T query(int u, int ql, int qr) const{
 		assert(0 <= ql && ql <= qr && qr <= n);
 		auto recurse = [&](auto self, int u, int l, int r)->T{
