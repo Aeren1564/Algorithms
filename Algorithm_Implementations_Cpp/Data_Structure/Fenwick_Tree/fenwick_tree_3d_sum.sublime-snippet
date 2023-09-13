@@ -12,13 +12,13 @@ struct fenwick_tree_3d_sum{
 	}
 	fenwick_tree_3d_sum(int n, int m, int l): n(n), m(m), l(l), data(n, vector<vector<T>>(m, vector<T>(l))){ }
 	// a[p][q][r] += x
-	// O(log n * log m * log l)
+	// O(log(n) * log(m) * log(l))
 	void update(int p, int q, int r, T x){
 		++ p, ++ q, ++ r;
 		for(auto i = p; i <= n; i += i & -i) for(auto j = q; j <= m; j += j & -j) for(auto k = r; k <= l; k += k & -k) data[i - 1][j - 1][k - 1] += x;
 	}
 	// Returns the sum of a[i][j][k] on [0, xr) X [0, yr) X [0, zr)
-	// O(log n * log m * log l)
+	// O(log(n) * log(m) * log(l))
 	T pref(int xr, int yr, int zr){
 		assert(0 <= xr && xr <= n && 0 <= yr && yr <= m && 0 <= zr && zr <= l);
 		T res{};
@@ -26,12 +26,12 @@ struct fenwick_tree_3d_sum{
 		return res;
 	}
 	// Returns the sum of a[i][j][k] on [xl, xr) X [yl, yr) X [zl, zr)
-	// O(log n * log m * log r)
+	// O(log(n) * log(m) * log(l))
 	T query(int xl, int xr, int yl, int yr, int zl, int zr){
 		assert(xl <= xr && yl <= yr && zl <= zr);
 		return pref(xr, yr, zr) - pref(xl, yr, zr) - pref(xr, yl, zr) - pref(xr, yr, zl) + pref(xl, yl, zr) + pref(xl, yr, zl) + pref(xr, yl, zl) - pref(xl, yl, zl);
 	}
-	// O(log n * log m * log r)
+	// O(log(n) * log(m) * log(l))
 	T query(int x, int y, int z){
 		return pref(x + 1, y + 1, z + 1) - pref(x, y + 1, z + 1) - pref(x + 1, y, z + 1) - pref(x + 1, y + 1, z) + pref(x, y, z + 1) + pref(x, y + 1, z) + pref(x + 1, y, z) - pref(x, y, z);
 	}
