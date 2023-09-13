@@ -12,14 +12,14 @@ struct fenwick_tree_2d_sum{
 	// O(n * m)
 	fenwick_tree_2d_sum(int n, int m): n(n), m(m), data(n, vector<T>(m)){}
 	// a[p][q] += x
-	// O(log n * log m)
+	// O(log(n) * log(m))
 	void update(int p, int q, T x){
 		assert(0 <= p && p < n && 0 <= q && q < m);
 		++ p, ++ q;
 		for(auto i = p; i <= n; i += i & -i) for(auto j = q; j <= m; j += j & -j) data[i - 1][j - 1] += x;
 	}
 	// Returns the sum of a[i][j] on [0, xr) X [0, yr)
-	// O(log n * log m)
+	// O(log(n) * log(m))
 	T pref(int xr, int yr){
 		assert(0 <= xr && xr <= n && 0 <= yr && yr <= m);
 		T res{};
@@ -27,12 +27,12 @@ struct fenwick_tree_2d_sum{
 		return res;
 	}
 	// Returns the sum of a[i][j] on [xl, xr) X [yl, yr)
-	// O(log n * log m)
+	// O(log(n) * log(m))
 	T query(int xl, int xr, int yl, int yr){
 		assert(xl <= xr && yl <= yr);
 		return pref(xr, yr) - pref(xr, yl) - pref(xl, yr) + pref(xl, yl);
 	}
-	// O(log n * log m)
+	// O(log(n) * log(m))
 	T query(int x, int y){
 		return pref(x + 1, y + 1) - pref(x + 1, y) - pref(x, y + 1) + pref(x, y);
 	}
