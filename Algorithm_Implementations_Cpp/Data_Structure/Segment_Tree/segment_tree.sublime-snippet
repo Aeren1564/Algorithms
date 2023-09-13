@@ -107,6 +107,7 @@ struct segment_tree_base{
 	// O(log(n))
 	U query_action(int p){
 		static_assert(!HAS_QUERY && HAS_UPDATE);
+		assert(0 <= p && p < n);
 		p += size;
 		ifU for(auto i = log; i >= 1; -- i) push(p >> i);
 		return data_action[p];
