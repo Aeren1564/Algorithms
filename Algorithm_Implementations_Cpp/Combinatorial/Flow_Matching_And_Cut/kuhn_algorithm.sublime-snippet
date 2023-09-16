@@ -12,6 +12,11 @@ struct kuhn_algorithm: maximum_bipartite_matching_solver{
 		adj[from].push_back(to);
 		return (int)adj[from].size() - 1;
 	}
+	void clear(){
+		adj.assign(n, {});
+		pu.assign(n, -1);
+		pv.assign(m, -1);
+	}
 	int it = 0;
 	vector<int> was;
 	bool dfs(int u){
