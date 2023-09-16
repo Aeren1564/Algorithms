@@ -13,6 +13,11 @@ struct hopcroft_karp_algorithm: maximum_bipartite_matching_solver{
 		adj[from].push_back(to);
 		return (int)adj[from].size() - 1;
 	}
+	void clear(){
+		adj.assign(n, {});
+		pu.assign(n, -1);
+		pv.assign(m, -1);
+	}
 	vector<int> a, p, q;
 	int maximum_matching(){
 		int matching = 0;
