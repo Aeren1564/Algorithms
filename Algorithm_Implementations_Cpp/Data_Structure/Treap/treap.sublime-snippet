@@ -93,7 +93,7 @@ struct treap_base{
 	vector<int> dead_node;
 	int new_node(const T &x, int v = -1, int w = -1){
 		// Among all seeds in range [0, 1769666],
-		// 72718 has the longest sequence of unique numbers of length 362129.
+		// 72718 has the longest sequence of unique numbers, which is of length 362129.
 		static mt19937 rng(72718);
 		int u;
 		if(dead_node.empty()){
@@ -211,7 +211,7 @@ struct treap_base{
 		return {a, b, c};
 	}
 	// Split into [0, pos[0]), [pos[0], pos[1]), ..., [pos[size(pos) - 1], size(root))
-	// O(k log n)
+	// O(k * log(n))
 	vector<int> split(int root, const vector<int> &pos){
 		assert(is_sorted(pos.begin(), pos.end()));
 		if(pos.empty()) return {root};
@@ -247,12 +247,12 @@ struct treap_base{
 	}
 	// Data must be sorted by <
 	// O(log(n))
-	int _insert_by_key(int root, int u){
+	int insert_node_by_key(int root, int u){
 		if(!~root) return u;
 		push(root);
 		if(priority[root] > priority[u]){
-			if(data[root] < data[u]) right[root] = _insert_by_key(right[root], u);
-			else left[root] = _insert_by_key(left[root], u);
+			if(data[root] < data[u]) right[root] = insert_node_by_key(right[root], u);
+			else left[root] = insert_node_by_key(left[root], u);
 			refresh(root);
 			return root;
 		}
@@ -264,17 +264,17 @@ struct treap_base{
 	// Data must be sorted by <
 	// O(log(n))
 	int insert_by_key(int root, const T &x){
-		return _insert_by_key(root, new_node(x));
+		return insert_node_by_key(root, new_node(x));
 	}
 	// Data must be sorted by cmp
 	// O(log(n))
 	template<class Compare>
-	int _insert_by_key(int root, int u, Compare cmp){
+	int insert_node_by_key(int root, int u, Compare cmp){
 		if(!~root) return u;
 		push(root);
 		if(priority[root] > priority[u]){
-			if(cmp(data[root], data[u])) right[root] = _insert_by_key(right[root], u, cmp);
-			else left[root] = _insert_by_key(left[root], u, cmp);
+			if(cmp(data[root], data[u])) right[root] = insert_node_by_key(right[root], u, cmp);
+			else left[root] = insert_node_by_key(left[root], u, cmp);
 			refresh(root);
 			return root;
 		}
@@ -287,18 +287,18 @@ struct treap_base{
 	// O(log(n))
 	template<class Compare>
 	int insert_by_key(int root, const T &x, Compare cmp){
-		return _insert_by_key(root, new_node(x), cmp);
+		return insert_node_by_key(root, new_node(x), cmp);
 	}
 	// O(log(n))
-	int _insert_by_order(int root, int pos, int u){
+	int insert_node_by_order(int root, int pos, int u){
 		if(!~root){
 			assert(pos == 0);
 			return u;
 		}
 		push(root);
 		if(priority[root] > priority[u]){
-			if(size(left[root]) < pos) right[root] = _insert_by_order(right[root], pos - size(left[root]) - 1, u);
-			else left[root] = _insert_by_order(left[root], pos, u);
+			if(size(left[root]) < pos) right[root] = insert_node_by_order(right[root], pos - size(left[root]) - 1, u);
+			else left[root] = insert_node_by_order(left[root], pos, u);
 			refresh(root);
 			return root;
 		}
@@ -309,16 +309,16 @@ struct treap_base{
 	}
 	// O(log(n))
 	int insert_by_order(int root, int pos, const T &x){
-		return _insert_by_order(root, pos, new_node(x));
+		return insert_node_by_order(root, pos, new_node(x));
 	}
 	// Data must be sorted by pred
 	// O(log(n))
-	int _insert_by_pred(int root, auto pred, int u){
+	int insert_node_by_pred(int root, auto pred, int u){
 		if(!~root) return u;
 		push(root);
 		if(priority[root] > priority[u]){
-			if(pred(data[root])) right[root] = _insert_by_pred(right[root], pred, u);
-			else left[root] = _insert_by_pred(left[root], pred, u);
+			if(pred(data[root])) right[root] = insert_node_by_pred(right[root], pred, u);
+			else left[root] = insert_node_by_pred(left[root], pred, u);
 			refresh(root);
 			return root;
 		}
@@ -329,7 +329,7 @@ struct treap_base{
 	}
 	// O(log(n))
 	int insert_by_pred(int root, auto pred, const T &x){
-		return _insert_by_pred(root, pred, new_node(x));
+		return insert_node_by_pred(root, pred, new_node(x));
 	}
 	// Erase the smallest element >= x.
 	// Return -2 when no such element exists
@@ -488,6 +488,17 @@ struct treap_base{
 				root = right[root];
 			}
 			else root = left[root];
+		}
+		return res;
+	}
+	// O(log(n))
+	int node_order(int root, int u){
+		assert(~root && ~u);
+		int res = size(left[u]);
+		while(root != u){
+			push(pv[u]);
+			if(right[pv[u]] == u) res += size(left[pv[u]]) + 1;
+			u = pv[u];
 		}
 		return res;
 	}
