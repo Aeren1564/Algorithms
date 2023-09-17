@@ -1,25 +1,28 @@
 <snippet>
 	<content><![CDATA[
+// All element must lie within [0, sigma).
 struct wavelet_tree{
-	int sigma; // size of the alphabet, all element lies within [0, sigma).
+	int n, sigma;
 	vector<vector<int>> data; // data[u][i]: # of elements mapped to left among first i elements
 	wavelet_tree(){ }
-	wavelet_tree(const vector<int> &a, int sigma): data(sigma << 1), sigma(sigma){
+	// O(n * log(sigma))
+	wavelet_tree(vector<int> a, int sigma): n((int)a.size()), sigma(sigma), data(sigma << 1){
 		assert(all_of(a.begin(), a.end(), [&](int x){ return 0 <= x && x < sigma; }));
-		auto temp = a;
-		auto build = [&](auto self, int u, int l, int r, int low, int high)->void{
+		auto build = [&](auto self, int u, int l, int r, int ql, int qr)->void{
 			if(r - l == 1) return;
 			int m = l + (r - l >> 1);
-			data[u].resize(high - low + 1);
-			for(auto i = low; i < high; ++ i) data[u][i - low + 1] = data[u][i - low] + (temp[i] < m);
-			int mid = stable_partition(temp.begin() + low, temp.begin() + high, [&](int x){ return x < m; }) - temp.begin();
-			self(self, u << 1, l, m, low, mid), self(self, u << 1 | 1, m, r, mid, high);
+			data[u].resize(qr - ql + 1);
+			for(auto i = ql; i < qr; ++ i) data[u][i - ql + 1] = data[u][i - ql] + (a[i] < m);
+			int qm = stable_partition(a.begin() + ql, a.begin() + qr, [&](int x){ return x < m; }) - a.begin();
+			self(self, u << 1, l, m, ql, qm), self(self, u << 1 | 1, m, r, qm, qr);
 		};
-		build(build, 1, 0, sigma, 0, (int)a.size());
+		build(build, 1, 0, sigma, 0, n);
 	}
 	// Count occurrences of x in the interval [0, qr)
 	// O(log(sigma))
 	int count(int qr, int x) const{
+		assert(0 <= qr && qr <= n);
+		assert(0 <= x && x < sigma);
 		for(auto u = 1, l = 0, r = sigma; r - l >= 2; ){
 			auto m = l + (r - l >> 1);
 			x < m ? (qr = data[u][qr], r = m, u = u << 1) : (qr -= data[u][qr], l = m, u = u << 1 | 1);
@@ -34,26 +37,55 @@ struct wavelet_tree{
 	// Count of occurrences of numbers in [xl, xr) in the interval [ql, qr)
 	// O(log(sigma))
 	int count(int ql, int qr, int xl, int xr) const{
-		if(qr <= ql || xr <= xl) return 0;
-		auto recurse = [&](auto self, int u, int l, int r, int cl, int cr)->int{
+		assert(0 <= ql && ql <= qr && qr <= n);
+		assert(0 <= xl && xl <= xr && xr <= sigma);
+		if(qr == ql || xr == xl) return 0;
+		auto recurse = [&](auto self, int u, int l, int r, int ql, int qr)->int{
 			if(r <= xl || xr <= l) return 0;
-			if(xl <= l && r <= xr) return cr - cl;
-			int m = l + (r - l >> 1), lcnt = data[u][cl], rcnt = data[u][cr];
-			return self(self, u << 1, l, m, lcnt, rcnt) + self(self, u << 1 | 1, m, r, cl - lcnt, cr - rcnt);
+			if(xl <= l && r <= xr) return qr - ql;
+			int m = l + (r - l >> 1), lcnt = data[u][ql], rcnt = data[u][qr];
+			return self(self, u << 1, l, m, lcnt, rcnt) + self(self, u << 1 | 1, m, r, ql - lcnt, qr - rcnt);
 		};
 		return recurse(recurse, 1, 0, sigma, ql, qr);
 	}
-	// Find the k-th smallest element in the interval [ql, qr)
+	// Find the k-th smallest element in the interval [ql, qr).
 	// O(log(sigma))
 	int find_by_order(int ql, int qr, int k) const{
+		assert(0 <= ql && ql <= qr && qr <= n);
 		assert(0 <= k && k < qr - ql);
 		for(auto u = 1, l = 0, r = sigma; ; ){
 			if(r - l == 1) return l;
-			auto m = l + (r - l >> 1), ri = data[u][ql], rj = data[u][qr];
-			if(k < rj - ri) ql = ri, qr = rj, r = m, u = u << 1;
-			else k -= rj - ri, ql -= ri, qr -= rj, l = m, u = u << 1 | 1;
+			auto m = l + (r - l >> 1), lcnt = data[u][ql], rcnt = data[u][qr];
+			if(k < rcnt - lcnt) ql = lcnt, qr = rcnt, r = m, u = u << 1;
+			else k -= rcnt - lcnt, ql -= lcnt, qr -= rcnt, l = m, u = u << 1 | 1;
 		}
 		assert(false);
+	}
+	// Find the k-th smallest element in the interval [ql, qr) among elements in range [xl, xr), -1 if no such element.
+	// O(log(sigma))
+	int find_by_order(int ql, int qr, int xl, int xr, int k) const{
+		assert(0 <= ql && ql <= qr && qr <= n);
+		assert(0 <= xl && xl <= xr && xr <= sigma);
+		assert(0 <= k);
+		auto recurse = [&](auto self, int u, int l, int r, int ql, int qr, int k)->array<int, 2>{
+			if(r <= xl || xr <= l) return {-1, 0};
+			if(xl <= l && r <= xr){
+				if(qr - ql <= k) return {-1, qr - ql};
+				while(true){
+					if(r - l == 1) return {l, -1};
+					int m = l + (r - l >> 1), lcnt = data[u][ql], rcnt = data[u][qr];
+					if(k < rcnt - lcnt) ql = lcnt, qr = rcnt, r = m, u = u << 1;
+					else k -= rcnt - lcnt, ql -= lcnt, qr -= rcnt, l = m, u = u << 1 | 1;
+				}
+				assert(false);
+			}
+			int m = l + (r - l >> 1), lcnt = data[u][ql], rcnt = data[u][qr];
+			auto [ansl, cntl] = self(self, u << 1, l, m, lcnt, rcnt, k);
+			if(~ansl) return {ansl, -1};
+			auto [ansr, cntr] = self(self, u << 1 | 1, m, r, ql - lcnt, qr - rcnt, k - cntl);
+			return {ansr, cntl + cntr};
+		};
+		return recurse(recurse, 1, 0, sigma, ql, qr, k)[0];
 	}
 };
 ]]></content>
