@@ -1,7 +1,7 @@
 <snippet>
 	<content><![CDATA[
 struct wavelet_tree{
-	int sigma; // size of the alphabet, all elements lie within [0, sigma)
+	int sigma; // size of the alphabet, all element lies within [0, sigma).
 	vector<vector<int>> data; // data[u][i]: # of elements mapped to left among first i elements
 	wavelet_tree(){ }
 	wavelet_tree(const vector<int> &a, int sigma): data(sigma << 1), sigma(sigma){
@@ -18,7 +18,7 @@ struct wavelet_tree{
 		build(build, 1, 0, sigma, 0, (int)a.size());
 	}
 	// Count occurrences of x in the interval [0, qr)
-	// O(log sigma)
+	// O(log(sigma))
 	int count(int qr, int x) const{
 		for(auto u = 1, l = 0, r = sigma; r - l >= 2; ){
 			auto m = l + (r - l >> 1);
@@ -27,12 +27,12 @@ struct wavelet_tree{
 		return qr;
 	}
 	// Count occurrences of x in the interval [ql, qr)
-	// O(log sigma)
+	// O(log(sigma))
 	int count(int ql, int qr, int x) const{
 		return count(qr, x) - count(ql, x);
 	}
 	// Count of occurrences of numbers in [xl, xr) in the interval [ql, qr)
-	// O(log sigma)
+	// O(log(sigma))
 	int count(int ql, int qr, int xl, int xr) const{
 		if(qr <= ql || xr <= xl) return 0;
 		auto recurse = [&](auto self, int u, int l, int r, int cl, int cr)->int{
@@ -44,7 +44,7 @@ struct wavelet_tree{
 		return recurse(recurse, 1, 0, sigma, ql, qr);
 	}
 	// Find the k-th smallest element in the interval [ql, qr)
-	// O(log sigma)
+	// O(log(sigma))
 	int find_by_order(int ql, int qr, int k) const{
 		assert(0 <= k && k < qr - ql);
 		for(auto u = 1, l = 0, r = sigma; ; ){
