@@ -3,38 +3,36 @@
 struct edge_coloring_bipartite{
 	int n, m;
 	vector<array<int, 2>> edge;
-	vector<int> degl, degr;
-	edge_coloring_bipartite(int n, int m): n(n), m(m), degl(n), degr(m){
-		assert(0 <= n && 0 <= m);
-	}
+	edge_coloring_bipartite(int n, int m): n(n), m(m){ assert(0 <= n && 0 <= m); }
 	int insert(int u, int v){
 		assert(0 <= u && u < n);
 		assert(0 <= v && v < m);
 		edge.push_back({u, v});
-		++ degl[u], ++ degr[v];
 		return (int)edge.size() - 1;
 	}
 	void clear(){
 		edge.clear();
-		degl.assign(n, 0);
-		degr.assign(m, 0);
 	}
 	// Assign color to each edge so that
 	// 1. two edges sharing an endpoint have different color, and
 	// 2. each color is an integer in range [0, max_deg).
-	// O(size(edge) * (n + m + max_deg))
-	pair<vector<int>, int> color(){
+	// Returns {coloring, max_deg}
+	// O(k * (n + m + max_deg))
+	pair<vector<int>, int> color_exactly(){
 		if(edge.empty()) return {{}, 0};
+		int k = (int)edge.size();
+		vector<int> degl(n), degr(m);
+		for(auto &[u, v]: edge) ++ degl[u], ++ degr[v];
 		int max_deg = max(*max_element(degl.begin(), degl.end()), *max_element(degr.begin(), degr.end()));
 		vector used_by_left(n, vector<int>(max_deg, -1)), used_by_right(m, vector<int>(max_deg, -1));
-		vector<int> edge_color((int)edge.size(), -1), order((int)edge.size());
+		vector<int> color(k, -1), order(k);
 		iota(order.begin(), order.end(), 0);
 		shuffle(order.begin(), order.end(), mt19937(12345));
 		for(auto i: order){
 			auto [u, v] = edge[i];
 			for(auto c = 0; c < max_deg; ++ c) if(!~used_by_left[u][c] && !~used_by_right[v][c]){
 				used_by_left[u][c] = used_by_right[v][c] = i;
-				edge_color[i] = c;
+				color[i] = c;
 				goto DONE;
 			}
 			{
@@ -44,7 +42,7 @@ struct edge_coloring_bipartite{
 				while(true){
 					int j = used_by_right[v][d];
 					used_by_left[u][d] = used_by_right[v][d] = i;
-					edge_color[i] = d;
+					color[i] = d;
 					if(!~j){
 						used_by_right[v][c] = -1;
 						break;
@@ -53,7 +51,7 @@ struct edge_coloring_bipartite{
 					u = edge[i][0];
 					j = used_by_left[u][c];
 					used_by_left[u][c] = used_by_right[v][c] = i;
-					edge_color[i] = c;
+					color[i] = c;
 					if(!~j){
 						used_by_left[u][d] = -1;
 						break;
@@ -64,7 +62,141 @@ struct edge_coloring_bipartite{
 			}
 			DONE:;
 		}
-		return {edge_color, max_deg};
+		return {color, max_deg};
+	}
+	// Assign color to each edge so that
+	// 1. two edges sharing an endpoint have different color, and
+	// 2. each color is an integer in range [0, th) where th is the smallest power of two equal or greater than max_deg.
+	// Returns {coloring, th}
+	// O(log(max_deg) * (n + m + k))
+	pair<vector<int>, int> color_with_power_of_two(){
+		if(edge.empty()) return {{}, 0};
+		int k = (int)edge.size();
+		vector<int> degl(n), degr(m);
+		for(auto [u, v]: edge) ++ degl[u], ++ degr[v];
+		int max_deg = max(*max_element(degl.begin(), degl.end()), *max_element(degr.begin(), degr.end()));
+		int th = 1 << __lg(max_deg) + (max_deg != 1 << __lg(max_deg));
+		vector<int> subset(k);
+		iota(subset.begin(), subset.end(), 0);
+		auto edge_recover = edge;
+		vector<int> color(k, -1);
+		vector<tuple<int, int, int, int, vector<int>>> stack{{n, m, th, 0, subset}};
+		vector<vector<int>> adj(n + m + 2);
+		vector<int> was(max(n + m, k), -1), oddl, oddr, appearL, appearR, on_L, on_R;
+		for(auto it = 0; !stack.empty(); ++ it){
+			auto [n, m, th, base, subset] = stack.back();
+			stack.pop_back();
+			if(subset.empty()) continue;
+			++ it;
+			degl.assign(n + 1, 0), degr.assign(m + 1, 0);
+			for(auto i: subset){
+				auto [u, v] = edge[i];
+				++ degl[u], ++ degr[v];
+			}
+			if(*max_element(degl.begin(), degl.end()) <= 2 && *max_element(degr.begin(), degr.end()) <= 2){
+				for(auto i: subset){
+					auto [u, v] = edge[i];
+					adj[u].push_back(i);
+					adj[n + v].push_back(i);
+				}
+				for(auto u = 0; u < n + m; ++ u){
+					if(was[u] == it){
+						continue;
+					}
+					for(auto t = 0; t < (int)adj[u].size(); ++ t){
+						int i = adj[u][t], c = base + t, v = u;
+						while(true){
+							was[v] = it;
+							color[i] = c;
+							c ^= base ^ base + 1;
+							v ^= edge[i][0] ^ n + edge[i][1];
+							if(was[v] == it || (int)adj[v].size() != 2){
+								was[v] = it;
+								break;
+							}
+							i ^= adj[v][0] ^ adj[v][1];
+						}
+					}
+				}
+				for(auto u = 0; u < n + m; ++ u) adj[u].clear();
+				continue;
+			}
+			oddl.clear(), oddr.clear();
+			for(auto u = 0; u < n; ++ u) if(degl[u] & 1) oddl.push_back(u);
+			for(auto v = 0; v < m; ++ v) if(degr[v] & 1) oddr.push_back(v);
+			int kc = k;
+			while(!oddl.empty() && !oddr.empty()){
+				subset.push_back(kc ++);
+				++ degl[oddl.back()], ++ degr[oddr.back()];
+				edge.push_back({oddl.back(), oddr.back()});
+				oddl.pop_back(), oddr.pop_back();
+			}
+			for(auto v = 0; !oddl.empty(); ){
+				while(v < m && degr[v] == th) ++ v;
+				for(auto rep = 0; rep < 2; ++ rep){
+					subset.push_back(kc ++);
+					edge.push_back({oddl.back(), v});
+					oddl.pop_back();
+					++ degr[v];
+				}
+			}
+			for(auto u = 0; !oddr.empty(); ){
+				while(u < n && degl[u] == th) ++ u;
+				for(auto rep = 0; rep < 2; ++ rep){
+					subset.push_back(kc ++);
+					edge.push_back({u, oddr.back()});
+					oddr.pop_back();
+					++ degl[u];
+				}
+			}
+			for(auto i: subset){
+				auto [u, v] = edge[i];
+				adj[u].push_back(i), adj[n + 1 + v].push_back(i);
+			}
+			was.resize(max((int)was.size(), kc), -1);
+			array<int, 2> subset_cnt{};
+			array<vector<int>, 2> subset_next;
+			auto dfs = [&](auto self, int u)->void{
+				while(true){
+					while(!adj[u].empty() && was[adj[u].back()] == it) adj[u].pop_back();
+					if(adj[u].empty()) break;
+					int i = adj[u].back();
+					adj[u].pop_back();
+					auto [_u, _v] = edge[i];
+					_v += n + 1;
+					was[i] = it;
+					self(self, u ^ _u ^ _v);
+					int t = subset_cnt[0] != subset_cnt[1];
+					if(i < k) subset_next[t].push_back(i);
+					++ subset_cnt[t];
+				}
+			};
+			for(auto u = 0; u < n; ++ u) dfs(dfs, u);
+			for(auto u = 0; u < n + m + 2; ++ u) adj[u].clear();
+			assert(subset_cnt[0] == subset_cnt[1]);
+			edge.resize(k);
+			for(auto t = 0; t < 2; ++ t){
+				on_L.assign(n, 0), on_R.assign(m, 0);
+				for(auto i: subset_next[t]){
+					auto [u, v] = edge[i];
+					on_L[u] = on_R[v] = true;
+				}
+				appearL.clear(), appearR.clear();
+				for(auto u = 0; u < n; ++ u) if(on_L[u]) appearL.push_back(u);
+				int n = (int)appearL.size();
+				for(auto i = 0; i < n; ++ i) on_L[appearL[i]] = i;
+				for(auto v = 0; v < m; ++ v) if(on_R[v]) appearR.push_back(v);
+				int m = (int)appearR.size();
+				for(auto j = 0; j < m; ++ j) on_R[appearR[j]] = j;
+				for(auto i: subset_next[t]){
+					auto &[u, v] = edge[i];
+					u = on_L[u], v = on_R[v];
+				}
+				stack.push_back({n, m, th / 2, base + th / 2 * t, subset_next[t]});
+			}
+		}
+		edge_recover = edge;
+		return {color, th};
 	}
 };
 ]]></content>
