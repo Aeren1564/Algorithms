@@ -1,0 +1,78 @@
+<snippet>
+	<content><![CDATA[
+// Implementation of https://en.wikipedia.org/wiki/Misra_%26_Gries_edge_coloring_algorithm
+// Given a simple graph, returns an edge coloring using colors in [0, D] where D is the maximum degree
+// O(n * m)
+// Requires graph
+template<class T>
+vector<int> edge_coloring_vizing(const graph<T> &g){
+	int n = g.n, m = (int)g.edge.size();
+	vector<int> color(m, -1), missing(n);
+	vector<vector<int>> has(n);
+	auto get = [&](int u, int c)->int &{
+		if((int)has[u].size() <= c) has[u].resize(c + 1, -1);
+		return has[u][c];
+	};
+	for(auto i = 0; i < m; ++ i){
+		if(g.ignore && g.ignore(i)) continue;
+		auto [u, v, ignore] = g.edge[i];
+		static vector<int> pseudo_forest;
+		auto generate_forest = [&]()->int{
+			pseudo_forest.clear();
+			static vector<int> was;
+			static int attempt = 0;
+			was.resize(n);
+			++ attempt;
+			int it = i;
+			for(auto w = v; was[w] != attempt; w = g(u, it)){
+				pseudo_forest.push_back(it);
+				was[w] = attempt;
+				it = get(u, missing[w]);
+				if(!~it) return -1;
+			}
+			return it;
+		};
+		if(auto it = generate_forest(); ~it){
+			static vector<int> kempe_chain;
+			int c = color[it], d = missing[u], w = u, e = c;
+			for(; ; e ^= c ^ d, w = g(w, it)){
+				it = get(w, e);
+				if(!~it) break;
+				kempe_chain.push_back(it);
+			}
+			get(u, c) = get(w, e ^ c ^ d) = -1;
+			for(auto it: kempe_chain){
+				auto [u, v, ignore] = g.edge[it];
+				color[it] ^= c ^ d;
+				get(u, color[it]) = get(v, color[it]) = it;
+			}
+			missing[u] = missing[w] = 0;
+			while(~get(u, missing[u])) ++ missing[u];
+			while(~get(w, missing[w])) ++ missing[w];
+			kempe_chain.clear();
+			assert(!~generate_forest());
+		}
+		int c = missing[g(u, pseudo_forest.back())];
+		for(auto i = 0; i < (int)pseudo_forest.size() - 1; ++ i){
+			int p = pseudo_forest[i], v = g(u, p), q = pseudo_forest[i + 1];
+			get(g(u, q), color[q]) = -1;
+			if(color[q] < missing[g(u, q)]) missing[g(u, q)] = color[q];
+			color[p] = color[q];
+			get(u, color[p]) = get(v, color[p]) = p;
+			while(~get(v, missing[v])) ++ missing[v];
+		}
+		color[pseudo_forest.back()] = c;
+		v = g(u, pseudo_forest.back());
+		get(u, c) = get(v, c) = pseudo_forest.back();
+		while(~get(u, missing[u])) ++ missing[u];
+		while(~get(v, missing[v])) ++ missing[v];
+		pseudo_forest.clear();
+	}
+	return color;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>edge_coloring_vizing</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
