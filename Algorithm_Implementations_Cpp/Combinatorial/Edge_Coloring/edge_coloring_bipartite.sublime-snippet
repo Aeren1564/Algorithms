@@ -1,0 +1,75 @@
+<snippet>
+	<content><![CDATA[
+struct edge_coloring_bipartite{
+	int n, m;
+	vector<array<int, 2>> edge;
+	vector<int> degl, degr;
+	edge_coloring_bipartite(int n, int m): n(n), m(m), degl(n), degr(m){
+		assert(0 <= n && 0 <= m);
+	}
+	int insert(int u, int v){
+		assert(0 <= u && u < n);
+		assert(0 <= v && v < m);
+		edge.push_back({u, v});
+		++ degl[u], ++ degr[v];
+		return (int)edge.size() - 1;
+	}
+	void clear(){
+		edge.clear();
+		degl.assign(n, 0);
+		degr.assign(m, 0);
+	}
+	// Assign color to each edge so that
+	// 1. two edges sharing an endpoint have different color, and
+	// 2. each color is an integer in range [0, max_deg).
+	// O(size(edge) * (n + m + max_deg))
+	pair<vector<int>, int> color(){
+		if(edge.empty()) return {{}, 0};
+		int max_deg = max(*max_element(degl.begin(), degl.end()), *max_element(degr.begin(), degr.end()));
+		vector used_by_left(n, vector<int>(max_deg, -1)), used_by_right(m, vector<int>(max_deg, -1));
+		vector<int> edge_color((int)edge.size(), -1), order((int)edge.size());
+		iota(order.begin(), order.end(), 0);
+		shuffle(order.begin(), order.end(), mt19937(12345));
+		for(auto i: order){
+			auto [u, v] = edge[i];
+			for(auto c = 0; c < max_deg; ++ c) if(!~used_by_left[u][c] && !~used_by_right[v][c]){
+				used_by_left[u][c] = used_by_right[v][c] = i;
+				edge_color[i] = c;
+				goto DONE;
+			}
+			{
+				int c = 0, d = 0;
+				while(!~used_by_left[u][c] || ~used_by_right[v][c]) ++ c;
+				while(~used_by_left[u][d] || !~used_by_right[v][d]) ++ d;
+				while(true){
+					int j = used_by_right[v][d];
+					used_by_left[u][d] = used_by_right[v][d] = i;
+					edge_color[i] = d;
+					if(!~j){
+						used_by_right[v][c] = -1;
+						break;
+					}
+					i = j;
+					u = edge[i][0];
+					j = used_by_left[u][c];
+					used_by_left[u][c] = used_by_right[v][c] = i;
+					edge_color[i] = c;
+					if(!~j){
+						used_by_left[u][d] = -1;
+						break;
+					}
+					i = j;
+					v = edge[i][1];
+				}
+			}
+			DONE:;
+		}
+		return {edge_color, max_deg};
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>edge_coloring_bipartite</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
