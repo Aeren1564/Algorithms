@@ -1,0 +1,48 @@
+<snippet>
+	<content><![CDATA[
+// For a commutative data structure supporting insertion,
+// support deletion offline.
+struct data_structure_deletion_enabler_offline{
+	int n, qn; // Elements should lie in range [0, n).
+	vector<vector<int>> queue;
+	data_structure_deletion_enabler_offline(int n, int qn): n(n), qn(qn), queue(qn << 1){ }
+	// Update i exists during interval [ql, qr).
+	void insert(int i, int ql, int qr){
+		assert(0 <= i && i < n);
+		assert(0 <= ql && ql <= qr && qr <= qn);
+		auto recurse = [&](auto self, int u, int l, int r)->void{
+			if(qr <= l || r <= ql) return;
+			if(ql <= l && r <= qr) queue[u].push_back(i);
+			else{
+				int m = l + (r - l >> 1), v = u + 1, w = u + (m - l << 1);
+				self(self, v, l, m), self(self, w, m, r);
+			}
+		};
+		recurse(recurse, 0, 0, qn);
+	}
+	// insert(i): insert update i.
+	// state(): return the state of the DS as an integer.
+	// reverse_to(s): reverse the state of the DS to s.
+	// answer(qi): return the answer to the time qi.
+	// O(qn * log(qn)) insert() calls and O(qn) answer() calls.
+	template<class I, class S, class R, class A>
+	void solve(I insert, S state, R reverse_to, A answer){
+		auto recurse = [&](auto self, int u, int l, int r)->void{
+			int s = state();
+			for(auto i: queue[u]) insert(i);
+			if(r - l == 1) answer(l);
+			else{
+				int m = l + (r - l >> 1);
+				self(self, u + 1, l, m), self(self, u + (m - l << 1), m, r);
+			}
+			reverse_to(s);
+		};
+		recurse(recurse, 0, 0, qn);
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>data_structure_deletion_enabler_offline</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
