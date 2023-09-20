@@ -1,0 +1,74 @@
+<snippet>
+	<content><![CDATA[
+// For a commutative data structure supporting update, where each update has an associated priority,
+// support deletion of update with lowest priority online.
+// Assumes that no two priorities are equal at any moment.
+template<class P, class I, class S, class R, class Compare = less<>>
+struct data_structure_priority_queue_like_deletion_enabler_online{
+	int n; // Elements should lie in range [0, n).
+	I insert; // insert(i): insert the i-th update.
+	S state; // state(): return the state of the DS as an integer.
+	R reverse_to; // reverse_to(s): reverse the state of the DS to s.
+	vector<int> log;
+	vector<pair<int, P>> stack;
+	map<P, int, Compare> order;
+	Compare cmp;
+	data_structure_priority_queue_like_deletion_enabler_online(int n, P _type_deducer, I insert, S state, R reverse_to, Compare cmp = less<>()): n(n), was(n), insert(insert), state(state), reverse_to(reverse_to), log({state()}), cmp(cmp){ }
+	int iter = 0;
+	vector<int> was;
+	vector<pair<int, P>> popped, top;
+	// Amortized O(log(qn)) insert() and state() calls, and O(1) reverse_to() calls.
+	void pop(){
+		assert(!stack.empty());
+		++ iter;
+		int qn = (int)stack.size();
+		auto it = order.begin();
+		for(auto pick = 1, cnt = 0; ; ++ pick){
+			assert(pick <= qn);
+			auto [i, p] = stack.back();
+			stack.pop_back();
+			popped.push_back({i, p});
+			was[i] = iter;
+			while(it != order.end() && was[it->second] == iter) ++ it, ++ cnt;
+			if(2 * cnt < pick) continue;
+			reverse_to(log[(int)stack.size()]);
+			++ iter;
+			auto it = order.begin();
+			for(auto rep = pick + 1 >> 1; rep; -- rep, ++ it){
+				auto [p, i] = *it;
+				top.push_back({i, p});
+				was[i] = iter;
+			}
+			order.erase(order.begin());
+			while(!popped.empty()){
+				auto [i, p] = popped.back();
+				popped.pop_back();
+				if(was[i] == iter) continue;
+				stack.push_back({i, p});
+				insert(i);
+				log.push_back(state());
+			}
+			while(!top.empty()){
+				auto [i, p] = top.back();
+				top.pop_back();
+				stack.push_back({i, p});
+				insert(i);
+				log.push_back(state());
+			}
+			break;
+		}
+	}
+	void push(int i, const P &p){
+		assert(0 <= i && i < n);
+		stack.push_back({i, p});
+		assert(order.insert({p, i}).second);
+		insert(i);
+		log.push_back(state());
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>data_structure_priority_queue_like_deletion_enabler_online</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
