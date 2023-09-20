@@ -1,0 +1,64 @@
+<snippet>
+	<content><![CDATA[
+// For a commutative data structure supporting update, 
+// support deletion of the earliest update online.
+template<class I, class S, class R>
+struct data_structure_queue_like_deletion_enabler_online{
+	int n; // Elements should lie in range [0, n).
+	I insert; // insert(i): insert the i-th update.
+	S state; // state(): return the state of the DS as an integer.
+	R reverse_to; // reverse_to(s): reverse the state of the DS to s.
+	int zero_cnt = 0;
+	vector<int> log;
+	vector<pair<bool, int>> stack;
+	data_structure_queue_like_deletion_enabler_online(int n, I insert, S state, R reverse_to): insert(insert), state(state), reverse_to(reverse_to), log({state()}){ }
+	array<vector<pair<bool, int>>, 2> cur;
+	// O(log(qn)) insert() and state() calls, and O(1) reverse_to() calls.
+	void pop(){
+		assert(!stack.empty());
+		if(!zero_cnt){
+			zero_cnt = (int)stack.size();
+			reverse(stack.begin(), stack.end());
+			reverse_to(log[0]);
+			log.resize(1);
+			for(auto &p: stack){
+				p.first = false;
+				insert(p.second);
+				log.push_back(state());
+			}
+		}
+		while(stack.back().first){
+			cur[1].push_back(stack.back());
+			stack.pop_back();
+		}
+		for(auto size = zero_cnt & -zero_cnt, i = 0; i < size; ++ i){
+			assert(!stack.back().first);
+			cur[0].push_back(stack.back());
+			stack.pop_back();
+		}
+		reverse_to(log[stack.size()]);
+		log.resize(stack.size() + 1);
+		for(auto z: {1, 0}) for(; !cur[z].empty(); cur[z].pop_back()){
+			insert(cur[z].back().second);
+			log.push_back(state());
+			stack.push_back(cur[z].back());
+		}
+		assert(!stack.back().first);
+		stack.pop_back();
+		reverse_to(log[stack.size()]);
+		log.resize(stack.size() + 1);
+		-- zero_cnt;
+	}
+	void push(int i){
+		assert(0 <= i && i < n);
+		stack.push_back({true, i});
+		insert(e);
+		log.push_back(state());
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>data_structure_queue_like_deletion_enabler_online</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
