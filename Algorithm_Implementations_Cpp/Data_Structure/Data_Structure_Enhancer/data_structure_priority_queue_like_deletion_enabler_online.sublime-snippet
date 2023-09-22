@@ -9,19 +9,25 @@ struct data_structure_priority_queue_like_deletion_enabler_online{
 	I insert; // insert(i): insert the i-th update.
 	S state; // state(): return the state of the DS as an integer.
 	R reverse_to; // reverse_to(s): reverse the state of the DS to s.
-	vector<int> log;
 	vector<pair<int, P>> stack;
+	vector<int> log;
 	map<P, int, Compare> order;
 	Compare cmp;
 	data_structure_priority_queue_like_deletion_enabler_online(int n, P _type_deducer, I insert, S state, R reverse_to, Compare cmp = less<>()): n(n), was(n), insert(insert), state(state), reverse_to(reverse_to), log({state()}), cmp(cmp){ }
+	void clear(){
+		stack.clear();
+		log.resize(1);
+		reverse_to(log.back());
+		order.clear();
+	}
 	int iter = 0;
 	vector<int> was;
 	vector<pair<int, P>> popped, top;
 	// Amortized O(log(qn)) insert() and state() calls, and O(1) reverse_to() calls.
-	void pop(){
+	int pop(){
 		assert(!stack.empty());
 		++ iter;
-		int qn = (int)stack.size();
+		int qn = (int)stack.size(), ipop = -1;
 		auto it = order.begin();
 		for(auto pick = 1, cnt = 0; ; ++ pick){
 			assert(pick <= qn);
@@ -31,7 +37,8 @@ struct data_structure_priority_queue_like_deletion_enabler_online{
 			was[i] = iter;
 			while(it != order.end() && was[it->second] == iter) ++ it, ++ cnt;
 			if(2 * cnt < pick) continue;
-			reverse_to(log[(int)stack.size()]);
+			log.resize((int)stack.size() + 1);
+			reverse_to(log.back());
 			++ iter;
 			auto it = order.begin();
 			for(auto rep = pick + 1 >> 1; rep; -- rep, ++ it){
@@ -39,6 +46,7 @@ struct data_structure_priority_queue_like_deletion_enabler_online{
 				top.push_back({i, p});
 				was[i] = iter;
 			}
+			ipop = order.begin()->second;
 			order.erase(order.begin());
 			while(!popped.empty()){
 				auto [i, p] = popped.back();
@@ -48,15 +56,18 @@ struct data_structure_priority_queue_like_deletion_enabler_online{
 				insert(i);
 				log.push_back(state());
 			}
-			while(!top.empty()){
+			while((int)top.size() >= 2){
 				auto [i, p] = top.back();
 				top.pop_back();
 				stack.push_back({i, p});
 				insert(i);
 				log.push_back(state());
 			}
+			top.pop_back();
 			break;
 		}
+		assert(~ipop);
+		return ipop;
 	}
 	void push(int i, const P &p){
 		assert(0 <= i && i < n);
@@ -64,6 +75,14 @@ struct data_structure_priority_queue_like_deletion_enabler_online{
 		assert(order.insert({p, i}).second);
 		insert(i);
 		log.push_back(state());
+	}
+	friend ostream &operator<<(ostream &out, const data_structure_priority_queue_like_deletion_enabler_online &enabler){
+		out << "{";
+		for(auto i = 0; i < (int)enabler.stack.size(); ++ i){
+			out << enabler.stack[i].first;
+			if(i < (int)enabler.stack.size() - 1) out << ", ";
+		}
+		return out << "}";
 	}
 };
 ]]></content>
