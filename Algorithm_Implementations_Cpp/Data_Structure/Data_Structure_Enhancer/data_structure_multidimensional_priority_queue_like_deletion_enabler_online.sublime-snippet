@@ -1,0 +1,109 @@
+<snippet>
+	<content><![CDATA[
+// For a commutative data structure supporting update, where each update has d associated priorities,
+// support deletion of update with lowest priority in specified dimension online.
+// Assumes that no two priorities are equal at any moment in all dimension.
+// Source: https://codeforces.com/blog/entry/111117
+template<class P, class I, class S, class R, class Compare = less<>>
+struct data_structure_multidimensional_priority_queue_like_deletion_enabler_online{
+	int n, d; // Elements should lie in range [0, n).
+	double alpha;
+	I insert; // insert(i): insert the i-th update.
+	S state; // state(): return the state of the DS as an integer.
+	R reverse_to; // reverse_to(s): reverse the state of the DS to s.
+	vector<int> stack, log;
+	vector<map<P, int, Compare>> order;
+	data_structure_multidimensional_priority_queue_like_deletion_enabler_online(int n, int d, P _type_deducer, I insert, S state, R reverse_to, Compare cmp = less<>()): n(n), d(d), was(n), insert(insert), state(state), reverse_to(reverse_to), log({state()}), order(d, map<P, int, Compare>(cmp)){
+		assert(n >= 0 && d >= 1);
+		alpha = min(0.5, 1 - sqrt(1 - 1.0 / d));
+	}
+	void clear(){
+		stack.clear();
+		log.resize(1);
+		reverse_to(log.back());
+		for(auto &mp: order) mp.clear();
+	}
+	int iter = 0;
+	vector<int> was, cnt, popped;
+	vector<vector<int>> top;
+	vector<typename map<P, int, Compare>::iterator> it;
+	// Amortized O(d * log(qn)) insert() and state() calls, and O(1) reverse_to() calls.
+	int pop(int dpop){
+		assert(0 <= dpop && dpop < d);
+		assert(!stack.empty());
+		cnt.assign(d, 0);
+		top.resize(d);
+		++ iter;
+		int qn = (int)stack.size(), ipop = -1;
+		it.resize(d);
+		for(auto di = 0; di < d; ++ di) it[di] = order[di].begin();
+		for(auto pick = 1; ; ++ pick){
+			assert(pick <= qn);
+			int i = stack.back();
+			stack.pop_back();
+			popped.push_back(i);
+			was[i] = iter;
+			for(auto di = 0; di < d; ++ di) while(it[di] != order[di].end() && was[it[di]->second] == iter) ++ it[di], ++ cnt[di];
+			if(*min_element(cnt.begin(), cnt.end()) < alpha * pick) continue;
+			log.resize((int)stack.size() + 1);
+			reverse_to(log.back());
+			++ iter;
+			for(auto di = 0; di < d; ++ di){
+				it[di] = order[di].begin();
+				for(auto rep = (int)ceil(alpha * pick); rep; -- rep, ++ it[di]){
+					while(it[di] != order[di].end() && was[it[di]->second] == iter) ++ it[di];
+					if(it[di] == order[di].end()) break;
+					int i = it[di]->second;
+					top[di].push_back(i);
+					was[i] = iter;
+				}
+			}
+			ipop = order[dpop].begin()->second;
+			order[dpop].erase(order[dpop].begin());
+			top[dpop].erase(top[dpop].begin());
+			while(!popped.empty()){
+				int i = popped.back();
+				popped.pop_back();
+				if(was[i] == iter) continue;
+				stack.push_back(i);
+				insert(i);
+				log.push_back(state());
+			}
+			for(auto rep = (int)ceil(alpha * pick); rep; -- rep){
+				for(auto di = d - 1; di >= 0; -- di){
+					if(top[di].empty()) continue;
+					int i = top[di].back();
+					top[di].pop_back();
+					stack.push_back(i);
+					insert(i);
+					log.push_back(state());
+				}
+			}
+			break;
+		}
+		assert(~ipop);
+		return ipop;
+	}
+	void push(int i, const vector<P> &p){
+		assert(0 <= i && i < n);
+		assert((int)p.size() == d);
+		stack.push_back(i);
+		for(auto di = 0; di < d; ++ di) assert(order[di].insert({p[di], i}).second);
+		insert(i);
+		log.push_back(state());
+	}
+	friend ostream &operator<<(ostream &out, const data_structure_multidimensional_priority_queue_like_deletion_enabler_online &enabler){
+		out << "{";
+		for(auto i = 0; i < (int)enabler.stack.size(); ++ i){
+			out << enabler.stack[i];
+			if(i < (int)enabler.stack.size() - 1) out << ", ";
+		}
+		return out << "}";
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>data_structure_multidimensional_priority_queue_like_deletion_enabler_online</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
