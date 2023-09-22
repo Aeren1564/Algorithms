@@ -5,7 +5,9 @@
 struct data_structure_deletion_enabler_offline{
 	int n, qn; // Elements should lie in range [0, n).
 	vector<vector<int>> queue;
-	data_structure_deletion_enabler_offline(int n, int qn): n(n), qn(qn), queue(qn << 1){ }
+	data_structure_deletion_enabler_offline(int n, int qn): n(n), qn(qn), queue(qn << 1){
+		assert(n >= 0 && qn >= 0);
+	}
 	// Update i exists during interval [ql, qr).
 	void insert(int i, int ql, int qr){
 		assert(0 <= i && i < n);
