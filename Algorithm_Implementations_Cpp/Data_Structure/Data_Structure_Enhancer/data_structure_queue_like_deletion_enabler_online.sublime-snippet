@@ -11,7 +11,9 @@ struct data_structure_queue_like_deletion_enabler_online{
 	int zero_cnt = 0;
 	vector<pair<bool, int>> stack;
 	vector<int> log;
-	data_structure_queue_like_deletion_enabler_online(int n, I insert, S state, R reverse_to): n(n), insert(insert), state(state), reverse_to(reverse_to), log({state()}){ }
+	data_structure_queue_like_deletion_enabler_online(int n, I insert, S state, R reverse_to): n(n), insert(insert), state(state), reverse_to(reverse_to), log({state()}){
+		assert(n >= 0);
+	}
 	void clear(){
 		zero_cnt = 0;
 		stack.clear();
