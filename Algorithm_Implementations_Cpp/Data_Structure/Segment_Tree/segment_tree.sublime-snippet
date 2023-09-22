@@ -276,7 +276,7 @@ auto make_U_segment_tree(F UU, U U_id){
 }
 // Supports query and update
 template<class T, class U, class F1, class F2, class F3>
-auto make_Q_segment_tree(F1 TT, T T_id, F2 UU, U U_id, F3 UT){
+auto make_QU_segment_tree(F1 TT, T T_id, F2 UU, U U_id, F3 UT){
 	return segment_tree_base<true, true, T, U, F1, F2, F3>(TT, T_id, UU, U_id, UT);
 }
 ]]></content>
