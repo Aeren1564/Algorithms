@@ -62,6 +62,17 @@ struct fast_fourier_transform_wrapper{
 		for(auto i = 0; i < (int)res.size(); ++ i) res[i] = llround(buffer2[i].imag() / 4);
 		return res;
 	}
+	// O(n * log(n))
+	static vector<CD> convolute_complex(const vector<CD> &p, const vector<CD> &q){
+		if(min(p.size(), q.size()) < 60) return convolute_naive(p, q);
+		int n = 1 << __lg((int)p.size() + (int)q.size() - 1) + 1;
+		buffer1 = p, buffer2 = q;
+		buffer1.resize(n), buffer2.resize(n);
+		transform(buffer1), transform(buffer2);
+		for(auto i = 0; i < n; ++ i) buffer1[i] *= buffer2[i];
+		transform(buffer1, true);
+		return {buffer1.begin(), buffer1.begin() + ((int)p.size() + (int)q.size() - 1)};
+	}
 	// Safe for 64-bit integer range
 	// O(n * log(n))
 	template<class T>
@@ -112,7 +123,7 @@ vector<complex<double>> fast_fourier_transform_wrapper::root;
 vector<complex<long double>> fast_fourier_transform_wrapper::root_ld;
 vector<complex<double>> fast_fourier_transform_wrapper::buffer1;
 vector<complex<double>> fast_fourier_transform_wrapper::buffer2;
-
+ 
 using fft = fast_fourier_transform_wrapper;
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
