@@ -9,12 +9,18 @@ struct data_structure_queue_like_deletion_enabler_online{
 	S state; // state(): return the state of the DS as an integer.
 	R reverse_to; // reverse_to(s): reverse the state of the DS to s.
 	int zero_cnt = 0;
-	vector<int> log;
 	vector<pair<bool, int>> stack;
-	data_structure_queue_like_deletion_enabler_online(int n, I insert, S state, R reverse_to): insert(insert), state(state), reverse_to(reverse_to), log({state()}){ }
+	vector<int> log;
+	data_structure_queue_like_deletion_enabler_online(int n, I insert, S state, R reverse_to): n(n), insert(insert), state(state), reverse_to(reverse_to), log({state()}){ }
+	void clear(){
+		zero_cnt = 0;
+		stack.clear();
+		log.resize(1);
+		reverse_to(log.back());
+	}
 	array<vector<pair<bool, int>>, 2> cur;
 	// O(log(qn)) insert() and state() calls, and O(1) reverse_to() calls.
-	void pop(){
+	int pop(){
 		assert(!stack.empty());
 		if(!zero_cnt){
 			zero_cnt = (int)stack.size();
@@ -44,16 +50,26 @@ struct data_structure_queue_like_deletion_enabler_online{
 			stack.push_back(cur[z].back());
 		}
 		assert(!stack.back().first);
+		int i = stack.back().second;
 		stack.pop_back();
 		reverse_to(log[stack.size()]);
 		log.resize(stack.size() + 1);
 		-- zero_cnt;
+		return i;
 	}
 	void push(int i){
 		assert(0 <= i && i < n);
 		stack.push_back({true, i});
-		insert(e);
+		insert(i);
 		log.push_back(state());
+	}
+	friend ostream &operator<<(ostream &out, const data_structure_queue_like_deletion_enabler_online &enabler){
+		out << "{";
+		for(auto i = 0; i < (int)enabler.stack.size(); ++ i){
+			out << enabler.stack[i].second;
+			if(i < (int)enabler.stack.size() - 1) out << ", ";
+		}
+		return out << "}";
 	}
 };
 ]]></content>
