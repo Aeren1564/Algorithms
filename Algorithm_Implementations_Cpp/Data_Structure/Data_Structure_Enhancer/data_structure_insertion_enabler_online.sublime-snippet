@@ -7,7 +7,9 @@ struct data_structure_insertion_enabler_online{
 	vector<int> element;
 	B build; // build(id, a): build the DS with updates in a and assign it to bucket id.
 	C clear; // clear(id): assign empty DS to bucket id.
-	data_structure_insertion_enabler_online(int n, B build, C clear): n(n), build(build), clear(clear){ }
+	data_structure_insertion_enabler_online(int n, B build, C clear): n(n), build(build), clear(clear){
+		assert(n >= 0);
+	}
 	// Insert update i.
 	// Amortized O(clear() + build(n) / n)
 	void insert(int i){
