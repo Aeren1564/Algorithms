@@ -3,17 +3,18 @@
 // For a commutative data structure supporting update, where each update has an associated priority,
 // support deletion of update with lowest priority online.
 // Assumes that no two priorities are equal at any moment.
+// Source: https://codeforces.com/blog/entry/111117
 template<class P, class I, class S, class R, class Compare = less<>>
 struct data_structure_priority_queue_like_deletion_enabler_online{
 	int n; // Elements should lie in range [0, n).
 	I insert; // insert(i): insert the i-th update.
 	S state; // state(): return the state of the DS as an integer.
 	R reverse_to; // reverse_to(s): reverse the state of the DS to s.
-	vector<pair<int, P>> stack;
-	vector<int> log;
+	vector<int> stack, log;
 	map<P, int, Compare> order;
-	Compare cmp;
-	data_structure_priority_queue_like_deletion_enabler_online(int n, P _type_deducer, I insert, S state, R reverse_to, Compare cmp = less<>()): n(n), was(n), insert(insert), state(state), reverse_to(reverse_to), log({state()}), cmp(cmp){ }
+	data_structure_priority_queue_like_deletion_enabler_online(int n, P _type_deducer, I insert, S state, R reverse_to, Compare cmp = less<>()): n(n), was(n), insert(insert), state(state), reverse_to(reverse_to), log({state()}), order(cmp){
+		assert(n >= 0);
+	}
 	void clear(){
 		stack.clear();
 		log.resize(1);
@@ -21,8 +22,7 @@ struct data_structure_priority_queue_like_deletion_enabler_online{
 		order.clear();
 	}
 	int iter = 0;
-	vector<int> was;
-	vector<pair<int, P>> popped, top;
+	vector<int> was, popped, top;
 	// Amortized O(log(qn)) insert() and state() calls, and O(1) reverse_to() calls.
 	int pop(){
 		assert(!stack.empty());
@@ -31,39 +31,39 @@ struct data_structure_priority_queue_like_deletion_enabler_online{
 		auto it = order.begin();
 		for(auto pick = 1, cnt = 0; ; ++ pick){
 			assert(pick <= qn);
-			auto [i, p] = stack.back();
+			int i = stack.back();
 			stack.pop_back();
-			popped.push_back({i, p});
+			popped.push_back(i);
 			was[i] = iter;
 			while(it != order.end() && was[it->second] == iter) ++ it, ++ cnt;
 			if(2 * cnt < pick) continue;
 			log.resize((int)stack.size() + 1);
 			reverse_to(log.back());
 			++ iter;
-			auto it = order.begin();
+			it = order.begin();
 			for(auto rep = pick + 1 >> 1; rep; -- rep, ++ it){
-				auto [p, i] = *it;
-				top.push_back({i, p});
+				int i = it->second;
+				top.push_back(i);
 				was[i] = iter;
 			}
 			ipop = order.begin()->second;
 			order.erase(order.begin());
+			top.erase(top.begin());
 			while(!popped.empty()){
-				auto [i, p] = popped.back();
+				int i = popped.back();
 				popped.pop_back();
 				if(was[i] == iter) continue;
-				stack.push_back({i, p});
+				stack.push_back(i);
 				insert(i);
 				log.push_back(state());
 			}
-			while((int)top.size() >= 2){
-				auto [i, p] = top.back();
+			while(!top.empty()){
+				int i = top.back();
 				top.pop_back();
-				stack.push_back({i, p});
+				stack.push_back(i);
 				insert(i);
 				log.push_back(state());
 			}
-			top.pop_back();
 			break;
 		}
 		assert(~ipop);
@@ -71,7 +71,7 @@ struct data_structure_priority_queue_like_deletion_enabler_online{
 	}
 	void push(int i, const P &p){
 		assert(0 <= i && i < n);
-		stack.push_back({i, p});
+		stack.push_back(i);
 		assert(order.insert({p, i}).second);
 		insert(i);
 		log.push_back(state());
@@ -79,7 +79,7 @@ struct data_structure_priority_queue_like_deletion_enabler_online{
 	friend ostream &operator<<(ostream &out, const data_structure_priority_queue_like_deletion_enabler_online &enabler){
 		out << "{";
 		for(auto i = 0; i < (int)enabler.stack.size(); ++ i){
-			out << enabler.stack[i].first;
+			out << enabler.stack[i];
 			if(i < (int)enabler.stack.size() - 1) out << ", ";
 		}
 		return out << "}";
