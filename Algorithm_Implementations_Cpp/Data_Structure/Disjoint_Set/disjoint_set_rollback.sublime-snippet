@@ -9,19 +9,19 @@ struct disjoint_set_rollback{
 	int classes() const{
 		return _classes;
 	}
-	// O(log n)
+	// O(log(n))
 	int root(int u){
 		return p[u] < 0 ? u : root(p[u]);
 	}
-	// O(log n)
+	// O(log(n))
 	bool share(int a, int b){
 		return root(a) == root(b);
 	}
-	// O(log n)
+	// O(log(n))
 	int size(int u){
 		return -p[root(u)];
 	}
-	// O(log n)
+	// O(log(n))
 	bool merge(int u, int v){
 		u = root(u), v = root(v);
 		if(u == v) return false;
@@ -31,7 +31,7 @@ struct disjoint_set_rollback{
 		p[u] += p[v], p[v] = u;
 		return true;
 	}
-	// O(log n)
+	// O(log(n))
 	bool merge(int u, int v, auto act){
 		u = root(u), v = root(v);
 		if(u == v) return false;
@@ -44,27 +44,28 @@ struct disjoint_set_rollback{
 		return true;
 	}
 	// O(1)
-	int time(){
+	int state(){
 		return (int)recover.size();
 	}
-	// O((size(recover) - t) * log n)
-	void reverse_to(int t){
-		while((int)recover.size() > t){
+	// O((size(recover) - s) * log(n))
+	void reverse_to(int s){
+		assert(s <= (int)recover.size());
+		while((int)recover.size() > s){
 			++ _classes;
-			auto [v, s] = recover.back();
+			auto [u, su] = recover.back();
 			recover.pop_back();
-			p[p[v]] -= s, p[v] = s;
+			p[p[u]] -= su, p[u] = su;
 		}
 	}
-	// O((size(recover) - t) * log n)
-	void reverse_to(int t, auto act){
-		while((int)recover.size() > t){
+	// O((size(recover) - s) * log(n))
+	void reverse_to(int s, auto act){
+		while((int)recover.size() > s){
 			++ _classes;
-			auto [v, s] = recover.back();
+			auto [u, su] = recover.back();
 			recover.pop_back();
-			int u = p[v];
-			p[p[v]] -= s, p[v] = s;
-			act(u, v);
+			int pu = p[u];
+			p[p[u]] -= su, p[u] = su;
+			act(pu, u);
 		}
 	}
 	void clear(){
