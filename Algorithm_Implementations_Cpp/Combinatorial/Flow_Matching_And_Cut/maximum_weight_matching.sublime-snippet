@@ -48,7 +48,7 @@ struct maximum_weight_matching{
 			index[node[pos].id] = 0;
 			if(pos == size_){ --size_; return; }
 			bool up = (node[size_].value < node[pos].value);
-			node[pos] = node[size_--]; index[node[pos].id] = pos;
+			node[pos] = node[size_ --]; index[node[pos].id] = pos;
 			if(up) up_heap(pos);
 			else down_heap(pos);
 		}
@@ -173,8 +173,8 @@ struct maximum_weight_matching{
 		Queue(){}
 		Queue(int N): qh(0), qt(0), data(N){}
 		T operator [](int i) const{ return data[i]; }
-		void enqueue(int u){ data[qt++] = u; }
-		int dequeue(){ return data[qh++]; }
+		void enqueue(int u){ data[qt ++] = u; }
+		int dequeue(){ return data[qh ++]; }
 		bool empty() const{ return qh == qt; }
 		void clear(){ qh = qt = 0; }
 		int size() const{ return qt; }
@@ -215,7 +215,7 @@ struct maximum_weight_matching{
 		tcost_t ret = 0;
 		for(auto u = 1; u <= N; ++ u) if(mate[u] > u){
 			cost_t max_c = 0;
-			for(auto eid = ofs[u]; eid < ofs[u + 1]; ++eid){
+			for(auto eid = ofs[u]; eid < ofs[u + 1]; ++ eid){
 				if(edges[eid].to == mate[u]) max_c = max(max_c, edges[eid].cost);
 			}
 			ret += max_c;
@@ -305,7 +305,7 @@ struct maximum_weight_matching{
 		}
 		return d;
 	}
-	template <Label Lab>
+	template<Label Lab>
 	inline void update_heap2(int x, int y, int by, cost_t t){
 		if(t >= slack[y]) return;
 		slack[y] = t; best_from[y] = x;
@@ -342,7 +342,7 @@ struct maximum_weight_matching{
 		swap(mate[a], mate[b]);
 		swap(potential[a], potential[b]); swap(lazy[a], lazy[b]);
 		swap(time_created[a], time_created[b]);
-		for(auto d = 0; d < 2; ++d) node[node[a].link[d].b].link[1 ^ d].b = b;
+		for(auto d = 0; d < 2; ++ d) node[node[a].link[d].b].link[1 ^ d].b = b;
 		swap(node[a], node[b]);
 	}
 	void set_surface_and_group(int b, int sf, int g){
@@ -383,7 +383,7 @@ struct maximum_weight_matching{
 		}
 		const int bid = unused_bid[--unused_bid_idx_]; assert(unused_bid_idx_ >= 0);
 		int tree_size = 0;
-		for(auto d = 0; d < 2; ++d){
+		for(auto d = 0; d < 2; ++ d){
 			for(auto bv = surface[x]; bv != lca; ){
 				int mv = mate[bv], bmv = surface[mv], v = mate[mv];
 				int f = link[v].from, t = link[v].to;
@@ -535,7 +535,7 @@ struct maximum_weight_matching{
 				if(x != root) rematch(x, 0);
 				return true;
 			}
-			for(auto eid = ofs[x]; eid < ofs[x + 1]; ++eid){
+			for(auto eid = ofs[x]; eid < ofs[x + 1]; ++ eid){
 				auto &e = edges[eid]; int y = e.to, by = surface[y];
 				if(bx == by) continue;
 				Label l = label[by];
@@ -620,7 +620,7 @@ struct maximum_weight_matching{
 	vector<cost_t> potential;
 	vector<int> unused_bid; int unused_bid_idx_;
 	vector<Node> node;
-	// for O(nm log n) implementation
+	// for O(n * m * log(n)) implementation
 	vector<int> heavy, group;
 	vector<cost_t> time_created, lazy, slack;
 	vector<int> best_from;
@@ -662,7 +662,7 @@ struct maximum_weight_matching{
 	void find_maximal_matching(){
 		// Find a maximal matching naively.
 		for(auto u = 1; u <= N; ++ u) if(!mate[u]){
-			for(auto eid = ofs[u]; eid < ofs[u + 1]; ++eid){
+			for(auto eid = ofs[u]; eid < ofs[u + 1]; ++ eid){
 				auto &e = edges[eid]; int v = e.to;
 				if(mate[v] > 0 || reduced_cost(u, v, e) > 0) continue;
 				mate[u] = v; mate[v] = u;
@@ -680,7 +680,7 @@ struct maximum_weight_matching{
 		for(auto i = N + 1; i > 0; -- i) ofs[i] = ofs[i - 1];
 		ofs[0] = 0;
 	}
-	// O(n m log n) time and O(n + m) space
+	// O(n * m * log(n)) time and O(n + m) space
 	tcost_t solve(bool init_matching = false){
 		initialize();
 		set_potential();
