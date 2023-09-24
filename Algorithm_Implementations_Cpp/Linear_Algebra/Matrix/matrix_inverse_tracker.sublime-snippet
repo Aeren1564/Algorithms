@@ -4,7 +4,7 @@
 // M must be a matrix type
 // Assumes T is a field
 // Requires matrix, matrix_fixed, or matrix_Z2
-template<class M, class I>
+template<class M>
 struct matrix_inverse_tracker{
 	using T = M::ring_t;
 	int n;
@@ -12,20 +12,18 @@ struct matrix_inverse_tracker{
 	T determinant;
 	M inverse_matrix;
 	T inverse_determinant;
-	I find_inverse;
 	// Assumes a is invertible
-	matrix_inverse_tracker(const M &a, I find_inverse):
+	matrix_inverse_tracker(const M &a):
 		n(a.n),
 		matrix(a),
-		determinant(a.determinant(find_inverse)),
-		inverse_matrix(*a.inverse(find_inverse)),
-		inverse_determinant(*find_inverse(determinant)),
-		find_inverse(find_inverse){
+		determinant(a.determinant_field()),
+		inverse_matrix(*a.inverse()),
+		inverse_determinant(T(1) / determinant){
 		assert(a.m == n);
 	}
 	// Sherman–Morrison formula and matrix determinant lemma
 	// Apply a += u * v^T if the resulting matrix is invertible
-	// One find_inverse() call along with O(n^2) operations on T
+	// O(n^2) operations on T
 	bool update(const M::domain_t &u, const M::range_t &v){
 		auto au = inverse_matrix * u;
 		T c = T(1);
@@ -33,7 +31,7 @@ struct matrix_inverse_tracker{
 		if(c == T(0)) return false;
 		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < n; ++ j) matrix[i][j] += u[i] * v[j];
 		determinant *= c;
-		inverse_determinant *= c = *find_inverse(c);
+		inverse_determinant *= c = T(1) / c;
 		auto va = v * inverse_matrix;
 		for(auto &x: va) x *= c;
 		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < n; ++ j) inverse_matrix[i][j] -= au[i] * va[j];
@@ -49,15 +47,15 @@ struct matrix_inverse_tracker{
 		assert(U.n == n && U.m == k);
 		assert(C.n == k && C.m == k);
 		assert(V.n == k && V.m == n);
-		T det_C = C.determinant(find_inverse);
-		T det_C_inv = *find_inverse(det_C);
+		T det_C = C.determinant_field();
+		T det_C_inv = T(1) / det_C;
 		auto au = inverse_matrix * U;
-		auto D = *C.inverse(find_inverse) + V * au;
-		auto invDp = D.inverse(find_inverse);
+		auto D = *C.inverse() + V * au;
+		auto invDp = D.inverse();
 		if(!invDp) return false;
 		matrix += U * C * V;
-		determinant *= D.determinant(find_inverse) * det_C;
-		inverse_determinant *= (D = *invDp).determinant(find_inverse) * det_C_inv;
+		determinant *= D.determinant_field() * det_C;
+		inverse_determinant *= (D = *invDp).determinant_field() * det_C_inv;
 		auto va = V * inverse_matrix;
 		inverse_matrix -= au * D * va;
 		return true;
