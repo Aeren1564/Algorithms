@@ -12,7 +12,7 @@ struct hungarian_weighted_bipartite_matching{
 	// assign 0 to the non-linked and negative pairs for maximum weight matching
 	// assign -infty to the non-linked pairs for maximum weight maximum matching
 	// infity should satisfy infity > n * (max_weight - min_weight)
-	// O(n ^ 3)
+	// O(n^3)
 	template<class U>
 	T optimal_matching(const vector<vector<U>> &adjm){
 		if(!n) return 0;
