@@ -194,7 +194,7 @@ struct matrix{
 		for(auto i = 0; i < n; ++ i) res[i][i] = T(1);
 		for(auto j = 0; j < n; ++ j){
 			int rank = j, pivot = -1;
-			if(is_floating_point_v<T>){
+			if constexpr(is_floating_point_v<T>){
 				static const T eps = 1e-9;
 				pivot = rank;
 				for(auto i = rank + 1; i < n; ++ i) if(abs(a[pivot][j]) < abs(a[i][j])) pivot = i;
