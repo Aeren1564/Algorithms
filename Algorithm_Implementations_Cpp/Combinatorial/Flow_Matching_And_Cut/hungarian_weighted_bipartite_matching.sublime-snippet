@@ -1,76 +1,55 @@
 <snippet>
 	<content><![CDATA[
+// Source: kactl
+// Assign 0 to the non-linked and negative pairs for maximum weight matching.
+// Assign -infty to the non-linked pairs for maximum weight maximum matching.
+// infity should satisfy infity > n * (max_weight - min_weight)
+// O(n^2 * m)
 template<class T>
-struct hungarian_weighted_bipartite_matching{
-	int n; // maximum number of vertices on each bipartition
-	vector<int> pu, pv;
-	hungarian_weighted_bipartite_matching(int n): n(n), pu(n), pv(n), l_x(n), l_y(n), slack(n), slack_x(n), tree_x(n), tree_y(n), s(n), t(n){
+tuple<T, vector<int>, vector<int>> hungarian_weighted_bipartite_matching(vector<vector<T>> a){
+	if(a.empty()) return {0, {}, {}};
+	bool swapped = false;
+	int n = (int)a.size() + 1, m = (int)a[0].size() + 1;
+	for(auto i = 0; i < n - 1; ++ i) for(auto j = 0; j < m - 1; ++ j) a[i][j] = -a[i][j];
+	if(n > m){
+		swap(n, m);
+		swapped = true;
+		vector b(n - 1, vector<T>(m - 1));
+		for(auto i = 0; i < n - 1; ++ i) for(auto j = 0; j < m - 1; ++ j) b[i][j] = a[j][i];
+		swap(a, b);
 	}
-	vector<T> l_x, l_y, slack;
-	vector<int> slack_x, tree_x, tree_y;
-	vector<bool> s, t;
-	// assign 0 to the non-linked and negative pairs for maximum weight matching
-	// assign -infty to the non-linked pairs for maximum weight maximum matching
-	// infity should satisfy infity > n * (max_weight - min_weight)
-	// O(n^3)
-	template<class U>
-	T optimal_matching(const vector<vector<U>> &adjm){
-		if(!n) return 0;
-		assert((int)adjm.size() == n && (int)adjm[0].size() == n);
-		fill(pu.begin(), pu.end(), -1);
-		fill(pv.begin(), pv.end(), -1);
-		fill(l_x.begin(), l_x.end(), 0);
-		fill(l_y.begin(), l_y.end(), 0);
-		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < n; ++ j) l_x[i] = max<T>(l_x[i], adjm[i][j]);
-		for(auto rep = n; rep > 0; ){
-			fill(tree_x.begin(), tree_x.end(), -1);
-			fill(tree_y.begin(), tree_y.end(), -1);
-			fill(s.begin(), s.end(), false);
-			fill(t.begin(), t.end(), false);
-			int s_start;
-			for(auto i = 0; i < n; ++ i) if(!~pu[i]){
-				s[i] = true, s_start = i;
-				break;
+	vector<T> u(n), v(m);
+	vector<int> p(m), mu(n - 1);
+	for(auto i = 1; i < n; ++ i){
+		p[0] = i;
+		int j0 = 0; // add "dummy" worker 0
+		vector<T> dist(m, numeric_limits<T>::max());
+		vector<int> pv(m, -1), done(m + 1);
+		do{ // dijkstra
+			done[j0] = true;
+			int i0 = p[j0], j1;
+			T delta = numeric_limits<T>::max();
+			for(auto j = 1; j < m; ++ j) if(!done[j]){
+				T cur = a[i0 - 1][j - 1] - u[i0] - v[j];
+				if(cur < dist[j]) dist[j] = cur, pv[j] = j0;
+				if(dist[j] < delta) delta = dist[j], j1 = j;
 			}
-			for(auto i = 0; i < n; ++ i){
-				slack[i] = l_x[s_start] + l_y[i] - adjm[s_start][i];
-				slack_x[i] = s_start;
+			for(auto j = 0; j < m; ++ j){
+				if(done[j]) u[p[j]] += delta, v[j] -= delta;
+				else dist[j] -= delta;
 			}
-			FLAG:;
-			int y = -1;
-			for(auto i = 0; i < n; ++ i) if(!slack[i] && !t[i]) y = i;
-			if(!~y){
-				T alpha = numeric_limits<T>::max();
-				for(auto i = 0; i < n; ++ i) if(!t[i]) alpha = min(alpha, slack[i]);
-				for(auto i = 0; i < n; ++ i){
-					if(s[i]) l_x[i] -= alpha;
-					if(t[i]) l_y[i] += alpha;
-				}
-				for(auto i = 0; i < n; ++ i) if(!t[i]){
-					slack[i] -= alpha;
-					if(!slack[i]) y = i;
-				}
-			}
-			if(!~pv[y]){
-				tree_y[y] = slack_x[y];
-				while(~y){
-					int x = tree_y[y], next_y = pu[x];
-					pv[y] = x, pu[x] = y;
-					y = next_y;
-				}
-				-- rep;
-			}
-			else{
-				int z = pv[y];
-				tree_x[z] = y, tree_y[y] = slack_x[y];
-				s[z] = true, t[y] = true;
-				for(auto i = 0; i < n; ++ i) if(auto temp = l_x[z] + l_y[i] - adjm[z][i]; temp < slack[i]) slack[i] = temp, slack_x[i] = z;
-				goto FLAG;
-			}
+			j0 = j1;
+		}while(p[j0]);
+		while(j0){ // update alternating path
+			int j1 = pv[j0];
+			p[j0] = p[j1], j0 = j1;
 		}
-		return accumulate(l_x.begin(), l_x.end(), accumulate(l_y.begin(), l_y.end(), T{}));
 	}
-};
+	vector<int> mv(m - 1, -1);
+	for(auto j = 1; j < m; ++ j) if(p[j]) mu[p[j] - 1] = j - 1, mv[j - 1] = p[j] - 1;
+	if(swapped) swap(mu, mv);
+	return {v[0], mu, mv};
+}
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
 	<tabTrigger>hungarian_weighted_bipartite_matching</tabTrigger> -->
