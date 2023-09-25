@@ -25,8 +25,9 @@ struct range_minmax_query_solver_2d{
 		}
 	}
 	// O(1)
-	T query(int xl, int yl, int xr, int yr) const{
-		assert(0 <= xl && xl <= xr && xr <= n && 0 <= yl && yl <= yr && yr <= m);
+	T query(int xl, int xr, int yl, int yr) const{
+		assert(0 <= xl && xl <= xr && xr <= n);
+		assert(0 <= yl && yl <= yr && yr <= m);
 		if(xl == xr || yl == yr) return T_id;
 		int xd = __lg(xr - xl), yd = __lg(yr - yl);
 		return min({data[xd][yd][xl][yl], data[xd][yd][xl][yr - (1 << yd)], data[xd][yd][xr - (1 << xd)][yl], data[xd][yd][xr - (1 << xd)][yr - (1 << yd)]}, cmp);
