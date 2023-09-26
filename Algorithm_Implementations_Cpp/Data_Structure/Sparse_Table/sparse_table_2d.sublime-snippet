@@ -7,7 +7,7 @@ struct sparse_table_2d{
 	F TT;
 	T T_id;
 	sparse_table_2d(){ }
-	// O(n m log n log m)
+	// O(n * log(n) * m * log(m))
 	sparse_table_2d(const vector<vector<T>> &a, F TT, T T_id): n((int)a.size()), m((int)a[0].size()), TT(TT), T_id(T_id), data({{a}}){
 		for(auto q = 1, j = 1; q << 1 <= m; q <<= 1, ++ j){
 			data[0].push_back(vector<vector<T>>(n, vector<T>(m - (q << 1) + 1)));
