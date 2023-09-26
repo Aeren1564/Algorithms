@@ -9,7 +9,7 @@ struct range_minmax_query_solver_2d{
 	Compare cmp;
 	T T_id;
 	range_minmax_query_solver_2d(){ }
-	// O(n m log n log m)
+	// O(n * log(n) * m * log(m))
 	range_minmax_query_solver_2d(const vector<vector<T>> &a, Compare cmp = less<>(), T T_id = numeric_limits<T>::max()): n((int)a.size()), m((int)a[0].size()), cmp(cmp), T_id(T_id), data({{a}}){
 		for(auto q = 1, j = 1; q << 1 <= m; q <<= 1, ++ j){
 			data[0].push_back(vector<vector<T>>(n, vector<T>(m - (q << 1) + 1)));
