@@ -1,0 +1,43 @@
+<snippet>
+	<content><![CDATA[
+// Returns [closed segment l lies (strictly if [strict]) inside poly].
+// Requires point, line, and point_in_polygon
+template<class T>
+bool segment_in_polygon(const line<T> &l, const vector<point<T>> &poly, bool strict = true){
+	if(!point_in_polygon(l.p, poly, strict) || !point_in_polygon(l.q(), poly, strict)) return false;
+	int n = (int)poly.size();
+	for(auto u = 0; u < n; ++ u){
+		auto r = poly[u], s = poly[(u + 1) % n];
+		auto prod = l.q() - l.p ^ s - r;
+		auto x = r - l.p ^ l.q() - l.p;
+		auto y = s - r ^ l.p - r;
+		if(prod < 0) prod = -prod, x = -x, y = -y;
+		if(0 < x && x < prod && 0 <= y && y <= prod){
+			// intersects strictly between r and s
+			if(clockwise(r, s, l.p) || clockwise(r, s, l.q())) return false;
+		}
+		if((s - l.p ^ s - l.q()) == 0 && (s - l.p) * (s - l.q()) <= 0){
+			// intersects at point s
+			auto t = poly[(u + 2) % n];
+			if(counterclockwise(l.p, l.q(), r) && counterclockwise(l.q(), l.p, t)){
+				if(s != l.p) return false;
+			}
+			else if(counterclockwise(l.p, l.q(), t) && counterclockwise(l.q(), l.p, r)){
+				if(s != l.q()) return false;
+			}
+			else if(counterclockwise(l.p, l.q(), r) || counterclockwise(l.p, l.q(), t)){
+				if(counterclockwise(r, s, t) && !(s == l.q() && colinear(l.p, r, s)) && !(s == l.p && colinear(s, t, l.q()))) return false;
+			}
+			else{
+				if(counterclockwise(r, s, t) && !(s == l.p && colinear(s, r, l.q())) && !(s == l.q() && colinear(l.p, t, s))) return false;
+			}
+		}
+	}
+	return true;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>segment_in_polygon</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
