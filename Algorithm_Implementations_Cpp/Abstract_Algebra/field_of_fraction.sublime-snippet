@@ -1,10 +1,17 @@
 <snippet>
 	<content><![CDATA[
-template<class T>
+template<class T, bool Force_Reduction = false>
 struct field_of_fraction{
 	T n, d;
 	field_of_fraction(T n = 0, T d = 1): n(n), d(d){
 		if(d < 0) this->n = -n, this->d = -d;
+	}
+	friend ostream &operator<<(ostream &out, const field_of_fraction &x){
+		return out << x.n << "/" << x.d;
+	}
+	friend istream &operator>>(istream &in, field_of_fraction &x){
+		in >> x.n, x.d = 1;
+		return in;
 	}
 	field_of_fraction &reduce(){
 		T g = gcd(n, d);
@@ -15,33 +22,46 @@ struct field_of_fraction{
 		return field_of_fraction(*this).reduce();
 	}
 	field_of_fraction &operator+=(const field_of_fraction &x){
-		return *this = {n * x.d + x.n * d, d * x.d};
+		*this = {n * x.d + x.n * d, d * x.d};
+		if constexpr(Force_Reduction) this->reduce();
+		return *this;
 	}
 	field_of_fraction &operator+=(const T &x){
-		return *this = {n + d * x, d};
+		*this = {n + d * x, d};
+		if constexpr(Force_Reduction) this->reduce();
+		return *this;
 	}
 	field_of_fraction &operator-=(const field_of_fraction &x){
-		return *this = {n * x.d - x.n * d, d * x.d};
+		*this = {n * x.d - x.n * d, d * x.d};
+		if constexpr(Force_Reduction) this->reduce();
+		return *this;
 	}
 	field_of_fraction &operator-=(const T &x){
-		return *this = {n - d * x, d};
+		*this = {n - d * x, d};
+		if constexpr(Force_Reduction) this->reduce();
+		return *this;
 	}
 	field_of_fraction &operator*=(const field_of_fraction &x){
-		return *this = {n * x.n, d * x.d};
+		*this = {n * x.n, d * x.d};
+		if constexpr(Force_Reduction) this->reduce();
+		return *this;
 	}
 	field_of_fraction &operator*=(const T &x){
-		return *this = {n * x, d};
+		*this = {n * x, d};
+		if constexpr(Force_Reduction) this->reduce();
+		return *this;
 	}
 	field_of_fraction &operator/=(const field_of_fraction &x){
 		assert(x.n != T(0));
-		return *this = {n * x.d, d * x.n};
+		*this = {n * x.d, d * x.n};
+		if constexpr(Force_Reduction) this->reduce();
+		return *this;
 	}
 	field_of_fraction &operator/=(const T &x){
 		assert(x != T(0));
-		return *this = {n, d * x};
-	}
-	friend ostream &operator<<(ostream &out, const field_of_fraction &x){
-		return out << x.n << "/" << x.d;
+		*this = {n, d * x};
+		if constexpr(Force_Reduction) this->reduce();
+		return *this;
 	}
 	field_of_fraction operator+(const field_of_fraction &x) const{
 		return field_of_fraction(*this) += x;
@@ -62,7 +82,9 @@ struct field_of_fraction{
 		return field_of_fraction(*this) -= x;
 	}
 	friend field_of_fraction operator-(const T &x, const field_of_fraction &f){
-		return {x * f.d - f.n, f.d};
+		field_of_fraction g = {x * f.d - f.n, f.d};
+		if constexpr(Force_Reduction) g.reduce();
+		return g;
 	}
 	field_of_fraction operator-() const{
 		return {-n, d};
@@ -83,7 +105,9 @@ struct field_of_fraction{
 		return field_of_fraction(*this) /= x;
 	}
 	friend field_of_fraction operator/(const T &x, const field_of_fraction &f){
-		return field_of_fraction(x * f.d, f.n);
+		auto g = field_of_fraction(x * f.d, f.n);
+		if constexpr(Force_Reduction) g.reduce();
+		return g;
 	}
 	field_of_fraction &operator++(){
 		n += d;
@@ -121,10 +145,24 @@ friend bool operator c(const T &x, const field_of_fraction &f){\
 }
 OP(==) OP(!=) OP(<) OP(<=) OP(>) OP(>=)
 #undef OP
+	explicit operator double() const{
+		return 1.0 * n / d;
+	}
+	explicit operator long double() const{
+		return 1.0l * n / d;
+	}
+	friend double sqrt(const field_of_fraction &f){
+		return sqrt((double)f);
+	}
+	friend long double sqrtl(const field_of_fraction &f){
+		return sqrtl((long double)f);
+	}
+	friend field_of_fraction abs(const field_of_fraction &f){
+		return f < 0 ? -f : f;
+	}
 };
 namespace std{
-	template<class T>
-	struct numeric_limits<field_of_fraction<T>>{
+	template<class T> struct numeric_limits<field_of_fraction<T>>{
 		static field_of_fraction<T> min(){ return {-1, 0}; };
 		static field_of_fraction<T> max(){ return {1, 0}; };
 	};
