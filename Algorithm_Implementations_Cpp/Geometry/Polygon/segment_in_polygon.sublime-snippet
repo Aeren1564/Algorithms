@@ -5,6 +5,7 @@
 template<class T>
 bool segment_in_polygon(const line<T> &l, const vector<point<T>> &poly, bool strict = true){
 	if(!point_in_polygon(l.p, poly, strict) || !point_in_polygon(l.q(), poly, strict)) return false;
+	if(l.p == l.q()) return true;
 	int n = (int)poly.size();
 	for(auto u = 0; u < n; ++ u){
 		auto r = poly[u], s = poly[(u + 1) % n];
