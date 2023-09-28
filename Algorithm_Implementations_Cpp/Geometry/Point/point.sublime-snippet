@@ -50,10 +50,10 @@ struct point{
 #undef scalarapply
 #undef compareop
 	double norm() const{
-		return sqrt(1.0 * x * x + 1.0 * y * y);
+		return sqrt(x * x + y * y);
 	}
-	long double norml() const{
-		return sqrtl(1.0L * x * x + 1.0L * y * y);
+	long double norm_l() const{
+		return sqrtl(x * x + y * y);
 	}
 	T squared_norm() const{
 		return x * x + y * y;
@@ -63,14 +63,14 @@ struct point{
 		return atan2(y, x);
 	}
 	// [-pi, pi]
-	long double anglel() const{
+	long double angle_l() const{
 		return atan2l(y, x);
 	}
 	point<double> unit() const{
 		return point<double>(x, y) / norm();
 	}
-	point<long double> unitl() const{
-		return point<long double>(x, y) / norml();
+	point<long double> unit_l() const{
+		return point<long double>(x, y) / norm_l();
 	}
 	point perp() const{
 		return {-y, x};
@@ -78,13 +78,13 @@ struct point{
 	point<double> normal() const{
 		return perp().unit();
 	}
-	point<long double> normall() const{
-		return perp().unitl();
+	point<long double> normal_l() const{
+		return perp().unit_l();
 	}
 	point<double> rotate(double theta) const{
 		return {x * cos(theta) - y * sin(theta), x * sin(theta) + y * cos(theta)};
 	}
-	point<long double> rotatel(double theta) const{
+	point<long double> rotate_l(double theta) const{
 		return {x * cosl(theta) - y * sinl(theta), x * sinl(theta) + y * cosl(theta)};
 	}
 	point reflect_x() const{
@@ -97,7 +97,8 @@ struct point{
 		return {2 * o.x - x, 2 * o.y - y};
 	}
 	bool parallel_to(const point &q) const{
-		return abs(*this ^ q) <= 1e-9;
+		if constexpr(is_floating_point_v<T>) return abs(*this ^ q) <= 1e-9;
+		else return abs(*this ^ q) == 0;
 	}
 };
 template<class T>
@@ -105,8 +106,8 @@ double distance(const point<T> &p, const point<T> &q){
 	return (p - q).norm();
 }
 template<class T>
-long double distancel(const point<T> &p, const point<T> &q){
-	return (p - q).norml();
+long double distance_l(const point<T> &p, const point<T> &q){
+	return (p - q).norm_l();
 }
 template<class T>
 T squared_distance(const point<T> &p, const point<T> &q){
@@ -130,7 +131,7 @@ double angle(const point<T> &p, const point<T> &q){
 }
 // [-pi, pi]
 template<class T>
-long double anglel(const point<T> &p, const point<T> &q){
+long double angle_l(const point<T> &p, const point<T> &q){
 	return atan2l(p ^ q, p * q);
 }
 // Check if p->q->r is sorted by angle with respect to the origin
@@ -172,7 +173,7 @@ point<double> polar(double x, double theta){
 	assert(x >= 0);
 	return {x * cos(theta), x * sin(theta)};
 }
-point<long double> polarl(long double x, long double theta){
+point<long double> polar_l(long double x, long double theta){
 	assert(x >= 0);
 	return {x * cosl(theta), x * sinl(theta)};
 }
