@@ -1,0 +1,140 @@
+<snippet>
+	<content><![CDATA[
+// Source: https://infossm.github.io/blog/2022/03/10/Minimum-Steiner-Tree/
+// Requires disjoint_set and graph
+struct minimum_steiner_tree{
+	// Edge weights must be non-negative.
+	// Returns null if subset does not lie in the same connected component.
+	// O(m * log(m) + 2^{n-k} * alpha(n) * m)
+	template<class T>
+	static optional<pair<T, vector<int>>>
+	solve_for_small_complement(const graph<auto> &g, const vector<int> &subset){
+		if(subset.empty()) return pair<T, vector<int>>{0, {}};
+		int n = g.n, m = (int)g.edge.size(), k = (int)subset.size();
+		assert(n - k <= 30);
+		assert(is_sorted(subset.begin(), subset.end()));
+		assert(0 <= subset.front() && subset.back() < n);
+		vector<int> order(m);
+		iota(order.begin(), order.end(), 0);
+		order.erase(remove_if(order.begin(), order.end(), [&](int id){ return g.ignore && g.ignore(id) || g.edge[id].from == g.edge[id].to; }), order.end());
+		sort(order.begin(), order.end(), [&](int i, int j){ return g.edge[i].cost < g.edge[j].cost; });
+		for(auto id: order) assert(g.edge[id].cost > 0);
+		vector<int> rem, pos(n, -2);
+		for(auto u: subset) pos[u] = -1;
+		for(auto u = 0; u < n; ++ u) if(pos[u] == -2){
+			pos[u] = (int)rem.size();
+			rem.push_back(u);
+		}
+		int nrem = (int)rem.size();
+		disjoint_set dsu(n);
+		const T inf = numeric_limits<T>::max() / 2;
+		T opt = inf;
+		int opt_mask = -1;
+		for(auto mask = 0; mask < 1 << nrem; ++ mask){
+			dsu.clear();
+			T cur = 0;
+			for(auto id: order){
+				auto [u, v, w] = g.edge[id];
+				if(~pos[u] && ~mask & 1 << pos[u] || ~pos[v] && ~mask & 1 << pos[v]) continue;
+				if(dsu.merge(u, v)) cur += w;
+			}
+			for(auto i = 1; i < k; ++ i) if(!dsu.share(subset[0], subset[i])) goto NEXT;
+			if(opt > cur){
+				opt = cur;
+				opt_mask = mask;
+			}
+			NEXT:;
+		}
+		if(opt == inf) return {};
+		vector<int> res;
+		dsu.clear();
+		for(auto id: order){
+			auto [u, v, w] = g.edge[id];
+			if((!~pos[u] || opt_mask & 1 << pos[u]) && (!~pos[v] || opt_mask & 1 << pos[v]) && dsu.merge(u, v)) res.push_back(id);
+		}
+		return pair{opt, res};
+	}
+	// Edge weights must be positive.
+	// Returns null if subset does not lie in the same connected component.
+	// O(m + n^3 + 3^k * n + 2^k * n^2)
+	template<class T>
+	static optional<pair<T, vector<int>>>
+	solve_for_small_subset(const graph<auto> &g, const vector<int> &subset){
+		if(subset.empty()) return pair<T, vector<int>>{0, {}};
+		int n = g.n, m = (int)g.edge.size(), k = (int)subset.size();
+		assert(k <= 30);
+		assert(is_sorted(subset.begin(), subset.end()));
+		assert(0 <= subset.front() && subset.back() < n);
+		const T inf = numeric_limits<T>::max() / 2;
+		vector prev_dist(n, vector<int>(n, -1));
+		vector dist(n, vector<T>(n, inf));
+		for(auto u = 0; u < n; ++ u) dist[u][u] = 0;
+		for(auto id = 0; id < m; ++ id){
+			if(g.ignore && g.ignore(id)) continue;
+			auto [u, v, w] = g.edge[id];
+			assert(w > 0);
+			if(dist[u][v] > w){
+				prev_dist[u][v] = prev_dist[v][u] = id;
+				dist[u][v] = dist[v][u] = w;
+			}
+		}
+		for(auto w = 0; w < n; ++ w) for(auto u = 0; u < n; ++ u) for(auto v = 0; v < n; ++ v) if(dist[u][v] > dist[u][w] + dist[w][v]){
+			prev_dist[u][v] = prev_dist[w][v];
+			dist[u][v] = dist[u][w] + dist[w][v];
+		}
+		for(auto i = 1; i < k; ++ i) if(dist[subset[0]][subset[i]] == inf) return {};
+		vector prev_dp(1 << k, vector<array<int, 2>>(n, {-1, -1}));
+		vector dp(1 << k, vector<T>(n, inf));
+			for(auto i = 0; i < k; ++ i) for(auto u = 0; u < n; ++ u){
+			if(subset[i] != u){
+				prev_dp[1 << i][u] = {1, subset[i]};
+				dp[1 << i][u] = dist[subset[i]][u];
+			}
+			else dp[1 << i][u] = 0;
+		}
+		for(auto mask = 1; mask < 1 << k; ++ mask){
+			for(auto smask = mask - 1 & mask; smask; smask = smask - 1 & mask) for(auto u = 0; u < n; ++ u) if(dp[mask][u] > dp[smask][u] + dp[mask ^ smask][u]){
+				prev_dp[mask][u] = {0, smask};
+				dp[mask][u] = dp[smask][u] + dp[mask ^ smask][u];
+			}
+			for(auto u = 0; u < n; ++ u) for(auto v = 0; v < n; ++ v) if(dp[mask][u] > dp[mask][v] + dist[v][u]){
+				prev_dp[mask][u] = {1, v};
+				dp[mask][u] = dp[mask][v] + dist[v][u];
+			}
+		}
+		for(auto i = 1; i < k; ++ i) assert(dp.back()[subset[0]] == dp.back()[subset[i]]);
+		vector<int> res, on_res(m);
+		vector<array<int, 2>> stack{{(1 << k) - 1, subset[0]}};
+		while(!stack.empty()){
+			auto [mask, u] = stack.back();
+			stack.pop_back();
+			if(!~prev_dp[mask][u][0]) continue;
+			if(prev_dp[mask][u][0]){
+				int v = prev_dp[mask][u][1];
+				stack.push_back({mask, v});
+				while(u != v){
+					int id = prev_dist[v][u];
+					auto &e = g.edge[id];
+					if(on_res[id]) assert(e.cost == 0);
+					else{
+						on_res[id] = true;
+						res.push_back(id);
+					}
+					u ^= e.from ^ e.to;
+				}
+			}
+			else{
+				int smask = prev_dp[mask][u][1];
+				stack.push_back({smask, u});
+				stack.push_back({mask ^ smask, u});
+			}
+		}
+		return pair{dp.back()[subset[0]], res};
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>minimum_steiner_tree</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
