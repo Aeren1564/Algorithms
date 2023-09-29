@@ -2,7 +2,7 @@
 	<content><![CDATA[
 // O(|V| log |V| + |E|)
 template<class T>
-vector<int> lexicographical_topological_sort(const graph<T> &g){
+optional<vector<int>> lexicographical_topological_sort(const graph<T> &g){
 	int n = g.n;
 	vector<int> indeg(n), res;
 	for(int u = 0; u < n; ++ u) for(auto id: g.adj[u]){
