@@ -1,61 +1,67 @@
 <snippet>
 	<content><![CDATA[
-// insert(u): insert vertex u into the state
-// answer(u, flag): answer for the subtree of u, flag indicates whether u is included or not
-// clear_subtr(u): erase every vertex in the subtree of u from the state
-// O(n * log(n)) insert() calls
-// answer(u, false) and answer(u, true) is called once for each u
-// sum of subtree size of vertex u for all clear_subtr(u) calls is O(n)
 // Requires graph
-template<class T>
 struct small_to_large_on_forest{
 	int n;
-	graph<T> g;
-	vector<int> roots, size, order, pos, end;
-	small_to_large_on_forest(const graph<T> &g, const vector<int> &_roots): n(g.n), g(g), size(n, 1), pos(n, -1), end(n, -1), roots(_roots){
-		auto dfs = [&](auto self, int u, int pe)->void{
+	vector<vector<int>> adj;
+	vector<int> size, pv, pe, order, pos, end, root;
+	small_to_large_on_forest(int n): n(n), adj(n), size(n), pv(n), pe(n), pos(n), end(n), root(n), was(n){ }
+	int iter = 0;
+	vector<int> was;
+	void init(const graph<auto> &g){
+		vector<int> roots(g.n);
+		iota(roots.begin(), roots.end(), 0);
+		init(g, roots);
+	}
+	void init(const graph<auto> &g, const vector<int> &roots){
+		assert(n == g.n);
+		order.clear();
+		++ iter;
+		auto dfs_size = [&](auto self, int u)->void{
+			was[u] = iter;
+			adj[u].clear();
+			size[u] = 1;
+			for(auto id: g.adj[u]){
+				if(g.ignore && g.ignore(id)) continue;
+				auto &e = g.edge[id];
+				int v = u ^ e.from ^ e.to;
+				if(was[v] == iter) continue;
+				pv[v] = u;
+				pe[v] = id;
+				root[v] = root[u];
+				self(self, v);
+				size[u] += size[v];
+				adj[u].push_back(v);
+				if(size[adj[u][0]] < size[v]) swap(adj[u].front(), adj[u].back());
+			}
+		};
+		auto dfs = [&](auto self, int u)->void{
 			pos[u] = (int)order.size();
 			order.push_back(u);
-			for(auto id: g.adj[u]){
-				if(id == pe || g.ignore && g.ignore(id)) continue;
-				auto &e = g.edge[id];
-				int v = u ^ e.from ^ e.to;
-				self(self, v, id);
-				size[u] += size[v];
-			}
+			for(auto v: adj[u]) self(self, v);
 			end[u] = (int)order.size();
 		};
-		for(auto u: roots) assert(!~pos[u]), dfs(dfs, u, -1);
+		for(auto u: roots) if(was[u] != iter){
+			root[u] = u;
+			pv[u] = pe[u] = -1;
+			dfs_size(dfs_size, u);
+			dfs(dfs, u);
+		}
 	}
-	void solve(int root, auto insert, auto clear_subtr, auto answer){
-		auto dfs = [&](auto self, int u, int pe, bool keep)->void{
-			int hv = -1, hid = -1;
-			for(auto id: g.adj[u]){
-				if(id == pe || g.ignore && g.ignore(id)) continue;
-				auto &e = g.edge[id];
-				int v = u ^ e.from ^ e.to;
-				if(!~hv || size[hv] < size[v]) hv = v, hid = id;
-			}
-			for(auto id: g.adj[u]){
-				if(id == pe || id == hid || g.ignore && g.ignore(id)) continue;
-				auto &e = g.edge[id];
-				int v = u ^ e.from ^ e.to;
-				self(self, v, id, false);
-			}
-			if(~hid) self(self, hv, hid, true);
-			for(auto id: g.adj[u]){
-				if(id == pe || id == hid || g.ignore && g.ignore(id)) continue;
-				auto &e = g.edge[id];
-				int v = u ^ e.from ^ e.to;
-				for(auto i = pos[v]; i < end[v]; ++ i) insert(order[i]);
-			}
-			answer(u, false), insert(u), answer(u, true);
-			if(!keep) clear_subtr(u);
-		};
-		dfs(dfs, root, -1, false);
-	}
-	void solve(auto insert, auto clear_subtr, auto answer){
-		for(auto r: roots) solve(r, insert, clear_subtr, answer);
+	// insert_subtr(u): insert all vertices in the subtree of u into the state.
+	// insert_root(u): insert vertex u into the state.
+	// answer(u, flag): answer for the subtree of u, flag indicates whether u is included or not.
+	// clear_subtr(u): erase every vertex in the subtree of u from the state.
+	// Sum of subtree sizes of u over all insert_subtr(u) calls is O(n * log(n)).
+	// insert_root(u), answer(u, false), and answer(u, true) are called once for each u.
+	// Sum of subtree size of vertex u for all clear_subtr(u) calls is O(n).
+	void run(auto insert_subtr, auto insert_root, auto clear_subtr, auto answer){
+		for(auto r: order) if(root[r] == r) for(auto i = end[r] - 1; i >= pos[r]; -- i){
+			int u = order[i];
+			for(auto j = 1; j < (int)adj[u].size(); ++ j) insert_subtr(adj[u][j]);
+			answer(u, false), insert_root(u), answer(u, true);
+			if(!~pv[u] || adj[pv[u]][0] != u) clear_subtr(u);
+		}
 	}
 };
 ]]></content>
