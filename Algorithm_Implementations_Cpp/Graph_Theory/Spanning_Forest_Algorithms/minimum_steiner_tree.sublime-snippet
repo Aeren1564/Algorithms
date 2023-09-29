@@ -18,7 +18,7 @@ struct minimum_steiner_tree{
 		iota(order.begin(), order.end(), 0);
 		order.erase(remove_if(order.begin(), order.end(), [&](int id){ return g.ignore && g.ignore(id) || g.edge[id].from == g.edge[id].to; }), order.end());
 		sort(order.begin(), order.end(), [&](int i, int j){ return g.edge[i].cost < g.edge[j].cost; });
-		for(auto id: order) assert(g.edge[id].cost > 0);
+		for(auto id: order) assert(g.edge[id].cost >= 0);
 		vector<int> rem, pos(n, -2);
 		for(auto u: subset) pos[u] = -1;
 		for(auto u = 0; u < n; ++ u) if(pos[u] == -2){
@@ -54,7 +54,7 @@ struct minimum_steiner_tree{
 		}
 		return pair{opt, res};
 	}
-	// Edge weights must be positive.
+	// Edge weights must be non-negative.
 	// Returns null if subset does not lie in the same connected component.
 	// O(m + n^3 + 3^k * n + 2^k * n^2)
 	template<class T>
@@ -72,7 +72,7 @@ struct minimum_steiner_tree{
 		for(auto id = 0; id < m; ++ id){
 			if(g.ignore && g.ignore(id)) continue;
 			auto [u, v, w] = g.edge[id];
-			assert(w > 0);
+			assert(w >= 0);
 			if(dist[u][v] > w){
 				prev_dist[u][v] = prev_dist[v][u] = id;
 				dist[u][v] = dist[v][u] = w;
