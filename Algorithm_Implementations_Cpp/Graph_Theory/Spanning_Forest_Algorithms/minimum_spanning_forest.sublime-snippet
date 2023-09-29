@@ -1,7 +1,7 @@
 <snippet>
 	<content><![CDATA[
 // Requires disjoint_set
-template<class T, class G>
+template<class G>
 vector<int> minimum_spanning_forest(const G &g){
 	vector<int> order(g.edge.size());
 	iota(order.begin(), order.end(), 0);
