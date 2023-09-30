@@ -1,10 +1,12 @@
 <snippet>
 	<content><![CDATA[
+// Bron-Kerbosch algorithm for enumerating all maximum cliques.
 // Reads adjacency matrix represented with bitset
 // O(3^(n/3))
 template<int SZ>
-vector<int> maximum_clique_large(const vector<bitset<SZ>> &input_adjm){
+void enumerate_maximal_cliques_large(const vector<bitset<SZ>> &input_adjm, auto process_while){
 	int n = (int)input_adjm.size();
+	if(n == 0) return;
 	vector<int> deg(n), order(n), pos(n);
 	for(auto u = 0; u < n; ++ u) deg[u] = input_adjm[u].count();
 	iota(order.begin(), order.end(), 0);
@@ -13,13 +15,8 @@ vector<int> maximum_clique_large(const vector<bitset<SZ>> &input_adjm){
 	using bs = bitset<SZ>;
 	vector<bs> adjm(n);
 	for(auto u = 0; u < n; ++ u) for(auto v = u + 1; v < n; ++ v) if(input_adjm[u][v]) adjm[pos[u]].set(pos[v]), adjm[pos[v]].set(pos[u]);
-	bs res;
-	auto dfs = [&](auto self, bs r, bs p)->void{
-		if(p == 0){
-			if(res.count() < r.count()) res = r;
-			return;
-		}
-		if((r | p).count() <= res.count()) return;
+	auto dfs = [&](auto self, bs r, bs p)->bool{
+		if(p == 0) return process_while(r);
 		int u = p._Find_first();
 		bs c = p & ~adjm[u];
 		while(c.count()){
@@ -27,23 +24,20 @@ vector<int> maximum_clique_large(const vector<bitset<SZ>> &input_adjm){
 			bs umask;
 			umask.set(u);
 			r |= umask;
-			self(self, r, p & adjm[u]);
+			if(!self(self, r, p & adjm[u])) return false;
 			r &= ~umask;
 			p &= ~umask;
 			c ^= umask;
 		}
+		return true;
 	};
 	bs p;
 	for(auto u = 0; u < n; ++ u) p.set(u);
 	dfs(dfs, {}, p);
-	vector<int> clique;
-	for(auto t = 0; t < n; ++ t) if(res[t]) clique.push_back(order[t]);
-	sort(clique.begin(), clique.end());
-	return clique;
 }
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
-	<tabTrigger>maximum_clique_large</tabTrigger> -->
+	<tabTrigger>enumerate_maximal_cliques_large</tabTrigger> -->
 	<!-- Optional: Set a scope to limit where the snippet will trigger -->
 	<scope>source.c++</scope> -->
 </snippet>

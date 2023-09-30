@@ -1,0 +1,51 @@
+<snippet>
+	<content><![CDATA[
+// Bron-Kerbosch algorithm
+// Reads adjacency matrix represented with bitmask
+// O(3^(n/3))
+template<int SZ>
+vector<int> find_a_maximum_clique_large(const vector<bitset<SZ>> &input_adjm){
+	int n = (int)input_adjm.size();
+	assert(1 <= n);
+	vector<int> deg(n), order(n), pos(n);
+	for(auto u = 0; u < n; ++ u) deg[u] = input_adjm[u].count();
+	iota(order.begin(), order.end(), 0);
+	sort(order.begin(), order.end(), [&](int u, int v){ return deg[u] < deg[v]; });
+	for(auto t = 0; t < n; ++ t) pos[order[t]] = t;
+	using bs = bitset<SZ>;
+	vector<bs> adjm(n);
+	for(auto u = 0; u < n; ++ u) for(auto v = u + 1; v < n; ++ v) if(input_adjm[u][v]) adjm[pos[u]].set(pos[v]), adjm[pos[v]].set(pos[u]);
+	bs res;
+	auto dfs = [&](auto self, bs r, bs p)->void{
+		if(p == 0){
+			if(res.count() < r.count()) res = r;
+			return;
+		}
+		if((r | p).count() <= res.count()) return;
+		int u = p._Find_first();
+		bs c = p & ~adjm[u];
+		while(c.count()){
+			u = c._Find_first();
+			bs umask;
+			umask.set(u);
+			r |= umask;
+			self(self, r, p & adjm[u]);
+			r &= ~umask;
+			p &= ~umask;
+			c ^= umask;
+		}
+	};
+	bs p;
+	for(auto u = 0; u < n; ++ u) p.set(u);
+	dfs(dfs, {}, p);
+	vector<int> clique;
+	for(auto t = 0; t < n; ++ t) if(res[t]) clique.push_back(order[t]);
+	sort(clique.begin(), clique.end());
+	return clique;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>find_a_maximum_clique_large</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

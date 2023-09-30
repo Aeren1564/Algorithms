@@ -13,11 +13,11 @@ struct segment_tree_2d{
 	// O(n * m)
 	segment_tree_2d(const vector<vector<T>> &a, F TT, T T_id): n((int)a.size()), m((int)a[0].size()), TT(TT), T_id(T_id), data(n << 1, vector<T>(m << 1, T_id)){
 		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) data[i + n][j + m] = a[i][j];
-		for(auto i = n - 1; i > 0; -- i) for(auto j = 0; j < m; ++ j) data[i][j + m] = TT(data[i << 1][j + m], data[i << 1 | 1][j + m]);
-		for(auto i = 1; i < n << 1; ++ i) for(auto j = m - 1; j > 0; -- j) data[i][j] = TT(data[i][j << 1], data[i][j << 1 | 1]);
+		for(auto i = n - 1; i >= 1; -- i) for(auto j = 0; j < m; ++ j) data[i][j + m] = TT(data[i << 1][j + m], data[i << 1 | 1][j + m]);
+		for(auto i = 1; i < n << 1; ++ i) for(auto j = m - 1; j >= 1; -- j) data[i][j] = TT(data[i][j << 1], data[i][j << 1 | 1]);
 	}
 	// a[p][q] := x
-	// O(log n * log m)
+	// O(log(n) * log(m))
 	void set(int p, int q, T x){
 		data[p += n][q += m] = x;
 		for(auto j = q; j >>= 1; ) data[p][j] = TT(data[p][j << 1], data[p][j << 1 | 1]);

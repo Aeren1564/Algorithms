@@ -22,7 +22,7 @@ struct segment_tree_2d_sparse{
 			while(X[x] < pos[0]) ++ x;
 			hold[x + (int)X.size()].push_back({{pos[1], pos[0]}, val});
 		}
-		for(auto x = 2 * (int)X.size() - 1; x; -- x){
+		for(auto x = 2 * (int)X.size() - 1; x >= 1; -- x){
 			if(x < (int)X.size()) merge(hold[x << 1].begin(), hold[x << 1].end(), hold[x << 1 | 1].begin(), hold[x << 1 | 1].end(), back_inserter(hold[x]));
 			auto &Y0 = Y[x];
 			auto &hold0 = hold[x];
@@ -35,11 +35,11 @@ struct segment_tree_2d_sparse{
 				while(Y0[y] < hold0[j].first) ++ y;
 				data[x][y + (int)Y0.size()] = TT(data[x][y + (int)Y0.size()], hold0[j].second);
 			}
-			for(auto y = (int)Y0.size() - 1; y; -- y) data[x][y] = TT(data[x][y << 1], data[x][y << 1 | 1]);
+			for(auto y = (int)Y0.size() - 1; y >= 1; -- y) data[x][y] = TT(data[x][y << 1], data[x][y << 1 | 1]);
 		}
 	}
 	// O(n * log^2(n))
-	segment_tree_2d_sparse(vector<array<B, 2>> base, F TT, T T_id){
+	segment_tree_2d_sparse(vector<array<B, 2>> base, F TT, T T_id): TT(TT), T_id(T_id){
 		vector<pair<array<B, 2>, T>> init(base.size());
 		for(auto i = 0; i < (int)base.size(); ++ i) init[i] = {base[i], T_id};
 		*this = segment_tree_2d_sparse(init, TT, T_id);

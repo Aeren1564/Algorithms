@@ -1,11 +1,12 @@
 <snippet>
 	<content><![CDATA[
+// Bron-Kerbosch algorithm
 // Reads adjacency matrix represented with bitmask
-// n must be equal or less than 64
-// Works under 100ms for n <= 64
+// n must be equal or less than 64 (works under 100ms).
 // O(3^(n/3))
-vector<int> maximum_clique(const vector<unsigned long long> &input_adjm){
+vector<int> find_a_maximum_clique(const vector<unsigned long long> &input_adjm){
 	int n = (int)input_adjm.size();
+	assert(1 <= n && n <= 64);
 	vector<int> deg(n), order(n), pos(n);
 	for(auto u = 0; u < n; ++ u) deg[u] = __builtin_popcountll(input_adjm[u]);
 	iota(order.begin(), order.end(), 0);
@@ -41,7 +42,7 @@ vector<int> maximum_clique(const vector<unsigned long long> &input_adjm){
 }
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
-	<tabTrigger>maximum_clique</tabTrigger> -->
+	<tabTrigger>find_a_maximum_clique</tabTrigger> -->
 	<!-- Optional: Set a scope to limit where the snippet will trigger -->
 	<scope>source.c++</scope> -->
 </snippet>
