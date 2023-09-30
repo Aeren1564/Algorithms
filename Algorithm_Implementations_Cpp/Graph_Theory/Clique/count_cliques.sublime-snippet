@@ -1,7 +1,7 @@
 <snippet>
 	<content><![CDATA[
 // Returns the sum of the product of vertex weights over all cliques.
-// O(2^(n / 2) * n + m)
+// O(2^(n/2) * n + m)
 template<class T, class M = unsigned long long>
 T count_cliques(const vector<M> &adjm, vector<T> w = {}){
 	int n = (int)adjm.size();
