@@ -1,0 +1,36 @@
+<snippet>
+	<content><![CDATA[
+// Interpolate with the points (base, y[0]), ..., (base+n-1, y[n-1])
+// O(n^2 + inverse())
+template<class T, class U>
+vector<T> interpolate_range_naive(U base, const vector<T> &y){
+	int n = (int)y.size();
+	assert(n >= 1);
+	vector<T> invfact(n, 1);
+	for(auto x = 2; x < n; ++ x) invfact[n - 1] *= x;
+	invfact[n - 1] = 1 / invfact[n - 1];
+	for(auto x = n - 2; x >= 0; -- x) invfact[x] = invfact[x + 1] * (x + 1);
+	vector<T> res(n), p(n + 1);
+	p[0] = 1;
+	for(auto i = 0; i < n; ++ i){
+		T x = base + i;
+		for(auto j = i + 1; j >= 1; -- j) p[j] = p[j - 1] - x * p[j];
+		p[0] *= -x;
+	}
+	for(auto i = 0; i < n; ++ i){
+		T x = base + i, coef = y[i] * invfact[i] * invfact[n - 1 - i] * (n - 1 - i & 1 ? -1 : 1);
+		for(auto j = n - 1; j >= 1; -- j) p[j] += x * p[j + 1];
+		p[0] = 0;
+		rotate(p.begin(), p.begin() + 1, p.end());
+		for(auto j = 0; j < n; ++ j) res[j] += coef * p[j];
+		for(auto j = n; j >= 1; -- j) p[j] = p[j - 1] - x * p[j];
+		p[0] *= -x;
+	}
+	return res;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>interpolate_range_naive</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
