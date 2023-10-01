@@ -130,24 +130,24 @@ template<uint _mod> istream &operator>>(istream &in, modular_fixed_base<_mod> &n
 }
 // #define _SHOW_FRACTION
 template<uint _mod> ostream &operator<<(ostream &out, const modular_fixed_base<_mod> &number){
-#if defined(LOCAL) && defined(_SHOW_FRACTION)
 	out << number();
+#if defined(LOCAL) && defined(_SHOW_FRACTION)
 	cerr << "(";
 	for(auto d = 1; ; ++ d){
 		if((number * d).data <= 1000000){
-			cerr << (number * d).data << "/" << d;
+			cerr << (number * d).data;
+			if(d != 1) cerr << "/" << d;
 			break;
 		}
 		else if((-number * d).data <= 1000000){
-			cerr << "-" << (-number * d).data << "/" << d;
+			cerr << "-" << (-number * d).data;
+			if(d != 1) cerr << "/" << d;
 			break;
 		}
 	}
 	cerr << ")";
-	return out;
-#else
-	return out << number();
 #endif
+	return out;
 }
 #undef _SHOW_FRACTION
 
