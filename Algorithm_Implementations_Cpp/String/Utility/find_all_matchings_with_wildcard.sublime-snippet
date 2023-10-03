@@ -1,6 +1,6 @@
 <snippet>
 	<content><![CDATA[
-// Returns the list of all positions of text in pattern
+// Returns the list of all positions in [0, n() of text in pattern, where the text is assumed to have infinite trailing wildcards.
 // 0 represents wildcard, where it can match with any character
 // Assumes low alphabet size. Switch to higher percision FFT if not.
 // O((n + m) * log(n + m))
@@ -20,9 +20,9 @@ vector<int> find_all_matchings_with_wildcard(const vector<Char_Type> &text, cons
 		}
 		temp = fft::convolute_splitting(p, q);
 		for(auto k = 0; k < n + m - 1; ++ k) r[k] += (e == 2 ? -2 : 1) * temp[k];
-	}
+	}\
 	vector<int> res;
-	for(auto i = 0; i + m <= n; ++ i) if(!r[i + m - 1]) res.push_back(i);
+	for(auto i = 0; i < n; ++ i) if(!r[i + m - 1]) res.push_back(i);
 	return res;
 }
 ]]></content>
