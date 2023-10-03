@@ -1,0 +1,47 @@
+<snippet>
+	<content><![CDATA[
+// Returns the sum of the product of vertex weights over all cliques.
+// O(2^(n/2) * n + m)
+template<class T>
+T count_cliques_weighted(const vector<unsigned long long> &adjm, vector<T> w){
+	int n = (int)adjm.size();
+	assert(n <= 64);
+	if(n == 0) return 0;
+	assert((int)w.size() == n);
+	if(n == 1) return w[0];
+	int nl = n >> 1, nr = n - nl;
+	static vector<T> sum;
+	sum.assign(1u << nr, 0);
+	sum[0] = 1;
+	static vector<unsigned long long> adjmask;
+	adjmask.resize(1u << nr);
+	adjmask[0] = (1u << nr) - 1;
+	static vector<T> prod;
+	prod.resize(1u << nr);
+	prod[0] = 1;
+	for(auto mask = 1u; mask < 1u << nr; ++ mask){
+		int u = __builtin_ctz(mask);
+		adjmask[mask] = adjmask[mask ^ 1u << u] & (adjm[nl + u] >> nl | 1u << u);
+		prod[mask] = prod[mask ^ 1u << u] * w[nl + u];
+		if((adjmask[mask] & mask) == mask) sum[mask] = prod[mask];
+	}
+	for(auto u = 0; u < nr; ++ u) for(auto mask = 0; mask < 1u << nr; ++ mask) if(mask & 1u << u) sum[mask] += sum[mask ^ 1u << u];
+	adjmask.resize(1u << nl);
+	adjmask[0] = (1ull << n) - 1;
+	prod.resize(1u << nl);
+	prod[0] = 1;
+	T res = sum.back() - 1;
+	for(auto mask = 1u; mask < 1u << nl; ++ mask){
+		int u = __builtin_ctz(mask);
+		adjmask[mask] = adjmask[mask ^ 1u << u] & (adjm[u] | 1u << u);
+		prod[mask] = prod[mask ^ 1u << u] * w[u];
+		if((adjmask[mask] & mask) == mask) res += prod[mask] * sum[adjmask[mask] >> nl];
+	}
+	return res;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>count_cliques_weighted</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
