@@ -13,7 +13,7 @@ long long count_common_substrings(const suffix_automaton<Char_Type, Adjacency_Ty
 		while(u && !aut_s.next[u][c]){
 			u = aut_s.link[u];
 			len = aut_s.len[u];
-			while(v && aut_t.len[aut_t.link[v]] >= len) v = aut_t.link[v];
+			while(v && aut_t.max_len[aut_t.link[v]] >= len) v = aut_t.link[v];
 		}
 		if(aut_s.next[u][c]){
 			u = aut_s.next[u][c];
@@ -27,8 +27,8 @@ long long count_common_substrings(const suffix_automaton<Char_Type, Adjacency_Ty
 		int u = aut_t.order[t];
 		if(req[u]){
 			int v = aut_t.link[u];
-			res += req[u] - aut_t.len[v];
-			req[v] = max(req[v], aut_t.len[v]);
+			res += req[u] - aut_t.max_len[v];
+			req[v] = max(req[v], aut_t.max_len[v]);
 		}
 	}
 	req.clear();
