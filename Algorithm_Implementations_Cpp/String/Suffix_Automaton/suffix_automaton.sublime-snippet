@@ -42,13 +42,13 @@ struct suffix_automaton{
 		count.clear();
 		inv_link.clear();
 	}
-	int next_state(int u, int c) const{
+	int next_state(int u, int c){
 		assert(0 <= u && u < (int)next.size());
 		while(u && !next[u][c]) u = link[u];
-		if(!next[u][c]) u = next[u][c];
+		if(next[u][c]) u = next[u][c];
 		return u;
 	}
-	pair<int, int> next_state(int u, int len, int c) const{
+	pair<int, int> next_state(int u, int len, int c){
 		assert(0 <= u && u < (int)next.size());
 		while(u && !next[u][c]) u = link[u], len = max_len[u];
 		if(next[u][c]) u = next[u][c], ++ len;
