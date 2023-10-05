@@ -7,31 +7,33 @@
 template<class Char_Type, class Adjacency_Type>
 struct suffix_automaton{
 	// Begin States
-	// len: length of the longest substring in the class, suffix link, minimum value in the set endpos
-	vector<int> len{0}, link{-1}, firstpos{-1}, is_clone{false};
+	vector<int> max_len{0}; // Length of the longest string in the class.
+	vector<int> link{-1};
+	vector<int> firstpos{-1}; // Index of the first occurences of the strings in the class.
+	vector<int> is_clone{false};
 	vector<Adjacency_Type> next{{}};
 	// End States
 	int new_state(int l, int sl, int fp, bool c, const Adjacency_Type &adj){
-		len.push_back(l);
+		max_len.push_back(l);
 		link.push_back(sl);
 		firstpos.push_back(fp);
 		is_clone.push_back(c);
 		next.push_back(adj);
-		return (int)len.size() - 1;
+		return (int)max_len.size() - 1;
 	}
 	int last = 0;
 	void extend(const vector<Char_Type> &s){
 		for(auto c: s) extend(c);
 	}
 	void extend(Char_Type c){
-		int cur = new_state(len[last] + 1, -1, len[last], false, {}), p = last;
+		int cur = new_state(max_len[last] + 1, -1, max_len[last], false, {}), p = last;
 		while(~p && !next[p][c]) next[p][c] = cur, p = link[p];
 		if(!~p) link[cur] = 0;
 		else{
 			int q = next[p][c];
-			if(len[p] + 1 == len[q]) link[cur] = q;
+			if(max_len[p] + 1 == max_len[q]) link[cur] = q;
 			else{
-				int clone = new_state(len[p] + 1, link[q], firstpos[q], true, next[q]);
+				int clone = new_state(max_len[p] + 1, link[q], firstpos[q], true, next[q]);
 				while(~p && next[p][c] == q) next[p][c] = clone, p = link[p];
 				link[q] = link[cur] = clone;
 			}
@@ -40,11 +42,23 @@ struct suffix_automaton{
 		count.clear();
 		inv_link.clear();
 	}
+	int next_state(int u, int c) const{
+		assert(0 <= u && u < (int)next.size());
+		while(u && !next[u][c]) u = link[u];
+		if(!next[u][c]) u = next[u][c];
+		return u;
+	}
+	pair<int, int> next_state(int u, int len, int c) const{
+		assert(0 <= u && u < (int)next.size());
+		while(u && !next[u][c]) u = link[u], len = max_len[u];
+		if(next[u][c]) u = next[u][c], ++ len;
+		return {u, len};
+	}
 	int size() const{ // # of states
-		return (int)len.size();
+		return (int)max_len.size();
 	}
 	int min_len(int u) const{ // length of the shortest string in the endpos equivalent class
-		return u ? len[link[u]] + 1 : 0;
+		return u ? max_len[link[u]] + 1 : 0;
 	}
 	vector<int> terminals() const{
 		vector<int> t;
