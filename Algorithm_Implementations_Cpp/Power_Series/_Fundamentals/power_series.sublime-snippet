@@ -9,8 +9,8 @@ struct power_series_base: vector<T>{
 	template<class ...Args>
 	power_series_base(Args... args): vector<T>(args...){}
 	power_series_base(initializer_list<T> init): vector<T>(init){}
-	int degree() const{
-		return data.empty() ? numeric_limits<int>::max() : data.size() - 1;
+	operator bool() const{
+		return find_if(data.begin(), data.end(), [&](const T &x){ return x != T{0}; }) != data.end();
 	}
 	// Returns \sum_{i=0}^{n-1} a_i/i! * X^i
 	static power_series_base EGF(vector<T> a){
@@ -244,27 +244,29 @@ struct power_series_base: vector<T>{
 	// Euclidean division
 	// O(n * log(n))
 	power_series_base &operator/=(const power_series_base &p){
-		assert(!p.empty() && p.back() != T{0});
+		int n = (int)p.size();
+		while(n && p[n - 1] == T{0}) -- n;
+		assert(n >= 1);
 		reduce();
-		if(data.size() < p.size()){
+		if(data.size() < n){
 			data.clear();
 			return *this;
 		}
-		if((int)p.size() - count(p.begin(), p.end(), 0) <= 100){
-			T inv = 1 / p.back();
+		if(n - count(p.begin(), p.begin() + n, 0) <= 100){
+			T inv = 1 / p[n - 1];
 			static vector<int> indices;
-			for(auto i = 0; i < (int)p.size() - 1; ++ i) if(p[i]) indices.push_back(i);
-			power_series_base res((int)data.size() - (int)p.size() + 1);
-			for(auto i = (int)data.size() - 1; i >= (int)p.size() - 1; -- i) if(data[i]){
+			for(auto i = 0; i < n - 1; ++ i) if(p[i]) indices.push_back(i);
+			power_series_base res((int)data.size() - n + 1);
+			for(auto i = (int)data.size() - 1; i >= n - 1; -- i) if(data[i]){
 				T x = data[i] * inv;
-				res[i - (int)p.size() + 1] = x;
-				for(auto j: indices) data[i - ((int)p.size() - 1 - j)] -= x * p[j];
+				res[i - n + 1] = x;
+				for(auto j: indices) data[i - (n - 1 - j)] -= x * p[j];
 			}
 			indices.clear();
 			return *this = res;
 		}
 		power_series_base b;
-		int n = data.size() - p.size() + 1;
+		n = data.size() - p.size() + 1;
 		b.assign(n, {});
 		copy(p.rbegin(), p.rbegin() + min(p.size(), b.size()), b.begin());
 		std::reverse(data.begin(), data.end());
@@ -293,17 +295,19 @@ struct power_series_base: vector<T>{
 		return {q, r};
 	}
 	power_series_base &operator%=(const power_series_base &p){
-		assert(!p.empty() && p.back() != T{0});
+		int n = (int)p.size();
+		while(n && p[n - 1] == T{0}) -- n;
+		assert(n >= 1);
 		reduce();
-		if(data.size() < p.size()) return *this;
-		if((int)p.size() - count(p.begin(), p.end(), 0) <= 100){
-			T inv = 1 / p.back();
+		if(data.size() < n) return *this;
+		if(n - count(p.begin(), p.begin() + n, 0) <= 100){
+			T inv = 1 / p[n - 1];
 			static vector<int> indices;
-			for(auto i = 0; i < (int)p.size() - 1; ++ i) if(p[i]) indices.push_back(i);
-			for(auto i = (int)data.size() - 1; i >= (int)p.size() - 1; -- i) if(data[i]){
+			for(auto i = 0; i < n - 1; ++ i) if(p[i]) indices.push_back(i);
+			for(auto i = (int)data.size() - 1; i >= n - 1; -- i) if(data[i]){
 				T x = data[i] * inv;
 				data[i] = 0;
-				for(auto j: indices) data[i - ((int)p.size() - 1 - j)] -= x * p[j];
+				for(auto j: indices) data[i - (n - 1 - j)] -= x * p[j];
 			}
 			indices.clear();
 			return reduce();
