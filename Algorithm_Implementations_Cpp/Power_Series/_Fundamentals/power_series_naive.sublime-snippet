@@ -2,15 +2,15 @@
 	<content><![CDATA[
 // T must support *=, *, +=, -=, and -
 // T{} should return the additive identity
-// Requires modular and fast_fourier_transform
+// Requires modular (and fast_fourier_transform if FFT != void)
 template<class T, class FFT>
 struct power_series_naive_base: vector<T>{
 #define data (*this)
 	template<class ...Args>
 	power_series_naive_base(Args... args): vector<T>(args...){}
 	power_series_naive_base(initializer_list<T> init): vector<T>(init){}
-	int degree() const{
-		return data.empty() ? numeric_limits<int>::max() : data.size() - 1;
+	operator bool() const{
+		return find_if(data.begin(), data.end(), [&](const T &x){ return x != T{0}; }) != data.end();
 	}
 	friend ostream &operator<<(ostream &out, const power_series_naive_base &p){
 		if(p.empty()){
@@ -43,8 +43,23 @@ struct power_series_naive_base: vector<T>{
 		for(auto i = (int)data.size() - 1; i >= 0; -- i) res = res * x + data[i];
 		return res;
 	}
+	// Takes mod x^n-1
+	power_series_naive_base &inplace_circularize(int n){
+		assert(n >= 1);
+		for(auto i = n; i < (int)data.size(); ++ i) data[i % n] += data[i];
+		data.resize(n);
+		return *this;
+	}
+	// Takes mod x^n-1
+	power_series_naive_base circularize(int n) const{
+		return power_series_naive_base(*this).inplace_circularize(n);
+	}
 	power_series_naive_base operator*(const power_series_naive_base &p) const{
-		return FFT::arbitrarily_convolute(data, p);
+		if(this->empty() || p.empty()) return {};
+		// return FFT::arbitrarily_convolute(data, p);
+		power_series_naive_base q(data.size() + p.size() - 1);
+		for(auto i = 0; i < data.size(); ++ i) for(auto j = 0; j < p.size(); ++ j) q[i + j] += data[i] * p[j];
+		return q;
 	}
 	power_series_naive_base &operator*=(const power_series_naive_base &p){
 		return *this = *this * p;
@@ -62,6 +77,23 @@ struct power_series_naive_base: vector<T>{
 	friend power_series_naive_base operator*(U x, power_series_naive_base p){
 		for(auto &c: p) c = x * c;
 		return p;
+	}
+	// Compute p^e mod x^n - 1.
+	template<class U>
+	power_series_naive_base &inplace_power_circular(U e, int n){
+		assert(n >= 1);
+		power_series_naive_base p = *this;
+		data.assign(n, 0);
+		data[0] = 1;
+		for(; e; e >>= 1){
+			if(e & 1) (*this *= p).inplace_circularize(n);
+			(p *= p).inplace_circularize(n);
+		}
+		return *this;
+	}
+	template<class U>
+	power_series_naive_base power_circular(U e, int len) const{
+		return power_series_naive_base(*this).inplace_power_circular(e, len);
 	}
 	power_series_naive_base &operator+=(const power_series_naive_base &p){
 		resize(max(data.size(), p.size()));
@@ -146,8 +178,6 @@ struct power_series_naive_base: vector<T>{
 	power_series_naive_base dot_product(const power_series_naive_base &p) const{
 		return power_series_naive_base(*this).inplace_power_series_product(p);
 	}
-	// Returns the first n terms of the inverse series
-	// O(n * log(n))
 	power_series_naive_base inverse(int n) const{
 		assert(!data.empty() && data[0]);
 		auto inv = 1 / data[0];
@@ -171,7 +201,7 @@ struct power_series_naive_base: vector<T>{
 };
 // TODO: add more operations
 
-using power_series_naive = power_series_naive_base<modular, ntt>;
+using power_series_naive = power_series_naive_base<modular, void>;
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
 	<tabTrigger>power_series_naive</tabTrigger> -->
