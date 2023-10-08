@@ -2,6 +2,16 @@
 	<content><![CDATA[
 // DEBUG BEGIN
 #ifdef LOCAL
+// DECLARATION BEGIN
+template<class L, class R> ostream &operator<<(ostream &out, const pair<L, R> &p);
+template<class Tuple, size_t N> struct _tuple_printer;
+template<class... Args> ostream &_print_tuple(ostream &out, const tuple<Args...> &t);
+template<class ...Args> ostream &operator<<(ostream &out, const tuple<Args...> &t);
+template<class T> ostream &operator<<(class enable_if<!is_same<T, string>::value, ostream>::type &out, const T &arr);
+ostream &operator<<(ostream &out, const _Bit_reference &bit);
+template<class T, class A, class C>
+ostream &operator<<(ostream &out, priority_queue<T, A, C> pq);
+// DECLARATION END
 template<class L, class R> ostream &operator<<(ostream &out, const pair<L, R> &p){
 	return out << "{" << p.first << ", " << p.second << "}";
 }
