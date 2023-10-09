@@ -1,0 +1,64 @@
+<snippet>
+	<content><![CDATA[
+// Source: https://atcoder.jp/contests/abc323/submissions/46284826
+// Returns the determinant of a + b*X.
+// O(n^3)
+// Requires characteristic_polynomial
+template<class T>
+vector<T> determinant_linear_polynomial(vector<vector<T>> a, vector<vector<T>> b){
+	int n = a.size();
+	assert((int)b.size() == n);
+	if(n == 0) return {T{1}};
+	for(auto i = 0; i < n; ++ i){
+		assert((int)a[i].size() == n);
+		assert((int)b[i].size() == n);
+	}
+	T prod = 1;
+	int off = 0;
+	for(auto h = 0; h < n; ++ h){
+		while(true){
+			if(b[h][h]) break;
+			for(auto j = h + 1; j < n; ++ j) if(b[h][j]){
+				prod *= -1;
+				for(auto i = 0; i < n; ++ i) swap(a[i][h], a[i][j]), swap(b[i][h], b[i][j]);
+				break;
+			}
+			if(b[h][h]) break;
+			if(++ off > n) return vector<T>(n + 1, 0);
+			for(auto j = 0; j < n; ++ j){
+				b[h][j] = a[h][j];
+				a[h][j] = 0;
+			}
+			for(auto i = 0; i < h; ++ i){
+				T t = b[h][i];
+				for(auto j = 0; j < n; ++ j){
+					a[h][j] -= t * a[i][j];
+					b[h][j] -= t * b[i][j];
+				}
+			}
+		}
+		prod *= b[h][h];
+		T s = 1 / b[h][h];
+		for(auto j = 0; j < n; ++ j){
+			a[h][j] *= s;
+			b[h][j] *= s;
+		}
+		for(auto i = 0; i < n; ++ i) if(h != i){
+			T t = b[i][h];
+			for(auto j = 0; j < n; ++ j){
+				a[i][j] -= t * a[h][j];
+				b[i][j] -= t * b[h][j];
+			}
+		}
+	}
+	for(auto i = 0; i < n; ++ i) for(auto j = 0; j < n; ++ j) a[i][j] = -a[i][j];
+	vector<T> fs = characteristic_polynomial(a), gs(n + 1, 0);
+	for(auto i = 0; off + i <= n; ++ i) gs[i] = prod * fs[off + i];
+	return gs;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>determinant_linear_polynomial</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
