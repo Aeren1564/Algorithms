@@ -1,0 +1,70 @@
+<snippet>
+	<content><![CDATA[
+// Source: https://atcoder.jp/contests/abc323/submissions/46284826
+// Returns the determinant of a[0] + a[1]*X + ... + a[m]*X^{m}.
+// O(n^3 * m^3)
+// Requires characteristic_polynomial
+template<class T>
+vector<T> determinant_polynomial(vector<vector<vector<T>>> a){
+	assert(!a.empty());
+	int n = a[0].size(), m = (int)a.size() - 1;
+	if(n == 0) return {T{1}};
+	for(auto &b: a){
+		assert((int)b.size() == n);
+		for(auto i = 0; i < n; ++ i) assert((int)b[i].size() == n);
+	};
+	T prod = 1;
+	int off = 0;
+	for(auto h = 0; h < n; ++ h){
+		while(true){
+			if(a[m][h][h]) break;
+			for(auto j = h + 1; j < n; ++ j) if(a[m][h][j]){
+				prod *= -1;
+				for(auto d = 0; d <= m; ++ d) for(auto i = 0; i < n; ++ i) swap(a[d][i][h], a[d][i][j]);
+				break;
+			}
+			if(a[m][h][h]) break;
+			if(++ off > m * n) return vector<T>(m * n + 1, 0);
+			for(auto d = m; -- d >= 0; ) for(auto j = 0; j < n; ++ j){
+				a[d + 1][h][j] = a[d][h][j];
+			}
+			for(auto j = 0; j < n; ++ j){
+				a[0][h][j] = 0;
+			}
+			for(auto i = 0; i < h; ++ i){
+				T t = a[m][h][i];
+				for(auto d = 0; d <= m; ++ d) for(auto j = 0; j < n; ++ j){
+					a[d][h][j] -= t * a[d][i][j];
+				}
+			}
+		}
+		prod *= a[m][h][h];
+		T s = 1 / a[m][h][h];
+		for(auto d = 0; d <= m; ++ d) for(auto j = 0; j < n; ++ j){
+			a[d][h][j] *= s;
+		}
+		for(auto i = 0; i < n; ++ i) if(h != i){
+			T t = a[m][i][h];
+			for(auto d = 0; d <= m; ++ d) for(auto j = 0; j < n; ++ j){
+				a[d][i][j] -= t * a[d][h][j];
+			}
+		}
+	}
+	vector<vector<T>> b(m * n, vector<T>(m * n, 0));
+	for(auto i = 0; i < (m - 1) * n; ++ i) b[i][n + i] = -1;
+	for(auto d = 0; d < m; ++ d){
+		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < n; ++ j){
+			b[(m - 1) * n + i][d * n + j] = a[d][i][j];
+		}
+	}
+	for(auto i = 0; i < m * n; ++ i) for(auto j = 0; j < m * n; ++ j) b[i][j] = -b[i][j];
+	vector<T> fs = characteristic_polynomial(b), gs(m * n + 1, 0);
+	for(auto i = 0; off + i <= m * n; ++ i) gs[i] = prod * fs[off + i];
+	return gs;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>determinant_polynomial</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
