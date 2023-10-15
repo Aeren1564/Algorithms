@@ -1,0 +1,133 @@
+<snippet>
+	<content><![CDATA[
+// All element must lie within [0, sigma).
+struct wavelet_tree{
+	int n, sigma;
+	vector<vector<int>> data; // data[u][i]: # of elements mapped to left among first i elements
+	wavelet_tree(){ }
+	// O(n * log(sigma))
+	wavelet_tree(vector<int> a, int sigma): n((int)a.size()), sigma(sigma), data(sigma << 1){
+		assert(0 < sigma);
+		assert(all_of(a.begin(), a.end(), [&](int x){ return 0 <= x && x < sigma; }));
+		auto build = [&](auto self, int u, int l, int r, int ql, int qr)->void{
+			if(r - l == 1) return;
+			int m = l + (r - l >> 1);
+			data[u].resize(qr - ql + 1);
+			for(auto i = ql; i < qr; ++ i) data[u][i - ql + 1] = data[u][i - ql] + (a[i] < m);
+			int qm = stable_partition(a.begin() + ql, a.begin() + qr, [&](int x){ return x < m; }) - a.begin();
+			self(self, u << 1, l, m, ql, qm), self(self, u << 1 | 1, m, r, qm, qr);
+		};
+		build(build, 1, 0, sigma, 0, n);
+	}
+	// Returns the frequency of x in the interval [ql, qr).
+	// O(log(sigma))
+	int freq(int ql, int qr, int x) const{
+		assert(0 <= ql && ql <= qr && qr <= n);
+		assert(0 <= x && x < sigma);
+		if(ql == qr) return 0;
+		for(auto u = 1, l = 0, r = sigma; r - l >= 2; ){
+			auto m = l + (r - l >> 1), lcnt = data[u][ql], rcnt = data[u][qr];
+			if(x < m){
+				ql = lcnt, qr = rcnt;
+				r = m;
+				u = u << 1;
+			}
+			else{
+				ql -= lcnt, qr -= rcnt;
+				l = m;
+				u = u << 1 | 1;
+			}
+		}
+		return qr - ql;
+	}
+	// Returns the number of occurrences of numbers in [0, xr) in the interval [ql, qr).
+	// O(log(sigma))
+	int count(int ql, int qr, int xr) const{
+		assert(0 <= ql && ql <= qr && qr <= n);
+		assert(0 <= xr && xr <= sigma);
+		if(ql == qr || xr == 0) return 0;
+		int res = 0;
+		for(auto u = 1, l = 0, r = sigma; ; ){
+			if(r - l == 1){
+				res += (l < xr) * (qr - ql);
+				break;
+			}
+			auto m = l + (r - l >> 1), lcnt = data[u][ql], rcnt = data[u][qr];
+			if(xr <= m){
+				ql = lcnt, qr = rcnt;
+				r = m;
+				u = u << 1;
+			}
+			else{
+				res += rcnt - lcnt;
+				ql -= lcnt, qr -= rcnt;
+				l = m;
+				u = u << 1 | 1;
+			}
+		}
+		return res;
+	}
+	// Returns the number of occurrences of numbers in [xl, xr) in the interval [ql, qr).
+	// O(log(sigma))
+	int count(int ql, int qr, int xl, int xr) const{
+		assert(xl <= xr);
+		if(xl == xr) return 0;
+		return count(ql, qr, xr) - count(ql, qr, xl);
+	}
+	// Find the k-th smallest element in the interval [ql, qr).
+	// O(log(sigma))
+	int find_by_order(int ql, int qr, int k) const{
+		assert(0 <= ql && ql <= qr && qr <= n);
+		assert(0 <= k && k < qr - ql);
+		for(auto u = 1, l = 0, r = sigma; ; ){
+			if(r - l == 1) return l;
+			auto m = l + (r - l >> 1), lcnt = data[u][ql], rcnt = data[u][qr];
+			if(k < rcnt - lcnt) ql = lcnt, qr = rcnt, r = m, u = u << 1;
+			else k -= rcnt - lcnt, ql -= lcnt, qr -= rcnt, l = m, u = u << 1 | 1;
+		}
+		assert(false);
+	}
+	// Find the k-th smallest element in the interval [ql, qr) among elements in range [xl, sigma), -1 if no such element.
+	// O(log(sigma))
+	int find_by_order(int ql, int qr, int xl, int k) const{
+		assert(0 <= ql && ql <= qr && qr <= n);
+		assert(0 <= xl && xl <= sigma);
+		assert(0 <= k);
+		if(xl == sigma) return -1;
+		k += count(ql, qr, xl, sigma);
+		if(k >= qr - ql) return -1;
+		return find_by_order(ql, qr, k + count(ql, qr, xl, sigma));
+	}
+	// Find the smallest element >= x, sigma if no such element.
+	// O(log(MAXVAL))
+	int lower_bound(int ql, int qr, int x) const{
+		assert(0 <= x && x < sigma);
+		int res = find_by_order(ql, qr, x, 0);
+		return ~res ? res : sigma;
+	}
+	// Find the smallest element > x, 2^lg if no such element.
+	// O(log(MAXVAL))
+	int upper_bound(int ql, int qr, int x) const{
+		assert(0 <= x && x < sigma);
+		int res = find_by_order(ql, qr, x + 1, 0);
+		return ~res ? res : sigma;
+	}
+	// Find the largest element <= x, -1 if no such element.
+	// O(log(MAXVAL))
+	int reverse_lower_bound(int ql, int qr, int x) const{
+		int cnt = count(ql, qr, x);
+		return cnt ? find_by_order(ql, qr, cnt - 1) : -1;
+	}
+	// Find the largest element < x, -1 if no such element.
+	// O(log(MAXVAL))
+	int reverse_upper_bound(int ql, int qr, int x) const{
+		int cnt = count(ql, qr, x + 1);
+		return cnt ? find_by_order(ql, qr, cnt - 1) : -1;
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>wavelet_tree</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
