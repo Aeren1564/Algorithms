@@ -1,0 +1,114 @@
+<snippet>
+	<content><![CDATA[
+// Requires succinct_dictionary
+template<class T>
+struct wavelet_matrix{
+	int n, lg;
+	vector<succinct_dictionary> bv;
+	// O(n * log(MAXVAL)) time and O(n * log(MAXVAL) / w) memory
+	wavelet_matrix(const vector<T> &a): n((int)a.size()), lg(__lg(max(*max_element(a.begin(), a.end()), (T)1)) + 1), bv(lg, n){
+		vector<T> cur = a, next(n);
+		for(auto h = lg; h --;){
+			for(auto i = 0; i < n; ++ i) if(cur[i] >> h & 1) bv[h].set(i);
+			bv[h].build();
+			array it{next.begin(), next.begin() + bv[h].zeros};
+			for(auto i = 0; i < n; ++ i) *it[bv[h][i]] ++ = cur[i];
+			swap(cur, next);
+		}
+	}
+	// Returns the frequency of x in the interval [ql, qr).
+	// O(log(MAXVAL))
+	int freq(int ql, int qr, int x) const{
+		assert(0 <= ql && ql <= qr && qr <= n);
+		assert(0 <= x);
+		if(ql == qr || (T)1 << lg <= x) return 0;
+		for(auto h = lg; h --; ){
+			auto lcnt = bv[h].rank0(ql), rcnt = bv[h].rank0(qr);
+			if(~x >> h & 1) ql = lcnt, qr = rcnt;
+			else ql += bv[h].zeros - lcnt, qr += bv[h].zeros - rcnt;
+		}
+		return qr - ql;
+	}
+	// Returns the number of occurrences of numbers in [0, xr) in the interval [ql, qr).
+	// O(log(MAXVAL))
+	int count(int ql, int qr, T xr) const{
+		assert(0 <= ql && ql <= qr && qr <= n);
+		assert(0 <= xr);
+		if((T)1 << lg <= xr) return qr - ql;
+		if(xr == 0) return 0;
+		int res = 0;
+		for(auto h = lg; h --; ){
+			auto lcnt = bv[h].rank0(ql), rcnt = bv[h].rank0(qr);
+			if(~xr >> h & 1) ql = lcnt, qr = rcnt;
+			else{
+				res += rcnt - lcnt;
+				ql += bv[h].zeros - lcnt, qr += bv[h].zeros - rcnt;
+			}
+		}
+		return res;
+	}
+	// Returns the number of occurrences of numbers in [xl, xr) in the interval [ql, qr).
+	// O(log(MAXVAL))
+	int count(int ql, int qr, T xl, T xr) const{
+		assert(xl <= xr);
+		return count(ql, qr, xr) - count(ql, qr, xl);
+	}
+	// Find the k-th smallest element in the interval [ql, qr).
+	// O(log(MAXVAL))
+	T find_by_order(int ql, int qr, int k) const{
+		assert(0 <= k && k < qr - ql);
+		T res = 0;
+		for(auto h = lg; h --; ){
+			auto lcnt = bv[h].rank0(ql), rcnt = bv[h].rank0(qr);
+			if(k < rcnt - lcnt) ql = lcnt, qr = rcnt;
+			else {
+				k -= rcnt - lcnt;
+				res |= (T)1 << h;
+				ql += bv[h].zeros - lcnt;
+				qr += bv[h].zeros - rcnt;
+			}
+		}
+		return res;
+	}
+	// Find the k-th smallest element in the interval [ql, qr) among elements in range [xl, inf), -1 if no such element.
+	// O(log(MAXVAL))
+	T find_by_order(int ql, int qr, T xl, int k) const{
+		assert(0 <= ql && ql <= qr && qr <= n);
+		assert(0 <= xl);
+		if((T)1 << lg <= xl) return -1;
+		assert(0 <= k);
+		k += count(ql, qr, xl, (T)1 << lg);
+		if(k >= qr - ql) return -1;
+		return find_by_order(ql, qr, k);
+	}
+	// Find the smallest element >= x, 2^lg if no such element.
+	// O(log(MAXVAL))
+	T lower_bound(int ql, int qr, T x) const{
+		T res = find_by_order(ql, qr, x, 0);
+		return ~res ? res : (T)1 << lg;
+	}
+	// Find the smallest element > x, 2^lg if no such element.
+	// O(log(MAXVAL))
+	T upper_bound(int ql, int qr, T x) const{
+		T res = find_by_order(ql, qr, x + 1, 0);
+		return ~res ? res : (T)1 << lg;
+	}
+	// Find the largest element <= x, -1 if no such element.
+	// O(log(MAXVAL))
+	T reverse_lower_bound(int ql, int qr, T x) const{
+		int cnt = count(ql, qr, x);
+		return cnt ? find_by_order(ql, qr, cnt - 1) : -1;
+	}
+	// Find the largest element < x, -1 if no such element.
+	// O(log(MAXVAL))
+	T reverse_upper_bound(int ql, int qr, T x) const{
+		int cnt = count(ql, qr, x + 1);
+		return cnt ? find_by_order(ql, qr, cnt - 1) : -1;
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>wavelet_matrix</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
