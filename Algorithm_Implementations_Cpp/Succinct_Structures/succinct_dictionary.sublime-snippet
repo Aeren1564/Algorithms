@@ -1,0 +1,63 @@
+<snippet>
+	<content><![CDATA[
+struct succinct_dictionary{
+	static constexpr unsigned int wsize = 64;
+	static unsigned int rank64(unsigned long long x, unsigned int i){
+		return __builtin_popcountll(x & ((1ULL << i) - 1));
+	}
+#pragma pack(4)
+	struct block_t{
+		unsigned long long bit;
+		unsigned int sum;
+	};
+#pragma pack()
+	unsigned int n, zeros;
+	vector<block_t> block;
+	succinct_dictionary(unsigned int n = 0) : n(n), block(n / wsize + 1){}
+	// O(1)
+	int operator[](unsigned int i) const{
+		return block[i / wsize].bit >> i % wsize & 1;
+	}
+	// O(1)
+	void set(unsigned int i){
+		block[i / wsize].bit |= 1ULL << i % wsize;
+	}
+	// O(n/w)
+	void build(){
+		for(auto i = 0; i < n / wsize; ++ i) block[i + 1].sum = block[i].sum + __builtin_popcountll(block[i].bit);
+		zeros = rank0(n);
+	}
+	// O(1)
+	unsigned int rank0(unsigned int i) const{
+		return i - rank1(i);
+	}
+	// O(1)
+	unsigned int rank1(unsigned int i) const{
+		auto &&e = block[i / wsize];
+		return e.sum + rank64(e.bit, i % wsize);
+	}
+	// O(log(n))
+	unsigned int select0(unsigned int k) const{
+		unsigned int low = 0, high = n;
+		while(high - low >= 2){
+			unsigned int mid = low + high >> 1;
+			(rank0(mid) <= k ? low : high) = mid;
+		}
+		return low;
+	}
+	// O(log(n))
+	unsigned int select1(unsigned int k) const{
+		unsigned int low = 0, high = n;
+		while(high - low >= 2){
+			unsigned int mid = low + high >> 1;
+			(rank1(mid) <= k ? low : high) = mid;
+		}
+		return low;
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>succinct_dictionary</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
