@@ -89,38 +89,41 @@ struct wavelet_tree{
 	}
 	// Find the k-th smallest element in the interval [ql, qr) among elements in range [xl, sigma), -1 if no such element.
 	// O(log(sigma))
-	int find_by_order(int ql, int qr, int xl, int k) const{
+	int find_by_order(int ql, int qr, int xl, int xr, int k) const{
 		assert(0 <= ql && ql <= qr && qr <= n);
-		assert(0 <= xl && xl <= sigma);
+		assert(0 <= xl && xl && xl <= xr && <= sigma);
 		assert(0 <= k);
-		if(xl == sigma) return -1;
-		k += count(ql, qr, xl, sigma);
+		if(xl == xr) return -1;
+		k += count(ql, qr, 0, xl);
 		if(k >= qr - ql) return -1;
-		return find_by_order(ql, qr, k + count(ql, qr, xl, sigma));
+		int res = find_by_order(ql, qr, k);
+		return ~res && res < xr ? res : -1;
 	}
 	// Find the smallest element >= x, sigma if no such element.
 	// O(log(MAXVAL))
 	int lower_bound(int ql, int qr, int x) const{
 		assert(0 <= x && x < sigma);
-		int res = find_by_order(ql, qr, x, 0);
+		int res = find_by_order(ql, qr, x, sigma, 0);
 		return ~res ? res : sigma;
 	}
 	// Find the smallest element > x, 2^lg if no such element.
 	// O(log(MAXVAL))
 	int upper_bound(int ql, int qr, int x) const{
 		assert(0 <= x && x < sigma);
-		int res = find_by_order(ql, qr, x + 1, 0);
+		int res = find_by_order(ql, qr, x + 1, sigma, 0);
 		return ~res ? res : sigma;
 	}
 	// Find the largest element <= x, -1 if no such element.
 	// O(log(MAXVAL))
 	int reverse_lower_bound(int ql, int qr, int x) const{
+		assert(0 <= x && x < sigma);
 		int cnt = count(ql, qr, x);
 		return cnt ? find_by_order(ql, qr, cnt - 1) : -1;
 	}
 	// Find the largest element < x, -1 if no such element.
 	// O(log(MAXVAL))
 	int reverse_upper_bound(int ql, int qr, int x) const{
+		assert(0 <= x && x < sigma);
 		int cnt = count(ql, qr, x + 1);
 		return cnt ? find_by_order(ql, qr, cnt - 1) : -1;
 	}
