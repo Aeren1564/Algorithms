@@ -1,5 +1,56 @@
 <snippet>
 	<content><![CDATA[
+template<class T>
+struct continued_fraction{
+	vector<T> data;
+	continued_fraction(T x): data({x}){ }
+	continued_fraction(T n, T d){
+		assert(d > 0);
+		while(d > 0){
+			auto [q, r] = divrem(n, d);
+			if(r < 0){
+				-- q;
+				r += d;
+			}
+			data.push_back(q);
+			n = d, d = r;
+		}
+	}
+	continued_fraction(const vector<T> &a): data(a){
+		assert(!data.empty());
+		for(auto i = 1; i < (int)data.size(); ++ i) assert(data[i] >= 1);
+	}
+	// Assuming data represents a rational number, switch to the alternative representation.
+	continued_fraction &alter(){
+		if((int)data.size() == 1 || data.back() >= 2){
+			-- data.back();
+			data.push_back(T{1});
+		}
+		else{
+			data.pop_back();
+			++ data.back();
+		}
+		return *this;
+	}
+	array<T, 2> operator()() const{
+		T n = T{1}, d = T{0};
+		for(auto i = (int)data.size() - 1; i >= 0; -- i){
+			swap(n, d);
+			n += data[i] * d;
+		}
+		return {n, d};
+	}
+	vector<array<T, 2>> convergents() const{
+		vector<array<T, 2>> c((int)data.size() + 2);
+		c[0] = {T{0}, T{1}}, c[1] = {T{1}, T{0}};
+		for(auto i = 0; i < (int)data.size(); ++ i){
+			c[i + 2][0] = data[i] * c[i + 1][0] + c[i][0];
+			c[i + 2][1] = data[i] * c[i + 1][1] + c[i][1];
+		}
+		return c;
+	}
+};
+
 typedef array<long long, 2> frac;
 struct continued_fraction{
 	vector<long long> a;

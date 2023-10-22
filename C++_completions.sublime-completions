@@ -308,6 +308,7 @@
         { "trigger": "kill", "contents": "auto kill = [](){\n\t${1:cout << -1;}\n\texit(0);\n};"},
         { "trigger": "iop", "contents": "istream &operator>>(istream &in, $1 &$2){\n\t${3:return in >> $2;}\n}"},
         { "trigger": "oop", "contents": "ostream &operator<<(ostream &out, const $1 &$2){\n\t${3:return out << $2;}\n}"},
+        { "trigger": "floored_division", "contents": "template<class T>\nT floored_division(T x, T y){\n\treturn x / y - ((x ^ y) < 0 && x % y);\n}"},
         { "trigger": "cl", "contents": "cout << \"\\n\";"},
         { "trigger": "flush", "contents": "cout << endl;"},
         { "trigger": "order_statistic_trees", "contents": "#include <ext/pb_ds/assoc_container.hpp>\n#include <ext/pb_ds/tree_policy.hpp>\nusing namespace __gnu_pbds;\ntemplate<class T, class U, class Compare = less<>> using order_statistic_map = tree<T, U, Compare, rb_tree_tag, tree_order_statistics_node_update>;\ntemplate<class T, class Compare = less<>> using order_statistic_set = order_statistic_map<T, null_type, Compare>;"},

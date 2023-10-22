@@ -2,14 +2,14 @@
 	<content><![CDATA[
 // Partition the sorted elements according to capacity, and track the sum of each blocks.
 template<class T, class U, class Compare = less<>, class Plus = plus<>, class Minus = minus<>>
-struct block_sum_processor{
+struct sorted_range_sum_tracker{
 	int B;
 	Plus op;
 	Minus inv_op;
 	vector<U> sum;
 	vector<multiset<T, Compare>> data;
 	vector<int> capacity;
-	block_sum_processor(int B = 2, U init = {}, Compare cmp = less<>(), Plus op = plus<>(), Minus inv_op = minus<>()): B(B), sum(B, init), data(B, multiset<T, Compare>{cmp}), capacity(B - 1), op(op), inv_op(inv_op){
+	sorted_range_sum_tracker(int B = 2, U init = {}, Compare cmp = less<>(), Plus op = plus<>(), Minus inv_op = minus<>()): B(B), sum(B, init), data(B, multiset<T, Compare>{cmp}), capacity(B - 1), op(op), inv_op(inv_op){
 		assert(B >= 2);
 	}
 	// O(B * log(n))
@@ -62,7 +62,7 @@ struct block_sum_processor{
 };
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
-	<tabTrigger>block_sum_processor</tabTrigger> -->
+	<tabTrigger>sorted_range_sum_tracker</tabTrigger> -->
 	<!-- Optional: Set a scope to limit where the snippet will trigger -->
 	<scope>source.c++</scope> -->
 </snippet>

@@ -1,0 +1,105 @@
+<snippet>
+	<content><![CDATA[
+template<class T, bool PRECALC_INVERSE = true>
+struct range_choose_sum_tracker{
+	int n, deg, th;
+	T base, inv_base;
+	vector<T> base_power;
+	vector<vector<T>> power;
+	// Every number from 1 to n along with base + 1 must be invertible.
+	// O((n + deg) * deg)
+	range_choose_sum_tracker(int n, T base, int deg): n(n), deg(deg), th(max(n, deg)), base(base), value(deg + 1), base_power(th + 1, 1), power(th + 1, vector<T>(deg + 1, 1)){
+		assert(n >= 0 && deg >= 0);
+		fact.assign(th + 1, 1);
+		for(auto i = 2; i <= th; ++ i) fact[i] = fact[i - 1] * i;
+		if constexpr(PRECALC_INVERSE){
+			inv_base = 1 / (base + 1);
+			invfact.assign(th + 1, 1);
+			invfact[th] = 1 / fact[th];
+			for(auto i = th - 1; i >= 2; -- i) invfact[i] = invfact[i + 1] * (i + 1);
+		}
+		for(auto x = 1; x <= th; ++ x) base_power[x] = base_power[x - 1] * base;
+		for(auto x = 0; x <= th; ++ x) for(auto y = 1; y <= deg; ++ y) power[x][y] = power[x][y - 1] * x;
+	}
+	vector<T> fact, invfact;
+	T choose(int m, int i) const{
+		assert(0 <= m && m <= th);
+		if(i < 0 || m < i) return T{0};
+		if constexpr(PRECALC_INVERSE) return fact[m] * invfact[i] * invfact[m - i];
+		else return fact[m] / fact[i] / fact[m - i];
+	}
+	int m = 0, l = 0, r = 0;
+	vector<T> value;
+	// O(deg^2)
+	void increase_m(){
+		assert(m < n);
+		if(l < r){
+			for(auto i = deg; i >= 0; -- i){
+				T res = 0;
+				for(auto j = 0; j <= i; ++ j) res += choose(i, j) * value[j];
+				res = res * base + value[i];
+				if(1 <= l && l <= th) res += power[l][i] * base_power[l] * choose(m, l - 1);
+				if(1 <= r && r <= th) res -= power[r][i] * base_power[r] * choose(m, r - 1);
+				value[i] = res;
+			}
+		}
+		++ m;
+	}
+	// O(deg^2)
+	void decrease_m(){
+		assert(m >= 1);
+		if(l < r){
+			for(auto i = 0; i <= deg; ++ i){
+				T res = 0;
+				for(auto j = 0; j < i; ++ j) res -= choose(i, j) * value[j];
+				res = res * base + value[i];
+				if(1 <= l && l <= th) res -= power[l][i] * base_power[l] * choose(m - 1, l - 1);
+				if(1 <= r && r <= th) res += power[r][i] * base_power[r] * choose(m - 1, r - 1);
+				if constexpr(PRECALC_INVERSE) value[i] = res * inv_base;
+				else value[i] = res / (base + 1);
+			}
+		}
+		-- m;
+	}
+	// O(deg)
+	void increase_l(){
+		assert(l < r);
+		if(0 <= l && l <= th) for(auto i = 0; i <= deg; ++ i) value[i] -= power[l][i] * base_power[l] * choose(m, l);
+		++ l;
+	}
+	// O(deg)
+	void decrease_l(){
+		-- l;
+		if(0 <= l && l <= th) for(auto i = 0; i <= deg; ++ i) value[i] += power[l][i] * base_power[l] * choose(m, l);
+	}
+	// O(deg)
+	void increase_r(){
+		if(0 <= r && r <= th) for(auto i = 0; i <= deg; ++ i) value[i] += power[r][i] * base_power[r] * choose(m, r);
+		++ r;
+	}
+	// O(deg)
+	void decrease_r(){
+		assert(l < r);
+		-- r;
+		if(0 <= r && r <= th) for(auto i = 0; i <= deg; ++ i) value[i] -= power[r][i] * base_power[r] * choose(m, r);
+	}
+	// Returns \sum_{i=ql}^qr i^j * base^i * Choose(qm,i) for all integer 0 <= j <= deg.
+	// O(deg^2 * abs(m - qm) + deg * (abs(l - ql) + abs(r - qr)))
+	const vector<T> &operator()(int qm, int ql, int qr){
+		assert(0 <= qm && qm <= n);
+		assert(ql <= qr);
+		while(m < qm) increase_m();
+		while(m > qm) decrease_m();
+		while(ql < l) decrease_l();
+		while(r < qr) increase_r();
+		while(l < ql) increase_l();
+		while(qr < r) decrease_r();
+		return value;
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>range_choose_sum_tracker</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

@@ -97,14 +97,15 @@ struct matrix{
 		return res;
 	}
 	// Assumes T is either a floating, integral, or a modular type.
-	// If T is a floating type, O(n) divisions with O(n^3) additions, subtractions, and multiplications.
-	// Otherwise, O(n^2 * log(size)) divisions with O(n^3) additions, subtractions, and multiplications.
+	// If T is a floating type, O(up_to) divisions with O(n * m * up_to) additions, subtractions, and multiplications.
+	// Otherwise, O(n * up_to * log(size)) divisions with O(n * m * up_to) additions, subtractions, and multiplications.
 	// Returns {REF matrix, determinant, rank}
-	tuple<matrix &, T, int> inplace_REF(){
+	tuple<matrix &, T, int> inplace_REF(int up_to = -1){
 		if(n == 0) return {*this, T(1), 0};
+		if(!~up_to) up_to = m;
 		T det = 1;
 		int rank = 0;
-		for(auto j = 0; j < m; ++ j){
+		for(auto j = 0; j < up_to; ++ j){
 			if constexpr(is_floating_point_v<T>){
 				static const T eps = 1e-9;
 				int pivot = rank;
@@ -140,20 +141,21 @@ struct matrix{
 		return {*this, det, rank};
 	}
 	// Assumes T is either a floating, integral, or a modular type.
-	// If T is a floating type, O(n) divisions with O(n^3) additions, subtractions, and multiplications.
-	// Otherwise, O(n^2 * log(size)) divisions with O(n^3) additions, subtractions, and multiplications.
+	// If T is a floating type, O(up_to) divisions with O(n * m * up_to) additions, subtractions, and multiplications.
+	// Otherwise, O(n * up_to * log(size)) divisions with O(n * m * up_to) additions, subtractions, and multiplications.
 	// Returns {REF matrix, determinant, rank}
-	tuple<matrix, T, int> REF() const{
-		return matrix(*this).inplace_REF();
+	tuple<matrix, T, int> REF(int up_to = -1) const{
+		return matrix(*this).inplace_REF(up_to);
 	}
 	// Assumes T is a field.
-	// O(n) divisions with O(n^3) additions, subtractions, and multiplications.
+	// O(up_to) divisions with O(n * m * up_to) additions, subtractions, and multiplications.
 	// Returns {REF matrix, determinant, rank}
-	tuple<matrix &, T, int> inplace_REF_field(){
+	tuple<matrix &, T, int> inplace_REF_field(int up_to = -1){
 		if(n == 0) return {*this, T(1), 0};
+		if(!~up_to) up_to = m;
 		T det = T(1);
 		int rank = 0;
-		for(auto j = 0; j < m; ++ j){
+		for(auto j = 0; j < up_to; ++ j){
 			int pivot = -1;
 			for(auto i = rank; i < n; ++ i) if(data[i][j] != T(0)){
 				pivot = i;
@@ -171,7 +173,7 @@ struct matrix{
 			T inv = 1 / data[rank][j];
 			for(auto i = rank + 1; i < n; ++ i) if(data[i][j] != T(0)){
 				T coef = data[i][j] * inv;
-				for(auto k = j; k < m; ++ k) data[i][k] -= coef * data[j][k];
+				for(auto k = j; k < m; ++ k) data[i][k] -= coef * data[rank][k];
 			}
 			++ rank;
 			if(rank == n) break;
@@ -179,10 +181,10 @@ struct matrix{
 		return {*this, det, rank};
 	}
 	// Assumes T is a field.
-	// O(n) divisions with O(n^3) additions, subtractions, and multiplications.
+	// O(up_to) divisions with O(n * m * up_to) additions, subtractions, and multiplications.
 	// Returns {REF matrix, determinant, rank}
-	tuple<matrix, T, int> REF_field() const{
-		return matrix(*this).inplace_REF_field();
+	tuple<matrix, T, int> REF_field(int up_to = -1) const{
+		return matrix(*this).inplace_REF_field(up_to);
 	}
 	// Assumes T is a field.
 	// O(n) divisions with O(n^3) additions, subtractions, and multiplications.
@@ -250,6 +252,24 @@ struct matrix{
 	int rank_field() const{
 		return get<2>(REF_field());
 	}
+	// Regarding the matrix as a system of linear equations by separating first m-1 columns, find a solution of the linear equation.
+	// Assumes T is a field
+	// O(n * m^2)
+	optional<vector<T>> find_a_solution() const{
+		assert(m >= 1);
+		auto [ref, _, rank] = REF_field(m - 1);
+		for(auto i = rank; i < n; ++ i) if(ref(i, m - 1) != T{0}) return {};
+		vector<T> res(m - 1);
+		for(auto i = rank - 1; i >= 0; -- i){
+			int pivot = 0;
+			while(pivot < m - 1 && ref(i, pivot) == T{0}) ++ pivot;
+			assert(pivot < m - 1);
+			res[pivot] = ref(i, m - 1);
+			for(auto j = pivot + 1; j < m - 1; ++ j) res[pivot] -= ref(i, j) * res[j];
+			res[pivot] /= ref(i, pivot);
+		}
+		return res;
+	}
 	// O(n * 2^n)
 	T permanent() const{
 		assert(n <= 30 && n == m);
@@ -276,6 +296,7 @@ struct matrix{
 		return out;
 	}
 	matrix(int n, int m, T init_diagonal = T(0), T init_off_diagonal = T(0)): n(n), m(m){
+		assert(n >= 0 && m >= 0);
 		data.assign(n, vector<T>(m, T(0)));
 		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) data[i][j] = i == j ? init_diagonal : init_off_diagonal;
 	}

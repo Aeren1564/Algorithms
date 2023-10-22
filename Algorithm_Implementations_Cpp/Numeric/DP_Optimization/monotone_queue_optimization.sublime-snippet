@@ -17,15 +17,16 @@ pair<vector<T>, vector<int>> monotone_queue_optimization(const vector<T> &init, 
 	};
 	deque<int> q{0};
 	for(auto i = 1; i < n; ++ i){
-		while(q.size() > 1 && dp[q[0]] + cost(q[0], i) > dp[q[1]] + cost(q[1], i)) q.pop_front();
 		auto x = cost(q.front(), i);
 		if constexpr(GET_MAX){
+			while(q.size() > 1 && dp[q[0]] + cost(q[0], i) < dp[q[1]] + cost(q[1], i)) q.pop_front();
 			if(dp[i] < dp[q.front()] + x){
 				dp[i] = dp[q.front()] + x;
 				prev[i] = q.front();
 			}
 		}
 		else{
+			while(q.size() > 1 && dp[q[0]] + cost(q[0], i) > dp[q[1]] + cost(q[1], i)) q.pop_front();
 			if(dp[i] > dp[q.front()] + x){
 				dp[i] = dp[q.front()] + x;
 				prev[i] = q.front();

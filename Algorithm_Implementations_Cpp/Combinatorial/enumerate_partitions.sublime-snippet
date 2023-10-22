@@ -1,0 +1,58 @@
+<snippet>
+	<content><![CDATA[
+// Enumerate all partitions of 0 to n in lexicographical order.
+vector<vector<vector<int>>> enumerate_partitions(int n){
+	assert(0 <= n);
+	vector<vector<vector<int>>> p(n + 1);
+	p[0] = {{}};
+	for(auto x = 1; x <= n; ++ x) for(auto last = x; last >= 1; -- last) for(auto q: p[x - last]){
+		if(!q.empty() && q.back() < last) break;
+		q.push_back(last);
+		p[x].push_back(q);
+	}
+	for(auto x = 1; x <= n; ++ x){
+		reverse(p[x].begin(), p[x].end());
+		for(auto &q: p[x]) reverse(q.begin(), q.end());
+	}
+	return p;
+}
+// Enumerate all partitions of 0 to n in lexicographical order, along with its occurence as set of sizes of cycles in S_n.
+template<class T, bool PRECOMPUTE_INVERSE = false>
+vector<vector<pair<vector<int>, T>>> enumerate_partitions_with_count(int n){
+	auto p = enumerate_partitions(n);
+	vector<T> fact(n + 1, 1), invfact, inv;
+	for(auto x = 1; x <= n; ++ x) fact[x] = fact[x - 1] * x;
+	if constexpr(PRECOMPUTE_INVERSE){
+		invfact.resize(n + 1), inv.resize(n + 1, 1);
+		invfact[n] = 1 / fact[n];
+		for(auto x = n - 1; x >= 1; -- x){
+			invfact[x] = invfact[x + 1] * (x + 1);
+			inv[x + 1] = invfact[x + 1] * fact[x];
+		}
+	}
+	vector<vector<pair<vector<int>, T>>> res(n + 1);
+	for(auto x = 0; x <= n; ++ x){
+		for(auto q: p[x]){
+			T cnt = fact[x];
+			for(auto y: q){
+				if constexpr(PRECOMPUTE_INVERSE) cnt *= inv[y];
+				else cnt /= y;
+			}
+			for(auto l = 0; l < (int)q.size(); ){
+				int r = l;
+				while(r < (int)q.size() && q[l] == q[r]) ++ r;
+				if constexpr(PRECOMPUTE_INVERSE) cnt *= invfact[r - l];
+				else cnt /= fact[r - l];
+				l = r;
+			}
+			res[x].push_back({q, cnt});
+		}
+	}
+	return res;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>enumerate_partitions</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
