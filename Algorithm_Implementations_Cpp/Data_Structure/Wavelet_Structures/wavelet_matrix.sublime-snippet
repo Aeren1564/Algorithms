@@ -4,9 +4,15 @@
 template<class T>
 struct wavelet_matrix{
 	int n, lg;
+	T sigma;
 	vector<succinct_dictionary> bv;
 	// O(n * log(MAXVAL)) time and O(n * log(MAXVAL) / w) memory
-	wavelet_matrix(const vector<T> &a): n((int)a.size()), lg(__lg(max(*max_element(a.begin(), a.end()), (T)1)) + 1), bv(lg, n){
+	wavelet_matrix(const vector<T> &a, T sigma): n((int)a.size()){
+		assert(sigma > 0);
+		for(auto x: a) assert(0 <= x && x < sigma);
+		lg = __lg(sigma);
+		assert(T(1) << lg == sigma);
+		bv.assign(lg, succinct_dictionary(n));
 		vector<T> cur = a, next(n);
 		for(auto h = lg; h --;){
 			for(auto i = 0; i < n; ++ i) if(cur[i] >> h & 1) bv[h].set(i);
@@ -21,7 +27,7 @@ struct wavelet_matrix{
 	int freq(int ql, int qr, int x) const{
 		assert(0 <= ql && ql <= qr && qr <= n);
 		assert(0 <= x);
-		if(ql == qr || (T)1 << lg <= x) return 0;
+		if(ql == qr || sigma <= x) return 0;
 		for(auto h = lg; h --; ){
 			auto lcnt = bv[h].rank0(ql), rcnt = bv[h].rank0(qr);
 			if(~x >> h & 1) ql = lcnt, qr = rcnt;
@@ -34,7 +40,7 @@ struct wavelet_matrix{
 	int count(int ql, int qr, T xr) const{
 		assert(0 <= ql && ql <= qr && qr <= n);
 		assert(0 <= xr);
-		if((T)1 << lg <= xr) return qr - ql;
+		if(sigma <= xr) return qr - ql;
 		if(xr == 0) return 0;
 		int res = 0;
 		for(auto h = lg; h --; ){
@@ -70,13 +76,13 @@ struct wavelet_matrix{
 		}
 		return res;
 	}
-	// Find the k-th smallest element in the interval [ql, qr) among elements in range [xl, inf), -1 if no such element.
+	// Find the k-th smallest element in the interval [ql, qr) among elements in range [xl, xr), -1 if no such element.
 	// O(log(MAXVAL))
 	T find_by_order(int ql, int qr, T xl, T xr, int k) const{
 		assert(0 <= ql && ql <= qr && qr <= n);
 		assert(0 <= xl && xl <= xr);
-		xl = min(xl, (T)1 << lg);
-		xr = min(xr, (T)1 << lg);
+		xl = min(xl, sigma);
+		xr = min(xr, sigma);
 		if(xl == xr) return -1;
 		assert(0 <= k);
 		k += count(ql, qr, 0, xl);
@@ -84,19 +90,19 @@ struct wavelet_matrix{
 		T res = find_by_order(ql, qr, k);
 		return ~res && res < xr ? res : -1;
 	}
-	// Find the smallest element >= x, 2^lg if no such element.
+	// Find the smallest element >= x, sigma if no such element.
 	// O(log(MAXVAL))
 	T lower_bound(int ql, int qr, T x) const{
 		assert(0 <= x);
-		T res = find_by_order(ql, qr, min(x, (T)1 << lg), (T)1 << lg, 0);
-		return ~res ? res : (T)1 << lg;
+		T res = find_by_order(ql, qr, min(x, sigma), sigma, 0);
+		return ~res ? res : sigma;
 	}
-	// Find the smallest element > x, 2^lg if no such element.
+	// Find the smallest element > x, sigma if no such element.
 	// O(log(MAXVAL))
 	T upper_bound(int ql, int qr, T x) const{
 		assert(0 <= x);
-		T res = find_by_order(ql, qr, min(x + 1, (T)1 << lg), (T)1 << lg, 0);
-		return ~res ? res : (T)1 << lg;
+		T res = find_by_order(ql, qr, min(x + 1, sigma), sigma, 0);
+		return ~res ? res : sigma;
 	}
 	// Find the largest element <= x, -1 if no such element.
 	// O(log(MAXVAL))
