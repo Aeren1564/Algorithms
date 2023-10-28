@@ -1,6 +1,5 @@
 <snippet>
 	<content><![CDATA[
-// All element must lie within [0, sigma).
 struct wavelet_tree{
 	int n, sigma;
 	vector<vector<int>> data; // data[u][i]: # of elements mapped to left among first i elements
@@ -91,7 +90,7 @@ struct wavelet_tree{
 	// O(log(sigma))
 	int find_by_order(int ql, int qr, int xl, int xr, int k) const{
 		assert(0 <= ql && ql <= qr && qr <= n);
-		assert(0 <= xl && xl && xl <= xr && <= sigma);
+		assert(0 <= xl && xl && xl <= xr && xr <= sigma);
 		assert(0 <= k);
 		if(xl == xr) return -1;
 		k += count(ql, qr, 0, xl);
@@ -106,7 +105,7 @@ struct wavelet_tree{
 		int res = find_by_order(ql, qr, x, sigma, 0);
 		return ~res ? res : sigma;
 	}
-	// Find the smallest element > x, 2^lg if no such element.
+	// Find the smallest element > x, sigma if no such element.
 	// O(log(MAXVAL))
 	int upper_bound(int ql, int qr, int x) const{
 		assert(0 <= x && x < sigma);
