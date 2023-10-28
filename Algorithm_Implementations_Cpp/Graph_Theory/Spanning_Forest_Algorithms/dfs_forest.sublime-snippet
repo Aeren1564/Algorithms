@@ -1,8 +1,10 @@
 <snippet>
 	<content><![CDATA[
+// Requires graph
 template<class T>
 struct dfs_forest{
 	int n;
+	T base_dist;
 	vector<T> dist;
 	vector<int> pv;
 	vector<int> pe;
@@ -16,9 +18,10 @@ struct dfs_forest{
 	vector<int> min_depth;
 	vector<int> min_depth_origin;
 	vector<int> min_depth_spanning_edge;
+	// extra_edge[u]: adjacent edges of u which is not part of the spanning forest found during the last dfs-like run.
+	vector<vector<int>> extra_edge;
 	vector<int> was;
-	T T_id;
-	dfs_forest(int n, T T_id = 0): T_id(T_id){ init(n); }
+	dfs_forest(T base_dist = 0): base_dist(base_dist){ }
 	void init(int n){
 		this->n = n;
 		pv.assign(n, -1);
@@ -33,23 +36,21 @@ struct dfs_forest{
 		min_depth.assign(n, -1);
 		min_depth_origin.assign(n, -1);
 		min_depth_spanning_edge.assign(n, -1);
-		dist.assign(n, T_id);
-		was.assign(n, -1);
-		attempt = 0;
+		dist.assign(n, base_dist);
+		extra_edge.assign(n, {});
+		was.assign(n, -2);
+		attempt = -1;
 	}
 	int attempt;
 	// O(n + m)
-	// Requires graph
-	template<class Graph, class F = plus<>>
-	void dfs(const Graph &g, int u, bool clear_order = true, F UT = plus<>()){
+	template<class F = plus<>>
+	void _dfs(const graph<T> &g, int u, F UT = plus<>()){
 		assert(n == g.n);
-		++ attempt;
 		depth[u] = 0;
-		dist[u] = T_id;
+		dist[u] = base_dist;
 		root_of[u] = u;
 		root.push_back(u);
 		pv[u] = pe[u] = -1;
-		if(clear_order) order.clear();
 		auto recurse = [&](auto self, int u)->void{
 			was[u] = attempt;
 			pos[u] = (int)order.size();
@@ -61,12 +62,13 @@ struct dfs_forest{
 			for(auto id: g.adj[u]){
 				if(id == pe[u] || g.ignore && g.ignore(id)) continue;
 				auto &e = g.edge[id];
-				int v = e.from ^ e.to ^ u;
+				int v = g(u, id);
 				if(was[v] == attempt){
 					if(min_depth[u] > depth[v]){
 						min_depth[u] = depth[v];
 						min_depth_spanning_edge[u] = id;
 					}
+					if(pe[u] != id) extra_edge[u].push_back(id);
 					continue;
 				}
 				depth[v] = depth[u] + 1;
@@ -87,64 +89,47 @@ struct dfs_forest{
 		recurse(recurse, u);
 	}
 	// O(n + m)
-	template<class Graph, class F = plus<>>
-	void dfs_all(const Graph &g, F UT = plus<>()){
-		root.clear();
-		for(auto u = 0; u < n; ++ u) if(!~depth[u]) dfs<Graph, F>(g, u, false, UT);
-	}
-	// O(n + m)
 	template<class F = plus<>>
-	void dfs_implicitly(auto get_deg, auto get_adj, int u, bool clear_order = true, F UT = plus<>()){
+	void dfs(const graph<T> &g, const vector<int> &src, F UT = plus<>()){
+		assert(g.n <= n);
+		root.clear(), order.clear();
 		++ attempt;
-		depth[u] = 0;
-		dist[u] = T_id;
-		root_of[u] = u;
-		root.push_back(u);
-		pv[u] = pe[u] = -1;
-		if(clear_order) order.clear();
-		auto recurse = [&](auto self, int u)->void{
-			was[u] = attempt;
-			pos[u] = (int)order.size();
-			order.push_back(u);
-			size[u] = 1;
-			min_depth[u] = depth[u];
-			min_depth_origin[u] = u;
-			min_depth_spanning_edge[u] = -1;
-			for(auto i = 0, deg = get_deg(u); i < deg; ++ i){
-				auto [v, w] = get_adj(u, i);
-				if(!~v) continue;
-				if(was[v] == attempt){
-					if(min_depth[u] > depth[v]){
-						min_depth[u] = depth[v];
-						min_depth_spanning_edge[u] = i;
-					}
-					continue;
-				}
-				depth[v] = depth[u] + 1;
-				dist[v] = UT(w, dist[u]);
-				pv[v] = u;
-				pe[v] = i;
-				root_of[v] = root_of[u];
-				self(self, v);
-				size[u] += size[v];
-				if(min_depth[u] > min_depth[v]){
-					min_depth[u] = min_depth[v];
-					min_depth_origin[u] = min_depth_origin[v];
-					min_depth_spanning_edge[u] = min_depth_spanning_edge[v];
-				}
-			}
-			end[u] = (int)order.size();
-		};
-		recurse(recurse, u);
+		for(auto u: src){
+			assert(0 <= u && u < g.n);
+			if(was[u] != attempt) _dfs(g, u, UT);
+		}
 	}
 	// O(n + m)
 	template<class F = plus<>>
-	void dfs_all_implicitly(auto get_deg, auto get_adj, F UT = plus<>()){
-		root.clear();
-		for(auto u = 0; u < n; ++ u) if(!~depth[u]) dfs<F>(get_deg, get_adj, u, false, UT);
+	void dfs_all(const graph<T> &g, F UT = plus<>()){
+		assert(n == g.n);
+		root.clear(), order.clear();
+		++ attempt;
+		for(auto u = 0; u < g.n; ++ u) if(was[u] != attempt) _dfs(g, u, UT);
 	}
+	// Check if u is visited during the last dfs-like call.
+	bool visited(int u) const{
+		assert(0 <= u && u < n);
+		return was[u] == attempt;
+	}
+	// Check if u is an ancestor of v in some spanning tree.
 	bool ancestor_of(int u, int v) const{
+		assert(visited(u) && visited(v));
 		return pos[u] <= pos[v] && end[v] <= end[u];
+	}
+	// Check if any cycle is found during the last dfs-like call.
+	// If must_contain_root = true, the sought cycle is forced to contain one of the root of the trees.
+	optional<pair<int, vector<int>>> find_any_cycle(const graph<T> &g, bool must_contain_root = false) const{
+		for(auto u: order) for(auto id: extra_edge[u]){
+			int v = g(u, id);
+			if(!ancestor_of(v, u) || must_contain_root && root_of[v] != v) continue;
+			vector<int> cycle_edge;
+			while(u != v) cycle_edge.push_back(pe[u]), u = pv[u];
+			reverse(cycle_edge.begin(), cycle_edge.end());
+			cycle_edge.push_back(id);
+			return pair{v, cycle_edge};
+		}
+		return {};
 	}
 };
 ]]></content>
