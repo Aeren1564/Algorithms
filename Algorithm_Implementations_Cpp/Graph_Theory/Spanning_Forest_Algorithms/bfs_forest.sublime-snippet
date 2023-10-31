@@ -1,8 +1,10 @@
 <snippet>
 	<content><![CDATA[
+// Requires graph
 template<class T>
 struct bfs_forest{
 	int n;
+	T base_dist;
 	vector<T> dist;
 	vector<int> pv;
 	vector<int> pe;
@@ -12,10 +14,7 @@ struct bfs_forest{
 	vector<int> root;
 	vector<int> depth;
 	vector<int> was;
-	T T_id;
-	bfs_forest(int n, T T_id = 0): T_id(T_id){
-		init(n);
-	}
+	bfs_forest(T base_dist = 0): base_dist(base_dist){ }
 	void init(int n){
 		this->n = n;
 		pv.assign(n, -1);
@@ -25,24 +24,21 @@ struct bfs_forest{
 		root_of.assign(n, -1);
 		root.clear();
 		depth.assign(n, -1);
-		dist.assign(n, T_id);
-		was.assign(n, -1);
-		attempt = 0;
+		dist.assign(n, base_dist);
+		was.assign(n, -2);
+		attempt = -1;
 	}
-	int attempt = 0;
+	int attempt;
 	vector<int> q;
 	// O(n + m)
-	// Requires graph
-	template<class Graph, class F = plus<>>
-	void bfs(const Graph &g, const vector<int> &src, bool clear_order = true, F UT = plus<>()){
-		assert(n == g.n);
-		++ attempt;
-		if(clear_order) order.clear();
+	template<class F = plus<>>
+	void _bfs(const graph<T> &g, const vector<int> &src, F UT = plus<>()){
+		assert(g.n <= n);
 		q = src;
 		for(auto u: src){
 			was[u] = attempt;
 			depth[u] = 0;
-			dist[u] = T_id;
+			dist[u] = base_dist;
 			root_of[u] = u;
 			root.push_back(u);
 			pv[u] = -1;
@@ -69,49 +65,28 @@ struct bfs_forest{
 		q.clear();
 	}
 	// O(n + m)
-	template<class Graph, class F = plus<>>
-	void bfs_all(const Graph &g, F UT = plus<>()){
-		root.clear();
-		for(auto u = 0; u < n; ++ u) if(!~depth[u]) bfs<Graph, F>(g, {u}, false, UT);
-	}
-	// O(n + m)
 	template<class F = plus<>>
-	void bfs_implicitly(auto get_deg, auto get_adj, const vector<int> &src, bool clear_order = true, F UT = plus<>()){
+	void bfs(const graph<T> &g, const vector<int> &src, F UT = plus<>()){
+		assert(g.n <= n);
+		root.clear(), order.clear();
+		for(auto u: src) assert(0 <= u && u < g.n);
 		++ attempt;
-		if(clear_order) order.clear();
-		q = src;
-		for(auto u: src){
-			was[u] = attempt;
-			depth[u] = 0;
-			dist[u] = T_id;
-			root_of[u] = u;
-			root.push_back(u);
-			pv[u] = -1;
-			pe[u] = -1;
-		}
-		for(auto it = 0; it < (int)q.size(); ++ it){
-			int u = q[it];
-			pos[u] = (int)order.size();
-			order.push_back(u);
-			for(auto i = 0, deg = get_deg(u); i < deg; ++ i){
-				auto [v, w] = get_adj(u, i);
-				if(!~v || was[v] == attempt) continue;
-				was[v] = attempt;
-				depth[v] = depth[u] + 1;
-				dist[v] = UT(w, dist[u]);
-				pv[v] = u;
-				pe[v] = i;
-				root_of[v] = root_of[u];
-				q.push_back(v);
-			}
-		}
-		q.clear();
+		_bfs(g, src, UT);
 	}
 	// O(n + m)
 	template<class F = plus<>>
-	void bfs_all_implicitly(auto get_deg, auto get_adj, F UT = plus<>()){
-		root.clear();
-		for(auto u = 0; u < n; ++ u) if(!~depth[u]) bfs<F>(get_deg, get_adj, {u}, false, UT);
+	void bfs_all(const graph<T> &g, F UT = plus<>()){
+		assert(g.n <= n);
+		root.clear(), order.clear();
+		vector<int> src(g.n);
+		iota(src.begin(), src.end(), 0);
+		++ attempt;
+		_bfs(g, src, UT);
+	}
+	// Check if u is visited during the last dfs-like call.
+	bool visited(int u) const{
+		assert(0 <= u && u < n);
+		return was[u] == attempt;
 	}
 };
 ]]></content>
