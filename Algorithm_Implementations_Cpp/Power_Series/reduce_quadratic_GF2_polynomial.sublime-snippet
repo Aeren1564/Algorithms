@@ -1,7 +1,7 @@
 <snippet>
 	<content><![CDATA[
 // Source: "The Computational Complexity of (XOR, AND)-Counting Problems"
-// Given a GF2-polynomial f over n variables of degree 2,
+// Given a GF2-polynomial f over n variables of degree <= 2,
 // returns a tuple of
 // 1. a non-negative integer m (<= n),
 // 2. constant z \in GF2,
