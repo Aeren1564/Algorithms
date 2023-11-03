@@ -14,7 +14,10 @@
 // g(mat[0] * v + c[0], ..., mat[m-1] * v + c[m-1]) = f(v[0], ..., v[n-1])
 // Note that
 // (# of solutions of f) = 2^{n-m}*(# of solutions of g)
-// (# of solutions of g) = 2^{m-1} if m is odd, 2^{m-1} - 2^{m/2-1} if m is even and z = 0, and 2^{m-1} + 2^{m/2-1} if m is even and z = 1.
+// (# of solutions of g)
+// 1. = 2^{m-1} if m is odd,
+// 3. = 2^{m-1} + 2^{m/2-1} if m is even and z = 0, and
+// 4. = 2^{m-1} - 2^{m/2-1} if m is even and z = 1.
 // O(n^3 / w + (# of terms in f))
 template<size_t SZ>
 tuple<int, bool, vector<bitset<SZ>>, vector<int>>
