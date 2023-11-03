@@ -1,0 +1,190 @@
+<snippet>
+	<content><![CDATA[
+// Source: "The Computational Complexity of (XOR, AND)-Counting Problems"
+// Given a GF2-polynomial f over n variables of degree 2,
+// returns a tuple of
+// 1. a non-negative integer m (<= n),
+// 2. constant z \in GF2,
+// 3. an m by n matrix mat of rank m, and
+// 4. a vector in GF2^m,
+// such that for a polynomial g over m variables where
+// 1. g(X_0, ..., X_{m-1}) = X_0 * X_1 + ... + X_{m-2} * X_{m-1} + z if m is even, and
+// 2. g(X_0, ..., X_{m-1}) = X_0 + X_1 * X_2 + ... + X_{m-2} * X_{m-1} + z otherwise,
+// the following holds for all vector v \in GF2^n.
+// g(mat[0] * v + c[0], ..., mat[m-1] * v + c[m-1]) = f(v[0], ..., v[n-1])
+// Note that
+// (# of solutions of f) = 2^{n-m}*(# of solutions of g)
+// (# of solutions of g) = 2^{m-1} if m is odd, 2^{m-1} - 2^{m/2-1} if m is even and z = 0, and 2^{m-1} + 2^{m/2-1} if m is even and z = 1.
+// O(n^3 / w + (# of terms in f))
+template<size_t SZ>
+tuple<int, bool, vector<bitset<SZ>>, vector<int>>
+reduce_quadratic_GF2_polynomial(int n, vector<vector<int>> f){
+	assert(n + 1 <= SZ);
+	vector<bitset<SZ>> coef(n);
+	bool z = 0;
+	for(auto &term: f){
+		assert((int)term.size() <= 2);
+		for(auto i: term) assert(0 <= i && i < n);
+		if(term.empty()){
+			z ^= 1;
+			continue;
+		}
+		if(term.front() == term.back()) coef[term[0]][n].flip();
+		else coef[min(term[0], term[1])][max(term[0], term[1])].flip();
+	}
+	int m = 0;
+	vector<bitset<SZ>> mat, ref, to_ref;
+	auto mat_fix_column = [&](int j)->void{
+		assert(m >= 1);
+		assert(0 <= j && j < n);
+		int start = 0, end = m - 1;
+		while(start < m && ref[start]._Find_first() < j) ++ start;
+		while(end >= 0 && !ref[end][j]) -- end;
+		for(auto i = start; i < end; ++ i) if(ref[i][j]){
+			ref[i] ^= ref[end];
+			to_ref[i] ^= to_ref[end];
+		}
+		if(start + 1 < m) for(auto pivot = ref[start]._Find_first(); start + 1 < m && ref[start + 1]._Find_first() < pivot; ++ start){
+			swap(ref[start], ref[start + 1]);
+			swap(to_ref[start], to_ref[start + 1]);
+			if(start + 1 == end) -- end;
+		}
+		if(end > 0 && ref[end]._Find_first() == j) for(auto pivot = j; end > 0 && ref[end - 1]._Find_first() > pivot; -- end){
+			swap(ref[end], ref[end - 1]);
+			swap(to_ref[end], to_ref[end - 1]);
+		}
+	};
+	auto mat_flip = [&](int i, int j)->void{
+		assert(0 <= i && i < m);
+		assert(0 <= j && j <= n);
+		mat[i][j].flip();
+		for(auto k = 0; k < m; ++ k) ref[k][j] = ref[k][j] ^ to_ref[k][i];
+	};
+	auto mat_add_column = [&](const bitset<SZ> &v, int j)->void{
+		assert(0 <= j && j < n);
+		for(auto i = 0; i < m; ++ i){
+			mat[i][j] = mat[i][j] ^ v[i];
+			ref[i][j] = ref[i][j] ^ (to_ref[i] & v).count() & 1;
+		}
+	};
+	auto mat_insert_singleton_at_front = [&](int j)->void{
+		assert(0 <= j && j < n);
+		bitset<SZ> v;
+		v.set(j);
+		mat.insert(mat.begin(), v);
+		ref.insert(ref.begin(), v);
+		for(auto i = 0; i < m; ++ i) to_ref[i] <<= 1;
+		v.reset(j), v.set(0);
+		to_ref.insert(to_ref.begin(), v);
+		++ m;
+	};
+	auto mat_insert_singleton_at_back = [&](int j, bool c)->void{
+		assert(0 <= j && j < n);
+		bitset<SZ> v;
+		v.set(j), v[n] = c;
+		mat.push_back(v);
+		ref.insert(ref.begin(), v);
+		v.reset(j), v.reset(n), v.set(m);
+		to_ref.insert(to_ref.begin(), v);
+		++ m;
+	};
+	auto mat_insert_vector_at_back = [&](bitset<SZ> v)->void{
+		mat.push_back(v);
+		ref.push_back(v);
+		bitset<SZ> w;
+		w.set(m);
+		to_ref.push_back(w);
+		for(auto i = 0; i < m; ++ i){
+			int pivot = ref[i]._Find_first();
+			assert(pivot < n);
+			if(ref[m][pivot]){
+				ref[m] ^= ref[i];
+				to_ref[m] ^= to_ref[i];
+			}
+		}
+		for(auto i = m, pivot = ref[m]._Find_first(); i >= 1 && pivot < ref[i - 1]._Find_first(); -- i){
+			swap(ref[i], ref[i - 1]);
+			swap(to_ref[i], to_ref[i - 1]);
+		}
+		++ m;
+	};
+	auto mat_rotate = [&]()->void{
+		rotate(mat.begin(), mat.begin() + 1, mat.end());
+		for(auto i = 0; i < m; ++ i){
+			bool c = to_ref[i][0];
+			to_ref[i] >>= 1;
+			to_ref[i][m - 1] = c;
+		}
+	};
+	auto decompose = [&](bitset<SZ> v)->optional<bitset<SZ>>{
+		bitset<SZ> in_recipe;
+		for(auto i = 0; i < m; ++ i){
+			int pivot = ref[i]._Find_first();
+			if(pivot == n) break;
+			if(v[pivot]){
+				v ^= ref[i];
+				in_recipe ^= to_ref[i];
+			}
+		}
+		if(v.count() == v[n]) return in_recipe;
+		else return {};
+	};
+	for(auto j = n - 1; j >= 0; -- j){
+		if(coef[j].count() == coef[j][n]){
+			if(!coef[j][n]) continue;
+			if(m & 1){
+				mat_flip(0, j);
+				mat_fix_column(j);
+			}
+			else mat_insert_singleton_at_front(j);
+		}
+		else if(auto recipe_ptr = decompose(coef[j])){
+			bitset<SZ> in_recipe = *recipe_ptr, delta;
+			for(auto i = m - 2; i >= 0; i -= 2){
+				if(in_recipe[i] && in_recipe[i + 1]){
+					delta.set(i), delta.set(i + 1);
+					if(mat[i][n] == mat[i + 1][n]) coef[j][n].flip();
+				}
+				else if(in_recipe[i] || in_recipe[i + 1]){
+					delta.set(i + in_recipe[i]);
+					if(mat[i + !in_recipe[i]][n]) coef[j][n].flip();
+				}
+			}
+			mat_add_column(delta, j);
+			mat_fix_column(j);
+			if(m & 1){
+				if(in_recipe[0]){
+					z ^= coef[j][n];
+					mat_rotate();
+					if(coef[j][n]) mat_flip(m - 1, n);
+					mat_insert_singleton_at_back(j, 1);
+					mat_fix_column(j);
+				}
+				else if(coef[j][n]){
+					mat_flip(0, j);
+					mat_fix_column(j);
+				}
+			}
+			else if(coef[j][n]){
+				mat_insert_singleton_at_front(j);
+				mat_fix_column(j);
+			}
+		}
+		else{
+			mat_insert_singleton_at_back(j, 0);
+			mat_insert_vector_at_back(coef[j]);
+		}
+	}
+	vector<int> c(m);
+	for(auto i = 0; i < m; ++ i){
+		c[i] = mat[i][n];
+		mat[i].reset(n);
+	}
+	return {m, z, mat, c};
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>reduce_quadratic_GF2_polynomial</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
