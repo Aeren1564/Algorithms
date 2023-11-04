@@ -1,0 +1,71 @@
+<snippet>
+	<content><![CDATA[
+#include <bits/stdc++.h>
+// #include <x86intrin.h>
+using namespace std;
+using namespace numbers;
+
+
+
+struct __testcase_t{
+	
+	// Set precomputed variables
+	__testcase_t(){ }
+	$0
+	void __input(){
+
+	}
+	int __solve(){
+
+		return 0;
+	}
+	void __output(){
+
+	}
+};
+
+int main(){
+	cin.tie(0)->sync_with_stdio(0);
+	cin.exceptions(ios::badbit | ios::failbit);
+	int __tc_cnt;
+	cin >> __tc_cnt;
+	vector __test(__tc_cnt, __testcase_t{});
+	for(auto __tc_num = 0; __tc_num < __tc_cnt; ++ __tc_num){
+		__test[__tc_num].__input();
+	}
+	const int PARALLEL = 16;
+	auto __run_test = [&](auto self, int l, int r)->void{
+		if(r - l == 1){
+			for(auto i = l; i < __tc_cnt; i += PARALLEL){
+				__test[i].__solve();
+			}
+			return;
+		}
+		int m = l + r >> 1;
+		auto handle = async(launch::async, self, self, l, m);
+		self(self, m, r);
+		handle.wait();
+	};
+	__run_test(__run_test, 0, PARALLEL);
+	for(auto __tc_num = 0; __tc_num < __tc_cnt; ++ __tc_num){
+		cout << "Case #" << __tc_num + 1 << ": ";
+		__test[__tc_num].__output();
+	}
+	return 0;
+}
+
+/*
+
+*/
+
+////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                    //
+//                                   Coded by Aeren                                   //
+//                                                                                    //
+////////////////////////////////////////////////////////////////////////////////////////
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>mhc_multithread_init</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
