@@ -45,7 +45,7 @@ struct dfs_forest{
 	// O(n + m)
 	template<class F = plus<>>
 	void _dfs(const graph<T> &g, int u, F UT = plus<>()){
-		assert(n == g.n);
+		assert(g.n <= n);
 		depth[u] = 0;
 		dist[u] = base_dist;
 		root_of[u] = u;
@@ -102,7 +102,7 @@ struct dfs_forest{
 	// O(n + m)
 	template<class F = plus<>>
 	void dfs_all(const graph<T> &g, F UT = plus<>()){
-		assert(n == g.n);
+		assert(g.n <= n);
 		root.clear(), order.clear();
 		++ attempt;
 		for(auto u = 0; u < g.n; ++ u) if(was[u] != attempt) _dfs(g, u, UT);
