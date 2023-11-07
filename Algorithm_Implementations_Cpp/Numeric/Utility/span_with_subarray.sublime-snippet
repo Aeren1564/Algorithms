@@ -1,0 +1,46 @@
+<snippet>
+	<content><![CDATA[
+// Let M = {0, ..., m-1}.
+// Given
+// 1. a cost funciton with cost(l, r) either -1, indicating invalid, or in M for 0 <= l <= r <= n, and
+// 2. a monoid operation TT over M with identity T_id,
+// returns the list of values x in sorted order where 0 <= x < m and there exists a non-negative integer k and a sequence of indices 0 <= l_0 <= r_0 <= ... <= l_{k-1} <= r_{k-1} <= n such that cost(l_i, r_i) are all valid and x = TT(cost(l_0, r_0), ..., cost(l_{k-1}, r_{k-1})).
+// O(n^2 + m^2) with n*(n+1)/2 cost() calls and O(m^2) TT() calls.
+vector<int> span_with_subarray(int n, int m, auto cost, auto TT, int T_id){
+	assert(0 <= n);
+	assert(0 <= T_id && T_id < m);
+	vector extent(n + 1, vector<int>(m, n + 1));
+	vector<int> require(m, n + 1);
+	for(auto l = n; l >= 0; -- l){
+		for(auto r = n; r >= l; -- r){
+			int x = cost(l, r);
+			if(!~x) continue;
+			assert(0 <= x && x < m);
+			extent[l][x] = r;
+		}
+		for(auto x = 0; x < m; ++ x){
+			if(l < n) extent[l][x] = min(extent[l][x], extent[l + 1][x]);
+			require[x] = min(require[x], extent[l][x]);
+		}
+	}
+	vector<int> done(m, false);
+	while(true){
+		int s = -1;
+		for(auto x = 0; x < m; ++ x) if(!done[x] && (!~s || require[s] > require[x])) s = x;
+		if(!~s || require[s] > n) break;
+		done[s] = true;
+		for(auto x = 0; x < m; ++ x){
+			int y = TT(s, x);
+			if(extent[require[s]][x] < require[y]) require[y] = extent[require[s]][x];
+		}
+	}
+	vector<int> span;
+	for(auto x = 0; x < m; ++ x) if(require[x] <= n) span.push_back(x);
+	return span;
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>span_with_subarray</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
