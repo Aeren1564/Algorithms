@@ -60,14 +60,27 @@ struct power_series_naive_base: vector<T>{
 		return *this;
 	}
 	power_series_naive_base take(int n) const{
-		return power_series_naive_base(*this).inplace_take(n);
+		auto res = vector<T>(data.begin(), data.begin() + min((int)data.size(), n));
+		res.resize(n, T{0});
+		return res;
 	}
 	power_series_naive_base &inplace_drop(int n){
 		data.erase(data.begin(), data.begin() + min((int)data.size(), n));
 		return *this;
 	}
 	power_series_naive_base drop(int n) const{
-		return power_series_naive_base(*this).inplace_drop(n);
+		return vector<T>(data.begin() + min((int)data.size(), n), data.end());
+	}
+	power_series_naive_base &inplace_slice(int l, int r){
+		assert(0 <= l && l <= r);
+		data.erase(data.begin(), data.begin() + min((int)data.size(), l));
+		data.resize(r - l, T{0});
+		return *this;
+	}
+	power_series_naive_base slice(int l, int r) const{
+		auto res = vector<T>(data.begin() + min((int)data.size(), l), data.begin() + min((int)data.size(), r));
+		res.resize(r - l, T{0});
+		return res;
 	}
 	power_series_naive_base &inplace_reverse(int n){
 		data.resize(max(n, (int)data.size()), T{0});
@@ -227,9 +240,8 @@ struct power_series_naive_base: vector<T>{
 		assert(!data.empty() && data[0]);
 		auto inv = 1 / data[0];
 		power_series_naive_base res{inv};
-		for(auto s = 1; s < n; s <<= 1) res = res * (2 - res * take(s << 1));
-		res.resize(n, T{0});
-		return res;
+		for(auto s = 1; s < n; s <<= 1) (res *= (2 - res * take(s << 1))).inplace_take(s << 1);
+		return res.inplace_take(n);
 	}
 	power_series_naive_base &inplace_inverse(int n){
 		return *this = this->inverse(n);
@@ -379,10 +391,9 @@ struct power_series_naive_base: vector<T>{
 		power_series_naive_base f{1}, g;
 		for(auto s = 1; s < n; s <<= 1){
 			g = f.log(s << 1).drop(s) - drop(s).take(s);
-			f -= (f * g).take(s).shift(s);
+			(f -= (f * g).take(s).shift(s)).inplace_take(s << 1);
 		}
-		f.resize(n, T{0});
-		return f.clear_range(0, n);
+		return f.take(n);
 	}
 	power_series_naive_base &inplace_exp(int n){
 		return *this = this->exp(n);
@@ -477,7 +488,7 @@ struct __with_fft{
 };
 
 // template<class T> using power_series = power_series_naive_base<T, __quadratic<T>>;
-template<class T, class FFT> using power_series = power_series_naive_base<T, __with_fft<T, FFT>>;
+using power_series = power_series_naive_base<modular, __with_fft<modular, ntt>>;
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
 	<tabTrigger>power_series_naive</tabTrigger> -->
