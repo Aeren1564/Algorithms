@@ -1,7 +1,7 @@
 <snippet>
 	<content><![CDATA[
 template<size_t SZ>
-struct matrix_OR_AND_base{
+struct matrix_AND_OR_base{
 	int n, m;
 	vector<bitset<SZ>> data;
 	bitset<SZ> &operator[](int i){
@@ -12,7 +12,7 @@ struct matrix_OR_AND_base{
 		assert(0 <= i && i < n);
 		return data[i];
 	}
-	matrix_OR_AND_base &inplace_slice(int il, int ir, int jl, int jr){
+	matrix_AND_OR_base &inplace_slice(int il, int ir, int jl, int jr){
 		assert(0 <= il && il <= ir && ir <= n);
 		assert(0 <= jl && jl <= jr && jr <= m);
 		n = ir - il, m = jr - jl;
@@ -21,93 +21,93 @@ struct matrix_OR_AND_base{
 		for(auto &row: data) row = row << SZ - jr >> jl;
 		return *this;
 	}
-	matrix_OR_AND_base slice(int il, int ir, int jl, int jr) const{
-		return matrix_OR_AND_base(*this).inplace_slice(il, ir, jl, jr);
+	matrix_AND_OR_base slice(int il, int ir, int jl, int jr) const{
+		return matrix_AND_OR_base(*this).inplace_slice(il, ir, jl, jr);
 	}
-	matrix_OR_AND_base &inplace_row_slice(int il, int ir){
+	matrix_AND_OR_base &inplace_row_slice(int il, int ir){
 		assert(0 <= il && il <= ir && ir <= n);
 		n = ir - il;
 		if(il > 0) for(auto i = 0; i < n; ++ i) swap(data[i], data[il + i]);
 		data.resize(n);
 		return *this;
 	}
-	matrix_OR_AND_base row_slice(int il, int ir) const{
-		return matrix_OR_AND_base(*this).inplace_row_slice(il, ir);
+	matrix_AND_OR_base row_slice(int il, int ir) const{
+		return matrix_AND_OR_base(*this).inplace_row_slice(il, ir);
 	}
-	matrix_OR_AND_base &inplace_column_slice(int jl, int jr){
+	matrix_AND_OR_base &inplace_column_slice(int jl, int jr){
 		assert(0 <= jl && jl <= jr && jr <= m);
 		m = jr - jl;
 		for(auto &row: data) row = row << SZ - jr >> jl;
 		return *this;
 	}
-	matrix_OR_AND_base column_slice(int jl, int jr) const{
-		return matrix_OR_AND_base(*this).inplace_column_slice(jl, jr);
+	matrix_AND_OR_base column_slice(int jl, int jr) const{
+		return matrix_AND_OR_base(*this).inplace_column_slice(jl, jr);
 	}
-	bool operator==(const matrix_OR_AND_base &a) const{
+	bool operator==(const matrix_AND_OR_base &a) const{
 		assert(n == a.n && m == a.m);
 		return data == a.data;
 	}
-	bool operator!=(const matrix_OR_AND_base &a) const{
+	bool operator!=(const matrix_AND_OR_base &a) const{
 		assert(n == a.n && m == a.m);
 		return data != a.data;
 	}
-	matrix_OR_AND_base &operator+=(const matrix_OR_AND_base &a){
+	matrix_AND_OR_base &operator+=(const matrix_AND_OR_base &a){
 		assert(n == a.n && m == a.m);
-		for(auto i = 0; i < n; ++ i) data[i] |= a[i];
+		for(auto i = 0; i < n; ++ i) data[i] &= a[i];
 		return *this;
 	}
-	matrix_OR_AND_base operator+(const matrix_OR_AND_base &a) const{
-		return matrix_OR_AND_base(*this) += a;
+	matrix_AND_OR_base operator+(const matrix_AND_OR_base &a) const{
+		return matrix_AND_OR_base(*this) += a;
 	}
-	matrix_OR_AND_base &operator*=(const matrix_OR_AND_base &a){
+	matrix_AND_OR_base &operator*=(const matrix_AND_OR_base &a){
 		assert(m == a.n);
 		int l = a.m;
-		matrix_OR_AND_base res(n, l);
+		matrix_AND_OR_base res(n, l);
 		vector<bitset<SZ>> temp(l);
 		for(auto i = 0; i < l; ++ i) for(auto j = 0; j < m; ++ j) temp[i][j] = a[j][i];
-		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < l; ++ j) res[i][j] = (data[i] & temp[j]).any();
+		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < l; ++ j) res[i][j] = (data[i] | temp[j]).all();
 		return *this = res;
 	}
-	matrix_OR_AND_base operator*=(const matrix_OR_AND_base &a) const{
-		return matrix_OR_AND_base(*this) *= a;
+	matrix_AND_OR_base operator*=(const matrix_AND_OR_base &a) const{
+		return matrix_AND_OR_base(*this) *= a;
 	}
-	matrix_OR_AND_base &operator*=(bool c){
-		if(!c) for(auto &v: *this) v.reset();
+	matrix_AND_OR_base &operator*=(bool c){
+		if(c) for(auto &v: *this) v.set();
 		return *this;
 	}
-	matrix_OR_AND_base operator*(bool c) const{
-		return matrix_OR_AND_base(*this) *= c;
+	matrix_AND_OR_base operator*(bool c) const{
+		return matrix_AND_OR_base(*this) *= c;
 	}
 	template<class T, typename enable_if<is_integral<T>::value>::type* = nullptr>
-	matrix_OR_AND_base &inplace_power(T e){
+	matrix_AND_OR_base &inplace_power(T e){
 		assert(n == m);
-		matrix_OR_AND_base res(n, n, true);
+		matrix_AND_OR_base res(n, n, true);
 		for(; e; *this *= *this, e >>= 1) if(e & 1) res *= *this;
 		return *this = res;
 	}
 	template<class T>
-	matrix_OR_AND_base power(T e) const{
-		return matrix_OR_AND_base(*this).inplace_power(e);
+	matrix_AND_OR_base power(T e) const{
+		return matrix_AND_OR_base(*this).inplace_power(e);
 	}
-	matrix_OR_AND_base &inplace_transpose(){
+	matrix_AND_OR_base &inplace_transpose(){
 		assert(n == m);
 		for(auto i = 0; i < n; ++ i) for(auto j = i + 1; j < n; ++ j) swap(data[i][j], data[j][i]);
 		return *this;
 	}
-	matrix_OR_AND_base transpose() const{
-		if(n == m) return matrix_OR_AND_base(*this).inplace_transpose();
-		matrix_OR_AND_base res(m, n);
+	matrix_AND_OR_base transpose() const{
+		if(n == m) return matrix_AND_OR_base(*this).inplace_transpose();
+		matrix_AND_OR_base res(m, n);
 		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) res[j][i] = data[i][j];
 		return res;
 	}
 	// Multiply a column vector v on the right
 	vector<int> operator*(const bitset<SZ> &v) const{
 		vector<int> res(n);
-		for(auto i = 0; i < n; ++ i) res[i] = (data[i] & v).any();
+		for(auto i = 0; i < n; ++ i) res[i] = (data[i] | v).all();
 		return res;
 	}
 	template<class output_stream>
-	friend output_stream &operator<<(output_stream &out, const matrix_OR_AND_base &a){
+	friend output_stream &operator<<(output_stream &out, const matrix_AND_OR_base &a){
 		out << "\n";
 		for(auto i = 0; i < a.n; ++ i){
 			for(auto j = 0; j < a.m; ++ j) out << bool(a[i][j]);
@@ -115,29 +115,30 @@ struct matrix_OR_AND_base{
 		}
 		return out;
 	}
-	matrix_OR_AND_base(int n, int m, bool init_diagonal = false, bool init_off_diagonal = false): n(n), m(m), data(n){
+	matrix_AND_OR_base(int n, int m, bool init_diagonal = false, bool init_off_diagonal = false): n(n), m(m), data(n){
 		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) data[i][j] = i == j ? init_diagonal : init_off_diagonal;
 	}
-	matrix_OR_AND_base(int n, int m, const vector<bitset<SZ>> &a): n(n), m(m), data(a){ }
+	matrix_AND_OR_base(int n, int m, const vector<bitset<SZ>> &a): n(n), m(m), data(a){ }
 };
 template<size_t SZ>
-matrix_OR_AND_base<SZ> operator*(bool c, matrix_OR_AND_base<SZ> a){
-	if(!c) for(auto &v: a) v.reset();
+matrix_AND_OR_base<SZ> operator*(bool c, matrix_AND_OR_base<SZ> a){
+	if(c) for(auto &v: a) v.set();
 	return a;
 }
 // Multiply a row vector v on the left
 template<size_t SZ>
-bitset<SZ> operator*(const vector<int> &v, const matrix_OR_AND_base<SZ> &a){
+bitset<SZ> operator*(const vector<int> &v, const matrix_AND_OR_base<SZ> &a){
 	assert(a.n == (int)v.size());
 	bitset<SZ> res;
-	for(auto i = 0; i < a.n; ++ i) if(v[i]) res |= a[i];
+	res.set();
+	for(auto i = 0; i < a.n; ++ i) if(!v[i]) res &= a[i];
 	return res;
 }
 
-using matrix_OR_AND = matrix_OR_AND_base<1000>;
+using matrix_AND_OR = matrix_AND_OR_base<1000>;
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
-	<tabTrigger>matrix_OR_AND</tabTrigger> -->
+	<tabTrigger>matrix_AND_OR_base</tabTrigger> -->
 	<!-- Optional: Set a scope to limit where the snippet will trigger -->
 	<scope>source.c++</scope> -->
 </snippet>

@@ -7,7 +7,7 @@ struct wavelet_matrix{
 	T sigma;
 	vector<succinct_dictionary> bv;
 	// O(n * log(MAXVAL)) time and O(n * log(MAXVAL) / w) memory
-	wavelet_matrix(const vector<T> &a, T sigma): n((int)a.size()){
+	wavelet_matrix(const vector<T> &a, T sigma): n((int)a.size()), sigma(sigma){
 		assert(sigma > 0);
 		for(auto x: a) assert(0 <= x && x < sigma);
 		lg = __lg(sigma);

@@ -1,31 +1,53 @@
 <snippet>
 	<content><![CDATA[
-// T must support +=, -=, *, *=, ==, and !=
 template<class T>
 struct matrix{
-	using ring_t = T;
-	using domain_t = vector<T>;
-	using range_t = vector<T>;
 	int n, m;
 	vector<vector<T>> data;
-	vector<T> &operator()(int i){
+	vector<T> &operator[](int i){
 		assert(0 <= i && i < n);
 		return data[i];
 	}
-	const vector<T> &operator()(int i) const{
+	const vector<T> &operator[](int i) const{
 		assert(0 <= i && i < n);
 		return data[i];
 	}
-	T &operator()(int i, int j){
-		assert(0 <= i && i < n && 0 <= j && j < m);
-		return data[i][j];
+	matrix &inplace_slice(int il, int ir, int jl, int jr){
+		assert(0 <= il && il <= ir && ir <= n);
+		assert(0 <= jl && jl <= jr && jr <= m);
+		n = ir - il, m = jr - jl;
+		if(il > 0) for(auto i = 0; i < n; ++ i) swap(data[i], data[il + i]);
+		data.resize(n);
+		for(auto &row: data){
+			row.erase(row.begin(), row.begin() + jl);
+			row.resize(m);
+		}
+		return *this;
 	}
-	const T &operator()(int i, int j) const{
-		assert(0 <= i && i < n && 0 <= j && j < m);
-		return data[i][j];
+	matrix slice(int il, int ir, int jl, int jr) const{
+		return matrix(*this).inplace_slice(il, ir, jl, jr);
 	}
-	operator vector<vector<T>>() const{
-		return data;
+	matrix &inplace_row_slice(int il, int ir){
+		assert(0 <= il && il <= ir && ir <= n);
+		n = ir - il;
+		if(il > 0) for(auto i = 0; i < n; ++ i) swap(data[i], data[il + i]);
+		data.resize(n);
+		return *this;
+	}
+	matrix row_slice(int il, int ir) const{
+		return matrix(*this).inplace_row_slice(il, ir);
+	}
+	matrix &inplace_column_slice(int jl, int jr){
+		assert(0 <= jl && jl <= jr && jr <= m);
+		m = jr - jl;
+		for(auto &row: data){
+			row.erase(row.begin(), row.begin() + jl);
+			row.resize(m);
+		}
+		return *this;
+	}
+	matrix column_slice(int jl, int jr) const{
+		return matrix(*this).inplace_column_slice(jl, jr);
 	}
 	bool operator==(const matrix &a) const{
 		assert(n == a.n && m == a.m);
@@ -37,7 +59,7 @@ struct matrix{
 	}
 	matrix &operator+=(const matrix &a){
 		assert(n == a.n && m == a.m);
-		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) data[i][j] += a(i, j);
+		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) data[i][j] += a[i][j];
 		return *this;
 	}
 	matrix operator+(const matrix &a) const{
@@ -45,7 +67,7 @@ struct matrix{
 	}
 	matrix &operator-=(const matrix &a){
 		assert(n == a.n && m == a.m);
-		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) data[i][j] -= a(i, j);
+		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) data[i][j] -= a[i][j];
 		return *this;
 	}
 	matrix operator-(const matrix &a) const{
@@ -55,7 +77,7 @@ struct matrix{
 		assert(m == a.n);
 		int l = a.m;
 		matrix res(n, l);
-		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) for(auto k = 0; k < l; ++ k) res(i, k) += data[i][j] * a(j, k);
+		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) for(auto k = 0; k < l; ++ k) res[i][k] += data[i][j] * a[j][k];
 		return *this = res;
 	}
 	matrix operator*(const matrix &a) const{
@@ -71,7 +93,7 @@ struct matrix{
 	template<class U, typename enable_if<is_integral<U>::value>::type* = nullptr>
 	matrix &inplace_power(U e){
 		assert(n == m && e >= 0);
-		matrix res(n, n, T(1));
+		matrix res(n, n, T{1});
 		for(; e; *this *= *this, e >>= 1) if(e & 1) res *= *this;
 		return *this = res;
 	}
@@ -87,12 +109,12 @@ struct matrix{
 	matrix transpose() const{
 		if(n == m) return matrix(*this).inplace_transpose();
 		matrix res(m, n);
-		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) res(j, i) = data[i][j];
+		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) res[j][i] = data[i][j];
 		return res;
 	}
-	range_t operator*(const domain_t &v) const{
+	vector<T> operator*(const vector<T> &v) const{
 		assert(m == (int)v.size());
-		vector<T> res(n, T(0));
+		vector<T> res(n, T{0});
 		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) res[i] += data[i][j] * v[j];
 		return res;
 	}
@@ -101,7 +123,7 @@ struct matrix{
 	// Otherwise, O(n * up_to * log(size)) divisions with O(n * m * up_to) additions, subtractions, and multiplications.
 	// Returns {REF matrix, determinant, rank}
 	tuple<matrix &, T, int> inplace_REF(int up_to = -1){
-		if(n == 0) return {*this, T(1), 0};
+		if(n == 0) return {*this, T{1}, 0};
 		if(!~up_to) up_to = m;
 		T det = 1;
 		int rank = 0;
@@ -133,7 +155,7 @@ struct matrix{
 					det *= -1;
 				}
 				if(rank == j) det *= data[rank][j];
-				else det = T(0);
+				else det = T{0};
 				if(data[rank][j]) ++ rank;
 			}
 			if(rank == n) break;
@@ -151,18 +173,18 @@ struct matrix{
 	// O(up_to) divisions with O(n * m * up_to) additions, subtractions, and multiplications.
 	// Returns {REF matrix, determinant, rank}
 	tuple<matrix &, T, int> inplace_REF_field(int up_to = -1){
-		if(n == 0) return {*this, T(1), 0};
+		if(n == 0) return {*this, T{1}, 0};
 		if(!~up_to) up_to = m;
-		T det = T(1);
+		T det = T{1};
 		int rank = 0;
 		for(auto j = 0; j < up_to; ++ j){
 			int pivot = -1;
-			for(auto i = rank; i < n; ++ i) if(data[i][j] != T(0)){
+			for(auto i = rank; i < n; ++ i) if(data[i][j] != T{0}){
 				pivot = i;
 				break;
 			}
 			if(!~pivot){
-				det = T(0);
+				det = T{0};
 				continue;
 			}
 			if(rank != pivot){
@@ -171,7 +193,7 @@ struct matrix{
 			}
 			det *= data[rank][j];
 			T inv = 1 / data[rank][j];
-			for(auto i = rank + 1; i < n; ++ i) if(data[i][j] != T(0)){
+			for(auto i = rank + 1; i < n; ++ i) if(data[i][j] != T{0}){
 				T coef = data[i][j] * inv;
 				for(auto k = j; k < m; ++ k) data[i][k] -= coef * data[rank][k];
 			}
@@ -192,8 +214,7 @@ struct matrix{
 		assert(n == m);
 		if(n == 0) return *this;
 		auto a = data;
-		vector<vector<T>> res(n, vector<T>(n, T(0)));
-		for(auto i = 0; i < n; ++ i) res[i][i] = T(1);
+		auto res = multiplicative_identity();
 		for(auto j = 0; j < n; ++ j){
 			int rank = j, pivot = -1;
 			if constexpr(is_floating_point_v<T>){
@@ -203,7 +224,7 @@ struct matrix{
 				if(abs(a[pivot][j]) <= eps) return {};
 			}
 			else{
-				for(auto i = rank; i < n; ++ i) if(a[i][j] != T(0)){
+				for(auto i = rank; i < n; ++ i) if(a[i][j] != T{0}){
 					pivot = i;
 					break;
 				}
@@ -220,7 +241,7 @@ struct matrix{
 						for(auto k = 0; k < n; ++ k) a[i][k] -= d * a[rank][k], res[i][k] -= d * res[rank][k];
 					}
 				}
-				else if(i != rank && a[i][j] != T(0)){
+				else if(i != rank && a[i][j] != T{0}){
 					T d = a[i][j];
 					for(auto k = 0; k < n; ++ k) a[i][k] -= d * a[rank][k], res[i][k] -= d * res[rank][k];
 				}
@@ -258,15 +279,15 @@ struct matrix{
 	optional<vector<T>> find_a_solution() const{
 		assert(m >= 1);
 		auto [ref, _, rank] = REF_field(m - 1);
-		for(auto i = rank; i < n; ++ i) if(ref(i, m - 1) != T{0}) return {};
+		for(auto i = rank; i < n; ++ i) if(ref[i][m - 1] != T{0}) return {};
 		vector<T> res(m - 1);
 		for(auto i = rank - 1; i >= 0; -- i){
 			int pivot = 0;
-			while(pivot < m - 1 && ref(i, pivot) == T{0}) ++ pivot;
+			while(pivot < m - 1 && ref[i][pivot] == T{0}) ++ pivot;
 			assert(pivot < m - 1);
-			res[pivot] = ref(i, m - 1);
-			for(auto j = pivot + 1; j < m - 1; ++ j) res[pivot] -= ref(i, j) * res[j];
-			res[pivot] /= ref(i, pivot);
+			res[pivot] = ref[i][m - 1];
+			for(auto j = pivot + 1; j < m - 1; ++ j) res[pivot] -= ref[i][j] * res[j];
+			res[pivot] /= ref[i][pivot];
 		}
 		return res;
 	}
@@ -288,37 +309,35 @@ struct matrix{
 	friend output_stream &operator<<(output_stream &out, const matrix &a){
 		out << "\n";
 		for(auto i = 0; i < a.n; ++ i){
-			for(auto j = 0; j < a.m; ++ j){
-				out << a(i, j) << " ";
-			}
+			for(auto j = 0; j < a.m; ++ j) out << a[i][j] << " ";
 			out << "\n";
 		}
 		return out;
 	}
-	matrix(int n, int m, T init_diagonal = T(0), T init_off_diagonal = T(0)): n(n), m(m){
+	matrix(int n, int m, T init_diagonal = T{0}, T init_off_diagonal = T{0}): n(n), m(m){
 		assert(n >= 0 && m >= 0);
-		data.assign(n, vector<T>(m, T(0)));
+		data.assign(n, vector<T>(m, T{0}));
 		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) data[i][j] = i == j ? init_diagonal : init_off_diagonal;
 	}
-	matrix(const vector<vector<T>> &arr, int _n = -1, int _m = -1): n(~_n ? _n : (int)arr.size()), m(~_m ? _m : (int)arr[0].size()), data(arr){ }
+	matrix(int n, int m, const vector<vector<T>> &a): n(n), m(m), data(a){ }
 	static matrix additive_identity(int n, int m){
-		return matrix(n, m, T(0), T(0));
+		return matrix(n, m, T{0}, T{0});
 	}
 	static matrix multiplicative_identity(int n, int m){
-		return matrix(n, m, T(1), T(0));
+		return matrix(n, m, T{1}, T{0});
 	}
 };
 template<class T>
 matrix<T> operator*(T c, matrix<T> a){
-	for(auto i = 0; i < a.n; ++ i) for(auto j = 0; j < a.m; ++ j) a(i, j) = c * a(i, j);
+	for(auto i = 0; i < a.n; ++ i) for(auto j = 0; j < a.m; ++ j) a[i][j] = c * a[i][j];
 	return a;
 }
 // Multiply a row vector v on the left
 template<class T>
-typename matrix<T>::domain_t operator*(const typename matrix<T>::range_t &v, const matrix<T> &a){
+vector<T> operator*(const vector<T> &v, const matrix<T> &a){
 	assert(a.n == (int)size(v));
-	typename matrix<T>::domain_t res(a.m, T(0));
-	for(auto i = 0; i < a.n; ++ i) for(auto j = 0; j < a.m; ++ j) res[j] += v[i] * a(i, j);
+	vector<T> res(a.m, T{0});
+	for(auto i = 0; i < a.n; ++ i) for(auto j = 0; j < a.m; ++ j) res[j] += v[i] * a[i][j];
 	return res;
 }
 ]]></content>

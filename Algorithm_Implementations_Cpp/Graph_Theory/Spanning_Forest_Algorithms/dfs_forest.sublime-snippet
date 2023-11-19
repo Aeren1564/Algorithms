@@ -43,8 +43,8 @@ struct dfs_forest{
 	}
 	int attempt;
 	// O(n + m)
-	template<class F = plus<>>
-	void _dfs(const graph<T> &g, int u, F UT = plus<>()){
+	template<class U, class F = plus<>>
+	void _dfs(const graph<U> &g, int u, F UT = plus<>()){
 		assert(g.n <= n);
 		depth[u] = 0;
 		dist[u] = base_dist;
@@ -89,23 +89,23 @@ struct dfs_forest{
 		recurse(recurse, u);
 	}
 	// O(n + m)
-	template<class F = plus<>>
-	void dfs(const graph<T> &g, const vector<int> &src, F UT = plus<>()){
+	template<class U, class F = plus<>>
+	void dfs(const graph<U> &g, const vector<int> &src, F UT = plus<>()){
 		assert(g.n <= n);
 		root.clear(), order.clear();
 		++ attempt;
 		for(auto u: src){
 			assert(0 <= u && u < g.n);
-			if(was[u] != attempt) _dfs(g, u, UT);
+			if(was[u] != attempt) _dfs<U, F>(g, u, UT);
 		}
 	}
 	// O(n + m)
-	template<class F = plus<>>
-	void dfs_all(const graph<T> &g, F UT = plus<>()){
+	template<class U, class F = plus<>>
+	void dfs_all(const graph<U> &g, F UT = plus<>()){
 		assert(g.n <= n);
 		root.clear(), order.clear();
 		++ attempt;
-		for(auto u = 0; u < g.n; ++ u) if(was[u] != attempt) _dfs(g, u, UT);
+		for(auto u = 0; u < g.n; ++ u) if(was[u] != attempt) _dfs<U, F>(g, u, UT);
 	}
 	// Check if u is visited during the last dfs-like call.
 	bool visited(int u) const{
@@ -119,7 +119,8 @@ struct dfs_forest{
 	}
 	// Check if any cycle is found during the last dfs-like call.
 	// If must_contain_root = true, the sought cycle is forced to contain one of the root of the trees.
-	optional<pair<int, vector<int>>> find_any_cycle(const graph<T> &g, bool must_contain_root = false) const{
+	template<class U>
+	optional<pair<int, vector<int>>> find_any_cycle(const graph<U> &g, bool must_contain_root = false) const{
 		for(auto u: order) for(auto id: extra_edge[u]){
 			int v = g(u, id);
 			if(!ancestor_of(v, u) || must_contain_root && root_of[v] != v) continue;

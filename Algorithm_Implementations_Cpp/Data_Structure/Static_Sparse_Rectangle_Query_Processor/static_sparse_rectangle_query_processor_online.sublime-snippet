@@ -13,7 +13,7 @@ struct static_sparse_rectangle_query_processor_online{
 		int n = (int)points.size();
 		vector<tuple<int, int, T>> points2(n);
 		for(auto i = 0; i < n; ++ i){
-			auto &[x, y, w] = points2;
+			auto &[x, y, w] = points2[i];
 			x = points[i][0];
 			y = points[i][1];
 			w = 1;

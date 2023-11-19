@@ -1,0 +1,52 @@
+<snippet>
+	<content><![CDATA[
+// O(n)
+vector<array<int, 2>> prufer_decode(vector<int> code){
+	int n = (int)code.size() + 2;
+	vector<int> deg(n, 1);
+	for(auto u: code){
+		assert(0 <= u && u < n);
+		++ deg[u];
+	}
+	code.push_back(n - 1);
+	vector<array<int, 2>> edge;
+	for(auto i = 0, ptr = 0, leaf = 0; i < n - 1; ++ i){
+		while(leaf == n - 1 || deg[leaf] != 1) leaf = ++ ptr;
+		edge.push_back({code[i], leaf});
+		-- deg[leaf];
+		-- deg[leaf = code[i]];
+	}
+	return edge;
+}
+// O(n)
+vector<int> prufer_encode(int n, const vector<array<int, 2>> &edge){
+	vector<vector<int>> adj(n);
+	for(auto [u, v]: edge){
+		assert(0 <= min(u, v) && max(u, v) < n);
+		adj[u].push_back(v), adj[v].push_back(u);
+	}
+	vector<int> pv(n, -2), deg(n);
+	auto dfs = [&](auto self, int u, int p)->void{
+		assert(pv[u] == -2);
+		pv[u] = p;
+		for(auto v: adj[u]) if(v != p){
+			++ deg[u], ++ deg[v];
+			self(self, v, u);
+		}
+	};
+	dfs(dfs, n - 1, -1);
+	for(auto u = 0; u < n; ++ u) assert(pv[u] != -2);
+	vector<int> code(n - 2);
+	for(auto i = 0, ptr = 0, leaf = 0; i < n - 2; ++ i){
+		while(leaf == n - 1 || deg[leaf] != 1) leaf = ++ ptr;
+		-- deg[leaf];
+		-- deg[code[i] = leaf = pv[leaf]];
+	}
+	return code;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>prufer_code</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

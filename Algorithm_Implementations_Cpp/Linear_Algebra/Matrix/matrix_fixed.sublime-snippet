@@ -1,31 +1,53 @@
 <snippet>
 	<content><![CDATA[
-// T must support +=, -=, *, *=, ==, and !=
 template<class T, size_t N, size_t M>
 struct matrix_fixed_base{
-	using ring_t = T;
-	using domain_t = array<T, M>;
-	using range_t = array<T, N>;
-	static constexpr int n = N, m = M;
+	int n, m;
 	array<array<T, M>, N> data;
-	array<T, M> &operator()(int i){
+	array<T, M> &operator[](int i){
 		assert(0 <= i && i < n);
 		return data[i];
 	}
-	const array<T, M> &operator()(int i) const{
+	const array<T, M> &operator[](int i) const{
 		assert(0 <= i && i < n);
 		return data[i];
 	}
-	T &operator()(int i, int j){
-		assert(0 <= i && i < n && 0 <= j && j < m);
-		return data[i][j];
+	matrix_fixed_base &inplace_slice(int il, int ir, int jl, int jr){
+		assert(0 <= il && il <= ir && ir <= n);
+		assert(0 <= jl && jl <= jr && jr <= m);
+		n = ir - il, m = jr - jl;
+		if(il > 0) for(auto i = 0; i < n; ++ i) swap(data[i], data[il + i]);
+		data.resize(n);
+		for(auto &row: data){
+			row.erase(row.begin(), row.begin() + jl);
+			row.resize(m);
+		}
+		return *this;
 	}
-	const T &operator()(int i, int j) const{
-		assert(0 <= i && i < n && 0 <= j && j < m);
-		return data[i][j];
+	matrix_fixed_base slice(int il, int ir, int jl, int jr) const{
+		return matrix_fixed_base(*this).inplace_slice(il, ir, jl, jr);
 	}
-	operator vector<vector<T>>() const{
-		return data;
+	matrix_fixed_base &inplace_row_slice(int il, int ir){
+		assert(0 <= il && il <= ir && ir <= n);
+		n = ir - il;
+		if(il > 0) for(auto i = 0; i < n; ++ i) swap(data[i], data[il + i]);
+		data.resize(n);
+		return *this;
+	}
+	matrix_fixed_base row_slice(int il, int ir) const{
+		return matrix_fixed_base(*this).inplace_row_slice(il, ir);
+	}
+	matrix_fixed_base &inplace_column_slice(int jl, int jr){
+		assert(0 <= jl && jl <= jr && jr <= m);
+		m = jr - jl;
+		for(auto &row: data){
+			row.erase(row.begin(), row.begin() + jl);
+			row.resize(m);
+		}
+		return *this;
+	}
+	matrix_fixed_base column_slice(int jl, int jr) const{
+		return matrix_fixed_base(*this).inplace_column_slice(jl, jr);
 	}
 	bool operator==(const matrix_fixed_base &a) const{
 		assert(n == a.n && m == a.m);
@@ -37,33 +59,29 @@ struct matrix_fixed_base{
 	}
 	matrix_fixed_base &operator+=(const matrix_fixed_base &a){
 		assert(n == a.n && m == a.m);
-		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) data[i][j] += a(i, j);
+		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) data[i][j] += a[i][j];
 		return *this;
 	}
 	matrix_fixed_base operator+(const matrix_fixed_base &a) const{
-		assert(n == a.n && m == a.m);
 		return matrix_fixed_base(*this) += a;
 	}
 	matrix_fixed_base &operator-=(const matrix_fixed_base &a){
 		assert(n == a.n && m == a.m);
-		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) data[i][j] += a(i, j);
+		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) data[i][j] -= a[i][j];
 		return *this;
 	}
 	matrix_fixed_base operator-(const matrix_fixed_base &a) const{
-		assert(n == a.n && m == a.m);
-		return matrix_fixed_base(*this) += a;
+		return matrix_fixed_base(*this) -= a;
 	}
-	template<size_t N2, size_t M2>
-	matrix_fixed_base<T, N, M2> operator*(const matrix_fixed_base<T, N2, M2> &a) const{
+	matrix_fixed_base operator*=(const matrix_fixed_base &a){
 		assert(m == a.n);
-		int l = M2;
-		matrix_fixed_base<T, N, M2> res;
-		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) for(auto k = 0; k < l; ++ k) res(i, k) += data[i][j] * a(j, k);
-		return res;
+		int l = a.m;
+		matrix_fixed_base res(n, l);
+		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) for(auto k = 0; k < l; ++ k) res[i][k] += data[i][j] * a[j][k];
+		return *this = res;
 	}
-	template<size_t N2, size_t M2>
-	matrix_fixed_base &operator*=(const matrix_fixed_base<T, N2, M2> &a){
-		return *this = *this * a;
+	matrix_fixed_base operator*(const matrix_fixed_base &a) const{
+		return matrix_fixed_base(*this) *= a;
 	}
 	matrix_fixed_base &operator*=(T c){
 		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) data[i][j] *= c;
@@ -75,7 +93,7 @@ struct matrix_fixed_base{
 	template<class U, typename enable_if<is_integral<U>::value>::type* = nullptr>
 	matrix_fixed_base &inplace_power(U e){
 		assert(n == m && e >= 0);
-		matrix_fixed_base res(1, 0);
+		matrix_fixed_base res(n, n, T{1});
 		for(; e; *this *= *this, e >>= 1) if(e & 1) res *= *this;
 		return *this = res;
 	}
@@ -90,26 +108,27 @@ struct matrix_fixed_base{
 	}
 	matrix_fixed_base transpose() const{
 		if(n == m) return matrix_fixed_base(*this).inplace_transpose();
-		matrix_fixed_base<T, M, N> res;
-		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) res(j, i) = data[i][j];
+		matrix_fixed_base res(m, n);
+		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) res[j][i] = data[i][j];
 		return res;
 	}
-	// Multiply a column vector v on the right
-	range_t operator*(const domain_t &v) const{
-		range_t res;
-		res.fill(T(0));
+	array<T, N> operator*(const array<T, M> &v) const{
+		assert(m == (int)v.size());
+		array<T, N> res;
+		res.fill(T{0});
 		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) res[i] += data[i][j] * v[j];
 		return res;
 	}
 	// Assumes T is either a floating, integral, or a modular type.
-	// If T is a floating type, O(n) divisions with O(n^3) additions, subtractions, and multiplications.
-	// Otherwise, O(n^2 * log(size)) divisions with O(n^3) additions, subtractions, and multiplications.
-	// Returns {REF matrix, determinant, rank}
-	tuple<matrix_fixed_base &, T, int> inplace_REF(){
-		if(n == 0) return {*this, T(1), 0};
+	// If T is a floating type, O(up_to) divisions with O(n * m * up_to) additions, subtractions, and multiplications.
+	// Otherwise, O(n * up_to * log(size)) divisions with O(n * m * up_to) additions, subtractions, and multiplications.
+	// Returns {REF matrix_fixed_base, determinant, rank}
+	tuple<matrix_fixed_base &, T, int> inplace_REF(int up_to = -1){
+		if(n == 0) return {*this, T{1}, 0};
+		if(!~up_to) up_to = m;
 		T det = 1;
 		int rank = 0;
-		for(auto j = 0; j < m; ++ j){
+		for(auto j = 0; j < up_to; ++ j){
 			if constexpr(is_floating_point_v<T>){
 				static const T eps = 1e-9;
 				int pivot = rank;
@@ -145,20 +164,21 @@ struct matrix_fixed_base{
 		return {*this, det, rank};
 	}
 	// Assumes T is either a floating, integral, or a modular type.
-	// If T is a floating type, O(n) divisions with O(n^3) additions, subtractions, and multiplications.
-	// Otherwise, O(n^2 * log(size)) divisions with O(n^3) additions, subtractions, and multiplications.
-	// Returns {REF matrix, determinant, rank}
-	tuple<matrix_fixed_base, T, int> REF() const{
-		return matrix_fixed_base(*this).inplace_REF();
+	// If T is a floating type, O(up_to) divisions with O(n * m * up_to) additions, subtractions, and multiplications.
+	// Otherwise, O(n * up_to * log(size)) divisions with O(n * m * up_to) additions, subtractions, and multiplications.
+	// Returns {REF matrix_fixed_base, determinant, rank}
+	tuple<matrix_fixed_base, T, int> REF(int up_to = -1) const{
+		return matrix_fixed_base(*this).inplace_REF(up_to);
 	}
 	// Assumes T is a field.
-	// O(n) divisions with O(n^3) additions, subtractions, and multiplications.
-	// Returns {REF matrix, determinant, rank}
-	tuple<matrix_fixed_base &, T, int> inplace_REF_field(){
-		if(n == 0) return {*this, T(1), 0};
-		T det = T(1);
+	// O(up_to) divisions with O(n * m * up_to) additions, subtractions, and multiplications.
+	// Returns {REF matrix_fixed_base, determinant, rank}
+	tuple<matrix_fixed_base &, T, int> inplace_REF_field(int up_to = -1){
+		if(n == 0) return {*this, T{1}, 0};
+		if(!~up_to) up_to = m;
+		T det = T{1};
 		int rank = 0;
-		for(auto j = 0; j < m; ++ j){
+		for(auto j = 0; j < up_to; ++ j){
 			int pivot = -1;
 			for(auto i = rank; i < n; ++ i) if(data[i][j] != T(0)){
 				pivot = i;
@@ -176,7 +196,7 @@ struct matrix_fixed_base{
 			T inv = 1 / data[rank][j];
 			for(auto i = rank + 1; i < n; ++ i) if(data[i][j] != T(0)){
 				T coef = data[i][j] * inv;
-				for(auto k = j; k < m; ++ k) data[i][k] -= coef * data[j][k];
+				for(auto k = j; k < m; ++ k) data[i][k] -= coef * data[rank][k];
 			}
 			++ rank;
 			if(rank == n) break;
@@ -184,10 +204,10 @@ struct matrix_fixed_base{
 		return {*this, det, rank};
 	}
 	// Assumes T is a field.
-	// O(n) divisions with O(n^3) additions, subtractions, and multiplications.
-	// Returns {REF matrix, determinant, rank}
-	tuple<matrix_fixed_base, T, int> REF_field() const{
-		return matrix_fixed_base(*this).inplace_REF_field();
+	// O(up_to) divisions with O(n * m * up_to) additions, subtractions, and multiplications.
+	// Returns {REF matrix_fixed_base, determinant, rank}
+	tuple<matrix_fixed_base, T, int> REF_field(int up_to = -1) const{
+		return matrix_fixed_base(*this).inplace_REF_field(up_to);
 	}
 	// Assumes T is a field.
 	// O(n) divisions with O(n^3) additions, subtractions, and multiplications.
@@ -195,11 +215,10 @@ struct matrix_fixed_base{
 		assert(n == m);
 		if(n == 0) return *this;
 		auto a = data;
-		array<array<T, N>, N> res{};
-		for(auto i = 0; i < n; ++ i) res[i][i] = T(1);
+		auto res = multiplicative_identity();
 		for(auto j = 0; j < n; ++ j){
 			int rank = j, pivot = -1;
-			if(is_floating_point_v<T>){
+			if constexpr(is_floating_point_v<T>){
 				static const T eps = 1e-9;
 				pivot = rank;
 				for(auto i = rank + 1; i < n; ++ i) if(abs(a[pivot][j]) < abs(a[i][j])) pivot = i;
@@ -255,11 +274,31 @@ struct matrix_fixed_base{
 	int rank_field() const{
 		return get<2>(REF_field());
 	}
+	// Regarding the matrix_fixed_base as a system of linear equations by separating first m-1 columns, find a solution of the linear equation.
+	// Assumes T is a field
+	// O(n * m^2)
+	optional<array<T, M - 1>> find_a_solution() const{
+		assert(m >= 1);
+		auto [ref, _, rank] = REF_field(m - 1);
+		for(auto i = rank; i < n; ++ i) if(ref[i][m - 1] != T{0}) return {};
+		array<T, M - 1> res;
+		res.fill(T{0});
+		for(auto i = rank - 1; i >= 0; -- i){
+			int pivot = 0;
+			while(pivot < m - 1 && ref[i][pivot] == T{0}) ++ pivot;
+			assert(pivot < m - 1);
+			res[pivot] = ref[i][m - 1];
+			for(auto j = pivot + 1; j < m - 1; ++ j) res[pivot] -= ref[i][j] * res[j];
+			res[pivot] /= ref[i][pivot];
+		}
+		return res;
+	}
 	// O(n * 2^n)
 	T permanent() const{
-		static_assert(n <= 30 && n == m);
+		assert(n <= 30 && n == m);
 		T perm = n ? 0 : 1;
-		array<T, N> sum{};
+		array<T, N> sum;
+		sum.fill(T{0});
 		for(auto order = 1; order < 1 << n; ++ order){
 			int j = __lg(order ^ order >> 1 ^ order - 1 ^ order - 1 >> 1), sign = (order ^ order >> 1) & 1 << j ? 1 : -1;
 			T prod = order & 1 ? -1 : 1;
@@ -271,41 +310,36 @@ struct matrix_fixed_base{
 	}
 	template<class output_stream>
 	friend output_stream &operator<<(output_stream &out, const matrix_fixed_base &a){
-		out << "{";
+		out << "\n";
 		for(auto i = 0; i < a.n; ++ i){
-			out << "{";
-			for(auto j = 0; j < a.m; ++ j){
-				out << a(i, j);
-				if(j != a.m - 1) out << ", ";
-			}
-			out << "}";
-			if(i != a.n - 1) out << ", ";
+			for(auto j = 0; j < a.m; ++ j) out << a[i][j] << " ";
+			out << "\n";
 		}
-		return out << "}";
+		return out;
 	}
-	matrix_fixed_base(): matrix_fixed_base(T(0), T(0)){ }
-	matrix_fixed_base(const T &init_diagonal, const T &init_off_diagonal){
+	matrix_fixed_base(int n, int m, T init_diagonal = T{0}, T init_off_diagonal = T{0}): n(n), m(m){
+		assert(n >= 0 && m >= 0);
 		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) data[i][j] = i == j ? init_diagonal : init_off_diagonal;
 	}
-	matrix_fixed_base(const array<array<T, M>, N> &arr): data(arr){ }
-	static matrix_fixed_base additive_identity(){
-		return matrix_fixed_base(T(0), T(0));
+	matrix_fixed_base(int n, int m, const array<array<T, M>, N> &a): n(n), m(m), data(a){ }
+	static matrix_fixed_base additive_identity(int n, int m){
+		return matrix_fixed_base(n, m, T{0}, T{0});
 	}
-	static matrix_fixed_base multiplicative_identity(){
-		return matrix_fixed_base(T(1), T(0));
+	static matrix_fixed_base multiplicative_identity(int n, int m){
+		return matrix_fixed_base(n, m, T{1}, T{0});
 	}
 };
 template<class T, size_t N, size_t M>
 matrix_fixed_base<T, N, M> operator*(T c, matrix_fixed_base<T, N, M> a){
-	for(auto i = 0; i < a.n; ++ i) for(auto j = 0; j < a.m; ++ j) a(i, j) = c * a(i, j);
+	for(auto i = 0; i < a.n; ++ i) for(auto j = 0; j < a.m; ++ j) a[i][j] = c * a[i][j];
 	return a;
 }
 // Multiply a row vector v on the left
 template<class T, size_t N, size_t M>
-typename matrix_fixed_base<T, N, M>::domain_t operator*(const typename matrix_fixed_base<T, N, M>::range_t &v, const matrix_fixed_base<T, N, M> &a){
-	typename matrix_fixed_base<T, N, M>::domain_t res;
-	res.fill(T(0));
-	for(auto i = 0; i < a.n; ++ i) for(auto j = 0; j < a.m; ++ j) res[j] += v[i] * a(i, j);
+array<T, M> operator*(const array<T, N> &v, const matrix_fixed_base<T, N, M> &a){
+	array<T, M> res;
+	res.fill(T{0});
+	for(auto i = 0; i < a.n; ++ i) for(auto j = 0; j < a.m; ++ j) res[j] += v[i] * a[i][j];
 	return res;
 }
 

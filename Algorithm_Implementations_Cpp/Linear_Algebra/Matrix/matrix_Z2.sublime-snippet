@@ -2,32 +2,46 @@
 	<content><![CDATA[
 template<size_t SZ>
 struct matrix_Z2_base{
-	using ring_t = bool;
-	using domain_t = bitset<SZ>;
-	using range_t = bitset<SZ>;
-	static bool get_zero(){
-		return false;
-	}
-	static bool get_one(){
-		return true;
-	}
 	int n, m;
 	vector<bitset<SZ>> data;
-	bitset<SZ> &operator()(int i){
+	bitset<SZ> &operator[](int i){
 		assert(0 <= i && i < n);
 		return data[i];
 	}
-	const bitset<SZ> &operator()(int i) const{
+	const bitset<SZ> &operator[](int i) const{
 		assert(0 <= i && i < n);
 		return data[i];
 	}
-	bitset<SZ>::reference operator()(int i, int j){
-		assert(0 <= i && i < n && 0 <= j && j < m);
-		return data[i][j];
+	matrix_Z2_base &inplace_slice(int il, int ir, int jl, int jr){
+		assert(0 <= il && il <= ir && ir <= n);
+		assert(0 <= jl && jl <= jr && jr <= m);
+		n = ir - il, m = jr - jl;
+		if(il > 0) for(auto i = 0; i < n; ++ i) swap(data[i], data[il + i]);
+		data.resize(n);
+		for(auto &row: data) row = row << SZ - jr >> jl;
+		return *this;
 	}
-	bool operator()(int i, int j) const{
-		assert(0 <= i && i < n && 0 <= j && j < m);
-		return data[i][j];
+	matrix_Z2_base slice(int il, int ir, int jl, int jr) const{
+		return matrix_Z2_base(*this).inplace_slice(il, ir, jl, jr);
+	}
+	matrix_Z2_base &inplace_row_slice(int il, int ir){
+		assert(0 <= il && il <= ir && ir <= n);
+		n = ir - il;
+		if(il > 0) for(auto i = 0; i < n; ++ i) swap(data[i], data[il + i]);
+		data.resize(n);
+		return *this;
+	}
+	matrix_Z2_base row_slice(int il, int ir) const{
+		return matrix_Z2_base(*this).inplace_row_slice(il, ir);
+	}
+	matrix_Z2_base &inplace_column_slice(int jl, int jr){
+		assert(0 <= jl && jl <= jr && jr <= m);
+		m = jr - jl;
+		for(auto &row: data) row = row << SZ - jr >> jl;
+		return *this;
+	}
+	matrix_Z2_base column_slice(int jl, int jr) const{
+		return matrix_Z2_base(*this).inplace_column_slice(jl, jr);
 	}
 	bool operator==(const matrix_Z2_base &a) const{
 		assert(n == a.n && m == a.m);
@@ -43,9 +57,7 @@ struct matrix_Z2_base{
 		return *this;
 	}
 	matrix_Z2_base operator+(const matrix_Z2_base &M) const{
-		matrix_Z2_base res(n, m);
-		res += M;
-		return res;
+		return matrix_Z2_base(*this) += M;
 	}
 	matrix_Z2_base &operator-=(const matrix_Z2_base &M){
 		assert(n == M.n && m == M.m);
@@ -53,29 +65,26 @@ struct matrix_Z2_base{
 		return *this;
 	}
 	matrix_Z2_base operator-(const matrix_Z2_base &M) const{
-		matrix_Z2_base res(n, m);
-		res += M;
-		return res;
+		return matrix_Z2_base(*this) -= M;
 	}
-	matrix_Z2_base operator*(const matrix_Z2_base &a) const{
+	matrix_Z2_base &operator*=(const matrix_Z2_base &a){
 		assert(m == a.n);
 		int l = a.m;
 		matrix_Z2_base res(n, l);
 		vector<bitset<SZ>> temp(l);
 		for(auto i = 0; i < l; ++ i) for(auto j = 0; j < m; ++ j) temp[i][j] = a[j][i];
 		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < l; ++ j) res[i][j] = (data[i] & temp[j]).count() & 1;
-		return res;
+		return *this = res;
 	}
-	matrix_Z2_base &operator*=(const matrix_Z2_base &a){
-		return *this = *this * a;
+	matrix_Z2_base operator*(const matrix_Z2_base &a) const{
+		return matrix_Z2_base(*this) *= a;
 	}
 	matrix_Z2_base &operator*=(bool c){
 		if(!c) for(auto &v: *this) v.reset();
 		return *this;
 	}
 	matrix_Z2_base operator*(bool c) const{
-		matrix_Z2_base res(data, n, m);
-		return res *= c;
+		return matrix_Z2_base(*this) *= c;
 	}
 	template<class T, typename enable_if<is_integral<T>::value>::type* = nullptr>
 	matrix_Z2_base &inplace_power(T e){
@@ -88,33 +97,53 @@ struct matrix_Z2_base{
 	matrix_Z2_base power(T e) const{
 		return matrix_Z2_base(*this).inplace_power(e);
 	}
-	matrix_Z2_base transposed() const{
+	matrix_Z2_base &inplace_transpose(){
+		assert(n == m);
+		for(auto i = 0; i < n; ++ i) for(auto j = i + 1; j < n; ++ j) swap(data[i][j], data[j][i]);
+		return *this;
+	}
+	matrix_Z2_base transpose() const{
+		if(n == m) return matrix_Z2_base(*this).inplace_transpose();
 		matrix_Z2_base res(m, n);
 		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) res[j][i] = data[i][j];
 		return res;
 	}
-	matrix_Z2_base &transpose(){
-		return *this = transposed();
-	}
 	// Multiply a row vector v on the left
-	range_t operator*(const domain_t &v) const{
-		range_t res(n);
+	vector<int> operator*(const bitset<SZ> &v) const{
+		vector<int> res(n);
 		for(auto i = 0; i < n; ++ i) res[i] = (data[i] & v).count() & 1;
 		return res;
 	}
-	bool determinant(auto) const{
-		assert(n == m);
-		matrix_Z2_base a(data);
-		for(auto i = 0; i < n; ++ i){
-			for(auto j = i + 1; j < n; ++ j) if(a[j][i]){
-				if(a[i][i]) a[j] ^= a[i];
-				else swap(a[i], a[j]);
+	// O(n * m * up_to / w)
+	// Returns {REF matrix, determinant, rank}
+	tuple<matrix_Z2_base &, bool, int> inplace_REF(int up_to = -1){
+		if(n == 0) return {*this, true, 0};
+		if(!~up_to) up_to = m;
+		bool det = true;
+		int rank = 0;
+		for(auto j = 0; j < up_to; ++ j){
+			int pivot = -1;
+			for(auto i = rank; i < n; ++ i) if(data[i][j]){
+				pivot = i;
+				break;
 			}
-			if(!a[i][i]) return false;
+			if(!~pivot){
+				det = false;
+				continue;
+			}
+			if(rank != pivot) swap(data[rank], data[pivot]);
+			for(auto i = rank + 1; i < n; ++ i) if(data[i][j]) data[i] ^= data[rank];
+			++ rank;
+			if(rank == n) break;
 		}
-		return true;
+		return {*this, det, rank};
 	}
-	optional<matrix_Z2_base> inverse(auto) const{
+	// O(n * m * up_to / w)
+	// Returns {REF matrix, determinant, rank}
+	tuple<matrix_Z2_base, bool, int> REF(int up_to = -1) const{
+		return matrix(*this).inplace_REF(up_to);
+	}
+	optional<matrix_Z2_base> inverse() const{
 		assert(n == m);
 		vector<bitset<SZ>> a(data), res(n);
 		for(auto i = 0; i < n; ++ i) res[i].set(i);
@@ -131,21 +160,50 @@ struct matrix_Z2_base{
 		swap(*this, res);
 		return true;
 	}
+	bool determinant() const{
+		assert(n == m);
+		matrix_Z2_base a(data);
+		for(auto i = 0; i < n; ++ i){
+			for(auto j = i + 1; j < n; ++ j) if(a[j][i]){
+				if(a[i][i]) a[j] ^= a[i];
+				else swap(a[i], a[j]);
+			}
+			if(!a[i][i]) return false;
+		}
+		return true;
+	}
+	// O(n^3 / w)
+	int rank() const{
+		return get<2>(REF());
+	}
+	// Regarding the matrix as a system of linear equations by separating first m-1 columns, find a solution of the linear equation.
+	// O(n * m^2 / w)
+	optional<bitset<SZ>> find_a_solution() const{
+		assert(m >= 1);
+		auto [ref, _, rank] = REF(m - 1);
+		for(auto i = rank; i < n; ++ i) if(ref[i][m - 1]) return {};
+		bitset<SZ> res;
+		for(auto i = rank - 1; i >= 0; -- i){
+			int pivot = ref[i]._Find_first();
+			assert(pivot < m - 1);
+			res[pivot] = ref[i][m - 1] ^ (ref[i] & res).count() & 1;
+		}
+		return res;
+	}
 	template<class output_stream>
 	friend output_stream &operator<<(output_stream &out, const matrix_Z2_base &a){
 		out << "\n";
 		for(auto i = 0; i < a.n; ++ i){
-			for(auto j = 0; j < a.m; ++ j){
-				out << bool(a[i][j]);
-			}
+			for(auto j = 0; j < a.m; ++ j) out << bool(a[i][j]);
 			out << "\n";
 		}
 		return out;
 	}
 	matrix_Z2_base(int n, int m, bool init_diagonal = false, bool init_off_diagonal = false): n(n), m(m), data(n){
+		assert(m <= SZ);
 		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) data[i][j] = i == j ? init_diagonal : init_off_diagonal;
 	}
-	matrix_Z2_base(const vector<bitset<SZ>> &arr, int _n = -1, int _m = -1): n(~n ? _n : (int)arr.size()), m(~_m ? _m : SZ), data(arr){ }
+	matrix_Z2_base(int n, int m, const vector<bitset<SZ>> &a): n(n), m(m), data(a){ }
 };
 template<size_t SZ>
 matrix_Z2_base<SZ> operator*(bool c, matrix_Z2_base<SZ> M){
@@ -154,9 +212,9 @@ matrix_Z2_base<SZ> operator*(bool c, matrix_Z2_base<SZ> M){
 }
 // Multiply a row vector v on the left
 template<size_t SZ>
-matrix_Z2_base<SZ>::domain_t operator*(const typename matrix_Z2_base<SZ>::range_t &v, const matrix_Z2_base<SZ> &a){
+bitset<SZ> operator*(const vector<int> &v, const matrix_Z2_base<SZ> &a){
 	assert(a.n == (int)v.size());
-	typename matrix_Z2_base<SZ>::domain_t res;
+	bitset<SZ> res;
 	for(auto i = 0; i < a.n; ++ i) if(v[i]) res ^= a[i];
 	return res;
 }
