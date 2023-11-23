@@ -7,7 +7,7 @@
 // Returns {true, set of solution} if finite solutions
 // Returns {false, empty set} otherwise
 template<class T>
-pair<bool, vector<complex<long double>>> solve_cubic_equation(T a, T b, T c, T d, const long double &eps = 1e-10){
+optional<vector<complex<long double>>> solve_cubic_equation(T a, T b, T c, T d, const long double &eps = 1e-10){
 	using ld = long double;
 	using cld = complex<ld>;
 	if(abs(a) > eps){
@@ -18,15 +18,15 @@ pair<bool, vector<complex<long double>>> solve_cubic_equation(T a, T b, T c, T d
 		for(auto zeta: {cld(1.0l), -0.5l + sqrtl(3) * 0.5il, -0.5l - sqrtl(3.0l) * 0.5il}){
 			res.push_back(-1 / (3.0l * a) * (b + (abs(C) > eps ? zeta * C + D0 / (zeta * C) : 0.0l)));
 		}
-		return {true, res};
+		return res;
 	}
 	else if(abs(b) > eps){
 		cld D = c * c - 4.0l * b * d;
-		return {true, {(-c + sqrt(D)) / (2.0l * b), (-c - sqrt(D)) / (2.0l * b)}};
+		return {(-c + sqrt(D)) / (2.0l * b), (-c - sqrt(D)) / (2.0l * b)};
 	}
-	else if(abs(c) > eps) return {true, {-d / c}};
-	else if(abs(d) > eps) return {true, {}};
-	else return {false, {}};
+	else if(abs(c) > eps) return {-d / c};
+	else if(abs(d) > eps) return vector<complex<long double>>{};
+	else return {};
 }
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
