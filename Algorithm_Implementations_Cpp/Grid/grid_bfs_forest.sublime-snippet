@@ -1,0 +1,130 @@
+<snippet>
+	<content><![CDATA[
+struct grid_bfs_forest{
+	int n, nr;
+	vector<int> ncs;
+	vector<vector<int>> index;
+	vector<array<int, 2>> locate;
+	vector<array<int, 2>> dr = {{1, 0}, {0, 1}, {-1, 0}, {0, -1}};
+	vector<int> pv;
+	vector<int> order;
+	vector<int> pos;
+	vector<int> size;
+	vector<int> root_of;
+	vector<int> root;
+	vector<int> depth;
+	vector<int> was;
+	void init(int nr, int nc){
+		assert(0 <= nr && 0 <= nc);
+		init(nr, vector(nr, nc));
+	}
+	void init(int nr, const vector<int> &ncs){
+		assert(nr == (int)ncs.size());
+		this->n = accumulate(ncs.begin(), ncs.end(), 0);
+		this->nr = nr;
+		this->ncs = ncs;
+		index.assign(nr, {});
+		for(auto x = 0; x < nr; ++ x){
+			int nc = ncs[x];
+			assert(0 <= nc);
+			index[x].assign(nc, -1);
+			for(auto y = 0; y < nc; ++ y){
+				index[x][y] = (int)locate.size();
+				locate.push_back({x, y});
+			}
+		}
+		pv.assign(n, -1);
+		order.clear();
+		pos.assign(n, -1);
+		size.assign(n, -1);
+		root_of.assign(n, -1);
+		root.clear();
+		depth.assign(n, -1);
+		was.assign(n, -2);
+		attempt = -1;
+	}
+	void init_dr(const vector<array<int, 2>> &dr){
+		this->dr = dr;
+	}
+	void init_dr_8(){
+		this->dr = {{1, 0}, {1, 1}, {0, 1}, {-1, 1}, {-1, 0}, {-1, -1}, {0, -1}, {1, -1}};
+	}
+	void init_dr_diag(){
+		this->dr = {{1, 1}, {-1, 1}, {-1, -1}, {1, -1}};
+	}
+	bool in_range(int x, int y) const{
+		return 0 <= x && x < nr && 0 <= y && y < ncs[x];
+	}
+	int attempt;
+	vector<int> q;
+	// O((# of cells reachable from src) * size(dr))
+	template<class Container>
+	void _bfs(const vector<Container> &grid, const vector<int> &src){
+		q = src;
+		for(auto u: src){
+			assert(was[u] != attempt);
+			was[u] = attempt;
+			depth[u] = 0;
+			root_of[u] = u;
+			root.push_back(u);
+			pv[u] = -1;
+		}
+		for(auto it = 0; it < (int)q.size(); ++ it){
+			int u = q[it];
+			auto [x, y] = locate[u];
+			pos[u] = (int)order.size();
+			order.push_back(u);
+			for(auto [dx, dy]: dr){
+				int xn = x + dx, yn = y + dy;
+				if(!in_range(xn, yn) || grid[x][y] != grid[xn][yn]) continue;
+				int v = index[xn][yn];
+				if(was[v] == attempt) continue;
+				was[v] = attempt;
+				depth[v] = depth[u] + 1;
+				pv[v] = u;
+				root_of[v] = root_of[u];
+				q.push_back(v);
+			}
+		}
+		q.clear();
+	}
+	// O((# of cells reachable from src) * size(dr))
+	template<class Container>
+	void bfs(const vector<Container> &grid, const vector<array<int, 2>> &src){
+		assert((int)grid.size() <= nr);
+		for(auto x = 0; x < nr; ++ x) assert((int)grid[x].size() <= ncs[x]);
+		root.clear(), order.clear();
+		++ attempt;
+		vector<int> src_index((int)src.size());
+		for(auto i = 0; i < (int)src.size(); ++ i){
+			auto [x, y] = src[i];
+			assert(0 <= x && x < (int)grid.size());
+			assert(0 <= y && y < (int)grid[x].size());
+			src_index[i] = index[x][y];
+		}
+		_bfs(grid, src_index);
+	}
+	// O(nr * nc * size(dr))
+	template<class Container>
+	void bfs_all(const vector<Container> &grid){
+		assert((int)grid.size() <= nr);
+		for(auto x = 0; x < nr; ++ x) assert((int)grid[x].size() <= ncs[x]);
+		root.clear(), order.clear();
+		++ attempt;
+		for(auto x = 0; x < (int)grid.size(); ++ x) for(auto y = 0; y < (int)grid[x].size(); ++ y) if(was[index[x][y]] != attempt) _bfs(grid, {index[x][y]});
+	}
+	// Check if (x, y) is visited during the last bfs-like call.
+	bool visited(int x, int y) const{
+		return was[index[x][y]] == attempt;
+	}
+	// Check if u is visited during the last bfs-like call.
+	bool visited(int u) const{
+		return was[u] == attempt;
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>grid_bfs_forest</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

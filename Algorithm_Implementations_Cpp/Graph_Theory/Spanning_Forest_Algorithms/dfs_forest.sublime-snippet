@@ -42,7 +42,7 @@ struct dfs_forest{
 		attempt = -1;
 	}
 	int attempt;
-	// O(n + m)
+	// O(# of nodes reachable from u)
 	template<class U, class F = plus<>>
 	void _dfs(const graph<U> &g, int u, F UT = plus<>()){
 		assert(g.n <= n);
@@ -88,7 +88,7 @@ struct dfs_forest{
 		};
 		recurse(recurse, u);
 	}
-	// O(n + m)
+	// O(# of nodes reachable from src)
 	template<class U, class F = plus<>>
 	void dfs(const graph<U> &g, const vector<int> &src, F UT = plus<>()){
 		assert(g.n <= n);
@@ -96,7 +96,7 @@ struct dfs_forest{
 		++ attempt;
 		for(auto u: src){
 			assert(0 <= u && u < g.n);
-			if(was[u] != attempt) _dfs<U, F>(g, u, UT);
+			if(was[u] != attempt) _dfs(g, u, UT);
 		}
 	}
 	// O(n + m)
@@ -105,7 +105,7 @@ struct dfs_forest{
 		assert(g.n <= n);
 		root.clear(), order.clear();
 		++ attempt;
-		for(auto u = 0; u < g.n; ++ u) if(was[u] != attempt) _dfs<U, F>(g, u, UT);
+		for(auto u = 0; u < g.n; ++ u) if(was[u] != attempt) _dfs(g, u, UT);
 	}
 	// Check if u is visited during the last dfs-like call.
 	bool visited(int u) const{

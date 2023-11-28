@@ -30,12 +30,13 @@ struct bfs_forest{
 	}
 	int attempt;
 	vector<int> q;
-	// O(n + m)
+	// O(# of nodes reachable from src)
 	template<class F = plus<>>
 	void _bfs(const graph<T> &g, const vector<int> &src, F UT = plus<>()){
 		assert(g.n <= n);
 		q = src;
 		for(auto u: src){
+			assert(was[u] != attempt);
 			was[u] = attempt;
 			depth[u] = 0;
 			dist[u] = base_dist;
@@ -64,7 +65,7 @@ struct bfs_forest{
 		}
 		q.clear();
 	}
-	// O(n + m)
+	// O(# of nodes reachable from src)
 	template<class F = plus<>>
 	void bfs(const graph<T> &g, const vector<int> &src, F UT = plus<>()){
 		assert(g.n <= n);
@@ -74,16 +75,14 @@ struct bfs_forest{
 		_bfs(g, src, UT);
 	}
 	// O(n + m)
-	template<class F = plus<>>
-	void bfs_all(const graph<T> &g, F UT = plus<>()){
+	template<class U, class F = plus<>>
+	void bfs_all(const graph<U> &g, F UT = plus<>()){
 		assert(g.n <= n);
 		root.clear(), order.clear();
-		vector<int> src(g.n);
-		iota(src.begin(), src.end(), 0);
 		++ attempt;
-		_bfs(g, src, UT);
+		for(auto u = 0; u < g.n; ++ u) if(was[u] != attempt) _bfs(g, u, UT);
 	}
-	// Check if u is visited during the last dfs-like call.
+	// Check if u is visited during the last bfs-like call.
 	bool visited(int u) const{
 		assert(0 <= u && u < n);
 		return was[u] == attempt;
