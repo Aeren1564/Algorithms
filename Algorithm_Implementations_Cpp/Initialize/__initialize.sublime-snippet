@@ -3,7 +3,9 @@
 #include <bits/stdc++.h>
 // #include <x86intrin.h>
 using namespace std;
+#if __cplusplus > 202002L
 using namespace numbers;
+#endif
 
 
 

@@ -2,12 +2,13 @@
 	<content><![CDATA[
 template<class T>
 struct graph{
-	struct E{
+	using Weight_t = T;
+	struct Edge_t{
 		int from, to;
 		T cost;
 	};
 	int n;
-	vector<E> edge;
+	vector<Edge_t> edge;
 	vector<vector<int>> adj;
 	function<bool(int)> ignore;
 	graph(int n = 1): n(n), adj(n){

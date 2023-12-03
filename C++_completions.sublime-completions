@@ -313,6 +313,8 @@
         { "trigger": "flush", "contents": "cout << endl;"},
         { "trigger": "order_statistic_trees", "contents": "#include <ext/pb_ds/assoc_container.hpp>\n#include <ext/pb_ds/tree_policy.hpp>\nusing namespace __gnu_pbds;\ntemplate<class T, class U, class Compare = less<>> using order_statistic_map = tree<T, U, Compare, rb_tree_tag, tree_order_statistics_node_update>;\ntemplate<class T, class Compare = less<>> using order_statistic_set = order_statistic_map<T, null_type, Compare>;"},
         { "trigger": "changeto", "contents": "template<class T> T &ctmin(T &x){ return x; }\ntemplate<class T, class Head, class ...Tail> T &ctmin(T &x, const Head &h, const Tail &... t){ return ctmin(x = min<T>(x, h), t...); }\ntemplate<class T> T &ctmax(T &x){ return x; }\ntemplate<class T, class Head, class ...Tail> T &ctmax(T &x, const Head &h, const Tail &... t){ return ctmax(x = max<T>(x, h), t...); }\n"},
+        { "trigger": "inrange", "contents": "auto in_range = [&](int ${1:x}, int ${2:y}){ return ${3:0 <= $1 && $1 < ${4:nr} && 0 <= $2 && $2 < ${5:nc}}; };"},
+        { "trigger": "index", "contents": "auto index = [&](int ${1:x}, int ${2:y}){ return ${3:nc} * $1 + $2; };"},
         
         { "trigger": "fopen", "contents" : "ifstream cin; ofstream cout;\ncin.open(\"$1.in\"); cout.open(\"$1.out\");"},
         { "trigger": "fclose", "contents": "cin.close(); cout.close();"},
