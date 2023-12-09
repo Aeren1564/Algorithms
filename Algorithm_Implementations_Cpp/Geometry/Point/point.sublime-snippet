@@ -165,7 +165,7 @@ template<class T>
 bool colinear(const vector<point<T>> &a){
 	int i = 1;
 	while(i < (int)a.size() && a[0] == a[i]) ++ i;
-	if(i >= (int)a.size()) return true;
+	if(i == (int)a.size()) return true;
 	for(auto j = i + 1; j < (int)a.size(); ++ j) if(!colinear(a[0], a[i], a[j])) return false;
 	return true;
 }

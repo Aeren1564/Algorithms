@@ -19,12 +19,6 @@ int main(){
 /*
 
 */
-
-////////////////////////////////////////////////////////////////////////////////////////
-//                                                                                    //
-//                                   Coded by Aeren                                   //
-//                                                                                    //
-////////////////////////////////////////////////////////////////////////////////////////
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
 	<tabTrigger>initialize</tabTrigger>

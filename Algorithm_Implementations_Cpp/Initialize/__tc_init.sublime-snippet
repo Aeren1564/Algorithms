@@ -3,7 +3,9 @@
 #include <bits/stdc++.h>
 // #include <x86intrin.h>
 using namespace std;
+#if __cplusplus > 202002L
 using namespace numbers;
+#endif
 
 
 
@@ -25,12 +27,6 @@ int main(){
 /*
 
 */
-
-////////////////////////////////////////////////////////////////////////////////////////
-//                                                                                    //
-//                                   Coded by Aeren                                   //
-//                                                                                    //
-////////////////////////////////////////////////////////////////////////////////////////
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
 	<tabTrigger>tc_init</tabTrigger>

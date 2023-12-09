@@ -9,6 +9,7 @@
 	[
 		"Vintage"
 	],
+	"index_files": true,
 	"shift_tab_unindent": true,
 	"tab_completion": false,
 	"tab_size": 2,
