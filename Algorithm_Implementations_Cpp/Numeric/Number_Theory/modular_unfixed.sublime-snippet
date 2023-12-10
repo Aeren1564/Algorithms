@@ -70,7 +70,7 @@ struct modular_unfixed_base{
 		return v;
 	}
 	const unsigned int &operator()() const{ return data; }
-	template<class T> operator T() const{ return data; }
+	template<class T, typename enable_if<is_integral<T>::value>::type* = nullptr> operator T() const{ return data; }
 	modular_unfixed_base &operator+=(const modular_unfixed_base &otr){ if((data += otr.data) >= _mod) data -= _mod; return *this; }
 	modular_unfixed_base &operator-=(const modular_unfixed_base &otr){ if((data += _mod - otr.data) >= _mod) data -= _mod; return *this; }
 	template<class T, typename enable_if<is_integral<T>::value>::type* = nullptr> modular_unfixed_base &operator+=(const T &otr){ return *this += modular_unfixed_base(otr); }
