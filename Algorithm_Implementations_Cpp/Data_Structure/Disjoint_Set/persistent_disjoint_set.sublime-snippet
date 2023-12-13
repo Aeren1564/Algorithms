@@ -1,6 +1,6 @@
 <snippet>
 	<content><![CDATA[
-// From https://old.yosupo.jp/submission/38019
+// From https://judge.yosupo.jp/submission/38019
 // Requires persistent_array
 struct persistent_disjoint_set{
 	explicit persistent_disjoint_set(persistent_array<int> par): p{move(par)}{ }

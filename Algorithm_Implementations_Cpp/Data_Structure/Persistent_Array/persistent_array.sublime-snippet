@@ -1,6 +1,6 @@
 <snippet>
 	<content><![CDATA[
-// from https://old.yosupo.jp/submission/38019
+// from https://judge.yosupo.jp/submission/38019
 template<class T, int K = 20>
 struct persistent_array{
 	struct Node; // No memory release by default.
