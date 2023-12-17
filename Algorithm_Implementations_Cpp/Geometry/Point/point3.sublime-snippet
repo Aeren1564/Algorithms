@@ -90,6 +90,14 @@ struct point3{
 		else return (*this ^ q).norm() == 0;
 	}
 };
+template<class T, class U>
+point3<double> lerp(const point3<T> &p, const point3<U> &q, double t){
+	return point3<double>(p) * (1 - t) + point3<double>(q) * t;
+}
+template<class T, class U>
+point3<long double> lerp_l(const point3<T> &p, const point3<U> &q, long double t){
+	return point3<long double>(p) * (1 - t) + point3<long double>(q) * t;
+}
 template<class T>
 double distance(const point3<T> &p, const point3<T> &q){
 	return (p - q).norm();
@@ -112,11 +120,15 @@ T sextupled_volume(const point3<T> &p, const point3<T> &q, const point3<T> &r, c
 }
 template<class T>
 double angle(const point3<T> &p, const point3<T> &q){
-	return atan2((p ^ q).norm(), p * q);
+	auto a = atan2((p ^ q).norm(), p * q);
+	if(a < 0) a += 2 * acos(-1);
+	return a;
 }
 template<class T>
 long double angle_l(const point3<T> &p, const point3<T> &q){
-	return atan2l((p ^ q).norml(), p * q);
+	auto a = atan2l((p ^ q).norml(), p * q);
+	if(a < 0) a += 2 * acosl(-1);
+	return a;
 }
 template<class T>
 bool positively_oriented(const point3<T> &p, const point3<T> &q, const point3<T> &r, const point3<T> &s){
