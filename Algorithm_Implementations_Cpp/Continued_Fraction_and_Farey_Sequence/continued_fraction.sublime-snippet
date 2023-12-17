@@ -1,0 +1,95 @@
+<snippet>
+	<content><![CDATA[
+template<class T>
+struct continued_fraction{
+	using F = array<T, 2>;
+	vector<T> data;
+	// O(1)
+	continued_fraction(T x): data({x}){ }
+	// O(log(MAXVAL))
+	continued_fraction(T n, T d){
+		assert(d > 0);
+		while(d > 0){
+			auto [q, r] = divrem(n, d);
+			if(r < 0){
+				-- q;
+				r += d;
+			}
+			data.push_back(q);
+			n = d, d = r;
+		}
+		if(n >= 2) for(auto &x: data) x /= n;
+	}
+	// O(log(MAXVAL))
+	continued_fraction(const F &f): continued_fraction(f[0], f[1]){ }
+	continued_fraction(const vector<T> &a): data(a){
+		assert(!data.empty());
+		for(auto i = 1; i < (int)data.size(); ++ i) assert(data[i] >= 1);
+	}
+	bool _frac_cmp(const F &x, const F &y) const{
+		return x[0] * y[1] < x[1] * y[0];
+	}
+	// Assuming data represents a rational number, switch to the alternative representation.
+	continued_fraction &alter(){
+		if((int)data.size() == 1 || data.back() >= 2){
+			-- data.back();
+			data.push_back(T{1});
+		}
+		else{
+			data.pop_back();
+			++ data.back();
+		}
+		return *this;
+	}
+	vector<F> all_convergents() const{
+		vector<F> c((int)data.size() + 2);
+		c[0] = {T{0}, T{1}}, c[1] = {T{1}, T{0}};
+		for(auto i = 0; i < (int)data.size(); ++ i){
+			c[i + 2][0] = data[i] * c[i + 1][0] + c[i][0];
+			c[i + 2][1] = data[i] * c[i + 1][1] + c[i][1];
+		}
+		return c;
+	}
+	// -1(0/1), 0(1/0), 1(data[0]/1), ...
+	F convergent(int i = -2) const{
+		assert(-2 <= i && i < (int)data.size());
+		if(i == -1) return {0, 1};
+		if(i == -2) i = (int)data.size() - 1;
+		F res{1, 0};
+		for(auto j = i - 1; j >= 0; -- j) res = {res[1] + res[0] * data[j], res[0]};
+		return res;
+	}
+};
+// Given two fractions 0 <= low < high,
+// Returns the rational number low < p/q < high with the smallest value of p(equiv. q)
+// O(log(MAXVAL))
+template<class T>
+array<T, 2> best_rational_within(const array<T, 2> &low, const array<T, 2> &high){
+	assert(0 <= low[0] && 0 < low[1] && 0 < high[1]);
+	assert(_frac_cmp(low, high));
+	continued_fraction cf_low(low), cf_high(high);
+	for(auto iter = 0; iter < 4; ++ iter){
+		array<T, 2> pf{0, 1}, f{1, 0};
+		for(int i = 0; ; ++ i){
+			if(i < (int)min(cf_low.size(), cf_high.size()) && cf_low.data[i] == cf_high.data[i]){
+				T x = cf_low.data[i];
+				tie(pf, f) = {f, array{pf[0] + x * f[0], pf[1] + x * f[1]}};
+			}
+			else{
+				T x = i >= (int)cf_high.size() || i < (int)cf_low.data.size() && cf_low.data[i] < cf_high.data[i] ? cf_low.data[i] + 1 : cf_high.data[i] + 1;
+				tie(pf, f) = {f, array{pf[0] + x * f[0], pf[1] + x * f[1]}};
+				break;
+			}
+		}
+		if(frac_cmp(low, f) && frac_cmp(f, high)) return f;
+		if(~iter & 1) cf_low.alter();
+		if(~iter >> 1 & 1) cf_high.alter();
+	}
+	assert(false);
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>continued_fraction</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
