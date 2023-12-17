@@ -58,13 +58,17 @@ struct point{
 	T squared_norm() const{
 		return x * x + y * y;
 	}
-	// [-pi, pi]
+	// [0, 2 * pi]
 	double angle() const{
-		return atan2(y, x);
+		auto a = atan2(y, x);
+		if(a < 0) a += 2 * acos(-1);
+		return a;
 	}
-	// [-pi, pi]
+	// [0, 2 * pi]
 	long double angle_l() const{
-		return atan2l(y, x);
+		auto a = atan2(y, x);
+		if(a < 0) a += 2 * acosl(-1);
+		return a;
 	}
 	point<double> unit() const{
 		return point<double>(x, y) / norm();
@@ -101,6 +105,14 @@ struct point{
 		else return abs(*this ^ q) == 0;
 	}
 };
+template<class T, class U>
+point<double> lerp(const point<T> &p, const point<U> &q, double t){
+	return point<double>(p) * (1 - t) + point<double>(q) * t;
+}
+template<class T, class U>
+point<long double> lerp_l(const point<T> &p, const point<U> &q, long double t){
+	return point<long double>(p) * (1 - t) + point<long double>(q) * t;
+}
 template<class T>
 double distance(const point<T> &p, const point<T> &q){
 	return (p - q).norm();
