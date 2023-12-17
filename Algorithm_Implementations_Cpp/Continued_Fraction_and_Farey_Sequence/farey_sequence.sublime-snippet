@@ -1,0 +1,103 @@
+<snippet>
+	<content><![CDATA[
+// The sequcne of all non-negative irreducible fractions with numerator and denominator <= th, along with 1/0 representing infinity
+// T must be able to hold the square of the square of MAXVAL
+template<class T>
+struct farey_sequence{
+	using F = array<T, 2>;
+	T th;
+	farey_sequence(T th): th(th){ assert(th >= 1); }
+	// Given a binary predicate pred such that pred(0)=true and pred(inf)=false, and for all rational 0 <= p/q < r/s, pred(r/s) implies pred(p/q),
+	// find the largest rational p/q and the smallest rational r/s such that gcd(p,q) = 1, gcd(r, s) = 1, q <= th, and s <= th
+	// O(log(MAXVAL)^2)
+	array<F, 2> rational_binary_search(auto pred) const{
+		assert(th >= 1);
+		F f_low{0, 1}, f_high{1, 0};
+		assert(pred(f_low) && !pred(f_high));
+		while(f_low[0] + f_high[0] <= th && f_low[1] + f_high[1] <= th){
+			T l = 1, r = min((th - f_low[0]) / f_high[0], (th - f_high[1]) / f_low[1]) + 1;
+			if(pred(F{f_low[0] + f_high[0], f_low[1] + f_high[1]})){
+				while(r - l >= 2){
+					T m = (l + r) / 2;
+					pred(F{f_low[0] + m * f_high[0], f_low[1] + m * f_high[1]}) ? l = m : r = m;
+				}
+				f_low = {f_low[0] + l * f_high[0], f_low[1] + l * f_high[1]};
+			}
+			else{
+				while(r - l >= 2){
+					T m = (l + r) / 2;
+					pred(F{m * f_low[0] + f_high[0], m * f_low[1] + f_high[1]}) ? r = m : l = m;
+				}
+				f_high = {l * f_low[0] + f_high[0], l * f_low[1] + f_high[1]};
+			}
+		}
+		return {f_low, f_high};
+	}
+	// O(log(MAXVAL))
+	bool contains(const F &f) const{
+		return 0 <= min(f[0], f[1]) && max(f[0], f[1]) <= th && gcd(f[0], f[1]) == 1;
+	}
+	// Check if f and g are adjacent in the sequence
+	bool is_adjacent(const F &f, const F &g) const{
+		return 0 <= min({f[0], f[1], g[0], g[1]}) && max({f[0], f[1], g[0], g[1]}) <= th && (f[0] + g[0] > th || f[1] + g[1] > th) && g[0] * f[1] - f[0] * g[1] == 1;
+	}
+	// Assumes pf comes before f
+	F next_rational(const F &f, const F &pf) const{
+		assert(is_adjacent(pf, f) && f[1] > 0);
+		return {(th + pf[1]) / f[1] * f[0] - pf[0], (th + pf[1]) / f[1] * f[1] - pf[1]};
+	}
+	// Assumes nf comes after f
+	F prev_rational(const F &f, const F &nf) const{
+		assert(is_adjacent(f, nf) && nf[1] > 0);
+		return {(th + f[1]) / nf[1] * nf[0] - f[0], (th + f[1]) / nf[1] * nf[1] - f[1]};
+	}
+	T _inv(T a, T n) const{
+		T t = 0, newt = 1, r = n, newr = a;
+		while(newr){
+			T q = r / newr;
+			tie(t, newt) = pair{newt, t - q * newt};
+			tie(r, newr) = pair{newr, r - q * newr};
+		}
+		assert(r == 1);
+		if(t < 0) t += n;
+		return t;
+	}
+	F next_rational(const F &f) const{
+		assert(0 <= f[0] && 0 < f[1]);
+		T inv = _inv(f[0], f[1]);
+		T b = (inv + th) / f[1] * f[1] - inv;
+		return {(b * f[0] + 1) / f[1], b};
+	}
+	F prev_rational(const F &f) const{
+		assert(0 < f[0] && 0 <= f[1]);
+		T inv = _inv(f[1], f[0]);
+		T a = (inv + th) / f[0] * f[0] - inv;
+		return {a, (a * f[1] + 1) / f[0]};
+	}
+	// TODO: Finish these with https://csacademy.com/contest/algorithms-2018-07-22-6/task/farey_sequence/solution/
+	// F operator[](Index_t i) const{
+	// 	assert(0 <= i);
+
+	// }
+	// Index_t operator[](const F &f) const{
+
+	// }
+	vector<F> to_vector() const{
+		vector<F> res{{0, 1}, {1, 0}}, res_next;
+		for(auto i = 1; i <= th; ++ i){
+			res_next = {res[0]};
+			for(auto j = 1; j < (int)res.size(); ++ j){
+				if(res[j - 1][0] + res[j][0] <= th && res[j - 1][1] + res[j][1] <= th) res_next.push_back({res[j - 1][0] + res[j][0], res[j - 1][1] + res[j][1]});
+				res.push_back(res[j]);
+			}
+			swap(res, res_next);
+		}
+		return res;
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>farey_sequence</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
