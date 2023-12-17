@@ -87,7 +87,30 @@ struct bigint{
 		return _karatsuba_multiplication(x, y);
 	}
 	bigint(){ }
-	bigint(const string &s, unsigned int base = 2){
+	template<class U, typename enable_if<is_integral<U>::value>::type* = nullptr>
+	bigint(U x){
+		if(x < 0){
+			*this = -bigint(-x);
+			return;
+		}
+		while(x){
+			data.push_back(x & ~T(0));
+			x /= T_large(1) << width;
+		}
+	}
+	// MSB at a.back()
+	template<class U, typename enable_if<is_integral<U>::value>::type* = nullptr>
+	bigint(bool sign, const vector<U> &a, U base){
+		bigint x{};
+		for(auto d: a){
+			assert(0 <= d && d < base);
+			x = base * x + d;
+		}
+		*this = sign ? -x : x;
+	}
+	// MSB at s.front()
+	bigint(const string &s, unsigned int base){
+		assert(base >= 2);
 		if(base == 2){
 			int pos = 0;
 			while(pos < (int)s.size() && (s[pos] == '-' || s[pos] == '+')){
@@ -103,48 +126,77 @@ struct bigint{
 				data.push_back(x);
 			}
 			while(!data.empty() && !data.back()) data.pop_back();
-			if(sign){
-				if(data.empty()) sign = 0;
-				else _negate(data);
+		}
+		else if(base <= 10){
+			int pos = 0;
+			while(pos < (int)s.size() && (s[pos] == '-' || s[pos] == '+')){
+				if(s[pos] == '-') sign = !sign;
+				++ pos;
 			}
-			_trim();
+			bigint x{};
+			for(auto d: s){
+				assert(isdigit(d));
+				x = base * x + (d - '0');
+			}
+			*this = x;
+		}
+		else if(base == 16){
+			// 0, ..., 9, A, B, C, D, E, F
+			int pos = 0;
+			while(pos < (int)s.size() && (s[pos] == '-' || s[pos] == '+')){
+				if(s[pos] == '-') sign = !sign;
+				++ pos;
+			}
+			bigint x{};
+			for(auto d: s){
+				assert(isdigit(d) || isupper(d) && d <= 'F');
+				x = base * x + (isdigit(d) ? d - '0' : d - 'A' + 10);
+			}
+			*this = x;
 		}
 		else assert(false);
+		if(sign){
+			if(data.empty()) sign = 0;
+			else _negate(data);
+		}
+		_trim();
 		assert(_is_valid());
 	}
+	// MSB at back()
 	template<class U, typename enable_if<is_integral<U>::value>::type* = nullptr>
-	bigint(U x){
-		if(x < 0){
-			*this = -bigint(-x);
-			return;
-		}
-		while(x){
-			data.push_back(x & ~T(0));
-			x /= T_large(1) << width;
-		}
-	}
-	friend istream &operator>>(istream &in, bigint &x){
-		string s;
-		in >> s;
-		x = bigint(s);
-		return in;
+	friend pair<bool, vector<U>> to_vector(const bigint &x, U base){
+		assert(base >= 2);
+		if(x < 0) return {1, to_vector(-x, base).second};
+		vector<U> v;
+		for(auto y = x; y; y /= base) v.push_back(y % base);
+		return {0, v};
 	}
 	// TODO: Implement Schoenhage
-	friend string to_string(const bigint &x, unsigned int base = 2){
+	// MSB at front()
+	friend string to_string(const bigint &x, unsigned int base){
 		assert(base >= 2);
+		if(!x) return "0";
+		if(x < 0) return '-' + to_string(-x, base);
 		if(base == 2){
-			if(x < 0) return '-' + to_string(-x, base);
-			if(!x) return "0";
 			string s;
 			for(int i = __lg(x.data.back()); i >= 0; -- i) s.push_back('0' + (x.data.back() >> i & 1));
 			for(auto i = (int)x.data.size() - 2; i >= 0; -- i) s += bitset<width>(x.data[i]).to_string();
 			return s;
 		}
 		else if(base <= 10){
-			if(x < 0) return '-' + to_string(-x, base);
 			string s;
 			for(auto y = x; y; y /= base) s.push_back('0' + int(y % base));
-			ranges::reverse(s);
+			reverse(s.begin(), s.end());
+			return s;
+		}
+		else if(base == 16){
+			// 0, ..., 9, A, B, C, D, E, F
+			string s;
+			for(auto y = x; y; y /= base){
+				int rem = y % base;
+				s.push_back(rem < 10 ? '0' + rem : rem - 10 + 'A');
+			}
+			reverse(s.begin(), s.end());
 			return s;
 		}
 		else assert(false);
@@ -166,7 +218,7 @@ struct bigint{
 	bool operator!=(const bigint &x) const{ return !(*this == x); }
 	bool operator<(const bigint &x) const{
 		if(sign != x.sign) return sign > x.sign;
-		if(!*this) return false;
+		if(!x) return false;
 		if(data.size() != x.data.size()) return data.size() < x.data.size() ^ sign;
 		for(auto i = (int)data.size() - 1; i >= 0; -- i) if(data[i] != x.data[i]) return data[i] < x.data[i];
 		return false;
