@@ -41,6 +41,9 @@ struct bidirectional_hash_base{
 		swap(data, rev_data);
 		return *this;
 	}
+	bidirectional_hash_base flip() const{
+		return bidirectional_hash_base(*this).inplace_flip();
+	}
 	bidirectional_hash_base &operator=(const bidirectional_hash_base &x){
 		data = x.data, rev_data = x.rev_data, len = x.len;
 		return *this;
