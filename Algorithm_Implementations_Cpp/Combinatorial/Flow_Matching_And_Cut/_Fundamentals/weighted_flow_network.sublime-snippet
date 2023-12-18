@@ -30,7 +30,7 @@ struct weighted_flow_network{
 		cost += f * edge[i].cost;
 		edge[i ^ 1].flow -= f;
 	}
-	friend ostream &operator<<(ostream &out, const flow_network &F){
+	friend ostream &operator<<(ostream &out, const weighted_flow_network &F){
 		out << "\n";
 		for(auto &e: F.edge){
 			out << "{" << e.from << " -> " << e.to << ", " << e.cost << ", " << e.flow << "/" << e.capacity << "}\n";
