@@ -68,9 +68,10 @@ struct modular_fixed_base{
 	modular_fixed_base operator--(int){ modular_fixed_base result(*this); *this += _mod - 1; return result; }
 	modular_fixed_base operator-() const{ return modular_fixed_base(_mod - data); }
 	modular_fixed_base &operator*=(const modular_fixed_base &rhs){
-		if constexpr(is_same_v<data_t, int> || is_same_v<data_t, unsigned int>) data = (unsigned long long)data * rhs.data % _mod;
-		else if constexpr(is_same_v<data_t, long long> || is_same_v<data_t, unsigned long long>){
-			long long res = data * data.rhs - _mod * ull(1.L / _mod * data * data.rhs);
+		using ull = unsigned long long;
+		if constexpr(is_same_v<data_t, int> || is_same_v<data_t, unsigned int>) data = (ull)data * rhs.data % _mod;
+		else if constexpr(is_same_v<data_t, long long> || is_same_v<data_t, ull>){
+			long long res = data * rhs.data - _mod * (ull)(1.L / _mod * data * rhs.data);
 			data = res + _mod * (res < 0) - _mod * (res >= (long long)_mod);
 		}
 		else data = (__uint128_t)data * rhs.data % _mod;
@@ -160,7 +161,9 @@ template<class data_t, data_t _mod> ostream &operator<<(ostream &out, const modu
 // const unsigned int mod = 1e9 + 7; // 1000000007
 const unsigned int mod = (119 << 23) + 1; // 998244353
 // const unsigned int mod = 1e9 + 9; // 1000000009
+// const unsigned long long mod = (unsigned long long)1e18 + 9;
 using modular = modular_fixed_base<unsigned int, mod>;
+// using modular = modular_fixed_base<unsigned long long, mod>;
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
 	<tabTrigger>modular_fixed</tabTrigger> -->
