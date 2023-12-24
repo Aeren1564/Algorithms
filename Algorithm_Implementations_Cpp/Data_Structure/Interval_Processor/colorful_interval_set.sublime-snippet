@@ -1,0 +1,97 @@
+<snippet>
+	<content><![CDATA[
+// B: coordinate type, C: color type
+template<class B, class C>
+struct colorful_interval_set{
+	map<array<B, 2>, C> data;
+	colorful_interval_set(C initial_color = -1): data({{{numeric_limits<B>::min(), numeric_limits<B>::max()}, initial_color}}){ }
+	colorful_interval_set(const map<array<B, 2>, C> &data): data(data){ assert(is_valid(data)); }
+	// is_valid(*this) holds after all operations
+	static bool is_valid(const map<array<B, 2>, C> &data){
+		if(data.empty() || data.begin()->first[0] != numeric_limits<B>::min() || data.rbegin()->first[1] == numeric_limits<B>::max()) return false;
+		for(auto it = data.begin(); next(it) != data.end(); ++ it) if(it->first[1] != next(it)->first[0] || it->second == next(it)->second) return false;
+		return true;
+	}
+	auto belongs(B p){
+		return prev(data.upper_bound({p, numeric_limits<B>::max()}));
+	}
+	// Cover the range [l, r) with the color c
+	// process(l, r, pc): color of range [l, r) is changed from pc to c
+	// Amortized O(1) process calls
+	auto cover(B l, B r, C c, auto process){
+		array<B, 2> I{l, l};
+		auto it = data.lower_bound(I);
+		if(it != data.begin() && l < prev(it)->first[1]){
+			-- it;
+			auto x = *it; data.erase(it);
+			data.insert({{x.first[0], l}, x.second});
+			it = data.insert({{l, x.first[1]}, x.second}).first;
+		}
+		while(it != data.end() && it->first[0] < r){
+			if(r < it->first[1]){
+				auto x = *it; data.erase(it);
+				it = data.insert({{x.first[0], r}, x.second}).first;
+				data.insert({{r, x.first[1]}, x.second});
+			}
+			process(max(l, it->first[0]), min(r, it->first[1]), it->second);
+			I = {min(I[0], it->first[0]), max(I[1], it->first[1])};
+			it = data.erase(it);
+		}
+		return data.insert({I, c});
+	}
+	auto cover(B l, B r, C c){
+		return cover(l, r, c, [&](B, B, C){  });
+	}
+	// new_color(l, r, c): returns the new color for the range [l, r), previously colored with c
+	// O(Number of color ranges affected)
+	void recolor(B l, B r, auto new_color){
+		auto left = data.lower_bound({l, l});
+		if(l < left->first[0]){
+			-- left;
+			auto [range, c] = *left;
+			left = data.erase(left);
+			left = data.insert(left, {{range[0], l}, c});
+			left = data.insert(left, {{l, range[1]}, c});
+		}
+		auto right = data.lower_bound({r, r});
+		if(r < right->first[0]){
+			-- right;
+			auto [range, c] = *right;
+			right = data.erase(right);
+			right = data.insert(right, {{range[0], r}, c});
+			right = data.insert(right, {{r, range[1]}, c});
+		}
+		for(auto it = left; it != right; ++ it) it->second = new_color(it->first[0], it->first[1], it->second);
+	}
+	// new_color(l, r, c, d): returns the new color for the range [l, r), where s is colored with c and t is colored with d
+	// O(Number of color ranges affected)
+	friend colorful_interval_set merge(const colorful_interval_set &s, const colorful_interval_set &t, auto new_color){
+		map<array<B, 2>, C> res;
+		for(auto it_s = s.data.begin(), it_t = t.data.begin(); it_s != s.end() && it_t != t.end; ){
+			B l = max(it_s->first[0], it_t->first[0]), r;
+			C c;
+			if(it_s->first[1] <= it_t->first[1]){
+				r = it_s->first[1];
+				c = new_color(l, r, it_s->second, it_t->second);
+				++ it_s;
+			}
+			else{
+				r = it_s->first[1];
+				c = new_color(l, r, it_s->second, it_t->second);
+				++ it_t;
+			}
+			if(!res.empty() && res.rbegin()->second == c){
+				l = res.rbegin()->first;
+				res.erase(prev(res.end()));
+			}
+			res.insert(res.end(), {{l, r}, c});
+		}
+		return res;
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>colorful_interval_set</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
