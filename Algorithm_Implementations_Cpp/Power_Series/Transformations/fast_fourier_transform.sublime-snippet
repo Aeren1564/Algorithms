@@ -59,7 +59,7 @@ struct fast_fourier_transform_wrapper{
 		for(auto i = 0; i < n; ++ i) buffer2[i] = buffer1[i] - conj(buffer1[-i & n - 1]);
 		transform(buffer2, true);
 		vector<T> res((int)p.size() + (int)q.size() - 1);
-		for(auto i = 0; i < (int)res.size(); ++ i) res[i] = llround(buffer2[i].imag() / 4);
+		for(auto i = 0; i < (int)res.size(); ++ i) res[i] = is_integral_v<T> ? llround(buffer2[i].imag() / 4) : buffer2[i].imag() / 4;
 		return res;
 	}
 	// O(n * log(n))
