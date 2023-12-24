@@ -4,7 +4,7 @@ struct disjoint_set_rollback{
 	int n, _classes;
 	vector<int> p;
 	vector<pair<int, int>> recover;
-	disjoint_set_rollback(int n): n(n), _classes(n), p(n, -1){ }
+	disjoint_set_rollback(int n): n(n), _classes(n), p(n, -1){ assert(n >= 0); }
 	// O(1)
 	int classes() const{
 		return _classes;
@@ -43,11 +43,15 @@ struct disjoint_set_rollback{
 		act(u, v, swapped);
 		return true;
 	}
+	// Log the current state into recover
+	void refresh(int signal){
+		recover.push_back({-1, signal});
+	}
 	// O(1)
 	int state(){
 		return (int)recover.size();
 	}
-	// O((size(recover) - s) * log(n))
+	// O(size(recover) - s)
 	void reverse_to(int s){
 		assert(s <= (int)recover.size());
 		while((int)recover.size() > s){
@@ -57,15 +61,20 @@ struct disjoint_set_rollback{
 			p[p[u]] -= su, p[u] = su;
 		}
 	}
-	// O((size(recover) - s) * log(n))
+	// O(size(recover) - s)
+	// act(-1, signal): refresh() was called with signal
+	// act(u, v): u has been split from the child v
 	void reverse_to(int s, auto act){
 		while((int)recover.size() > s){
-			++ _classes;
 			auto [u, su] = recover.back();
 			recover.pop_back();
-			int pu = p[u];
-			p[p[u]] -= su, p[u] = su;
-			act(pu, u);
+			if(!~u) act(u, su);
+			else{
+				++ _classes;
+				int pu = p[u];
+				p[p[u]] -= su, p[u] = su;
+				act(pu, u);
+			}
 		}
 	}
 	void clear(){
@@ -78,6 +87,20 @@ struct disjoint_set_rollback{
 		for(auto i = 0; i < n; ++ i) g[root(i)].push_back(i);
 		g.erase(remove_if(g.begin(), g.end(), [&](auto &s){ return s.empty(); }), g.end());
 		return g;
+	}
+	friend ostream &operator<<(ostream &out, disjoint_set_rollback dsu){
+		auto gs = dsu.group_up();
+		out << "{";
+		if(!gs.empty()) for(auto i = 0; i < (int)gs.size(); ++ i){
+			out << "{";
+			for(auto j = 0; j < (int)gs[i].size(); ++ j){
+				out << gs[i][j];
+				if(j + 1 < (int)gs[i].size()) out << ", ";
+			}
+			out << "}";
+			if(i + 1 < (int)gs.size()) out << ", ";
+		}
+		return out << "}";
 	}
 };
 ]]></content>
