@@ -414,6 +414,16 @@ struct treap_base{
 		refresh(root);
 		return root;
 	}
+	// O(# of elements erased)
+	void erase(int root){
+		if(!~root) return;
+		dead_node.push_back(root);
+		for(auto beg = (int)dead_node.size() - 1; beg < (int)dead_node.size(); ++ beg){
+			int u = dead_node[beg];
+			if(~left[u]) dead_node.push_back(left[u]);
+			if(~right[u]) dead_node.push_back(right[u]);
+		}
+	}
 	// Data must be sorted by <
 	// O(min(size(u), size(v)) * log(size ratio))
 	int unite_by_key(int u, int v){
