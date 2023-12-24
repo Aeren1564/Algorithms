@@ -4,12 +4,15 @@
 template<class modular_t, class len_t, bool ALLOW_BINEXP>
 struct bidirectional_hash_base{
 	static modular_t _base, _inv_base;
-	static void setup(modular_t base = 0){
+	template<class T = int>
+	static void setup(T base = 0){
+		if constexpr(modular_t::VARIATE_MOD_FLAG) modular_t::setup((unsigned long long)1e18 + 9);
 		if(!base) base = mt19937(chrono::high_resolution_clock::now().time_since_epoch().count())() % 100'000'000 + 100'000'000;
 		_base = base, _inv_base = modular_t(1) / base;
 	}
 	static vector<modular_t> _power, _inv_power;
 	static void setup_power(size_t len){
+		if(_power.empty()) _power.push_back(1), _inv_power.push_back(1);
 		while((int)_power.size() <= len){
 			_power.push_back(_power.back() * _base);
 			_inv_power.push_back(_inv_power.back() * _inv_base);
@@ -19,7 +22,7 @@ struct bidirectional_hash_base{
 		assert(e >= 0);
 		if constexpr(ALLOW_BINEXP) return e < (int)_power.size() ? _power[e] : _base.power(e);
 		else{
-			assert(e < (int)_power.size());
+			if((int)_power.size() <= e) setup_power(e);
 			return _power[e];
 		}
 	}
@@ -27,7 +30,7 @@ struct bidirectional_hash_base{
 		assert(e >= 0);
 		if constexpr(ALLOW_BINEXP) return e < (int)_inv_power.size() ? _inv_power[e] : _inv_base.power(e);
 		else{
-			assert(e < (int)_inv_power.size());
+			if((int)_power.size() <= e) setup_power(e);
 			return _inv_power[e];
 		}
 	}
@@ -41,9 +44,8 @@ struct bidirectional_hash_base{
 		swap(data, rev_data);
 		return *this;
 	}
-	bidirectional_hash_base flip() const{
-		return bidirectional_hash_base(*this).inplace_flip();
-	}
+	bidirectional_hash_base flip() const{ return bidirectional_hash_base(*this).inplace_flip(); }
+	bool is_palindrome() const{ return data == rev_data; }
 	bidirectional_hash_base &operator=(const bidirectional_hash_base &x){
 		data = x.data, rev_data = x.rev_data, len = x.len;
 		return *this;
@@ -54,24 +56,16 @@ struct bidirectional_hash_base{
 		len += x.len;
 		return *this;
 	}
-	bidirectional_hash_base operator+(const bidirectional_hash_base &x) const{
-		return bidirectional_hash_base(*this) += x;
-	}
-	bidirectional_hash_base &inplace_append_right(const bidirectional_hash_base &x){
-		return *this += x;
-	}
-	bidirectional_hash_base append_right(const bidirectional_hash_base &x) const{
-		return bidirectional_hash_base(*this).inplace_append_right(x);
-	}
+	bidirectional_hash_base operator+(const bidirectional_hash_base &x) const{ return bidirectional_hash_base(*this) += x; }
+	bidirectional_hash_base &inplace_append_right(const bidirectional_hash_base &x){ return *this += x; }
+	bidirectional_hash_base append_right(const bidirectional_hash_base &x) const{ return bidirectional_hash_base(*this).inplace_append_right(x); }
 	bidirectional_hash_base &inplace_append_left(const bidirectional_hash_base &x){
 		data += power(len) * x.data;
 		rev_data = x.rev_data + power(x.len) * rev_data;
 		len += x.len;
 		return *this;
 	}
-	bidirectional_hash_base append_left(const bidirectional_hash_base &x) const{
-		return bidirectional_hash_base(*this).inplace_append_left(x);
-	}
+	bidirectional_hash_base append_left(const bidirectional_hash_base &x) const{ return bidirectional_hash_base(*this).inplace_append_left(x); }
 	bidirectional_hash_base &inplace_pop_right(const bidirectional_hash_base &x){
 		assert(len >= x.len);
 		data = inv_power(x.len) * (data - x.data);
@@ -79,19 +73,24 @@ struct bidirectional_hash_base{
 		len -= x.len;
 		return *this;
 	}
-	bidirectional_hash_base pop_right(const bidirectional_hash_base &x) const{
-		return bidirectional_hash_base(*this).pop_right(x);
-	}
+	bidirectional_hash_base pop_right(const bidirectional_hash_base &x) const{ return bidirectional_hash_base(*this).inplace_pop_right(x); }
 	bidirectional_hash_base &inplace_pop_left(const bidirectional_hash_base &x){
 		assert(len >= x.len);
 		data -= power(len - x.len) * x.data;
-		rev_data = inv_power(x.len) * (data - x.data);
+		rev_data = inv_power(x.len) * (rev_data - x.rev_data);
 		len -= x.len;
 		return *this;
 	}
-	bidirectional_hash_base pop_left(const bidirectional_hash_base &x) const{
-		return bidirectional_hash_base(*this).pop_left(x);
+	bidirectional_hash_base pop_left(const bidirectional_hash_base &x) const{ return bidirectional_hash_base(*this).inplace_pop_left(x); }
+	template<class T, enable_if<is_integral_v<T>>::type* = nullptr>
+	bidirectional_hash_base &inplace_update(len_t pos, T x){
+		assert(0 <= pos && pos < len);
+		data += power(len - pos - 1) * x;
+		rev_data += power(pos) * x;
+		return *this;
 	}
+	template<class T, enable_if<is_integral_v<T>>::type* = nullptr>
+	bidirectional_hash_base update(len_t pos, T x) const{ return bidirectional_hash_base(*this).inplace_update(pos, x); }
 	bidirectional_hash_base &inplace_update(len_t pos, const bidirectional_hash_base &x){
 		assert(0 <= pos && pos + x.len <= len);
 		data += power(len - pos - x.len) * x.data;
@@ -118,22 +117,19 @@ struct bidirectional_hash_base{
 		return *this = res;
 	}
 	template<class T, enable_if<is_integral_v<T>>::type* = nullptr>
-	bidirectional_hash_base operator*(T x) const{
-		return bidirectional_hash_base(*this) *= x;
-	}
+	bidirectional_hash_base operator*(T x) const{ return bidirectional_hash_base(*this) *= x; }
 	template<class T, enable_if<is_integral_v<T>>::type* = nullptr>
-	friend bidirectional_hash_base operator*(T x, const bidirectional_hash_base &h){
-		return bidirectional_hash_base(h) *= x;
-	}
+	friend bidirectional_hash_base operator*(T x, const bidirectional_hash_base &h){ return bidirectional_hash_base(h) *= x; }
 	modular_t data = 0, rev_data = 0;
 	len_t len = 0;
 };
 template<class modular_t, class len_t, bool ALLOW_BINEXP> modular_t bidirectional_hash_base<modular_t, len_t, ALLOW_BINEXP>::_base;
 template<class modular_t, class len_t, bool ALLOW_BINEXP> modular_t bidirectional_hash_base<modular_t, len_t, ALLOW_BINEXP>::_inv_base;
-template<class modular_t, class len_t, bool ALLOW_BINEXP> vector<modular_t> bidirectional_hash_base<modular_t, len_t, ALLOW_BINEXP>::_power{1};
-template<class modular_t, class len_t, bool ALLOW_BINEXP> vector<modular_t> bidirectional_hash_base<modular_t, len_t, ALLOW_BINEXP>::_inv_power{1};
+template<class modular_t, class len_t, bool ALLOW_BINEXP> vector<modular_t> bidirectional_hash_base<modular_t, len_t, ALLOW_BINEXP>::_power;
+template<class modular_t, class len_t, bool ALLOW_BINEXP> vector<modular_t> bidirectional_hash_base<modular_t, len_t, ALLOW_BINEXP>::_inv_power;
+template<class modular_t, class len_t, bool ALLOW_BINEXP> ostream &operator<<(ostream &out, const bidirectional_hash_base<modular_t, len_t, ALLOW_BINEXP> &x){ return out << "{" << x.data << ", " << x.rev_data << ", " << x.len << "}"; }
 
-using hash = bidirectional_hash_base<modular_fixed_base<unsigned long long, (unsigned long long)1e18 + 9>, int, false>;
+using hash_t = bidirectional_hash_base<modular, int, false>;
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
 	<tabTrigger>bidirectional_hash</tabTrigger> -->
