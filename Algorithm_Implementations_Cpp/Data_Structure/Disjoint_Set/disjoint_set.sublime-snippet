@@ -1,54 +1,73 @@
 <snippet>
 	<content><![CDATA[
-template<bool Enable_small_to_large = true>
 struct disjoint_set{
 	int n, _classes;
 	vector<int> p;
-	disjoint_set(int n): n(n), _classes(n), p(n, -1){ }
-	int make_set(){
-		p.push_back(-1);
-		++ _classes;
-		return n ++;
-	}
+	disjoint_set(int n): n(n), _classes(n), p(n, -1){ assert(n >= 0); }
+	// O(1)
 	int classes() const{
 		return _classes;
 	}
+	// O(log(n))
 	int root(int u){
-		return p[u] < 0 ? u : p[u] = root(p[u]);
+		return p[u] < 0 ? u : root(p[u]);
 	}
+	// O(log(n))
 	bool share(int a, int b){
 		return root(a) == root(b);
 	}
+	// O(log(n))
 	int size(int u){
 		return -p[root(u)];
 	}
+	// O(log(n))
 	bool merge(int u, int v){
 		u = root(u), v = root(v);
 		if(u == v) return false;
 		-- _classes;
-		if constexpr(Enable_small_to_large) if(p[u] > p[v]) swap(u, v);
+		if(p[u] > p[v]) swap(u, v);
 		p[u] += p[v], p[v] = u;
 		return true;
 	}
+	// O(log(n))
 	bool merge(int u, int v, auto act){
 		u = root(u), v = root(v);
 		if(u == v) return false;
 		-- _classes;
 		bool swapped = false;
-		if constexpr(Enable_small_to_large) if(p[u] > p[v]) swap(u, v), swapped = true;
+		if(p[u] > p[v]) swap(u, v), swapped = true;
 		p[u] += p[v], p[v] = u;
 		act(u, v, swapped);
 		return true;
 	}
+	// O(1)
+	int state(){
+		return (int)recover.size();
+	}
 	void clear(){
 		_classes = n;
 		fill(p.begin(), p.end(), -1);
+		recover.clear();
 	}
 	vector<vector<int>> group_up(){
 		vector<vector<int>> g(n);
 		for(auto i = 0; i < n; ++ i) g[root(i)].push_back(i);
 		g.erase(remove_if(g.begin(), g.end(), [&](auto &s){ return s.empty(); }), g.end());
 		return g;
+	}
+	friend ostream &operator<<(ostream &out, disjoint_set dsu){
+		auto gs = dsu.group_up();
+		out << "{";
+		if(!gs.empty()) for(auto i = 0; i < (int)gs.size(); ++ i){
+			out << "{";
+			for(auto j = 0; j < (int)gs[i].size(); ++ j){
+				out << gs[i][j];
+				if(j + 1 < (int)gs[i].size()) out << ", ";
+			}
+			out << "}";
+			if(i + 1 < (int)gs.size()) out << ", ";
+		}
+		return out << "}";
 	}
 };
 ]]></content>
