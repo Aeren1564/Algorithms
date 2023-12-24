@@ -11,7 +11,7 @@ T pick(T x, T y, double p = 0.5){
 	assert(-0.0001 <= p && p <= 1.0001);
 	return randd_t(0, 1)(rng) <= p ? x : y;
 }
-array<int, 2> get_range(int n, bool allow_empty_range = false){
+array<int, 2> gen_range(int n, bool allow_empty_range = false){
 	if(allow_empty_range){
 		int l = rng() % (n + 1), r = rng() % (n + 1);
 		if(l > r) swap(l, r);
