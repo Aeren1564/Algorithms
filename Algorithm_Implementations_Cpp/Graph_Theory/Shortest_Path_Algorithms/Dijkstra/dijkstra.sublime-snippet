@@ -6,6 +6,7 @@ struct dijkstra{
 	T base_dist;
 	vector<T> dist;
 	vector<int> pv;
+	vector<int> pe;
 	vector<int> order;
 	vector<int> pos;
 	vector<int> root_of;
@@ -17,13 +18,13 @@ struct dijkstra{
 		this->n = n;
 		dist.assign(n, base_dist);
 		pv.assign(n, -1);
+		pe.assign(n, -1);
 		order.clear();
 		pos.assign(n, -1);
 		root_of.assign(n, -1);
 		root.clear();
 		depth.assign(n, -1);
 		was.assign(n, -2);
-		done.assign(n, false);
 		attempt = -1;
 	}
 	int attempt;
@@ -31,7 +32,7 @@ struct dijkstra{
 	// O(((# of reachable nodes) + (# of reachable edges)) * log((# of reachable edges)))
 	// Requires graph
 	template<class Graph>
-	void _run_sparse(const Graph &g, const vector<int> &src){
+	void _run(const Graph &g, const vector<int> &src){
 		for(auto u: src){
 			if(was[u] == attempt) continue;
 			was[u] = attempt;
@@ -40,6 +41,7 @@ struct dijkstra{
 			root_of[u] = u;
 			root.push_back(u);
 			pv[u] = -1;
+			pe[u] = -1;
 		}
 		order.clear();
 		while(!pq.empty()){
@@ -51,45 +53,16 @@ struct dijkstra{
 			for(auto id: g.adj[u]){
 				if(g.ignore && g.ignore(id)) continue;
 				int v = g(u, id);
-				if(was[v] != attempt || dist[u] + g.edge[id].cost < dist[v]){
+				auto &e = g.edge[id];
+				assert(0 <= e.cost);
+				if(was[v] != attempt || dist[u] + e.cost < dist[v]){
 					was[v] = attempt;
 					depth[v] = depth[u] + 1;
 					pv[v] = u;
+					pe[v] = id;
 					root_of[v] = root_of[u];
-					pq.push({dist[v] = dist[u] + g.edge[id].cost, v});
+					pq.push({dist[v] = dist[u] + e.cost, v});
 				}
-			}
-		}
-	}
-	vector<int> done;
-	// O(n^2)
-	template<class U>
-	void _run_dense(const vector<vector<U>> &edge_length, const vector<int> &src){
-		int n = (int)edge_length.size();
-		for(auto u: src){
-			if(was[u] == attempt) continue;
-			was[u] = attempt;
-			done[u] = false;
-			dist[u] = base_dist;
-			depth[u] = 0;
-			root_of[u] = u;
-			root.push_back(u);
-			pv[u] = -1;
-		}
-		while(true){
-			int u = -1;
-			for(auto v = 0; v < n; ++ v) if(was[v] == attempt && !done[v] && (!~u || dist[u] > dist[v])) u = v;
-			if(!~u) break;
-			done[u] = true;
-			pos[u] = (int)order.size();
-			order.push_back(u);
-			for(auto v = 0; v < n; ++ v) if(~edge_length[u][v] && (was[v] != attempt || !done[v] && dist[v] > dist[u] + edge_length[u][v])){
-				dist[v] = dist[u] + edge_length[u][v];
-				was[v] = attempt;
-				done[v] = false;
-				depth[v] = depth[u] + 1;
-				pv[v] = u;
-				root_of[v] = root_of[u];
 			}
 		}
 	}
@@ -98,31 +71,10 @@ struct dijkstra{
 	void run(const Graph &g, const vector<int> &src){
 		assert(g.n <= n);
 		if(g.n == 0) return;
-		for(auto e: g.edge) assert(0 <= e.cost);
 		for(auto u: src) assert(0 <= u && u < g.n);
 		root.clear(), order.clear();
 		++ attempt;
-		if(auto m = (int)g.edge.size(); 1LL * g.n * g.n > 1LL * (g.n + m) * __lg(max(1, m))) _run_sparse(g, src);
-		else{
-			vector edge_length(g.n, vector<typename Graph::Weight_t>(g.n, -1));
-			for(auto u = 0; u < g.n; ++ u) for(auto id: g.adj[u]){
-				if(g.ignore && g.ignore(id)) continue;
-				int v = g(u, id);
-				edge_length[u][v] = ~edge_length[u][v] ? min(edge_length[u][v], g.edge[id].cost) : g.edge[id].cost;
-			}
-			_run_dense(edge_length, src);
-		}
-	}
-	// edge_length = -1 implies no edge
-	template<class U>
-	void run(const vector<vector<U>> &edge_length, const vector<int> &src){
-		int n = (int)edge_length.size();
-		assert(n <= this->n);
-		for(const auto &row: edge_length) for(auto w: row) assert(-1 <= w);
-		for(auto u: src) assert(0 <= u && u < n);
-		root.clear(), order.clear();
-		++ attempt;
-		_run_dense(edge_length, src);
+		_run(g, src);
 	}
 	// Check if u is visited during the last dijkstra-like call.
 	bool visited(int u) const{
