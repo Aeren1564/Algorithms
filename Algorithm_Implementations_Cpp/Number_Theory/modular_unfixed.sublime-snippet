@@ -117,7 +117,6 @@ struct modular_unfixed_base{
 	}
 	modular_unfixed_base &operator/=(const modular_unfixed_base &otr){
 		make_signed_t<data_t> a = otr.data, m = _mod, u = 0, v = 1;
-		static_assert(is_same_v<long long, decltype(a)>);
 		if(a < _INV.size()) return *this *= _INV[a];
 		while(a){
 			make_signed_t<data_t> t = m / a;
