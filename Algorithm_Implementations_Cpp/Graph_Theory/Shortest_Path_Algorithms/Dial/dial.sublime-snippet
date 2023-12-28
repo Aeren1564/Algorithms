@@ -1,19 +1,30 @@
 <snippet>
 	<content><![CDATA[
 // Requires graph
-template<class T>
 struct dial{
-	int n;
-	vector<T> dist;
-	vector<int> pv, pe, was;
-	dial(int n){ init(n); }
+	int n, base_dist;
+	vector<int> dist;
+	vector<int> pv;
+	vector<int> pe;
+	vector<int> order;
+	vector<int> pos;
+	vector<int> root_of;
+	vector<int> root;
+	vector<int> depth;
+	vector<int> was;
+	dial(int base_dist = 0): base_dist(base_dist){ }
 	void init(int n){
 		this->n = n;
-		dist.assign(n, numeric_limits<T>::max());
+		dist.assign(n, base_dist);
 		pv.assign(n, -1);
 		pe.assign(n, -1);
-		was.assign(n, -1);
-		attempt = 0;
+		order.clear();
+		pos.assign(n, -1);
+		root_of.assign(n, -1);
+		root.clear();
+		depth.assign(n, -1);
+		was.assign(n, -2);
+		attempt = -1;
 	}
 	int attempt;
 	// Edge weights must be integers in range [0, C)
@@ -21,64 +32,52 @@ struct dial{
 	// V is the set of vertices reachable from src and
 	// E is the set of edges reachable from src
 	template<class Graph>
-	void run(const Graph &g, const int C, const vector<int> &src){
-		assert(n == g.n);
-		++ attempt;
+	void _run(const Graph &g, int C, const vector<int> &src){
 		int it = 0;
-		vector<deque<array<int, 2>>> dqs(C);
+		vector<vector<array<int, 2>>> dq(C);
+		vector<int> beg(C);
 		for(auto u: src){
+			if(was[u] == attempt) continue;
 			was[u] = attempt;
-			dqs[it].push_back({dist[u] = {}, u});
+			dq[it].push_back({dist[u] = base_dist, u});
+			depth[u] = 0;
+			root_of[u] = u;
+			root.push_back(u);
 			pv[u] = -1;
 			pe[u] = -1;
 		}
-		while(any_of(dqs.begin(), dqs.end(), [&](auto &dq){ return !dq.empty(); })){
-			while(dqs[it].empty()) it = (it + 1) % C;
-			auto [d, u] = dqs[it].front();
-			dqs[it].pop_front();
+		while(true){
+			for(auto th = C; th && beg[it] == (int)dq[it].size(); -- th) it = (it + 1) % C;
+			if(beg[it] == (int)dq[it].size()) break;
+			auto [d, u] = dq[it][beg[it] ++];
 			if(d != dist[u]) continue;
 			for(auto id: g.adj[u]){
 				if(g.ignore && g.ignore(id)) continue;
 				auto &e = g.edge[id];
-				int v = u ^ e.from ^ e.to;
+				assert(0 <= e.cost && e.cost < C);
+				int v = g(u, id);
 				if(was[v] != attempt || d + e.cost < dist[v]){
-					dqs[(d + e.cost) % C].push_back({dist[v] = d + e.cost, v});
-					pv[v] = u, pe[v] = id, was[v] = attempt;
+					was[v] = attempt;
+					depth[v] = depth[u] + 1;
+					pv[v] = u;
+					pe[v] = id;
+					root_of[v] = root_of[u];
+					dq[(d + e.cost) % C].push_back({dist[v] = d + e.cost, v});
 				}
 			}
 		}
 	}
-	// The graph is represented implicitly
-	// get_deg(u) returns the degree of u
-	// get_adj(u, i) returns a pair of the i-th neighbor of u, possibly -1 representing an invalid node, and the weight of the edge joining them
-	// Edge weights must be integers in range [0, C)
-	// O(|E| + min(|V| * C, (sum of edge weights))) where
-	// V is the set of vertices reachable from src and
-	// E is the set of edges reachable from src
-	void run_implicitly(auto get_deg, auto get_adj, const int C, const vector<int> &src){
+	template<class Graph>
+	void run(const Graph &g, int C, const vector<int> &src){
+		assert(g.n <= n);
+		for(auto u: src) assert(0 <= u && u < g.n);
+		root.clear(), order.clear();
 		++ attempt;
-		int it = 0;
-		vector<deque<array<int, 2>>> dqs(C);
-		for(auto u: src){
-			was[u] = attempt;
-			dqs[it].push_back({dist[u] = {}, u});
-			pv[u] = -1;
-			pe[u] = -1;
-		}
-		while(any_of(dqs.begin(), dqs.end(), [&](auto &dq){ return !dq.empty(); })){
-			while(dqs[it].empty()) it = (it + 1) % C;
-			auto [d, u] = dqs[it].front();
-			dqs[it].pop_front();
-			if(d != dist[u]) continue;
-			for(auto i = 0, deg = get_deg(u); i < deg; ++ i){
-				auto [v, w] = get_adj(u, i);
-				if(!~v) continue;
-				if(was[v] != attempt || d + w < dist[v]){
-					dqs[(d + w) % C].push_back({dist[v] = d + w, v});
-					pv[v] = u, pe[v] = i, was[v] = attempt;
-				}
-			}
-		}
+		_run(g, C, src);
+	}
+	// Check if u is visited during the last dial-like call.
+	bool visited(int u) const{
+		return was[u] == attempt;
 	}
 };
 ]]></content>
