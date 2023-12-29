@@ -29,10 +29,12 @@ struct dijkstra{
 	}
 	int attempt;
 	priority_queue<pair<T, int>, vector<pair<T, int>>, greater<pair<T, int>>> pq;
+	// act_greater(v, u): dist[v] has been updated to larger value by u
+	// act_equal(v, u): dist[v] equals the length of shortest path to v through u
 	// O(((# of reachable nodes) + (# of reachable edges)) * log((# of reachable edges)))
 	// Requires graph
 	template<class Graph>
-	void _run(const Graph &g, const vector<int> &src){
+	void _run(const Graph &g, const vector<int> &src, auto act_greater, auto act_equal){
 		for(auto u: src){
 			if(was[u] == attempt) continue;
 			was[u] = attempt;
@@ -62,19 +64,26 @@ struct dijkstra{
 					pe[v] = id;
 					root_of[v] = root_of[u];
 					pq.push({dist[v] = dist[u] + e.cost, v});
+					act_greater(v, u);
 				}
+				else if(dist[u] + e.cost == dist[v]) act_equal(v, u);
 			}
 		}
 	}
 	// Requires graph
 	template<class Graph>
-	void run(const Graph &g, const vector<int> &src){
+	void run(const Graph &g, const vector<int> &src, auto act_greater, auto act_equal){
 		assert(g.n <= n);
 		if(g.n == 0) return;
 		for(auto u: src) assert(0 <= u && u < g.n);
 		root.clear(), order.clear();
 		++ attempt;
-		_run(g, src);
+		_run(g, src, act_greater, act_equal);
+	}
+	// Requires graph
+	template<class Graph>
+	void run(const Graph &g, const vector<int> &src){
+		run(g, src, [&](int, int){  }, [&](int, int){  });
 	}
 	// Check if u is visited during the last dijkstra-like call.
 	bool visited(int u) const{
