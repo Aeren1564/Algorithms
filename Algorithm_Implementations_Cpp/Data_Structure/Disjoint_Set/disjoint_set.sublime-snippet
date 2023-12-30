@@ -40,14 +40,9 @@ struct disjoint_set{
 		act(u, v, swapped);
 		return true;
 	}
-	// O(1)
-	int state(){
-		return (int)recover.size();
-	}
 	void clear(){
 		_classes = n;
 		fill(p.begin(), p.end(), -1);
-		recover.clear();
 	}
 	vector<vector<int>> group_up(){
 		vector<vector<int>> g(n);
