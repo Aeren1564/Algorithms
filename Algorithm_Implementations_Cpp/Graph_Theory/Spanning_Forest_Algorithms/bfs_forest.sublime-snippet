@@ -10,6 +10,7 @@ struct bfs_forest{
 	vector<int> pe;
 	vector<int> order;
 	vector<int> pos;
+	vector<int> size;
 	vector<int> root_of;
 	vector<int> root;
 	vector<int> depth;
@@ -21,6 +22,7 @@ struct bfs_forest{
 		pe.assign(n, -1);
 		order.clear();
 		pos.assign(n, -1);
+		size.assign(n, -1);
 		root_of.assign(n, -1);
 		root.clear();
 		depth.assign(n, -1);
@@ -44,23 +46,31 @@ struct bfs_forest{
 			root.push_back(u);
 			pv[u] = -1;
 			pe[u] = -1;
+			size[u] = 1;
 		}
+		int init_size = (int)order.size();
 		for(auto it = 0; it < (int)q.size(); ++ it){
 			int u = q[it];
 			pos[u] = (int)order.size();
 			order.push_back(u);
 			for(auto id: g.adj[u]){
 				if(g.ignore && g.ignore(id)) continue;
-				auto &e = g.edge[id];
-				int v = u ^ e.from ^ e.to;
+				int v = g(u, id);
 				if(was[v] == attempt) continue;
 				was[v] = attempt;
 				depth[v] = depth[u] + 1;
-				dist[v] = UT(e.cost, dist[u]);
+				dist[v] = UT(g.edge[id].cost, dist[u]);
 				pv[v] = u;
 				pe[v] = id;
 				root_of[v] = root_of[u];
 				q.push_back(v);
+			}
+		}
+		for(auto i = (int)order.size() - 1; i >= init_size; -- i){
+			int u = order[i];
+			for(auto id: g.adj[u]){
+				if(g.ignore && g.ignore(id)) continue;
+				if(~pv[u]) size[pv[u]] += size[u];
 			}
 		}
 		q.clear();
