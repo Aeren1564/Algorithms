@@ -61,7 +61,6 @@ struct dfs_forest{
 			min_depth_spanning_edge[u] = -1;
 			for(auto id: g.adj[u]){
 				if(id == pe[u] || g.ignore && g.ignore(id)) continue;
-				auto &e = g.edge[id];
 				int v = g(u, id);
 				if(was[v] == attempt){
 					if(min_depth[u] > depth[v]){
@@ -72,7 +71,7 @@ struct dfs_forest{
 					continue;
 				}
 				depth[v] = depth[u] + 1;
-				dist[v] = UT(e.cost, dist[u]);
+				dist[v] = UT(g.edge[id].cost, dist[u]);
 				pv[v] = u;
 				pe[v] = id;
 				root_of[v] = root_of[u];
