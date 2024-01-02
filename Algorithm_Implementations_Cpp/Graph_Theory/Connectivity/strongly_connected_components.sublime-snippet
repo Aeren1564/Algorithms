@@ -1,0 +1,101 @@
+<snippet>
+	<content><![CDATA[
+// Requires graph
+struct strongly_connected_components{
+	int n, attempt;
+	vector<int> dp;
+	vector<int> stack;
+	vector<int> assigned;
+	vector<int> was;
+	// condensation descriptions
+	vector<int> belongs; // vertex -> component
+	vector<vector<int>> comp; // in topological order
+	graph<int> condensation; // edge weights are the original edge id
+	void init(int n){
+		this->n = n;
+		dp.assign(n, -1);
+		stack.reserve(n);
+		assigned.assign(n, -1);
+		was.assign(n, -2);
+		attempt = -1;
+		belongs.assign(n, -1);
+		comp.clear();
+	}
+	// O(n + m) where n and m are the number of reachable nodes and edges respectively.
+	template<class T>
+	void _run(const graph<T> &g, const vector<int> &src){
+		int it = 0;
+		auto dfs = [&](auto self, int u)->int{
+			int low = dp[u] = ++ it;
+			was[u] = attempt;
+			stack.push_back(u);
+			for(auto id: g.adj[u]){
+				if(g.ignore && g.ignore(id)) continue;
+				int v = g.edge[id].to;
+				if(assigned[v] != attempt){
+					if(was[v] != attempt){
+						was[v] = attempt;
+						dp[v] = -1;
+					}
+					low = min(low, ~dp[v] ? dp[v] : self(self, v));
+				}
+			}
+			if(low == dp[u]){
+				vector<int> c;
+				while(true){
+					int v = stack.back();
+					stack.pop_back();
+					assigned[v] = attempt;
+					c.push_back(v);
+					if(u == v) break;
+				}
+				comp.push_back(move(c));
+			}
+			return dp[u] = low;
+		};
+		for(auto u: src) if(was[u] != attempt) dfs(dfs, u);
+		reverse(comp.begin(), comp.end());
+		condensation = {count()};
+		for(auto i = 0; i < count(); ++ i) for(auto u: comp[i]) belongs[u] = i;
+		for(auto i = 0; i < count(); ++ i) for(auto u: comp[i]) for(auto id: g.adj[u]){
+			if(g.ignore && g.ignore(id)) continue;
+			int v = g(u, id);
+			if(i != belongs[v]){
+				assert(i < belongs[v]);
+				condensation.orient(i, belongs[v], id);
+			}
+		}
+	}
+	template<class T>
+	void run(const graph<T> &g, const vector<int> &src){
+		assert(g.n <= n);
+		for(auto u: src) assert(0 <= u && u < g.n);
+		comp.clear();
+		++ attempt;
+		_run(g, src);
+	}
+	template<class T>
+	void run_all(const graph<T> &g){
+		assert(g.n <= n);
+		comp.clear();
+		++ attempt;
+		vector<int> src(n);
+		iota(src.begin(), src.end(), 0);
+		_run(g, src);
+	}
+	// Check if u is visited during the last run-like call
+	bool visited(int u) const{
+		assert(0 <= u && u < n);
+		return was[u] == attempt;
+	}
+	// # of strongly connected components
+	int count() const{
+		return (int)comp.size();
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>strongly_connected_components</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

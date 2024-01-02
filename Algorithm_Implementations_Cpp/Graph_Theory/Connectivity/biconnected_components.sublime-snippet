@@ -1,0 +1,128 @@
+<snippet>
+	<content><![CDATA[
+// Requires graph
+struct biconnected_components{
+	int n, attempt, comp_attempt;
+	vector<int> pos;
+	vector<int> stack;
+	vector<int> was;
+	vector<int> comp_was;
+	// block-cut tree descriptions
+	vector<vector<int>> belongs; // vertex -> list of 2-vertex-connected components
+	vector<vector<int>> comp_vertex; // list of vertices in a 2-vertex-connected component
+	vector<vector<int>> comp_edge; // list of edges in a 2-vertex-connected component
+	vector<int> bridge;
+	void init(int n){
+		this->n = n;
+		pos.assign(n, -1);
+		was.assign(n, -2);
+		attempt = -1;
+		comp_was.assign(n, -2);
+		comp_attempt = -1;
+		belongs.assign(n, {});
+		comp_vertex.clear();
+		comp_edge.clear();
+		bridge.clear();
+	}
+	// O(n + m) where n and m are the number of reachable nodes and edges respectively.
+	template<class T>
+	void _run(const graph<T> &g, const vector<int> &src){
+		int it = 0;
+		auto recurse = [&](auto self, int u, int pe)->int{
+			int low = pos[u] = ++ it;
+			belongs[u].clear();
+			was[u] = attempt;
+			for(auto id: g.adj[u]){
+				if(g.ignore && g.ignore(id) || id == pe) continue;
+				int v = g(u, id);
+				if(was[v] != attempt){
+					was[v] = attempt;
+					pos[v] = 0;
+				}
+				if(pos[v]){
+					low = min(low, pos[v]);
+					if(pos[v] < pos[u]) stack.push_back(id);
+				}
+				else{
+					int size = (int)stack.size(), up = self(self, v, id);
+					low = min(low, up);
+					if(up == pos[u]){
+						++ comp_attempt;
+						stack.push_back(id);
+						vector<int> comp_v;
+						vector<int> comp_e(stack.begin() + size, stack.end());
+						for(auto id: comp_e){
+							auto [u, v, _] = g.edge[id];
+							if(comp_was[u] != comp_attempt){
+								comp_was[u] = comp_attempt;
+								comp_v.push_back(u);
+							}
+							if(comp_was[v] != comp_attempt){
+								comp_was[v] = comp_attempt;
+								comp_v.push_back(v);
+							}
+						}
+						for(auto u: comp_v) belongs[u].push_back((int)comp_vertex.size());
+						comp_vertex.push_back(move(comp_v));
+						comp_edge.push_back(move(comp_e));
+						stack.resize(size);
+					}
+					else if(up < pos[u]) stack.push_back(id);
+					else{
+						belongs[g.edge[id].from].push_back((int)comp_vertex.size());
+						belongs[g.edge[id].to].push_back((int)comp_vertex.size());
+						comp_vertex.push_back({g.edge[id].from, g.edge[id].to});
+						comp_edge.push_back({id});
+						bridge.push_back(id);
+					}
+				}
+			}
+			return low;
+		};
+		for(auto u: src) if(was[u] != attempt) recurse(recurse, u, -1);
+	}
+	template<class T>
+	void run(const graph<T> &g, const vector<int> &src){
+		assert(g.n <= n);
+		for(auto u: src) assert(0 <= u && u < g.n);
+		comp_vertex.clear();
+		comp_edge.clear();
+		bridge.clear();
+		++ attempt;
+		_run(g, src);
+	}
+	template<class T>
+	void run_all(const graph<T> &g){
+		assert(g.n <= n);
+		comp_vertex.clear();
+		comp_edge.clear();
+		bridge.clear();
+		++ attempt;
+		vector<int> src(g.n);
+		iota(src.begin(), src.end(), 0);
+		_run(g, src);
+	}
+	// Check if u is visited during the last run-like call.
+	bool visited(int u) const{
+		assert(0 <= u && u < n);
+		return was[u] == attempt;
+	}
+	bool is_articulation_point(int u) const{
+		assert(0 <= u && u < n && visited(n));
+		return (int)belongs[u].size() >= 2;
+	}
+	bool is_bridge_component(int i) const{
+		assert(0 <= i && i < (int)comp_vertex.size());
+		return (int)comp_edge[i].size() == 1;
+	}
+	// # of 2-vertex-connected components
+	int count() const{
+		return (int)comp_vertex.size();
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>biconnected_components</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

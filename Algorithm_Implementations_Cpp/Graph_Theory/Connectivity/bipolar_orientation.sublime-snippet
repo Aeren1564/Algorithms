@@ -1,0 +1,84 @@
+<snippet>
+	<content><![CDATA[
+// Source: https://en.wikipedia.org/wiki/Bipolar_orientation#Algorithms
+// Requires graph
+struct bipolar_orientation{
+	int n, attempt;
+	vector<int> pv;
+	vector<int> order;
+	vector<int> pos;
+	vector<int> low;
+	vector<int> was;
+	vector<int> sign;
+	vector<list<int>::iterator> bipolar_pos;
+	void init(int n){
+		this->n = n;
+		pv.assign(n, -1);
+		order.clear();
+		pos.assign(n, -1);
+		low.assign(n, -1);
+		was.assign(n, -2);
+		sign.assign(n, 1);
+		bipolar_pos.resize(n);
+	}
+	template<class T>
+	optional<vector<int>> _run(const graph<T> &g, int from, int to){
+		int root_deg = 0;
+		auto recurse = [&](auto self, int u, int pe)->bool{
+			pos[u] = low[u] = (int)order.size();
+			order.push_back(u);
+			was[u] = attempt;
+			for(auto i = -(u == from); i < (int)g.adj[u].size(); ++ i){
+				int id = ~i ? g.adj[u][i] : -1;
+				if(~id && (g.ignore && g.ignore(id) || id == pe)) continue;
+				int v = ~id ? g(u, id) : to;
+				if(was[v] != attempt){
+					was[v] = attempt;
+					pos[v] = -1;
+				}
+				if(~pos[v]) low[u] = min(low[u], pos[v]);
+				else{
+					if(u == from) ++ root_deg;
+					pv[v] = u;
+					if(!self(self, v, id)) return false;
+					low[u] = min(low[u], low[v]);
+					if(pos[u] < low[v] || pos[u] == low[v] && u != from) return false;
+				}
+			}
+			return true;
+		};
+		pv[from] = -1;
+		if(!recurse(recurse, from, -1) || root_deg != 1) return {};
+		sign[from] = -1;
+		list<int> bipolar_ordering{from, to};
+		bipolar_pos[from] = bipolar_ordering.begin();
+		bipolar_pos[to] = prev(bipolar_ordering.end());
+		for(auto i = 2; i < (int)order.size(); ++ i){
+			int u = order[i];
+			auto p = sign[order[low[u]]] == -1 ? bipolar_pos[pv[u]] : next(bipolar_pos[pv[u]]);
+			bipolar_pos[u] = bipolar_ordering.insert(p, u);
+			sign[pv[u]] = -sign[order[low[u]]];
+		}
+		return vector<int>(bipolar_ordering.begin(), bipolar_ordering.end());
+	}
+	// Returns a bipolar orientation if the connected component of 'from' after adding the edge from-to is 2-vertex-connected
+	// O(n + m) where n and m are the number of reachable vertices and edges respectively
+	template<class T>
+	optional<vector<int>> run(const graph<T> &g, int from, int to){
+		assert(g.n <= n && 0 <= min(from, to) && max(from, to) < g.n && from != to);
+		order.clear();
+		++ attempt;
+		return _run(g, from, to);
+	}
+	// Check if u is visited during the last run-like call.
+	bool visited(int u) const{
+		assert(0 <= u && u < n);
+		return was[u] == attempt;
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>bipolar_orientation</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
