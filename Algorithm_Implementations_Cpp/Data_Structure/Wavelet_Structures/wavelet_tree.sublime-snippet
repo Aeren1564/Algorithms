@@ -1,24 +1,78 @@
 <snippet>
 	<content><![CDATA[
-struct wavelet_tree{
+template<bool HAS_QUERY, class T, class F, class I>
+struct wavelet_tree_base{
 	int n, sigma;
 	vector<vector<int>> data; // data[u][i]: # of elements mapped to left among first i elements
-	wavelet_tree(){ }
-	// O(n * log(sigma))
-	wavelet_tree(vector<int> a, int sigma): n((int)a.size()), sigma(sigma), data(sigma << 1){
-		assert(0 < sigma);
-		assert(all_of(a.begin(), a.end(), [&](int x){ return 0 <= x && x < sigma; }));
-		auto build = [&](auto self, int u, int l, int r, int ql, int qr)->void{
-			if(r - l == 1) return;
-			int m = l + (r - l >> 1);
-			data[u].resize(qr - ql + 1);
-			for(auto i = ql; i < qr; ++ i) data[u][i - ql + 1] = data[u][i - ql] + (a[i] < m);
-			int qm = stable_partition(a.begin() + ql, a.begin() + qr, [&](int x){ return x < m; }) - a.begin();
-			self(self, u << 1, l, m, ql, qm), self(self, u << 1 | 1, m, r, qm, qr);
-		};
-		build(build, 1, 0, sigma, 0, n);
+	vector<vector<T>> aggregate; // aggregate[u][i]: sum of values of elements maped to left among first i elements
+	F TT; // commutative group operation
+	T T_id; // commutative group identity
+	I TinvT; // commutative group inverse operation
+	wavelet_tree_base(F TT, T T_id, I TinvT): TT(TT), T_id(T_id), TinvT(TinvT){ }
+	wavelet_tree_base &operator=(const wavelet_tree_base &wt){
+		n = wt.n;
+		sigma = wt.sigma;
+		data = wt.data;
+		aggregate = wt.aggregate;
+		return *this;
 	}
-	// Returns the frequency of x in the interval [ql, qr).
+	vector<array<int, 5>> q;
+	// O(sigma + n * log(sigma))
+	void build(vector<int> key, int sigma){
+		static_assert(!HAS_QUERY);
+		assert(0 < sigma);
+		for(auto k: key) assert(0 <= k && k < sigma);
+		n = (int)key.size();
+		this->sigma = sigma;
+		data.assign(sigma << 1, {});
+		q.assign(sigma << 1, {});
+		q[0] = {{1, 0, sigma, 0, n}};
+		for(auto qbeg = 0, qend = 1; qbeg < qend; ++ qbeg){
+			auto &[u, l, r, ql, qr] = q[qbeg];
+			if(r - l == 1) continue;
+			int m = l + (r - l >> 1);
+			data[u].resize(qr - ql + 1, 0);
+			for(auto i = ql; i < qr; ++ i) data[u][i - ql + 1] = data[u][i - ql] + (key[i] < m);
+			int qm = stable_partition(key.begin() + ql, key.begin() + qr, [&](int x){ return x < m; }) - key.begin();
+			q[qend ++] = {u << 1, l, m, ql, qm};
+			q[qend ++] = {u << 1 | 1, m, r, qm, qr};
+		}
+	}
+	vector<pair<int, T>> key_and_value;
+	// O(sigma + n * log(sigma))
+	void build(const vector<int> &key, int sigma, const vector<T> &value){
+		static_assert(HAS_QUERY);
+		assert(0 < sigma);
+		for(auto k: key) assert(0 <= k && k < sigma);
+		n = (int)key.size();
+		assert((int)value.size() == n);
+		this->sigma = sigma;
+		data.assign(sigma << 1, {});
+		aggregate.assign(sigma << 1, {});
+		q.assign(sigma << 1, {});
+		key_and_value.resize(n);
+		for(auto i = 0; i < n; ++ i) key_and_value[i] = {key[i], value[i]};
+		q[0] = {{1, 0, sigma, 0, n}};
+		for(auto qbeg = 0, qend = 1; qbeg < qend; ++ qbeg){
+			auto &[u, l, r, ql, qr] = q[qbeg];
+			if(r - l == 1){
+				aggregate[u].resize(qr - ql + 1, T_id);
+				for(auto i = ql; i < qr; ++ i) aggregate[u][i - ql + 1] = TT(aggregate[u][i - ql], key_and_value[i].second);
+				continue;
+			}
+			int m = l + (r - l >> 1);
+			data[u].resize(qr - ql + 1, 0);
+			aggregate[u].resize(qr - ql + 1, T_id);
+			for(auto i = ql; i < qr; ++ i){
+				data[u][i - ql + 1] = data[u][i - ql] + (key_and_value[i].first < m);
+				aggregate[u][i - ql + 1] = key_and_value[i].first < m ? TT(aggregate[u][i - ql], key_and_value[i].second) : aggregate[u][i - ql];
+			}
+			int qm = stable_partition(key_and_value.begin() + ql, key_and_value.begin() + qr, [&](const auto &x){ return x.first < m; }) - key_and_value.begin();
+			q[qend ++] = {u << 1, l, m, ql, qm};
+			q[qend ++] = {u << 1 | 1, m, r, qm, qr};
+		}
+	}
+	// Returns the frequency of x in the interval [ql, qr)
 	// O(log(sigma))
 	int freq(int ql, int qr, int x) const{
 		assert(0 <= ql && ql <= qr && qr <= n);
@@ -39,16 +93,39 @@ struct wavelet_tree{
 		}
 		return qr - ql;
 	}
-	// Returns the number of occurrences of numbers in [0, xr) in the interval [ql, qr).
+	// Returns the frequency of x in the interval [ql, qr), along with the sum of their values
+	// O(log(sigma))
+	pair<int, T> freq_query(int ql, int qr, int x) const{
+		static_assert(HAS_QUERY);
+		assert(0 <= ql && ql <= qr && qr <= n);
+		assert(0 <= x && x < sigma);
+		if(ql == qr) return 0;
+		int u = 1;
+		for(auto l = 0, r = sigma; r - l >= 2; ){
+			auto m = l + (r - l >> 1), lcnt = data[u][ql], rcnt = data[u][qr];
+			if(x < m){
+				ql = lcnt, qr = rcnt;
+				r = m;
+				u = u << 1;
+			}
+			else{
+				ql -= lcnt, qr -= rcnt;
+				l = m;
+				u = u << 1 | 1;
+			}
+		}
+		return {qr - ql, TinvT(aggregate[u][qr], aggregate[u][ql])};
+	}
+	// Returns the number of occurrences of numbers in [0, xr) in the interval [ql, qr)
 	// O(log(sigma))
 	int count(int ql, int qr, int xr) const{
 		assert(0 <= ql && ql <= qr && qr <= n);
 		assert(0 <= xr && xr <= sigma);
 		if(ql == qr || xr == 0) return 0;
-		int res = 0;
+		int cnt = 0;
 		for(auto u = 1, l = 0, r = sigma; ; ){
 			if(r - l == 1){
-				res += (l < xr) * (qr - ql);
+				cnt += (l < xr) * (qr - ql);
 				break;
 			}
 			auto m = l + (r - l >> 1), lcnt = data[u][ql], rcnt = data[u][qr];
@@ -58,22 +135,65 @@ struct wavelet_tree{
 				u = u << 1;
 			}
 			else{
-				res += rcnt - lcnt;
+				cnt += rcnt - lcnt;
 				ql -= lcnt, qr -= rcnt;
 				l = m;
 				u = u << 1 | 1;
 			}
 		}
-		return res;
+		return cnt;
 	}
-	// Returns the number of occurrences of numbers in [xl, xr) in the interval [ql, qr).
+	// Returns the number of occurrences of numbers in [0, xr) in the interval [ql, qr), along with the sum of their values
+	// O(log(sigma))
+	pair<int, T> count_query(int ql, int qr, int xr) const{
+		static_assert(HAS_QUERY);
+		assert(0 <= ql && ql <= qr && qr <= n);
+		assert(0 <= xr && xr <= sigma);
+		if(ql == qr || xr == 0) return {0, T_id};
+		int cnt = 0;
+		T sum = T_id;
+		for(auto u = 1, l = 0, r = sigma; ; ){
+			if(r - l == 1){
+				if(l < xr){
+					cnt += qr - ql;
+					sum = TT(sum, TinvT(aggregate[u][qr], aggregate[u][ql]));
+				}
+				break;
+			}
+			auto m = l + (r - l >> 1), lcnt = data[u][ql], rcnt = data[u][qr];
+			if(xr <= m){
+				ql = lcnt, qr = rcnt;
+				r = m;
+				u = u << 1;
+			}
+			else{
+				cnt += rcnt - lcnt;
+				sum = TT(sum, TinvT(aggregate[u][qr], aggregate[u][ql]));
+				ql -= lcnt, qr -= rcnt;
+				l = m;
+				u = u << 1 | 1;
+			}
+		}
+		return {cnt, sum};
+	}
+	// Returns the number of occurrences of numbers in [xl, xr) in the interval [ql, qr)
 	// O(log(sigma))
 	int count(int ql, int qr, int xl, int xr) const{
 		assert(xl <= xr);
 		if(xl == xr) return 0;
 		return count(ql, qr, xr) - count(ql, qr, xl);
 	}
-	// Find the k-th smallest element in the interval [ql, qr).
+	// Returns the number of occurrences of numbers in [xl, xr) in the interval [ql, qr), along with the sum of their values
+	// O(log(sigma))
+	pair<int, T> count_query(int ql, int qr, int xl, int xr) const{
+		static_assert(HAS_QUERY);
+		assert(xl <= xr);
+		if(xl == xr) return {0, T_id};
+		auto [lcnt, lsum] = count_query(ql, qr, xl);
+		auto [rcnt, rsum] = count_query(ql, qr, xr);
+		return {rcnt - lcnt, TinvT(rsum, lsum)};
+	}
+	// Find the k-th smallest element in the interval [ql, qr)
 	// O(log(sigma))
 	int find_by_order(int ql, int qr, int k) const{
 		assert(0 <= ql && ql <= qr && qr <= n);
@@ -86,7 +206,25 @@ struct wavelet_tree{
 		}
 		assert(false);
 	}
-	// Find the k-th smallest element in the interval [ql, qr) among elements in range [xl, sigma), -1 if no such element.
+	// Find the k-th smallest element in the interval [ql, qr), along with the sum of values of the k smallest elements (prioritizing smaller index)
+	// O(log(sigma))
+	pair<int, T> find_by_order_query(int ql, int qr, int k) const{
+		static_assert(HAS_QUERY);
+		assert(0 <= ql && ql <= qr && qr <= n);
+		assert(0 <= k && k < qr - ql);
+		T sum = T_id;
+		for(auto u = 1, l = 0, r = sigma; ; ){
+			if(r - l == 1) return {l, TT(sum, TinvT(aggregate[u][qr], aggregate[u][ql]))};
+			auto m = l + (r - l >> 1), lcnt = data[u][ql], rcnt = data[u][qr];
+			if(k < rcnt - lcnt) ql = lcnt, qr = rcnt, r = m, u = u << 1;
+			else{
+				k -= rcnt - lcnt, ql -= lcnt, qr -= rcnt, l = m, u = u << 1 | 1;
+				sum = TT(sum, TinvT(aggregate[u][qr], aggregate[u][ql]));
+			}
+		}
+		assert(false);
+	}
+	// Find the k-th smallest element in the interval [ql, qr) among elements in range [xl, sigma), -1 if no such element
 	// O(log(sigma))
 	int find_by_order(int ql, int qr, int xl, int xr, int k) const{
 		assert(0 <= ql && ql <= qr && qr <= n);
@@ -96,30 +234,43 @@ struct wavelet_tree{
 		k += count(ql, qr, 0, xl);
 		if(k >= qr - ql) return -1;
 		int res = find_by_order(ql, qr, k);
-		return ~res && res < xr ? res : -1;
+		return res < xr ? res : -1;
 	}
-	// Find the smallest element >= x, sigma if no such element.
+	// Find the k-th smallest element in the interval [ql, qr) among elements in range [xl, sigma), {-1, T_id} if no such element
+	// O(log(sigma))
+	pair<int, T> find_by_order_query(int ql, int qr, int xl, int xr, int k) const{
+		assert(0 <= ql && ql <= qr && qr <= n);
+		assert(0 <= xl && xl && xl <= xr && xr <= sigma);
+		assert(0 <= k);
+		if(xl == xr) return {-1, T_id};
+		auto [cnt, sum] = count_query(ql, qr, 0, xl);
+		k += cnt;
+		if(k >= qr - ql) return {-1, T_id};
+		auto [res, sum2] = find_by_order_query(ql, qr, k);
+		return res < xr ? pair{res, TinvT(sum2, sum)} : pair{-1, T_id};
+	}
+	// Find the smallest element >= x, sigma if no such element
 	// O(log(MAXVAL))
 	int lower_bound(int ql, int qr, int x) const{
 		assert(0 <= x && x < sigma);
 		int res = find_by_order(ql, qr, x, sigma, 0);
 		return ~res ? res : sigma;
 	}
-	// Find the smallest element > x, sigma if no such element.
+	// Find the smallest element > x, sigma if no such element
 	// O(log(MAXVAL))
 	int upper_bound(int ql, int qr, int x) const{
 		assert(0 <= x && x < sigma);
 		int res = find_by_order(ql, qr, x + 1, sigma, 0);
 		return ~res ? res : sigma;
 	}
-	// Find the largest element <= x, -1 if no such element.
+	// Find the largest element <= x, -1 if no such element
 	// O(log(MAXVAL))
 	int reverse_lower_bound(int ql, int qr, int x) const{
 		assert(0 <= x && x < sigma);
 		int cnt = count(ql, qr, x);
 		return cnt ? find_by_order(ql, qr, cnt - 1) : -1;
 	}
-	// Find the largest element < x, -1 if no such element.
+	// Find the largest element < x, -1 if no such element
 	// O(log(MAXVAL))
 	int reverse_upper_bound(int ql, int qr, int x) const{
 		assert(0 <= x && x < sigma);
