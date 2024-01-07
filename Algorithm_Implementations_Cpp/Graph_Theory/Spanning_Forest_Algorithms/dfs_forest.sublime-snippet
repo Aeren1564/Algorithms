@@ -45,7 +45,6 @@ struct dfs_forest{
 	// O(# of nodes reachable from u)
 	template<class U, class F = plus<>>
 	void _dfs(const graph<U> &g, int u, F UT = plus<>()){
-		assert(g.n <= n);
 		depth[u] = 0;
 		dist[u] = base_dist;
 		root_of[u] = u;
