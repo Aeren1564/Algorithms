@@ -82,9 +82,9 @@ struct number_theoric_transform_wrapper{
 	}
 	// O((n + m) * log(n + m))
 	static vector<T> arbitrarily_convolute(const vector<T> &p, const vector<T> &q){
-		using modular0 = modular_fixed_base<1045430273>;
-		using modular1 = modular_fixed_base<1051721729>;
-		using modular2 = modular_fixed_base<1053818881>;
+		using modular0 = modular_fixed_base<unsigned int, 1045430273>;
+		using modular1 = modular_fixed_base<unsigned int, 1051721729>;
+		using modular2 = modular_fixed_base<unsigned int, 1053818881>;
 		using ntt0 = number_theoric_transform_wrapper<modular0>;
 		using ntt1 = number_theoric_transform_wrapper<modular1>;
 		using ntt2 = number_theoric_transform_wrapper<modular2>;
