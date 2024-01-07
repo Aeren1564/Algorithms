@@ -1,0 +1,114 @@
+<snippet>
+	<content><![CDATA[
+// Requires graph
+template<class T, class F>
+struct rerooter{
+	int n, attempt;
+	// Given a tree T rooted at r, let f(T) be the value at dp[r] after the following process
+	// For each vertex u in reversed dfs order, set dp[u] = T_id
+	// For each child v of u with edge id, set dp[u] = TT(dp[u], apply_edge(id, f[v]))
+	// Finally, set dp[u] = apply_vertex(u, dp[u])
+	// dp_subtr[u] holds f(T) where T is the subtree rooted at u
+	// dp_compl[u] for u != root holds f(T) where T is the complement subtree of the subtree rooted at u, where its root is the parent vertex of u
+	vector<T> dp_subtr;
+	vector<T> dp_compl;
+	vector<T> pref;
+	vector<int> pv;
+	vector<int> pe;
+	vector<int> order;
+	vector<int> size;
+	vector<int> root_of;
+	vector<int> root;
+	vector<int> was;
+	F TT; // commutative monoid operation
+	T T_id; // commutative monoid identity
+	rerooter(F TT, T T_id): TT(TT), T_id(T_id){ }
+	void init(int n){
+		this->n = n;
+		dp_subtr.assign(n, T_id);
+		dp_compl.assign(n, T_id);
+		pv.assign(n, -1);
+		pe.assign(n, -1);
+		order.clear();
+		size.assign(n, 0);
+		root_of.assign(n, -1);
+		root.clear();
+		was.assign(n, -2);
+		attempt = -1;
+	}
+	// O(n) apply_vertex() and apply_edge() calls where n is the number of nodes in the component of u
+	void _dfs(const graph<auto> &g, int u, auto apply_vertex, auto apply_edge){
+		pv[u] = pe[u] = -1;
+		root_of[u] = u;
+		root.push_back(u);
+		auto recurse = [&](auto self, int u)->void{
+			was[u] = attempt;
+			order.push_back(u);
+			size[u] = 1;
+			dp_subtr[u] = T_id;
+			for(auto id: g.adj[u]){
+				if(id == pe[u] || g.ignore && g.ignore(id)) continue;
+				int v = g(u, id);
+				pe[v] = id;
+				root_of[v] = root_of[u];
+				self(self, v);
+				size[u] += size[v];
+				dp_subtr[u] = TT(dp_subtr[u], apply_edge(id, dp_subtr[v]));
+			}
+			dp_subtr[u] = apply_vertex(u, dp_subtr[u]);
+		};
+		recurse(recurse, u);
+		for(auto u: order){
+			pref.assign(g.degree(u) + 1, T_id);
+			for(auto i = 0; i < g.degree(u); ++ i){
+				int id = g.adj[u][i];
+				if(id == pe[u] || g.ignore && g.ignore(id)){
+					pref[i + 1] = pref[i];
+					continue;
+				}
+				int v = g(u, id);
+				pref[i + 1] = TT(pref[i], apply_edge(id, dp_subtr[v]));
+			}
+			T suff = T_id;
+			for(auto i = g.degree(u) - 1; i >= 0; -- i){
+				int id = g.adj[u][i];
+				if(id == pe[u] || g.ignore && g.ignore(id)) continue;
+				int v = g(u, id);
+				dp_compl[v] = apply_vertex(u, TT(~pe[u] ? apply_edge(pe[u], dp_compl[u]) : T_id, TT(pref[i], suff)));
+				suff = TT(suff, apply_edge(id, dp_subtr[v]));
+			}
+		}
+	}
+	void dfs(const graph<auto> &g, const vector<int> &src, auto apply_vertex, auto apply_edge){
+		assert(g.n <= n);
+		++ attempt;
+		for(auto u: src){
+			assert(0 <= u && u < g.n);
+			if(was[u] != attempt) _dfs(g, u, apply_vertex, apply_edge);
+		}
+	}
+	void dfs(const graph<auto> &g, const vector<int> &src, auto apply_vertex){
+		dfs(g, src, apply_vertex, [&](int id, const T &x){ return x; });
+	}
+	// O(n + m)
+	void dfs_all(const graph<auto> &g, auto apply_vertex, auto apply_edge){
+		assert(g.n <= n);
+		++ attempt;
+		for(auto u = 0; u < g.n; ++ u) if(was[u] != attempt) _dfs(g, u, apply_vertex, apply_edge);
+	}
+	// O(n + m)
+	void dfs_all(const graph<auto> &g, auto apply_vertex){
+		dfs_all(g, apply_vertex, [&](int id, const T &x){ return x; });
+	}
+	// Check if u is visited during the last dfs-like call.
+	bool visited(int u) const{
+		assert(0 <= u && u < n);
+		return was[u] == attempt;
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>rerooter</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
