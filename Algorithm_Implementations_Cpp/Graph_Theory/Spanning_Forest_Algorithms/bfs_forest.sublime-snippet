@@ -35,7 +35,6 @@ struct bfs_forest{
 	// O(# of nodes reachable from src)
 	template<class F = plus<>>
 	void _bfs(const graph<T> &g, const vector<int> &src, F UT = plus<>()){
-		assert(g.n <= n);
 		q = src;
 		for(auto u: src){
 			assert(was[u] != attempt);
