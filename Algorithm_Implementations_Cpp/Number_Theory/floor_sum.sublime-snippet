@@ -5,6 +5,7 @@
 // O(log(min(m, a)))
 template<class T, class U>
 U floor_sum(T n, T m, T a, T b){
+	assert(n >= 0 && m > 0 && a >= 0 && b >= 0);
 	U res = 0;
 	auto [qa, ra] = div(a, m);
 	auto [qb, rb] = div(b, m);
