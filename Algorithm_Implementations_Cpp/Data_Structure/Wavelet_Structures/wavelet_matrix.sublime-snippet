@@ -1,5 +1,6 @@
 <snippet>
 	<content><![CDATA[
+// nor orz
 // Requires succinct_dictionary
 template<bool HAS_QUERY, class B, class T, class F, class I>
 struct wavelet_matrix_base{
