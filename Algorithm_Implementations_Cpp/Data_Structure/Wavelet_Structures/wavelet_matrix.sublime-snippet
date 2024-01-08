@@ -21,6 +21,7 @@ struct wavelet_matrix_base{
 	}
 	// O(n * log(sigma)) time and O(n * log(sigma) / w) memory
 	void build(const vector<B> &key, B sigma){
+		static_assert(!HAS_QUERY);
 		assert(sigma > 0);
 		for(auto x: key) assert(0 <= x && x < sigma);
 		n = (int)key.size();
