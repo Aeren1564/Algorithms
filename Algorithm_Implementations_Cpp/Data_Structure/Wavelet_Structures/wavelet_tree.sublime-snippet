@@ -1,95 +1,72 @@
 <snippet>
 	<content><![CDATA[
-template<bool HAS_QUERY, class T, class F, class I>
+template<bool HAS_QUERY, class B, class T, class F, class I>
 struct wavelet_tree_base{
-	int n, sigma;
-	vector<vector<int>> data; // data[u][i]: # of elements mapped to left among first i elements
-	vector<vector<T>> aggregate; // aggregate[u][i]: sum of values of elements maped to left among first i elements
+	int n, lg;
+	B sigma;
+	vector<vector<int>> data;
+	vector<vector<T>> aggregate;
 	F TT; // commutative group operation
 	T T_id; // commutative group identity
 	I TinvT; // commutative group inverse operation
 	wavelet_tree_base(F TT, T T_id, I TinvT): TT(TT), T_id(T_id), TinvT(TinvT){ }
 	wavelet_tree_base &operator=(const wavelet_tree_base &wt){
 		n = wt.n;
+		lg = wt.lg;
 		sigma = wt.sigma;
 		data = wt.data;
-		aggregate = wt.aggregate;
 		return *this;
 	}
-	vector<array<int, 5>> q;
-	// O(sigma + n * log(sigma))
-	void build(vector<int> key, int sigma){
+	// O(n * log(sigma)) time and O(n * log(sigma)) memory
+	void build(const vector<B> &key, B sigma){
 		static_assert(!HAS_QUERY);
-		assert(0 < sigma);
-		for(auto k: key) assert(0 <= k && k < sigma);
+		assert(sigma > 0);
+		for(auto x: key) assert(0 <= x && x < sigma);
 		n = (int)key.size();
 		this->sigma = sigma;
-		data.assign(sigma << 1, {});
-		q.assign(sigma << 1, {});
-		q[0] = {{1, 0, sigma, 0, n}};
-		for(auto qbeg = 0, qend = 1; qbeg < qend; ++ qbeg){
-			auto &[u, l, r, ql, qr] = q[qbeg];
-			if(r - l == 1) continue;
-			int m = l + (r - l >> 1);
-			data[u].resize(qr - ql + 1, 0);
-			for(auto i = ql; i < qr; ++ i) data[u][i - ql + 1] = data[u][i - ql] + (key[i] < m);
-			int qm = stable_partition(key.begin() + ql, key.begin() + qr, [&](int x){ return x < m; }) - key.begin();
-			q[qend ++] = {u << 1, l, m, ql, qm};
-			q[qend ++] = {u << 1 | 1, m, r, qm, qr};
+		lg = __lg(sigma) + (B(1) << lg != sigma) + 1;
+		data.assign(lg, vector<int>(n + 1));
+		vector<B> cur = key, next(n);
+		for(auto h = lg; h --;){
+			for(auto i = 0; i < n; ++ i) data[h][i + 1] = data[h][i] + (~cur[i] >> h & 1);
+			array it{next.begin(), next.begin() + data[h][n]};
+			for(auto i = 0; i < n; ++ i) *it[data[h][i] == data[h][i + 1]] ++ = cur[i];
+			swap(cur, next);
 		}
 	}
-	vector<pair<int, T>> key_and_value;
-	// O(sigma + n * log(sigma))
-	void build(const vector<int> &key, int sigma, const vector<T> &value){
+	// O(n * log(sigma)) time and O(n * log(sigma)) memory
+	template<class U>
+	void build(const vector<B> &key, B sigma, const vector<U> &value){
 		static_assert(HAS_QUERY);
-		assert(0 < sigma);
-		for(auto k: key) assert(0 <= k && k < sigma);
+		assert(sigma > 0);
+		for(auto x: key) assert(0 <= x && x < sigma);
 		n = (int)key.size();
-		assert((int)value.size() == n);
 		this->sigma = sigma;
-		data.assign(sigma << 1, {});
-		aggregate.assign(sigma << 2, {});
-		q.assign(sigma << 1, {});
-		key_and_value.resize(n);
-		for(auto i = 0; i < n; ++ i) key_and_value[i] = {key[i], value[i]};
-		q[0] = {{1, 0, sigma, 0, n}};
-		for(auto qbeg = 0, qend = 1; qbeg < qend; ++ qbeg){
-			auto &[u, l, r, ql, qr] = q[qbeg];
-			if(r - l == 1){
-				aggregate[u].resize(qr - ql + 1, T_id);
-				for(auto i = ql; i < qr; ++ i) aggregate[u][i - ql + 1] = TT(aggregate[u][i - ql], key_and_value[i].second);
-				continue;
+		lg = __lg(sigma) + (B(1) << lg != sigma) + 1;
+		data.assign(lg, vector<int>(n + 1));
+		aggregate.assign(lg + 1, vector<T>(n + 1, T_id));
+		vector<pair<B, T>> cur(n), next(n);
+		for(auto i = 0; i < n; ++ i) cur[i] = {key[i], value[i]};
+		for(auto h = lg; h --;){
+			for(auto i = 0; i < n; ++ i) data[h][i + 1] = data[h][i] + (~cur[i].first >> h & 1);
+			array it{next.begin(), next.begin() + data[h][n]};
+			for(auto i = 0; i < n; ++ i){
+				*it[data[h][i] == data[h][i + 1]] ++ = cur[i];
+				aggregate[h + 1][i + 1] = data[h][i] == data[h][i + 1] ? aggregate[h + 1][i] : TT(aggregate[h + 1][i], cur[i].second);
 			}
-			int m = l + (r - l >> 1);
-			data[u].resize(qr - ql + 1, 0);
-			aggregate[u].resize(qr - ql + 1, T_id);
-			for(auto i = ql; i < qr; ++ i){
-				data[u][i - ql + 1] = data[u][i - ql] + (key_and_value[i].first < m);
-				aggregate[u][i - ql + 1] = key_and_value[i].first < m ? TT(aggregate[u][i - ql], key_and_value[i].second) : aggregate[u][i - ql];
-			}
-			int qm = stable_partition(key_and_value.begin() + ql, key_and_value.begin() + qr, [&](const auto &x){ return x.first < m; }) - key_and_value.begin();
-			q[qend ++] = {u << 1, l, m, ql, qm};
-			q[qend ++] = {u << 1 | 1, m, r, qm, qr};
+			swap(cur, next);
 		}
+		for(auto i = 0; i < n; ++ i) aggregate[0][i + 1] = TT(aggregate[0][i], cur[i].second);
 	}
 	// Returns the frequency of x in the interval [ql, qr)
 	// O(log(sigma))
 	int freq(int ql, int qr, int x) const{
 		assert(0 <= ql && ql <= qr && qr <= n);
 		assert(0 <= x);
-		if(ql == qr || x >= sigma) return 0;
-		for(auto u = 1, l = 0, r = sigma; r - l >= 2; ){
-			auto m = l + (r - l >> 1), lcnt = data[u][ql], rcnt = data[u][qr];
-			if(x < m){
-				ql = lcnt, qr = rcnt;
-				r = m;
-				u = u << 1;
-			}
-			else{
-				ql -= lcnt, qr -= rcnt;
-				l = m;
-				u = u << 1 | 1;
-			}
+		if(ql == qr || sigma <= x) return 0;
+		for(auto h = lg; h --; ){
+			if(~x >> h & 1) ql = data[h][ql], qr = data[h][qr];
+			else ql += data[h][n] - data[h][ql], qr += data[h][n] - data[h][qr];
 		}
 		return qr - ql;
 	}
@@ -99,95 +76,60 @@ struct wavelet_tree_base{
 		static_assert(HAS_QUERY);
 		assert(0 <= ql && ql <= qr && qr <= n);
 		assert(0 <= x);
-		if(ql == qr || x >= sigma) return {0, T_id};
-		int u = 1;
-		for(auto l = 0, r = sigma; r - l >= 2; ){
-			auto m = l + (r - l >> 1), lcnt = data[u][ql], rcnt = data[u][qr];
-			if(x < m){
-				ql = lcnt, qr = rcnt;
-				r = m;
-				u = u << 1;
-			}
-			else{
-				ql -= lcnt, qr -= rcnt;
-				l = m;
-				u = u << 1 | 1;
-			}
+		if(ql == qr || sigma <= x) return {0, T_id};
+		for(auto h = lg; h --; ){
+			if(~x >> h & 1) ql = data[h][ql], qr = data[h][qr];
+			else ql += data[h][n] - data[h][ql], qr += data[h][n] - data[h][qr];
 		}
-		return {qr - ql, TinvT(aggregate[u][qr], aggregate[u][ql])};
+		return {qr - ql, TinvT(aggregate[0][qr], aggregate[0][ql])};
 	}
 	// Returns the number of occurrences of numbers in [0, xr) in the interval [ql, qr)
 	// O(log(sigma))
-	int count(int ql, int qr, int xr) const{
+	int count(int ql, int qr, B xr) const{
 		assert(0 <= ql && ql <= qr && qr <= n);
 		assert(0 <= xr);
-		if(ql == qr || xr == 0) return 0;
-		xr = min(sigma, xr);
+		if(sigma <= xr) return qr - ql;
+		if(xr == 0) return 0;
 		int cnt = 0;
-		for(auto u = 1, l = 0, r = sigma; ; ){
-			if(r - l == 1){
-				cnt += (l < xr) * (qr - ql);
-				break;
-			}
-			auto m = l + (r - l >> 1), lcnt = data[u][ql], rcnt = data[u][qr];
-			if(xr <= m){
-				ql = lcnt, qr = rcnt;
-				r = m;
-				u = u << 1;
-			}
+		for(auto h = lg; h --; ){
+			if(~xr >> h & 1) ql = data[h][ql], qr = data[h][qr];
 			else{
-				cnt += rcnt - lcnt;
-				ql -= lcnt, qr -= rcnt;
-				l = m;
-				u = u << 1 | 1;
+				cnt += data[h][qr] - data[h][ql];
+				ql += data[h][n] - data[h][ql], qr += data[h][n] - data[h][qr];
 			}
 		}
 		return cnt;
 	}
 	// Returns the number of occurrences of numbers in [0, xr) in the interval [ql, qr), along with the sum of their values
 	// O(log(sigma))
-	pair<int, T> count_query(int ql, int qr, int xr) const{
+	pair<int, T> count_query(int ql, int qr, B xr) const{
 		static_assert(HAS_QUERY);
 		assert(0 <= ql && ql <= qr && qr <= n);
 		assert(0 <= xr);
-		if(ql == qr || xr == 0) return {0, T_id};
+		if(xr == 0) return {0, T_id};
 		xr = min(sigma, xr);
 		int cnt = 0;
 		T sum = T_id;
-		for(auto u = 1, l = 0, r = sigma; ; ){
-			if(r - l == 1){
-				if(l < xr){
-					cnt += qr - ql;
-					sum = TT(sum, TinvT(aggregate[u][qr], aggregate[u][ql]));
-				}
-				break;
-			}
-			auto m = l + (r - l >> 1), lcnt = data[u][ql], rcnt = data[u][qr];
-			if(xr <= m){
-				ql = lcnt, qr = rcnt;
-				r = m;
-				u = u << 1;
-			}
+		for(auto h = lg; h --; ){
+			if(~xr >> h & 1) ql = data[h][ql], qr = data[h][qr];
 			else{
-				cnt += rcnt - lcnt;
-				sum = TT(sum, TinvT(aggregate[u][qr], aggregate[u][ql]));
-				ql -= lcnt, qr -= rcnt;
-				l = m;
-				u = u << 1 | 1;
+				cnt += data[h][qr] - data[h][ql];
+				sum = TT(sum, TinvT(aggregate[h + 1][qr], aggregate[h + 1][ql]));
+				ql += data[h][n] - data[h][ql], qr += data[h][n] - data[h][qr];
 			}
 		}
 		return {cnt, sum};
 	}
 	// Returns the number of occurrences of numbers in [xl, xr) in the interval [ql, qr)
 	// O(log(sigma))
-	int count(int ql, int qr, int xl, int xr) const{
+	int count(int ql, int qr, B xl, B xr) const{
 		assert(xl <= xr);
 		if(xl == xr) return 0;
 		return count(ql, qr, xr) - count(ql, qr, xl);
 	}
 	// Returns the number of occurrences of numbers in [xl, xr) in the interval [ql, qr), along with the sum of their values
 	// O(log(sigma))
-	pair<int, T> count_query(int ql, int qr, int xl, int xr) const{
+	pair<int, T> count_query(int ql, int qr, B xl, B xr) const{
 		static_assert(HAS_QUERY);
 		assert(xl <= xr);
 		if(xl == xr) return {0, T_id};
@@ -197,40 +139,41 @@ struct wavelet_tree_base{
 	}
 	// Find the k-th smallest element in the interval [ql, qr), sigma if no such element
 	// O(log(sigma))
-	int find_by_order(int ql, int qr, int k) const{
-		assert(0 <= ql && ql <= qr && qr <= n);
+	B find_by_order(int ql, int qr, int k) const{
 		assert(0 <= k);
 		if(k >= qr - ql) return sigma;
-		for(auto u = 1, l = 0, r = sigma; ; ){
-			if(r - l == 1) return k < qr - ql ? l : sigma;
-			auto m = l + (r - l >> 1), lcnt = data[u][ql], rcnt = data[u][qr];
-			if(k < rcnt - lcnt) ql = lcnt, qr = rcnt, r = m, u = u << 1;
-			else k -= rcnt - lcnt, ql -= lcnt, qr -= rcnt, l = m, u = u << 1 | 1;
+		B x = 0;
+		for(auto h = lg; h --; ){
+			if(k < data[h][qr] - data[h][ql]) ql = data[h][ql], qr = data[h][qr];
+			else{
+				k -= data[h][qr] - data[h][ql];
+				x |= (B)1 << h;
+				ql += data[h][n] - data[h][ql], qr += data[h][n] - data[h][qr];
+			}
 		}
-		assert(false);
+		return x;
 	}
 	// Find the k-th smallest element in the interval [ql, qr), sigma if no such element, along with the sum of values of the k smallest elements (prioritizing smaller index)
 	// O(log(sigma))
-	pair<int, T> find_by_order_query(int ql, int qr, int k) const{
-		static_assert(HAS_QUERY);
-		assert(0 <= ql && ql <= qr && qr <= n);
+	pair<B, T> find_by_order_query(int ql, int qr, int k) const{
 		assert(0 <= k);
 		k = min(k, qr - ql);
+		B x = 0;
 		T sum = T_id;
-		for(auto u = 1, l = 0, r = sigma; ; ){
-			if(r - l == 1) return {k < qr - ql ? l : sigma, TT(sum, TinvT(aggregate[u][ql + k], aggregate[u][ql]))};
-			auto m = l + (r - l >> 1), lcnt = data[u][ql], rcnt = data[u][qr];
-			if(k < rcnt - lcnt) ql = lcnt, qr = rcnt, r = m, u = u << 1;
-			else{
-				sum = TT(sum, TinvT(aggregate[u][qr], aggregate[u][ql]));
-				k -= rcnt - lcnt, ql -= lcnt, qr -= rcnt, l = m, u = u << 1 | 1;
+		for(auto h = lg; h --; ){
+			if(k < data[h][qr] - data[h][ql]) ql = data[h][ql], qr = data[h][qr];
+			else {
+				k -= data[h][qr] - data[h][ql];
+				x |= (B)1 << h;
+				sum = TT(sum, TinvT(aggregate[h + 1][qr], aggregate[h + 1][ql]));
+				ql += data[h][n] - data[h][ql], qr += data[h][n] - data[h][qr];
 			}
 		}
-		assert(false);
+		return {x, TT(sum, TinvT(aggregate[0][ql + k], aggregate[0][ql]))};
 	}
 	// Find the k-th smallest element in the interval [ql, qr) among elements >= xl, sigma if no such element
 	// O(log(sigma))
-	int find_by_order(int ql, int qr, int xl, int k) const{
+	B find_by_order(int ql, int qr, B xl, int k) const{
 		assert(0 <= ql && ql <= qr && qr <= n);
 		assert(0 <= xl && 0 <= k);
 		if(xl >= sigma) return sigma;
@@ -240,7 +183,7 @@ struct wavelet_tree_base{
 	}
 	// Find the k-th smallest element in the interval [ql, qr) among elements >= xl, sigma if no such element, along with the sum of values of the k smallest elements (prioritizing smaller index)
 	// O(log(sigma))
-	pair<int, T> find_by_order_query(int ql, int qr, int xl, int k) const{
+	pair<B, T> find_by_order_query(int ql, int qr, B xl, int k) const{
 		assert(0 <= ql && ql <= qr && qr <= n);
 		assert(0 <= xl && 0 <= k);
 		if(xl >= sigma) return {sigma, T_id};
@@ -250,40 +193,41 @@ struct wavelet_tree_base{
 		return {x, TinvT(sum2, sum)};
 	}
 	// Find the smallest element >= x, sigma if no such element
-	// O(log(MAXVAL))
-	int lower_bound(int ql, int qr, int x) const{
+	// O(log(sigma))
+	B lower_bound(int ql, int qr, B x) const{
 		assert(0 <= x);
 		return find_by_order(ql, qr, x, 0);
 	}
 	// Find the smallest element > x, sigma if no such element
-	// O(log(MAXVAL))
-	int upper_bound(int ql, int qr, int x) const{
+	// O(log(sigma))
+	B upper_bound(int ql, int qr, B x) const{
 		assert(0 <= x);
 		return find_by_order(ql, qr, x + 1, 0);
 	}
 	// Find the largest element <= x, -1 if no such element
-	// O(log(MAXVAL))
-	int reverse_lower_bound(int ql, int qr, int x) const{
+	// O(log(sigma))
+	B reverse_lower_bound(int ql, int qr, B x) const{
 		assert(0 <= x);
 		int cnt = count(ql, qr, x);
 		return cnt ? find_by_order(ql, qr, cnt - 1) : -1;
 	}
 	// Find the largest element < x, -1 if no such element
-	// O(log(MAXVAL))
-	int reverse_upper_bound(int ql, int qr, int x) const{
+	// O(log(sigma))
+	B reverse_upper_bound(int ql, int qr, B x) const{
 		assert(0 <= x);
 		int cnt = count(ql, qr, x + 1);
 		return cnt ? find_by_order(ql, qr, cnt - 1) : -1;
 	}
 };
 
+template<class B>
 auto make_wavelet_tree(){
-	return wavelet_tree_base<false, int, plus<>, minus<>>(plus<>(), 0, minus<>());
+	return wavelet_tree_base<false, B, int, plus<>, minus<>>(plus<>(), 0, minus<>());
 }
 // Supports query
-template<class T = long long, class F = plus<>, class I = minus<>>
+template<class B, class T = long long, class F = plus<>, class I = minus<>>
 auto make_Q_wavelet_tree(F TT = plus<>(), T T_id = 0, I TinvT = minus<>()){
-	return wavelet_tree_base<true, T, F, I>(TT, T_id, TinvT);
+	return wavelet_tree_base<true, B, T, F, I>(TT, T_id, TinvT);
 }
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
