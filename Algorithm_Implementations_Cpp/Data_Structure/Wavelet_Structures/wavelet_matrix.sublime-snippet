@@ -26,7 +26,7 @@ struct wavelet_matrix_base{
 		for(auto x: key) assert(0 <= x && x < sigma);
 		n = (int)key.size();
 		this->sigma = sigma;
-		lg = __lg(sigma) + (B(1) << lg != sigma);
+		lg = __lg(sigma) + (B(1) << lg != sigma) + 1;
 		data.assign(lg, succinct_dictionary(n));
 		vector<B> cur = key, next(n);
 		for(auto h = lg; h --;){
@@ -38,13 +38,14 @@ struct wavelet_matrix_base{
 		}
 	}
 	// O(n * log(sigma)) time and O(n * log(sigma)) memory
-	void build(const vector<B> &key, B sigma, const vector<T> &value){
+	template<class U>
+	void build(const vector<B> &key, B sigma, const vector<U> &value){
 		static_assert(HAS_QUERY);
 		assert(sigma > 0);
 		for(auto x: key) assert(0 <= x && x < sigma);
 		n = (int)key.size();
 		this->sigma = sigma;
-		lg = __lg(sigma) + (B(1) << lg != sigma);
+		lg = __lg(sigma) + (B(1) << lg != sigma) + 1;
 		data.assign(lg, succinct_dictionary(n));
 		aggregate.assign(lg + 1, vector<T>(n + 1, T_id));
 		vector<pair<B, T>> cur(n), next(n);
@@ -112,8 +113,8 @@ struct wavelet_matrix_base{
 		static_assert(HAS_QUERY);
 		assert(0 <= ql && ql <= qr && qr <= n);
 		assert(0 <= xr);
-		if(sigma <= xr) return qr - ql;
 		if(xr == 0) return {0, T_id};
+		xr = min(sigma, xr);
 		int cnt = 0;
 		T sum = T_id;
 		for(auto h = lg; h --; ){
@@ -197,7 +198,7 @@ struct wavelet_matrix_base{
 	pair<B, T> find_by_order_query(int ql, int qr, B xl, int k) const{
 		assert(0 <= ql && ql <= qr && qr <= n);
 		assert(0 <= xl && 0 <= k);
-		if(xl >= sigma) return sigma;
+		if(xl >= sigma) return {sigma, T_id};
 		auto [cnt, sum] = count_query(ql, qr, 0, xl);
 		k += cnt;
 		auto [x, sum2] = find_by_order_query(ql, qr, k);
