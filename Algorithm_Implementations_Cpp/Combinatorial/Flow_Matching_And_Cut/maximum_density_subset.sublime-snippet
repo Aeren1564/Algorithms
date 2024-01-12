@@ -26,13 +26,13 @@ vector<int> maximum_density_subset(const graph<T> &g, vector<U> vertex_weight = 
 	int source = n, sink = n + 1;
 	vector<int> edge_id(n);
 	for(auto u = 0; u < n; ++ u){
-		F.insert(source, u, shift, 0);
-		edge_id[u] = F.insert(u, sink, shift - deg[u] - 2 * vertex_weight[u], 0);
+		F.orient(source, u, shift);
+		edge_id[u] = F.orient(u, sink, shift - deg[u] - 2 * vertex_weight[u]);
 	}
 	for(auto id = 0; id < (int)g.edge.size(); ++ id){
 		if(g.ignore && g.ignore(id)) continue;
 		auto [u, v, w] = g.edge[id];
-		F.insert(u, v, w * scale, w * scale);
+		F.link(u, v, w * scale);
 	}
 	U cut_weight;
 	vector<int> left_cut, right_cut;

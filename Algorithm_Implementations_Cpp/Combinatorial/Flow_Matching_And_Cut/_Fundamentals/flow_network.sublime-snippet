@@ -13,12 +13,20 @@ struct flow_network{
 	void clear_flow(){
 		for(auto &e: edge) e.flow = 0;
 	}
-	int insert(int from, int to, T forward_cap, T backward_cap = 0){
+	int link(int from, int to, T cap){
 		int ind = (int)edge.size();
 		adj[from].push_back(ind);
-		edge.push_back({from, to, forward_cap, 0});
+		edge.push_back({from, to, cap, 0});
 		adj[to].push_back(ind + 1);
-		edge.push_back({to, from, backward_cap, 0});
+		edge.push_back({to, from, cap, 0});
+		return ind;
+	}
+	int orient(int from, int to, T cap){
+		int ind = (int)edge.size();
+		adj[from].push_back(ind);
+		edge.push_back({from, to, cap, 0});
+		adj[to].push_back(ind + 1);
+		edge.push_back({to, from, 0, 0});
 		return ind;
 	}
 	void add_flow(int i, T f){

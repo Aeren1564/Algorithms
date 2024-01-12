@@ -4,28 +4,28 @@
 template<class T, class Flow_Solver>
 struct flow_network_with_demand{
 	flow_network_with_demand(int n): n(n), F(n + 2), D(F), demand(n){}
-	int insert(int u, int v, T d, T c){
+	int orient(int u, int v, T d, T c){
 		assert(0 <= d && d <= c);
 		++ m;
-		int id = F.insert(u, v, c - d, 0);
+		int id = F.orient(u, v, c - d);
 		demand[u] -= d;
 		demand[v] += d;
 		edge_id.push_back(id);
 		edge_demand.push_back(d);
 		return id;
 	}
-	T setup(){
+	T _setup(){
 		T req = 0;
 		for(auto u = 0; u < n; ++ u){
-			if(demand[u] > 0) F.insert(n, u, demand[u], 0), req += demand[u];
-			else if(demand[u] < 0) F.insert(u, n + 1, -demand[u], 0);
+			if(demand[u] > 0) F.orient(n, u, demand[u]), req += demand[u];
+			else if(demand[u] < 0) F.orient(u, n + 1, -demand[u]);
 		}
 		return req;
 	}
 	// Destroys the network after getting called
 	optional<vector<T>> feasible_circulation(){
 		vector<T> w = edge_demand;
-		T req = setup();
+		T req = _setup();
 		if(req != D.maximum_flow(n, n + 1)) return {};
 		for(auto i = 0; i < m; ++ i) w[i] += F.edge[edge_id[i]].flow;
 		return w;
@@ -33,7 +33,7 @@ struct flow_network_with_demand{
 	// Destroys the network after getting called
 	optional<pair<T, vector<T>>> feasible_flow(int s, int t){
 		assert(0 <= min(s, t) && max(s, t) < n && s != t);
-		int id = F.insert(t, s, numeric_limits<T>::max(), 0);
+		int id = F.orient(t, s, numeric_limits<T>::max());
 		auto resptr = feasible_circulation();
 		if(!resptr) return {};
 		return pair{F.edge[id].flow, *resptr};
@@ -41,7 +41,7 @@ struct flow_network_with_demand{
 	// Destroys the network after getting called
 	optional<pair<T, vector<T>>> maximum_feasible_flow(int s, int t){
 		assert(0 <= min(s, t) && max(s, t) < n && s != t);
-		int id = F.insert(t, s, numeric_limits<T>::max(), 0);
+		int id = F.orient(t, s, numeric_limits<T>::max());
 		auto resptr = feasible_circulation();
 		if(!resptr) return {};
 		auto w = *resptr;
@@ -54,7 +54,7 @@ struct flow_network_with_demand{
 	// Destroys the network after getting called
 	optional<pair<T, vector<T>>> minimum_feasible_flow(int s, int t){
 		assert(0 <= min(s, t) && max(s, t) < n && s != t);
-		int id = F.insert(t, s, numeric_limits<T>::max(), 0);
+		int id = F.orient(t, s, numeric_limits<T>::max());
 		auto resptr = feasible_circulation();
 		if(!resptr) return {};
 		auto w = *resptr;

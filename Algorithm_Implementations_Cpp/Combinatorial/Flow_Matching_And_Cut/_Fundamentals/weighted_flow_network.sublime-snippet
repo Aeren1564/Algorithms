@@ -16,13 +16,19 @@ struct weighted_flow_network{
 		for(auto &e: edge) e.flow = 0;
 		cost = 0;
 	}
-	int insert(int from, int to, T forward_cap, T backward_cap, C cost){
+	int link(int from, int to, T cap, C cost){
+		assert(0 <= from && from < n && 0 <= to && to < n);
+		int ind = orient(from, to, cap, cost);
+		orient(to, from, cap, cost);
+		return ind;
+	}
+	int orient(int from, int to, T cap, C cost){
 		assert(0 <= from && from < n && 0 <= to && to < n);
 		int ind = (int)edge.size();
 		adj[from].push_back((int)edge.size());
-		edge.push_back({from, to, forward_cap, 0, cost});
+		edge.push_back({from, to, cap, 0, cost});
 		adj[to].push_back((int)edge.size());
-		edge.push_back({to, from, backward_cap, 0, -cost});
+		edge.push_back({to, from, 0, 0, -cost});
 		return ind;
 	}
 	void add_flow(int i, T f){

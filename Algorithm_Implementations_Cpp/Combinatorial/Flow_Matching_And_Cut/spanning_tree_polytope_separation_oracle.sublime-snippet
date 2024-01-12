@@ -18,7 +18,7 @@ bool spanning_tree_polytope_separation_oracle(const graph<T> &g, T c = 1){
 		if(g.ignore && g.ignore(id)) continue;
 		auto &e = g.edge[id];
 		if(e.cost < 0) return false;
-		F.insert(e.from, e.to, e.cost, e.cost);
+		F.link(e.from, e.to, e.cost);
 		delta[e.from] += e.cost, delta[e.to] += e.cost, tot += e.cost;
 	}
 	if(c * (n - 1) != tot) return false;
@@ -31,7 +31,7 @@ bool spanning_tree_polytope_separation_oracle(const graph<T> &g, T c = 1){
 			F.edge.resize(m);
 			for(auto u = 0; u < n; ++ u) F.adj[u].resize(sz[u]);
 			F.clear_flow();
-			for(auto u = 0; u < n; ++ u) F.insert(s, u, delta[u], 0), F.insert(u, t, 2 * c, 0);
+			for(auto u = 0; u < n; ++ u) F.orient(s, u, delta[u]), F.orient(u, t, 2 * c);
 			if(dinic_maximum_flow<T>(F).maximum_flow(s, t) < 2 * n * c) return false;
 			swap(s, t);
 		}

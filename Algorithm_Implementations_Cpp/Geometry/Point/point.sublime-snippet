@@ -41,8 +41,8 @@ struct point{
 	scalarop_l(+) scalarop_l(-) scalarop_l(*) scalarop_l(/)
 #define scalarop_r(op) point operator op(const T &c) const{ return {x op c, y op c}; }
 	scalarop_r(+) scalarop_r(-) scalarop_r(*) scalarop_r(/)
-#define scalarapply(op) point &operator op(const T &c){ return *this = *this op c; }
-	scalarapply(+=) scalarapply(-=) scalarapply(*=) scalarapply(/=)
+#define scalarapply(applyop, op) point &operator applyop(const T &c){ return *this = *this op c; }
+	scalarapply(+=, +) scalarapply(-=, -) scalarapply(*=, *) scalarapply(/=, /)
 #define compareop(op) bool operator op(const point &otr) const{ return pair<T, T>(x, y) op pair<T, T>(otr.x, otr.y); }
 	compareop(>) compareop(<) compareop(>=) compareop(<=) compareop(==) compareop(!=)
 #undef scalarop_l

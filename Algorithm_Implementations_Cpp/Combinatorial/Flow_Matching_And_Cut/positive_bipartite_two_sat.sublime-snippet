@@ -12,13 +12,13 @@ struct positive_bipartite_two_sat{
 		assert(wl.size() == n && wr.size() == m);
 		assert(!n || *min_element(wl.begin(), wl.end()) >= 0);
 		assert(!m || *min_element(wr.begin(), wr.end()) >= 0);
-		for(auto u = 0; u < n; ++ u) F.insert(source, u, wl[u], 0);
-		for(auto v = 0; v < m; ++ v) F.insert(n + v, sink, wr[v], 0);
+		for(auto u = 0; u < n; ++ u) F.orient(source, u, wl[u]);
+		for(auto v = 0; v < m; ++ v) F.orient(n + v, sink, wr[v]);
 	}
 	void either(int u, int v){
 		assert(0 <= u && u < n);
 		assert(0 <= v && v < m);
-		F.insert(u, n + v, numeric_limits<T>::max(), 0);
+		F.orient(u, n + v, numeric_limits<T>::max());
 	}
 	// sum of weights of the selected variables,
 	// the set of variables set to true on the left, and
