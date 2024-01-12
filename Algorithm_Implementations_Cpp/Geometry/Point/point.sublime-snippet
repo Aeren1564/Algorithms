@@ -189,6 +189,27 @@ point<long double> polar_l(long double x, long double theta){
 	assert(x >= 0);
 	return {x * cosl(theta), x * sinl(theta)};
 }
+// T must be able to hold the fourth power of max coordinate
+// returns [a, b, c, and d lies in a circle]
+template<class T>
+bool concircular(point<T> a, point<T> b, point<T> c, const point<T> &d){
+		a -= d, b -= d, c -= d;
+	return a.squared_norm() * (b ^ c) + b.squared_norm() * (c ^ a) + c.squared_norm() * (a ^ b) == 0;
+}
+// T must be able to hold the fourth power of max coordinate
+// returns [d lies in the interior of the circle defined by a, b, c]
+template<class T>
+bool inside_of_circle(point<T> a, point<T> b, point<T> c, const point<T> &d){
+		a -= d, b -= d, c -= d;
+	return (a.squared_norm() * (b ^ c) + b.squared_norm() * (c ^ a) + c.squared_norm() * (a ^ b)) * (doubled_signed_area(a, b, c) > 0 ? 1 : -1) > 0;
+}
+// T must be able to hold the fourth power of max coordinate
+// returns [d lies in the exterior of the circle defined by a, b, c]
+template<class T>
+bool outside_of_circle(point<T> a, point<T> b, point<T> c, const point<T> &d){
+		a -= d, b -= d, c -= d;
+	return (a.squared_norm() * (b ^ c) + b.squared_norm() * (c ^ a) + c.squared_norm() * (a ^ b)) * (doubled_signed_area(a, b, c) > 0 ? -1 : 1) > 0;
+}
 
 using pointint = point<int>;
 using pointll = point<long long>;

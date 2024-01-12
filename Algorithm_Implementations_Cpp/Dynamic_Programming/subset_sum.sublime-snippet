@@ -1,0 +1,65 @@
+<snippet>
+	<content><![CDATA[
+// Given a set of items where i-th item has non-negative weight w[i] <= bound,
+// find a subset S such that \sum_{i \in S} w[i] <= threshold and \sum_{i \in S} w[i] is maximized
+// O(n * bound)
+struct subset_sum{
+	vector<int> _pref;
+	vector<vector<int>> _dp;
+	vector<vector<array<int, 2>>> _prev;
+	int subset_weight;
+	vector<int> in_subset, subset;
+	void run_for_bounded_weight(const vector<int> &w, int weight_bound, int threshold){
+		assert(weight_bound > 0);
+		for(auto x: w) assert(0 <= x && x < weight_bound);
+		int n = (int)w.size();
+		_pref = {0};
+		while((int)_pref.size() - 1 < n && _pref.back() + w[(int)_pref.size() - 1] <= threshold) _pref.push_back(_pref.back() + w[(int)_pref.size() - 1]);
+		const int cut = (int)_pref.size() - 1;
+		if(n == cut){
+			subset_weight = _pref[n];
+			in_subset.assign(n, true);
+			subset.resize(n);
+			iota(subset.begin(), subset.end(), 0);
+			return;
+		}
+		_dp.assign(n - cut + 1, vector<int>(weight_bound << 1, numeric_limits<int>::min() / 2));
+		_prev.assign(n - cut + 1, vector<array<int, 2>>(weight_bound << 1, {-1, -1}));
+		fill(_dp[0].begin() + weight_bound, _dp[0].end(), 0);
+		_dp[0][weight_bound - 1] = cut + 1;
+		for(auto x = weight_bound - 1; x >= 0; -- x) if(_dp[0][x]) for(auto l = _dp[0][x] - 1; l >= 1; -- l){
+			if(_dp[0][x - w[l - 1]] < l){
+				_dp[0][x - w[l - 1]] = l;
+				_prev[0][x - w[l - 1]] = {0, x};
+			}
+		}
+		for(auto r = 1; r <= n - cut; ++ r) for(auto x = 2 * weight_bound - 1; x >= 0; -- x){
+			if(x >= w[r - 1] && _dp[r][x] < _dp[r - 1][x - w[r - 1]]){
+				_dp[r][x] = _dp[r - 1][x - w[r - 1]];
+				_prev[r][x] = {r - 1, x - w[r - 1]};
+			}
+			for(auto l = _dp[r][x] - 1; l >= _dp[r - 1][x]; -- l) if(_dp[r][x - w[l - 1]] < l){
+				_dp[r][x - w[l - 1]] = l;
+				_prev[r][x - w[l - 1]] = {r, x};
+			}
+		}
+		subset_weight = threshold;
+		while(!_dp[n - cut][subset_weight - _pref.back() + weight_bound - 1]) -- subset_weight;
+		in_subset.assign(n, false);
+		fill(in_subset.begin(), in_subset.begin() + cut, true);
+		for(auto r = n - cut, weight = subset_weight; ; ){
+			auto [nr, nweight] = _prev[r][weight];
+			if(!~nr) break;
+			if(r == nr) in_subset[_dp[r][weight] - 1] = false;
+			else in_subset[r - 1] = true;
+			r = nr, weight = nweight;
+		}
+		for(auto i = 0; i < n; ++ i) if(in_subset[i]) subset.push_back(i);
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>subset_sum</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
