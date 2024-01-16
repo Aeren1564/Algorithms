@@ -63,6 +63,10 @@ struct permutation: vector<int>{
 		return *this = *this * n;
 	}
 	template<class T>
+	friend permutation operator*(T n, const permutation &p){
+		return p * n;
+	}
+	template<class T>
 	vector<T> permute(const vector<T> &a) const{
 		assert((int)a.size() == (int)size());
 		vector<T> b(size());
@@ -70,10 +74,6 @@ struct permutation: vector<int>{
 		return b;
 	}
 };
-template<class T>
-permutation operator*(T n, const permutation &p){
-	return p * n;
-}
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
 	<tabTrigger>permutation</tabTrigger> -->
