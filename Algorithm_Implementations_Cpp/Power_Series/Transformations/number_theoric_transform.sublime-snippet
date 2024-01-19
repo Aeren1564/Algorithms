@@ -81,6 +81,17 @@ struct number_theoric_transform_wrapper{
 		return vector<T>(buffer1.begin(), buffer1.begin() + m);
 	}
 	// O((n + m) * log(n + m))
+	static vector<T> square(const vector<T> &p){
+		if((int)p.size() < 40) return convolute_naive(p, p);
+		int m = 2 * (int)p.size() - 1, n = 1 << __lg(m) + 1;
+		buffer1.assign(n, 0);
+		copy(p.begin(), p.end(), buffer1.begin());
+		transform(buffer1);
+		for(auto i = 0; i < n; ++ i) buffer1[i] *= buffer1[i];
+		transform(buffer1, true);
+		return vector<T>(buffer1.begin(), buffer1.begin() + m);
+	}
+	// O((n + m) * log(n + m))
 	static vector<T> arbitrarily_convolute(const vector<T> &p, const vector<T> &q){
 		using modular0 = modular_fixed_base<unsigned int, 1045430273>;
 		using modular1 = modular_fixed_base<unsigned int, 1051721729>;

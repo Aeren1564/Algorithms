@@ -60,7 +60,7 @@ struct subset_sum{
 		subset.clear();
 		for(auto i = 0; i < n; ++ i) if(in_subset[i]) subset.push_back(i);
 	}
-	// O(n * log(\sum{w}) + threshold * sqrt(\sum{w}) / bit_width)
+	// O(n * log(\sum{w}) + SZ * sqrt(\sum{w}) / bit_width)
 	template<size_t SZ>
 	void run_for_small_total_weight(const vector<int> &w, int threshold){
 		assert(threshold >= 0 && threshold < SZ);
@@ -71,14 +71,17 @@ struct subset_sum{
 		while(!mp.empty()){
 			int weight = mp.begin()->first;
 			auto &from = mp.begin()->second;
-			auto &to = mp[weight << 1];
-			while((int)from.size() >= 3){
-				next(from.begin())->splice(next(from.begin())->begin(), from.front());
-				from.pop_front();
-				to.push_back(move(from.front()));
-				from.pop_front();
+			if((int)from.size() >= 3){
+				auto &to = mp[weight << 1];
+				while((int)from.size() >= 3){
+					next(from.begin())->splice(next(from.begin())->begin(), from.front());
+					from.pop_front();
+					to.push_back(move(from.front()));
+					from.pop_front();
+				}
 			}
 			for(; !from.empty(); from.pop_front()) ordered_pool.push_back({weight, move(from.front())});
+			mp.erase(mp.begin());
 		}
 		vector<int> first_appear(threshold + 1, -1);
 		bitset<SZ> dp{};
@@ -87,7 +90,7 @@ struct subset_sum{
 			int weight = ordered_pool[i].first;
 			auto dp_next = dp | dp << weight;
 			auto dif = dp ^ dp_next;
-			for(auto x = dif._Find_first(); x < SZ; x = dif._Find_next(x)) first_appear[x] = i;
+			for(auto x = dif._Find_first(); x <= threshold; x = dif._Find_next(x)) first_appear[x] = i;
 			dp = dp_next;
 		}
 		subset_weight = threshold;

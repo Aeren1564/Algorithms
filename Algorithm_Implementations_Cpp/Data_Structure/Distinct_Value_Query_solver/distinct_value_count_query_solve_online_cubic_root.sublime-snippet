@@ -1,14 +1,14 @@
 <snippet>
 	<content><![CDATA[
 template<int BX>
-struct distinct_value_query_solve_online_cubic_root{
+struct distinct_value_count_query_solve_online_cubic_root{
 	int n;
 	vector<int> prev, next;
 	vector<vector<int>> prefix;
 	// O(n + n^2/BX^2) time and memory
 	// O(n + n^2/3 * qn^2/3) for BX = n^2/3 / qn^1/3
 	template<class T, class Compare = less<>>
-	distinct_value_query_solve_online_cubic_root(const vector<T> &a, Compare cmp = less<>()): n((int)a.size()), prev(n), next(n), prefix(n / BX + 2, vector<int>(n / BX + 2)){
+	distinct_value_count_query_solve_online_cubic_root(const vector<T> &a, Compare cmp = less<>()): n((int)a.size()), prev(n), next(n), prefix(n / BX + 2, vector<int>(n / BX + 2)){
 		int nB = n / BX;
 		vector<T> temp = a;
 		sort(temp.begin(), temp.end(), cmp);
@@ -48,7 +48,7 @@ struct distinct_value_query_solve_online_cubic_root{
 };
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
-	<tabTrigger>distinct_value_query_solve_online_cubic_root</tabTrigger> -->
+	<tabTrigger>distinct_value_count_query_solve_online_cubic_root</tabTrigger> -->
 	<!-- Optional: Set a scope to limit where the snippet will trigger -->
 	<scope>source.c++</scope> -->
 </snippet>

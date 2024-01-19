@@ -14,7 +14,7 @@ T circumradius(POINTS){
 	return (p - q).norm() * (q - r).norm() * (r - p).norm() / (2 * doubled_signed_area(p, q, r));
 }
 point<T> incenter(POINTS){
-	return weighted_mean(p, q, r, (p - q).norm(), (q - r).norm(), (r - p).norm());
+	return weighted_mean(p, q, r, (q - r).norm(), (r - p).norm(), (p - q).norm());
 }
 T inradius(POINTS){
 	return doubled_signed_area(p, q, r) / ((p - q).norm() + (q - r).norm() + (r - p).norm());
@@ -23,7 +23,7 @@ point<T> orthocenter(POINTS){
 	return weighted_mean(p, q, r, (q - p ^ r - p) / ((q - p) * (r - p)), (r - q ^ p - q) / ((r - q) * (p - q)), (p - r ^ q - r) / ((p - r) * (q - r)));
 }
 template<int i> point<T> excenter(POINTS){
-	return weighted_mean(p, q, r, (i == 0 ? -1 : 1) * (p - q).norm(), (i == 1 ? -1 : 1) * (q - r).norm(), (i == 2 ? -1 : 1) * (r - p).norm());
+	return weighted_mean(p, q, r, (i == 0 ? -1 : 1) * (q - r).norm(), (i == 1 ? -1 : 1) * (r - p).norm(), (i == 2 ? -1 : 1) * (p - q).norm());
 }
 template<int i> T exradius(POINTS){
 	return doubled_signed_area(p, q, r) / ((i == 0 ? -1 : 1) * (p - q).norm() + (i == 1 ? -1 : 1) * (q - r).norm() + (i == 2 ? -1 : 1) * (r - p).norm());

@@ -1,0 +1,37 @@
+<snippet>
+	<content><![CDATA[
+// Requires succinct_dictionary and wavelet_matrix
+struct distinct_value_count_query_solver_online{
+	int n, sigma;
+	wavelet_matrix_base<false, int, int, plus<>, minus<>> wm;
+	// 0 <= a[i] < sigma must hold for all 0 <= i < n
+	// O(n * log(sigma) + sigma)
+	distinct_value_count_query_solver_online(const vector<int> &a, int sigma): n((int)a.size()), sigma(sigma), wm(make_wavelet_matrix<int>()){
+		wm.build(a, sigma);
+		for(auto &x: a) assert(0 <= x && x < sigma);
+		vector<int> seen(sigma), aux(n);
+		for(auto i = 0; i < n; ++ i){
+			aux[i] = seen[a[i]];
+			seen[a[i]] = i + 1;
+		}
+		wm.build(aux, n);
+	}
+	distinct_value_count_query_solver_online &operator=(const distinct_value_count_query_solver_online &dvq){
+		n = dvq.n;
+		sigma = dvq.sigma;
+		wm = dvq.wm;
+		return *this;
+	}
+	// Find the sum of w[x] over all distinct values x appearing in a[ql, qr)
+	// O(log(n))
+	int query(int ql, int qr) const{
+		assert(0 <= ql && ql <= qr && qr <= n);
+		return wm.count(ql, qr, ql + 1);
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>distinct_value_count_query_solver_online</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

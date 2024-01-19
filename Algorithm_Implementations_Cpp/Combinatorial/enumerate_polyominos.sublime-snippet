@@ -1,0 +1,98 @@
+<snippet>
+	<content><![CDATA[
+// Jeoron ORZ
+// act_while(polyomino_grid): process polyomino_grid represented by '.'(empty cell) and 'o'(filled cell), then indicate whether to exit to search or not
+template<bool FILTER_ISOMETRY = false>
+void enumerate_polyominos(int n, int th_h, int th_w, auto act_while){
+	assert(n >= 1 && th_h >= 1 && th_w >= 1);
+	if(n > 1LL * th_h * th_w) return;
+	static const vector<pair<int, int>> dr4{{1, 0}, {0, 1}, {-1, 0}, {0, -1}};
+	vector state(n, vector<int>(2 * n - 1));
+	vector<int> min_col(n + 1, 2 * n - 1), max_col(n + 1, -1);
+	vector<array<int, 2>> c{{0, n - 1}};
+	auto recurse = [&](auto self, int i, int step)->bool{
+		state[c[i][0]][c[i][1]] = -1;
+		int l = min_col[step + 1] = min(min_col[step], c[i][1]);
+		int r = max_col[step + 1] = max(max_col[step], c[i][1] + 1);
+		if(r - l > th_w){
+			state[c[i][0]][c[i][1]] = 1;
+			return true;
+		}
+		if(step == n - 1){
+			vector<string> res;
+			for(auto i = 0; i < n; ++ i){
+				string layer(r - l, '.');
+				for(auto j = l; j < r; ++ j) if(!~state[i][j]) layer[j - l] = '#';
+				if(layer == string(r - l, '.')) break;
+				res.push_back(layer);
+			}
+			if constexpr(FILTER_ISOMETRY){
+				int h = n, w = r - l;
+				while(none_of(state[h - 1].begin(), state[h - 1].end(), [&](int x){ return !~x; })) -- h;
+				int opth = -1, optw = -1;
+				static vector<string> opt;
+				opt.assign(n, string(n, '.'));
+				for(auto flip = 0; flip < 2; ++ flip){
+					static vector<string> temp;
+					for(auto rot = 0; rot < 4; ++ rot){
+						if(h <= th_h && w <= th_w){
+							temp = res;
+							temp.resize(n);
+							for(auto &s: temp) s.resize(n, '.');
+							if(opt > temp){
+								opth = h, optw = w;
+								opt = temp;
+							}
+						}
+						temp.assign(w, string(h, '.'));
+						for(auto x = 0; x < h; ++ x) for(auto y = 0; y < w; ++ y) temp[w - 1 - y][x] = res[x][y];
+						swap(h, w);
+						swap(res, temp);
+					}
+					temp.assign(w, string(h, '.'));
+					for(auto x = 0; x < h; ++ x) for(auto y = 0; y < w; ++ y) temp[y][x] = res[x][y];
+					swap(h, w);
+					swap(res, temp);
+				}
+				opt.resize(opth);
+				for(auto &s: opt) s.resize(optw);
+				if(opt != res){
+					state[c[i][0]][c[i][1]] = 1;
+					return true;
+				}
+			}
+			if(!act_while(res)) return false;
+			state[c[i][0]][c[i][1]] = 1;
+			return true;
+		}
+		int size = (int)c.size();
+		for(auto [dx, dy]: dr4){
+			int nx = c[i][0] + dx, ny = c[i][1] + dy;
+			if(nx < 0 || nx == 0 && ny < n - 1 || state[nx][ny]) continue;
+			state[nx][ny] = 1;
+			c.push_back({nx, ny});
+		}
+		for(auto j = i + 1; j < (int)c.size(); ++ j) self(self, j, step + 1);
+		while((int)c.size() > size){
+			auto [x, y] = c.back();
+			c.pop_back();
+			state[x][y] = 0;
+		}
+		state[c[i][0]][c[i][1]] = 1;
+		return true;
+	};
+	recurse(recurse, 0, 0);
+}
+// act_while(polyomino_grid): process polyomino_grid represented by '.'(empty cell) and 'o'(filled cell), then indicate whether to exit to search or not
+// Enumerate all polynomios with n blocks while act_while() is true
+template<bool FILTER_ISOMETRY = false>
+void enumerate_polyominos(int n, auto act_while){
+	const int inf = numeric_limits<int>::max();
+	enumerate_polyominos<FILTER_ISOMETRY>(n, inf, inf, act_while);
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>polyominos</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
