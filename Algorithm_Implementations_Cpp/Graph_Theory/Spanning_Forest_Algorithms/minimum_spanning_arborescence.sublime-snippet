@@ -1,11 +1,11 @@
 <snippet>
 	<content><![CDATA[
 // Returns {min_cost, parent_vertices}
-// O(E log V)
+// O(E * log(V))
 // Requires graph and disjoint_set_rollback
 template<class U, class T>
 optional<pair<U, vector<int>>> minimum_spanning_arborescence(const graph<T> &g, int src){
-	using E = typename graph<T>::E;
+	using E = typename graph<T>::Edge_t;
 	struct node{ /// lazy skew heap node
 		E key;
 		shared_ptr<node> l, r;
@@ -48,11 +48,11 @@ optional<pair<U, vector<int>>> minimum_spanning_arborescence(const graph<T> &g, 
 			cost += e.cost, u = dsu.root(e.from);
 			if(seen[u] == s){ // found cycle, contract
 				shared_ptr<node> cyc;
-				int end = qi, time = dsu.time();
+				int end = qi, state = dsu.state();
 				do cyc = merge(merge, cyc, heap[w = path[-- qi]]);
 				while(dsu.merge(u, w));
 				u = dsu.root(u), heap[u] = cyc, seen[u] = -1;
-				cycs.push_front({u, time, {&Q[qi], &Q[end]}});
+				cycs.push_front({u, state, {&Q[qi], &Q[end]}});
 			}
 		}
 		for(auto i = 0; i < qi; ++ i) in[dsu.root(Q[i].to)] = Q[i];
