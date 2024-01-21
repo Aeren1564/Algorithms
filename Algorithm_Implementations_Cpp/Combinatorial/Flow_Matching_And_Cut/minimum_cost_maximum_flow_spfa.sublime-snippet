@@ -1,11 +1,11 @@
 <snippet>
 	<content><![CDATA[
-// Requires weighted_flow_network
+// Requires flow_network_weighted
 template<class T, class C>
 struct minimum_cost_maximum_flow_spfa{
 	static constexpr T eps = (T) 1e-9;
-	weighted_flow_network<T, C> &F;
-	minimum_cost_maximum_flow_spfa(weighted_flow_network<T, C> &F): F(F), d(F.n), in_queue(F.n), pe(F.n), state(F.n){ }
+	flow_network_weighted<T, C> &F;
+	minimum_cost_maximum_flow_spfa(flow_network_weighted<T, C> &F): F(F), d(F.n), in_queue(F.n), pe(F.n), state(F.n){ }
 	// type 0: augment as long as a path exists
 	// type 1: augment as long as a negative cost path exists
 	vector<C> d;
@@ -15,10 +15,9 @@ struct minimum_cost_maximum_flow_spfa{
 		q = {source};
 		d[source] = 0;
 		in_queue[source] = true;
-		int beg = 0;
 		bool found = false;
-		while(beg < (int)q.size()){
-			int u = q[beg ++];
+		for(auto beg = 0; beg < (int)q.size(); ++ beg){
+			int u = q[beg];
 			if(u == sink) found = true;
 			in_queue[u] = false;
 			for(auto id: F.adj[u]){
