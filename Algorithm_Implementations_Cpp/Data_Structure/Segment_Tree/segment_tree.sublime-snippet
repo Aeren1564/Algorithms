@@ -2,6 +2,7 @@
 	<content><![CDATA[
 template<bool HAS_QUERY, bool HAS_UPDATE, class T, class U, class F1, class F2, class F3>
 struct segment_tree_base{
+	static_assert(HAS_QUERY || HAS_UPDATE);
 #define ifQ if constexpr(HAS_QUERY)
 #define ifU if constexpr(HAS_UPDATE)
 	int n, size, log;
@@ -256,6 +257,8 @@ struct segment_tree_base{
 		}
 		return out << '}';
 	}
+#undef ifQ
+#undef ifU
 };
 
 // Supports query
