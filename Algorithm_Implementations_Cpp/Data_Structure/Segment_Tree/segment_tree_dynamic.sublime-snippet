@@ -1,0 +1,285 @@
+<snippet>
+	<content><![CDATA[
+template<bool HAS_QUERY, bool HAS_UPDATE, class B, class T, class U, class F1, class F2, class F3, class F4>
+struct segment_tree_dynamic_base{
+	static_assert(HAS_QUERY || HAS_UPDATE);
+#define ifQ if constexpr(HAS_QUERY)
+#define ifU if constexpr(HAS_UPDATE)
+	B low, high; // All coordinates lie in range [low, high)
+	F1 T_init; // T_init(l, r): initial aggregated value for [l, r)
+	vector<int> left; // left child
+	vector<int> right; // right child
+	vector<int> pv; // parent
+	vector<T> data;
+	vector<U> data_action;
+	F2 TT; // monoid operation (always adjacent)
+	T T_id; // monoid identity
+	F3 UU; // monoid operation (superset, subset)
+	U U_id; // monoid identity
+	F4 UT; // action of U on T (superset, subset)
+	segment_tree_dynamic_base(B low, B high, F1 T_init, F2 TT, T T_id, F3 UU, U U_id, F4 UT): low(low), high(high), T_init(T_init), TT(TT), T_id(T_id), UU(UU), U_id(U_id), UT(UT){
+		assert(low < high);
+		new_state(T_init(low, high), U_id);
+	}
+	void extend(int u, B l, B r){
+		if(!~left[u]){
+			B m = l + (r - l >> 1);
+			left[u] = new_state(T_init(l, m), U_id);
+			right[u] = new_state(T_init(m, r), U_id);
+			pv[left[u]] = pv[right[u]] = u;
+		}
+	}
+	int last_state(){
+		return (int)data.size() - 1;
+	}
+	int new_state(T x, U f){
+		left.push_back(-1);
+		right.push_back(-1);
+		pv.push_back(-1);
+		ifQ data.push_back(x);
+		ifU data_action.push_back(f);
+		return last_state();
+	}
+	void push(int u, B l, B r){
+		static_assert(HAS_UPDATE);
+		int m = l + (r - l >> 1), v = left[u], w = right[u];
+		ifQ data[v] = UT(data_action[u], data[v]);
+		data_action[v] = UU(data_action[u], data_action[v]);
+		ifQ data[w] = UT(data_action[u], data[w]);
+		data_action[w] = UU(data_action[u], data_action[w]);
+		data_action[u] = U_id;
+	}
+	// O(log(n))
+	T query(B p){
+		static_assert(HAS_QUERY);
+		assert(low <= p && p < high);
+		int u = 0;
+		B l = low, r = high;
+		while(true){
+			if(r - l == 1) return data[u];
+			extend(u, l, r);
+			ifU push(u, l, r);
+			B m = l + (r - l >> 1);
+			if(p < m) u = left[u], r = m;
+			else u = right[u], l = m;
+		}
+	}
+	// O(log(n))
+	U query_action(B p){
+		static_assert(!HAS_QUERY && HAS_UPDATE);
+		assert(low <= p && p < high);
+		int u = 0;
+		B l = low, r = high;
+		while(true){
+			if(r - l == 1) return data_action[u];
+			extend(u, l, r);
+			push(u, l, r);
+			B m = l + (r - l >> 1);
+			if(p < m) u = left[u], r = m;
+			else u = right[u], l = m;
+		}
+	}
+	// O(log(n))
+	T query(B ql, B qr){
+		static_assert(HAS_QUERY);
+		assert(low <= ql && ql <= qr && qr <= high);
+		auto recurse = [&](auto recurse, int u, B l, B r)->T{
+			if(qr <= l || r <= ql) return T_id;
+			if(ql <= l && r <= qr) return data[u];
+			extend(u, l, r);
+			ifU push(u, l, r);
+			B m = l + (r - l >> 1);
+			return TT(recurse(recurse, left[u], l, m), recurse(recurse, right[u], m, r));
+		};
+		return recurse(recurse, 0, low, high);
+	}
+	// O(1)
+	T query_all() const{
+		static_assert(HAS_QUERY);
+		return data[0];
+	}
+	// O(log(n))
+	void set(B p, T x){
+		static_assert(HAS_QUERY);
+		assert(low <= p && p < high);
+		int u = 0;
+		B l = low, r = high;
+		while(true){
+			if(r - l == 1){
+				data[u] = x;
+				break;
+			}
+			extend(u, l, r);
+			ifU push(u, l, r);
+			B m = l + (r - l >> 1);
+			if(p < m) u = left[u], r = m;
+			else u = right[u], l = m;
+		}
+		while(u > 0){
+			u = pv[u];
+			data[u] = TT(data[left[u]], data[right[u]]);
+		}
+	}
+	// O(log(n))
+	void set_action(B p, U f){
+		static_assert(!HAS_QUERY && HAS_UPDATE);
+		assert(low <= p && p < high);
+		int u = 0;
+		B l = low, r = high;
+		while(true){
+			if(r - l == 1){
+				data_action[u] = f;
+				break;
+			}
+			extend(u, l, r);
+			push(u, l, r);
+			B m = l + (r - l >> 1);
+			if(p < m) u = left[u], r = m;
+			else u = right[u], l = m;
+		}
+	}
+	// O(log(n))
+	void update(B p, U f){
+		static_assert(HAS_UPDATE);
+		assert(low <= p && p < high);
+		int u = 0;
+		B l = low, r = high;
+		while(true){
+			if(r - l == 1){
+				ifQ data[u] = UT(f, data[u]);
+				data_action[u] = UU(f, data_action[u]);
+				break;
+			}
+			extend(u, l, r);
+			push(u, l, r);
+			B m = l + (r - l >> 1);
+			if(p < m) u = left[u], r = m;
+			else u = right[u], l = m;
+		}
+		while(u > 0){
+			u = pv[u];
+			data[u] = TT(data[left[u]], data[right[u]]);
+		}
+	}
+	// O(log(n))
+	void update(B ql, B qr, U f){
+		static_assert(HAS_UPDATE);
+		assert(low <= ql && ql <= qr && qr <= high);
+		if(ql == qr) return;
+		auto recurse = [&](auto self, int u, B l, B r)->void{
+			if(qr <= l || r <= ql) return;
+			if(ql <= l && r <= qr){
+				ifQ data[u] = UT(f, data[u]);
+				data_action[u] = UU(f, data_action[u]);
+				return;
+			}
+			extend(u, l, r);
+			push(u, l, r);
+			B m = l + (r - l >> 1);
+			self(self, left[u], l, m), self(self, right[u], m, r);
+			ifQ data[u] = TT(data[left[u]], data[right[u]]);
+		};
+		recurse(recurse, 0, low, high);
+	}
+	// pred(sum[l, r)) is T, T, ..., T, F, F, ..., F
+	// Returns max r with T
+	// O(log(n))
+	B max_pref(B ql, auto pred){
+		static_assert(HAS_QUERY);
+		assert(pred(T_id));
+		if(ql == high) return ql;
+		T pref = T_id;
+		auto recurse = [&](auto self, int u, B l, B r)->B{
+			if(r <= ql) return -1;
+			if(ql <= l && pred(TT(pref, data[u]))){
+				pref = TT(pref, data[u]);
+				return -1;
+			}
+			if(r - l == 1) return l;
+			extend(u, l, r);
+			ifU push(u, l, r);
+			B m = l + (r - l >> 1), p = self(self, left[u], l, m);
+			return ~p ? p : self(self, right[u], m, r);
+		};
+		B qr = recurse(recurse, 0, low, high);
+		if(!~qr) qr = high;
+		return qr;
+	}
+	// pred(sum[l, r)) is F, F, ..., F, T, T, ..., T
+	// Returns min l with T
+	// O(log(n))
+	B min_suff(B qr, auto pred){
+		static_assert(HAS_QUERY);
+		assert(pred(T_id));
+		if(qr == low) return qr;
+		T suff = T_id;
+		auto recurse = [&](auto self, int u, B l, B r)->B{
+			if(qr <= l) return -1;
+			if(r <= qr && pred(TT(data[u], suff))){
+				suff = TT(data[u], suff);
+				return -1;
+			}
+			if(r - l == 1) return r;
+			extend(u, l, r);
+			ifU push(u, l, r);
+			B m = l + (r - l >> 1), p = self(self, right[u], m, r);
+			return ~p ? p : self(self, left[u], l, m);
+		};
+		B ql = recurse(recurse, 0, low, high);
+		if(!~ql) ql = low;
+		return ql;
+	}
+	template<class output_stream>
+	friend output_stream &operator<<(output_stream &out, segment_tree_dynamic_base<HAS_QUERY, HAS_UPDATE, B, T, U, F1, F2, F3, F4> seg){
+		out << "{";
+		for(auto i = 0; i < seg.n; ++ i){
+			ifQ out << seg.query(i);
+			else out << seg.query_action(i);
+			if(i != seg.n - 1) out << ", ";
+		}
+		return out << '}';
+	}
+#undef ifQ
+#undef ifU
+};
+
+// Supports query
+template<class B, class T, class F1, class F2>
+auto make_Q_segment_tree_dynamic(B low, B high, F1 T_init, F2 TT, T T_id){
+	using U = int;
+	auto _UU = [&](U, U)->U{ return U{}; };
+	auto _UT = [&](U, T)->T{ return T{}; };
+	return segment_tree_dynamic_base<true, false, B, T, U, F1, F2, decltype(_UU), decltype(_UT)>(low, high, T_init, TT, T_id, _UU, U{}, _UT);
+}
+// Supports query
+template<class B, class T, class F>
+auto make_Q_segment_tree_dynamic(B low, B high, F TT, T T_id){
+	auto _T_init = [T_id](B, B){ return T_id; };
+	return make_Q_segment_tree_dynamic<B, T, decltype(_T_init), F>(low, high, move(_T_init), TT, T_id);
+}
+// Supports update
+template<class B, class U, class F>
+auto make_U_segment_tree_dynamic(B low, B high, F UU, U U_id){
+	using T = int;
+	auto _T_init = [&](B, B)->T{ return T{}; };
+	auto _TT = [&](T, T)->T{ return T{}; };
+	auto _UT = [&](U, T)->T{ return T{}; };
+	return segment_tree_dynamic_base<false, true, B, T, U, decltype(_T_init), decltype(_TT), F, decltype(_UT)>(low, high, _T_init, _TT, T{}, UU, U_id, _UT);
+}
+// Supports query and update
+template<class B, class T, class U, class F1, class F2, class F3, class F4>
+auto make_QU_segment_tree_dynamic(B low, B high, F1 T_init, F2 TT, T T_id, F3 UU, U U_id, F4 UT){
+	return segment_tree_dynamic_base<true, true, B, T, U, F1, F2, F3, F4>(low, high, T_init, TT, T_id, UU, U_id, UT);
+}
+// Supports query and update
+template<class B, class T, class U, class F1, class F2, class F3>
+auto make_QU_segment_tree_dynamic(B low, B high, F1 TT, T T_id, F2 UU, U U_id, F3 UT){
+	auto _T_init = [T_id](B, B){ return T_id; };
+	return make_QU_segment_tree_dynamic<B, T, U, decltype(_T_init), F1, F2, F3>(low, high, _T_init, TT, T_id, UU, U_id, UT);
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>segment_tree_dynamic</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
