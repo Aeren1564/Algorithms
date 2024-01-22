@@ -1,27 +1,36 @@
 <snippet>
 	<content><![CDATA[
 // Efficient multiset when the keys are integers in range [offset, offset + len)
-// Requires fenwick_tree_sum
 template<class T>
 struct integral_multiset{
 	int _size = 0;
-	T offset, maxval;
+	T len, offset, maxval;
 	vector<int> freq;
-	fenwick_tree_sum<int> data;
-	integral_multiset(int len, T offset = {}): offset(offset), maxval(offset + len), freq(len), data(len){ }
+	vector<int> data;
+	integral_multiset(int len, T offset = {}): len(len), offset(offset), maxval(offset + len), freq(len), data(len){ }
 	integral_multiset(const vector<T> &init, int len, T offset = 0): offset(offset), maxval(offset + len), freq(len){
 		for(auto x: init){
 			assert(offset <= x && x < maxval);
 			++ freq[x - offset], ++ _size;
 		}
-		data = {freq};
+		data = freq;
+		for(auto i = 1; i <= len; ++ i) if(i + (i & -i) <= len) data[i + (i & -i) - 1] += data[i - 1];
 	}
 	integral_multiset(const integral_multiset &otr): _size(otr._size), offset(otr.offset), maxval(otr.maxval), freq(otr.freq), data(otr.data){
 	}
-	friend ostream &operator<<(ostream &out, integral_multiset ms){
+	vector<T> to_array() const{
+		vector<T> res;
+		for(auto x = offset; x < maxval; ++ x) for(auto rep = 0; rep < freq[x]; ++ rep) res.push_back(x);
+		return res;
+	}
+	friend ostream &operator<<(ostream &out, const integral_multiset &ms){
+		auto a = ms.to_array();
 		out << "{";
-		for(auto x = ms.offset; x < ms.maxval; ++ x) for(auto rep = 0; rep < ms.freq[x]; ++ rep) out << x << ", ";
-		return ms.empty() ? out << "}" : out << "\b\b}";
+		for(auto i = 0; i < (int)a.size(); ++ i){
+			out << a[i];
+			if(i + 1 < (int)a.size()) out << ", ";
+		}
+		return out << "}";
 	}
 	// O(1)
 	int size() const{
@@ -41,64 +50,79 @@ struct integral_multiset{
 		assert(offset <= x && x < maxval);
 		return freq[x - offset];
 	}
-	// O(log len)
+	// O(log(len))
 	void insert(T x){
 		assert(offset <= x && x < maxval);
 		++ _size;
 		++ freq[x - offset];
-		data.update(x - offset, 1);
+		for(auto p = x - offset + 1; p <= len; p += p & -p) ++ data[p - 1];
 	}
-	// O(log len) if true, O(1) otherwise
+	// O(log(len)) if true, O(1) otherwise
 	bool erase(T x){
 		assert(offset <= x && x < maxval);
 		if(freq[x - offset]){
 			-- _size;
 			-- freq[x - offset];
-			data.update(x - offset, -1);
+			for(auto p = x - offset + 1; p <= len; p += p & -p) -- data[p - 1];
 			return true;
 		}
 		return false;
 	}
-	// O(log len)
+	// O(log(len))
 	T find_by_order(int k) const{
 		if(k < 0) return offset - 1;
 		if(k >= _size) return maxval;
-		return data.max_pref([k](int pref){ return pref <= k; }) + offset;
+		int p = 0;
+		for(auto i = __lg(len + 1), sum = 0; i >= 0; -- i) if(p + (1 << i) <= len && sum + data[p + (1 << i) - 1] <= k){
+			sum += data[p + (1 << i) - 1];
+			p += 1 << i;
+		}
+		return p + offset;
 	}
-	// O(log len)
+	// O(log(len))
 	int order_of_key(T x) const{
 		if(x < offset) return 0;
 		if(maxval <= x) return _size;
-		return data.pref(x - offset);
+		int sum = 0;
+		for(auto r = x - offset; r > 0; r -= r & -r) sum += data[r - 1];
+		return sum;
 	}
-	// O(log len)
+	// O(log(len))
 	T front() const{
 		assert(_size);
 		return find_by_order(0) + offset;
 	}
-	// O(log len)
+	// O(log(len))
 	T back() const{
 		assert(_size);
 		return find_by_order(_size - 1) + offset;
 	}
 	// Returns maxval if no such element
-	// O(log len)
+	// O(log(len))
 	T lower_bound(T x) const{
-		return find_by_order(data.pref(x - offset));
+		int sum = 0;
+		for(auto r = x - offset; r > 0; r -= r & -r) sum += data[r - 1];
+		return find_by_order(sum);
 	}
-	// O(log len), returns maxval if no such element
+	// O(log(len)), returns maxval if no such element
 	T upper_bound(T x) const{
-		return find_by_order(data.pref(x - offset + 1));
+		int sum = 0;
+		for(auto r = x - offset + 1; r > 0; r -= r & -r) sum += data[r - 1];
+		return find_by_order(sum);
 	}
 	// Returns minval if no such element
-	// O(log len)
+	// O(log(len))
 	T reverse_lower_bound(T x) const{
-		return find_by_order(data.pref(x - offset + 1) - 1);
+		int sum = 0;
+		for(auto r = x - offset + 1; r > 0; r -= r & -r) sum += data[r - 1];
+		return find_by_order(sum - 1);
 	}
 	// Returns minval if no such element
-	// O(log len)
+	// O(log(len))
 	T reverse_upper_bound(T x) const{
-		return find_by_order(data.pref(x - offset) - 1);
+		int sum = 0;
+		for(auto r = x - offset; r > 0; r -= r & -r) sum += data[r - 1];
+		return find_by_order(sum - 1);
 	}
 };
 ]]></content>
