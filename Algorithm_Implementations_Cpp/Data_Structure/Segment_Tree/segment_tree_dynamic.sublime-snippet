@@ -40,9 +40,9 @@ struct segment_tree_dynamic_base{
 		ifU data_action.push_back(f);
 		return last_state();
 	}
-	void push(int u, B l, B r){
+	void push(int u){
 		static_assert(HAS_UPDATE);
-		int m = l + (r - l >> 1), v = left[u], w = right[u];
+		int v = left[u], w = right[u];
 		ifQ data[v] = UT(data_action[u], data[v]);
 		data_action[v] = UU(data_action[u], data_action[v]);
 		ifQ data[w] = UT(data_action[u], data[w]);
@@ -58,7 +58,7 @@ struct segment_tree_dynamic_base{
 		while(true){
 			if(r - l == 1) return data[u];
 			extend(u, l, r);
-			ifU push(u, l, r);
+			ifU push(u);
 			B m = l + (r - l >> 1);
 			if(p < m) u = left[u], r = m;
 			else u = right[u], l = m;
@@ -73,7 +73,7 @@ struct segment_tree_dynamic_base{
 		while(true){
 			if(r - l == 1) return data_action[u];
 			extend(u, l, r);
-			push(u, l, r);
+			push(u);
 			B m = l + (r - l >> 1);
 			if(p < m) u = left[u], r = m;
 			else u = right[u], l = m;
@@ -87,7 +87,7 @@ struct segment_tree_dynamic_base{
 			if(qr <= l || r <= ql) return T_id;
 			if(ql <= l && r <= qr) return data[u];
 			extend(u, l, r);
-			ifU push(u, l, r);
+			ifU push(u);
 			B m = l + (r - l >> 1);
 			return TT(recurse(recurse, left[u], l, m), recurse(recurse, right[u], m, r));
 		};
@@ -110,7 +110,7 @@ struct segment_tree_dynamic_base{
 				break;
 			}
 			extend(u, l, r);
-			ifU push(u, l, r);
+			ifU push(u);
 			B m = l + (r - l >> 1);
 			if(p < m) u = left[u], r = m;
 			else u = right[u], l = m;
@@ -132,7 +132,7 @@ struct segment_tree_dynamic_base{
 				break;
 			}
 			extend(u, l, r);
-			push(u, l, r);
+			push(u);
 			B m = l + (r - l >> 1);
 			if(p < m) u = left[u], r = m;
 			else u = right[u], l = m;
@@ -151,7 +151,7 @@ struct segment_tree_dynamic_base{
 				break;
 			}
 			extend(u, l, r);
-			push(u, l, r);
+			push(u);
 			B m = l + (r - l >> 1);
 			if(p < m) u = left[u], r = m;
 			else u = right[u], l = m;
@@ -174,7 +174,7 @@ struct segment_tree_dynamic_base{
 				return;
 			}
 			extend(u, l, r);
-			push(u, l, r);
+			push(u);
 			B m = l + (r - l >> 1);
 			self(self, left[u], l, m), self(self, right[u], m, r);
 			ifQ data[u] = TT(data[left[u]], data[right[u]]);
@@ -186,7 +186,7 @@ struct segment_tree_dynamic_base{
 	// O(log(n))
 	B max_pref(B ql, auto pred){
 		static_assert(HAS_QUERY);
-		assert(pred(T_id));
+		assert(low <= ql && ql <= high && pred(T_id));
 		if(ql == high) return ql;
 		T pref = T_id;
 		auto recurse = [&](auto self, int u, B l, B r)->B{
@@ -197,7 +197,7 @@ struct segment_tree_dynamic_base{
 			}
 			if(r - l == 1) return l;
 			extend(u, l, r);
-			ifU push(u, l, r);
+			ifU push(u);
 			B m = l + (r - l >> 1), p = self(self, left[u], l, m);
 			return ~p ? p : self(self, right[u], m, r);
 		};
@@ -210,7 +210,7 @@ struct segment_tree_dynamic_base{
 	// O(log(n))
 	B min_suff(B qr, auto pred){
 		static_assert(HAS_QUERY);
-		assert(pred(T_id));
+		assert(low <= qr && qr <= high && pred(T_id));
 		if(qr == low) return qr;
 		T suff = T_id;
 		auto recurse = [&](auto self, int u, B l, B r)->B{
@@ -221,7 +221,7 @@ struct segment_tree_dynamic_base{
 			}
 			if(r - l == 1) return r;
 			extend(u, l, r);
-			ifU push(u, l, r);
+			ifU push(u);
 			B m = l + (r - l >> 1), p = self(self, right[u], m, r);
 			return ~p ? p : self(self, left[u], l, m);
 		};
