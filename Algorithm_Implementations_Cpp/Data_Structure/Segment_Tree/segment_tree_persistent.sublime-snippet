@@ -456,7 +456,7 @@ auto make_QU_segment_tree_persistent(F1 TT, T T_id, F2 UU, U U_id, F3 UT){
 }
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
-	<tabTrigger>persistent_segment_tree</tabTrigger> -->
+	<tabTrigger>segment_tree_persistent</tabTrigger> -->
 	<!-- Optional: Set a scope to limit where the snippet will trigger -->
 	<scope>source.c++</scope> -->
 </snippet>
