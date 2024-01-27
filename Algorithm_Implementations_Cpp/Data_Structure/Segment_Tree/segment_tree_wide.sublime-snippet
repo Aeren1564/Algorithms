@@ -42,7 +42,7 @@ struct segment_tree_wide_base{
 	I T_inv; // group inverse
 	segment_tree_wide_base(F TT, T T_id, I T_inv): TT(TT), T_id(T_id), T_inv(T_inv){ }
 	void _prefetch(int h, int i) const{
-		// __builtin_prefetch(data + offset[h] + round(i));
+		__builtin_prefetch(data + offset[h] + round(i));
 	}
 	void build(int n){
 		build(vector<T>(n, T_id));
