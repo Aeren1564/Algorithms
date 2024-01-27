@@ -19,7 +19,8 @@ struct monoid{
 		for(; e; e >>= 1, *this = *this * *this) if(e & 1) res += *this;
 		return *this = res;
 	}
-	friend ostream &operator<<(ostream &out, const monoid &x){
+	template<class ostream_t>
+	friend ostream_t &operator<<(ostream_t &out, const monoid &x){
 		return out << x.data;
 	}
 	// Modify end

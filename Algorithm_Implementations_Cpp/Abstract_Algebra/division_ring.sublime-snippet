@@ -27,7 +27,8 @@ struct division_ring{
 		data /= x.data;
 		return *this;
 	}
-	friend ostream &operator<<(ostream &out, const division_ring &x){
+	template<class ostream_t>
+	friend ostream_t &operator<<(ostream_t &out, const division_ring &x){
 		return out << x.data;
 	}
 	// Modify end
