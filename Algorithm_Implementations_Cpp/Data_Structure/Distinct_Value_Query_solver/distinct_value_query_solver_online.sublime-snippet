@@ -1,45 +1,41 @@
 <snippet>
 	<content><![CDATA[
-// Requires persistent_segment_tree
-template<class T = int, class F = plus<>>
 struct distinct_value_query_solver_online{
-	int n, sigma;
-	vector<int> root;
-	persistent_segment_tree<T, F> pseg;
+	int n;
 	// 0 <= a[i] < sigma must hold for all 0 <= i < n
-	// O(n * log(n) + sigma)
-	distinct_value_query_solver_online(const vector<int> &a, int sigma, F TT = plus<>(), T T_id = {}): distinct_value_query_solver_online(a, vector<T>(sigma, 1), TT = plus<>(), T_id = {}){ }
-	// 0 <= a[i] < sigma must hold for all 0 <= i < n
-	// O(n * log(n) + sigma)
-	distinct_value_query_solver_online(const vector<int> &a, const vector<T> &w, F TT = plus<>(), T T_id = {}): n((int)a.size()), sigma((int)w.size()), root(n + 1), pseg(n + 1, TT, T_id){
+	// build(a): prepare a static data structure to process the following queries: given l, r, and k, count the number of elements in a[ql, qr) less than k
+	// O(n * log(sigma) + sigma)
+	distinct_value_query_solver_online(const vector<int> &a, int sigma, auto build): n((int)a.size()){
 		for(auto &x: a) assert(0 <= x && x < sigma);
-		vector<tuple<int, int, T>> event(n);
-		vector<int> last(w.size(), -1);
+		vector<int> seen(sigma), aux(n);
 		for(auto i = 0; i < n; ++ i){
-			event[i] = {last[a[i]], i, w[a[i]]};
-			last[a[i]] = i;
+			aux[i] = seen[a[i]];
+			seen[a[i]] = i + 1;
 		}
-		sort(event.rbegin(), event.rend());
-		for(auto i = 0; i <= n; ++ i){
-			while(!event.empty() && get<0>(event.back()) < i){
-				pseg.set(pseg.last_state(), get<1>(event.back()), get<2>(event.back()));
-				event.pop_back();
-			}
-			root[i] = pseg.last_state();
-		}
+		build(aux);
 	}
-	distinct_value_query_solver_online &operator=(const distinct_value_query_solver_online &dvq){
-		n = dvq.n;
-		sigma = dvq.sigma;
-		root = dvq.root;
-		pseg = dvq.pseg;
-		return *this;
+	// 0 <= a[i] < sigma must hold for all 0 <= i < n
+	// build(a, w): prepare a static data structure to process the following queries: given ql, qr, and k, find the aggregate of w[i] over all indices i with ql <= i < qr and a[i] < k
+	// O(n * log(sigma) + sigma)
+	template<class T>
+	distinct_value_query_solver_online(const vector<int> &a, const vector<T> &w, auto build): n((int)a.size()){
+		int sigma = (int)w.size();
+		for(auto &x: a) assert(0 <= x && x < sigma);
+		vector<int> seen(sigma), aux(n);
+		vector<T> aux_w(n);
+		for(auto i = 0; i < n; ++ i){
+			aux[i] = seen[a[i]];
+			aux_w[i] = w[a[i]];
+			seen[a[i]] = i + 1;
+		}
+		build(aux, w);
 	}
 	// Find the sum of w[x] over all distinct values x appearing in a[ql, qr)
+	// _query(ql, qr, k): returns the answer to the query defined by (ql, qr, k)
 	// O(log(n))
-	T query(int ql, int qr) const{
+	int query(int ql, int qr, auto _query) const{
 		assert(0 <= ql && ql <= qr && qr <= n);
-		return pseg.query(root[ql], ql, qr);
+		return _query(ql, qr, ql + 1);
 	}
 };
 ]]></content>
