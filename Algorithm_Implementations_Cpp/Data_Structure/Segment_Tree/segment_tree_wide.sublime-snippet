@@ -2,9 +2,9 @@
 	<content><![CDATA[
 // Very fast segtree from https://en.algorithmica.org/hpc/data-structures/segment-trees/
 // T must be a group and support vectorization
-template<int size, class T, class F, class I>
+template<int SIZE, class T, class F, class I>
 struct segment_tree_wide_base{
-	static_assert(size > 0 && __builtin_popcount(size) == 1);
+	static_assert(SIZE > 0 && __builtin_popcount(SIZE) == 1);
 	static constexpr int cache_size = 64;
 	static constexpr int reg_size = 32;
 	static constexpr int reg_count = cache_size / reg_size;
@@ -29,10 +29,10 @@ struct segment_tree_wide_base{
 	}
 	static constexpr int calc_offset(int h){
 		int s = 0;
-		for(auto n = size; h --; n >>= branching_bits) s += ceil(n);
+		for(auto n = SIZE; h --; n >>= branching_bits) s += ceil(n);
 		return s;
 	}
-	static constexpr int H = calc_height(size);
+	static constexpr int H = calc_height(SIZE);
 	template<size_t ... indices> static constexpr array<int, H + 1> calc_offsets(index_sequence<indices...>){ return {calc_offset(indices)...}; }
 	static constexpr auto offset = calc_offsets(make_index_sequence<H + 1>());
 	int n;
@@ -40,35 +40,21 @@ struct segment_tree_wide_base{
 	F TT; // group operation
 	T T_id; // group identity
 	I T_inv; // group inverse
-	segment_tree_wide_base(int n, F TT, T T_id, I T_inv): TT(TT), T_id(T_id), T_inv(T_inv){
-		init(n);
+	segment_tree_wide_base(F TT, T T_id, I T_inv): TT(TT), T_id(T_id), T_inv(T_inv){ }
+	void _prefetch(int h, int i) const{
+		// __builtin_prefetch(data + offset[h] + round(i));
 	}
-	segment_tree_wide_base(int n, T x, F TT, T T_id, I T_inv): TT(TT), T_id(T_id), T_inv(T_inv){
-		init(n, x);
+	void build(int n){
+		build(vector<T>(n, T_id));
 	}
-	segment_tree_wide_base(const vector<T> &a, F TT, T T_id, I T_inv): TT(TT), T_id(T_id), T_inv(T_inv){
-		init(a);
+	void build(int n, T x){
+		build(vector<T>(n, x));
 	}
-	void init(int n){
-		init(n, T_id);
-	}
-	void init(int n, T x){
-		this->n = n;
-		assert(round(n) + branching <= size);
-		for(auto i = 0; i < ceil(n); ++ i) data[i] = i < n ? x : T_id;
-		_build(n);
-	}
-	void init(const vector<T> &a){
+	void build(const vector<T> &a){
 		n = (int)a.size();
-		assert(round(n) + branching <= size);
+		assert(round(n) + branching <= SIZE);
 		for(auto i = 0; i < ceil(n); ++ i) data[i] = i < n ? a[i] : T_id;
-		_build(n);
-	}
-	void _build(int n){
-		for(auto h = 1; h < H; ++ h)
-			for(auto i = 0; i < ceil(n >> branching_bits * h); ++ i)
-				for(auto j = i << branching_bits, r = min(ceil(n >> branching_bits * (h - 1)), i + 1 << branching_bits); j < r; ++ j)
-					data[offset[h] + i] = TT(data[offset[h] + i], data[offset[h - 1] + j]);
+		for(auto h = 1; h < H; ++ h) for(auto i = 0; i < ceil(n >> branching_bits * h); ++ i) for(auto j = i << branching_bits, r = min(ceil(n >> branching_bits * (h - 1)), i + 1 << branching_bits); j < r; ++ j) data[offset[h] + i] = TT(data[offset[h] + i], data[offset[h - 1] + j]);
 		for(auto h = 0; h < H; ++ h){
 			T sum;
 			for(auto i = 0; i < ceil(n >> branching_bits * h); ++ i){
@@ -78,52 +64,60 @@ struct segment_tree_wide_base{
 			}
 		}
 	}
-	void update(int p, T _x){
-		assert(0 <= p && p < n);
-		Twide x = Twide{} + _x;
-		for(auto h = 0; h < H; ++ h, p >>= branching_bits){
-			auto a = (Twide *)&data[offset[h] + round(p)];
-			const auto suffix_mask = (const Twide *)&precalc.mask[p % branching];
-			for(auto i = 0; i < reg_count; ++ i) a[i] = TT(a[i], x & suffix_mask[i]);
-		}
-	}
 	T query(int p) const{
 		assert(0 <= p && p < n);
-		return TT(T_inv(data[p]), (p + 1) % branching ? data[p + 1] : data[offset[1] + (p + 1 >> branching_bits)]);
-	}
-	void set(int p, T x){
-		update(p, TT(T_inv(query(p)), x));
+		return TT(T_inv(data[p]), (p + 1) % branching ? data[p + 1] : data[offset[H - 1] + (p + 1 >> branching_bits)]);
 	}
 	T prefix(int r) const{
 		assert(0 <= r && r <= n);
 		if(!r) return T_id;
 		T res = T_id;
-		for(auto h = 0; h < H; ++ h, r >>= branching_bits) res = TT(res, data[offset[h] + r]);
+		for(auto h = 0; h < H; ++ h, r >>= branching_bits){
+			if(h + 1 != H) _prefetch(h + 1, r >> branching_bits);
+			res = TT(res, data[offset[h] + r]);
+		}
 		return res;
 	}
 	T query(int l, int r) const{
 		assert(0 <= l && l <= r && r <= n);
 		if(l == r) return T_id;
 		T res = T_id;
-		for(auto h = 0; h < H; ++ h, l >>= branching_bits, r >>= branching_bits) res = TT(res, TT(T_inv(data[offset[h] + l]), data[offset[h] + r]));
+		for(auto h = 0; h < H; ++ h, l >>= branching_bits, r >>= branching_bits){
+			if(h + 1 != H){
+				_prefetch(h + 1, l >> branching_bits);
+				if(l >> branching_bits != r >> branching_bits) _prefetch(h + 1, r >> branching_bits);
+			}
+			res = TT(res, TT(T_inv(data[offset[h] + l]), data[offset[h] + r]));
+		}
 		return res;
 	}
-	friend ostream &operator<<(ostream &out, const segment_tree_wide_base<size, T, F, I> &seg){
-		out << "[";
+	void update(int p, T _x){
+		assert(0 <= p && p < n);
+		Twide x = Twide{} + _x;
+		for(auto h = 0; h < H; ++ h, p >>= branching_bits){
+			if(h + 1 != H) _prefetch(h + 1, p >> branching_bits);
+			auto a = (Twide *)&data[offset[h] + round(p)];
+			const auto suffix_mask = (const Twide *)&precalc.mask[p % branching];
+			for(auto i = 0; i < reg_count; ++ i) a[i] = TT(a[i], x & suffix_mask[i]);
+		}
+	}
+	void set(int p, T x){
+		update(p, TT(T_inv(query(p)), x));
+	}
+	friend ostream &operator<<(ostream &out, const segment_tree_wide_base<SIZE, T, F, I> &seg){
+		out << "{";
 		for(auto i = 0; i < seg.n; ++ i){
 			out << seg.query(i);
 			if(i != seg.n - 1) out << ", ";
 		}
-		return out << ']';
+		return out << '}';
 	}
 };
 
-template<class T, class F, class I>
-using segment_tree_wide = segment_tree_wide_base<1 << 17, T, F, I>; // 131072
-// using segment_tree_wide = segment_tree_wide_base<1 << 18, T, F, I>; // 262144
-// using segment_tree_wide = segment_tree_wide_base<1 << 19, T, F, I>; // 524288
-// using segment_tree_wide = segment_tree_wide_base<1 << 20, T, F, I>; // 1048576
-// using segment_tree_wide = segment_tree_wide_base<1 << 21, T, F, I>; // 2097152
+template<int SIZE, class T, class F, class I>
+auto make_segment_tree_wide(F TT, T T_id, I T_inv){
+	return segment_tree_wide_base<SIZE, T, F, I>(TT, T_id, T_inv);
+}
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
 	<tabTrigger>segment_tree_wide</tabTrigger> -->
