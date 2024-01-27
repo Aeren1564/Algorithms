@@ -1,5 +1,6 @@
 <snippet>
 	<content><![CDATA[
+// #pragma GCC optimize("O3,unroll-loops")
 #include <bits/stdc++.h>
 // #include <x86intrin.h>
 using namespace std;

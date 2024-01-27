@@ -29,15 +29,14 @@ struct distinct_value_query_solver_offline{
 		assert(0 <= ql && ql <= qr && qr <= n);
 		queries.push_back({ql, qr, qi});
 	}
-	// init(n) Initialize DS over identity array A of length n
+	// First, prepare a data structure of length sigma, initialized with identities
 	// set(p, x): A[p] <- x, A[p] is always identity beforehand
 	// query(l, r): return sum in A[l:r)
 	// answer(qi, x): answer to query qi is sum of w[x] over all distinct values x in a[ql, qr)
-	// O(init() + n * (log(n) + update()) + q * (log(q) + query() + answer()))
-	void solve(auto init, auto set, auto query, auto answer){
+	// O(n * (log(n) + update()) + q * (log(q) + query() + answer()))
+	void solve(auto set, auto query, auto answer){
 		sort(queries.begin(), queries.end());
 		sort(event.begin(), event.end());
-		init(n);
 		int i = 0;
 		for(auto &q: queries){
 			while(i < (int)event.size() && get<0>(event[i]) < q[0]){
