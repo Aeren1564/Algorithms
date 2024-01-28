@@ -25,65 +25,51 @@ struct segment_tree_persistent_base{
 		data_action = seg.data_action;
 		return *this;
 	}
-	int last_state() const{
-		return (int)data.size() - 1;
+	int _last_state() const{
+		return (int)left.size() - 1;
 	}
-	int new_state(int l, int r, T x){
+	int _new_state(int l, int r, T x){
 		static_assert(HAS_QUERY);
 		left.push_back(l);
 		right.push_back(r);
 		data.push_back(x);
 		ifU data_action.push_back(U_id);
-		return last_state();
+		return _last_state();
 	}
-	int new_state_action(int l, int r, U f){
+	int _new_state(int l, int r, T x, U f){
+		static_assert(HAS_QUERY && HAS_UPDATE);
+		left.push_back(l);
+		right.push_back(r);
+		data.push_back(x);
+		data_action.push_back(f);
+		return _last_state();
+	}
+	int _new_state_action(int l, int r, U f){
 		static_assert(!HAS_QUERY && HAS_UPDATE);
 		left.push_back(l);
 		right.push_back(r);
 		ifU data_action.push_back(f);
-		return last_state();
+		return _last_state();
 	}
-	int new_state(int u){
+	int copy(int u){
+		assert(0 <= u && u <= _last_state());
 		left.push_back(left[u]);
 		right.push_back(right[u]);
 		ifQ data.push_back(data[u]);
 		ifU data_action.push_back(data_action[u]);
-		return last_state();
+		return _last_state();
 	}
 	// Invalidates all previous roots
 	// O(n)
 	int build(int n){
-		assert(n >= 1);
-		this->n = n;
-		left.clear();
-		right.clear();
-		data.clear();
-		data_action.clear();
-		auto recurse = [&](auto self, int l, int r)->int{
-			if(r - l == 1) return new_state(-1, -1, T_id);
-			int m = l + (r - l >> 1);
-			int v = self(self, l, m), w = self(self, m, r);;
-			return new_state(v, w, T_id);
-		};
-		return recurse(recurse, 0, n);
+		static_assert(HAS_QUERY);
+		return build(vector<T>(n, T_id));
 	}
 	// Invalidates all previous roots
 	// O(n)
 	int build(int n, T x){
 		static_assert(HAS_QUERY);
-		assert(n >= 1);
-		this->n = n;
-		left.clear();
-		right.clear();
-		data.clear();
-		data_action.clear();
-		auto recurse = [&](auto self, int l, int r)->int{
-			if(r - l == 1) return new_state(-1, -1, x);
-			int m = l + (r - l >> 1);
-			int v = self(self, l, m), w = self(self, m, r);
-			return new_state(v, w, TT(data[v], data[w]));
-		};
-		return recurse(recurse, 0, n);
+		return build(vector<T>(n, x));
 	}
 	// Invalidates all previous roots
 	// O(n)
@@ -96,31 +82,20 @@ struct segment_tree_persistent_base{
 		data.clear();
 		data_action.clear();
 		auto recurse = [&](auto self, int l, int r)->int{
-			if(r - l == 1) return new_state(-1, -1, a[l]);
+			if(r - l == 1) return _new_state(-1, -1, a[l]);
 			int m = l + (r - l >> 1);
 			int v = self(self, l, m), w = self(self, m, r);
-			return new_state(v, w, TT(data[v], data[w]));
+			return _new_state(v, w, TT(data[v], data[w]));
 		};
 		return recurse(recurse, 0, n);
 	}
 	int build_action(int n){
 		static_assert(!HAS_QUERY && HAS_UPDATE);
-		return build(n);
+		return build_action(vector<U>(n, U_id));
 	}
 	int build_action(int n, U f){
 		static_assert(!HAS_QUERY && HAS_UPDATE);
-		this->n = n;
-		left.clear();
-		right.clear();
-		data.clear();
-		data_action.clear();
-		auto recurse = [&](auto self, int l, int r)->int{
-			if(r - l == 1) return new_state_action(-1, -1, f);
-			int m = l + (r - l >> 1);
-			int v = self(self, l, m), w = self(self, m, r);
-			return new_state_action(v, w, UU(data_action[v], data_action[w]));
-		};
-		return recurse(recurse, 0, n);
+		return build_action(vector<U>(n, f));
 	}
 	int build_action(const vector<U> &a){
 		static_assert(!HAS_QUERY && HAS_UPDATE);
@@ -131,32 +106,36 @@ struct segment_tree_persistent_base{
 		data.clear();
 		data_action.clear();
 		auto recurse = [&](auto self, int l, int r)->int{
-			if(r - l == 1) return new_state_action(-1, -1, a[l]);
+			if(r - l == 1) return _new_state_action(-1, -1, a[l]);
 			int m = l + (r - l >> 1);
 			int v = self(self, l, m), w = self(self, m, r);
-			return new_state_action(v, w, U_id);
+			return _new_state_action(v, w, U_id);
 		};
 		return recurse(recurse, 0, n);
 	}
-	int push(int u){
+	int _push_copy(int u){
 		static_assert(HAS_UPDATE);
-		int u_new = new_state(u), v_new = new_state(left[u]), w_new = new_state(right[u]);
-		ifQ data[v_new] = UT(data_action[u_new], data[v_new]);
-		data_action[v_new] = UU(data_action[u_new], data_action[v_new]);
-		ifQ data[w_new] = UT(data_action[u_new], data[w_new]);
-		data_action[w_new] = UU(data_action[u_new], data_action[w_new]);
-		data_action[u_new] = U_id;
-		return u_new;
+		if(data_action[u] == U_id) return copy(u);
+		int v_new = copy(left[u]), w_new = copy(right[u]);
+		ifQ data[v_new] = UT(data_action[u], data[v_new]);
+		data_action[v_new] = UU(data_action[u], data_action[v_new]);
+		ifQ data[w_new] = UT(data_action[u], data[w_new]);
+		data_action[w_new] = UU(data_action[u], data_action[w_new]);
+		ifQ u = _new_state(v_new, w_new, TT(data[v_new], data[w_new]));
+		else u = _new_state_action(v_new, w_new, UU(data_action[v_new], data_action[w_new]));
+		data_action[u] = U_id;
+		return u;
 	}
 	// Assumes u represents an interval of size n
 	// O(log(n))
 	pair<int, T> query(int u, int p){	
 		static_assert(HAS_QUERY);
+		assert(0 <= u && u <= _last_state());
 		assert(0 <= p && p < n);
 		ifU{
 			auto recurse = [&](auto self, int u, int l, int r)->pair<int, T>{
 				if(r - l == 1) return {u, data[u]};
-				u = push(u);
+				u = _push_copy(u);
 				int m = l + (r - l >> 1);
 				if(p < m){
 					auto [v, x] = self(self, left[u], l, m);
@@ -185,10 +164,11 @@ struct segment_tree_persistent_base{
 	// O(log(n))
 	pair<int, U> query_action(int u, int p){
 		static_assert(!HAS_QUERY && HAS_UPDATE);
+		assert(0 <= u && u <= _last_state());
 		assert(0 <= p && p < n);
 		auto recurse = [&](auto self, int u, int l, int r)->pair<int, U>{
 			if(r - l == 1) return {u, data_action[u]};
-			u = push(u);
+			u = _push_copy(u);
 			int m = l + (r - l >> 1);
 			if(p < m){
 				auto [v, f] = self(self, left[u], l, m);
@@ -207,11 +187,13 @@ struct segment_tree_persistent_base{
 	// O(log(n))
 	pair<int, T> query(int u, int ql, int qr){
 		static_assert(HAS_QUERY);
+		assert(0 <= u && u <= _last_state());
 		assert(0 <= ql && ql <= qr && qr <= n);
+		if(ql == qr) return {u, T_id};
 		auto recurse = [&](auto self, int u, int l, int r)->pair<int, T>{
 			if(qr <= l || r <= ql) return {u, T_id};
 			if(ql <= l && r <= qr) return {u, data[u]};
-			ifU u = push(u);
+			ifU u = _push_copy(u);
 			int m = l + (r - l >> 1);
 			auto [v, x] = self(self, left[u], l, m);
 			auto [w, y] = self(self, right[u], m, r);
@@ -224,19 +206,21 @@ struct segment_tree_persistent_base{
 	// O(1)
 	pair<int, T> query_all(int u) const{
 		static_assert(HAS_QUERY);
+		assert(0 <= u && u <= _last_state());
 		return {u, data[u]};
 	}
 	// Assumes u represents an interval of size n
 	// O(n)
 	pair<int, vector<T>> to_array(int u){
 		static_assert(HAS_QUERY);
+		assert(0 <= u && u <= _last_state());
 		vector<T> res;
 		auto recurse = [&](auto self, int u, int l, int r)->int{
 			if(r - l == 1){
-				res.push_back(data[l]);
+				res.push_back(data[u]);
 				return u;
 			}
-			ifU u = push(u);
+			ifU u = _push_copy(u);
 			int m = l + (r - l >> 1);
 			left[u] = self(self, left[u], l, m);
 			right[u] = self(self, right[u], m, r);
@@ -249,13 +233,14 @@ struct segment_tree_persistent_base{
 	// O(n)
 	pair<int, vector<U>> to_array_of_updates(int u){
 		static_assert(!HAS_QUERY && HAS_UPDATE);
+		assert(0 <= u && u <= _last_state());
 		vector<U> res;
 		auto recurse = [&](auto self, int u, int l, int r)->int{
 			if(r - l == 1){
-				res.push_back(data_action[l]);
+				res.push_back(data_action[u]);
 				return u;
 			}
-			u = push(u);
+			u = _push_copy(u);
 			int m = l + (r - l >> 1);
 			left[u] = self(self, left[u], l, m);
 			right[u] = self(self, right[u], m, r);
@@ -268,12 +253,13 @@ struct segment_tree_persistent_base{
 	// O(log(n))
 	int set(int u, int p, T x){
 		static_assert(HAS_QUERY);
+		assert(0 <= u && u <= _last_state());
 		assert(0 <= p && p < n);
 		auto recurse = [&](auto self, int u, int l, int r)->int{
-			if(r - l == 1) return new_state(-1, -1, x);
+			if(r - l == 1) return _new_state(-1, -1, x);
 			int m = l + (r - l >> 1);
 			ifU{
-				u = push(u);
+				u = _push_copy(u);
 				if(p < m) left[u] = self(self, left[u], l, m);
 				else right[u] = self(self, right[u], m, r);
 				data[u] = TT(data[left[u]], data[right[u]]);
@@ -283,7 +269,7 @@ struct segment_tree_persistent_base{
 				int v = left[u], w = right[u];
 				if(p < m) v = self(self, v, l, m);
 				else w = self(self, w, m, r);
-				return new_state(v, w, TT(data[v], data[w]));
+				return _new_state(v, w, TT(data[v], data[w]));
 			}
 		};
 		return recurse(recurse, u, 0, n);
@@ -292,10 +278,11 @@ struct segment_tree_persistent_base{
 	// O(log(n))
 	int set_action(int u, int p, U f){
 		static_assert(!HAS_QUERY && HAS_UPDATE);
+		assert(0 <= u && u <= _last_state());
 		assert(0 <= p && p < n);
 		auto recurse = [&](auto self, int u, int l, int r)->int{
-			if(r - l == 1) return new_state_action(-1, -1, f);
-			u = push(u);
+			if(r - l == 1) return _new_state_action(-1, -1, f);
+			u = _push_copy(u);
 			int m = l + (r - l >> 1);
 			if(p < m) left[u] = self(self, left[u], l, m);
 			else right[u] = self(self, right[u], m, r);
@@ -307,40 +294,38 @@ struct segment_tree_persistent_base{
 	// O(log(n))
 	int update(int u, int p, U f){
 		static_assert(HAS_UPDATE);
+		assert(0 <= u && u <= _last_state());
 		assert(0 <= p && p < n);
 		auto recurse = [&](auto self, int u, int l, int r)->int{
 			if(r - l == 1){
-				ifQ return new_state(-1, -1, UT(f, data[u]));
-				else new_state_action(-1, -1, UU(f, data_action[u]));
+				ifQ return _new_state(-1, -1, UT(f, data[u]));
+				else return _new_state_action(-1, -1, UU(f, data_action[u]));
 			}
-			u = push(u);
+			u = _push_copy(u);
 			int m = l + (r - l >> 1);
 			if(p < m) left[u] = self(self, left[u], l, m);
 			else right[u] = self(self, right[u], m, r);
 			ifQ data[u] = TT(data[left[u]], data[right[u]]);
 			return u;
 		};
-		return recurse(recurse, u, 0, n);
+		// return recurse(recurse, u, 0, n);
+		u = recurse(recurse, u, 0, n);
+		return u;
 	}
 	// Assumes u represents an interval of size n
 	// O(log(n))
 	int update(int u, int ql, int qr, U f){
 		static_assert(HAS_UPDATE);
+		assert(0 <= u && u <= _last_state());
 		assert(0 <= ql && ql <= qr && qr <= n);
 		if(ql == qr) return u;
 		auto recurse = [&](auto self, int u, int l, int r)->int{
 			if(qr <= l || r <= ql) return u;
 			if(ql <= l && r <= qr){
-				ifQ data[u] = UT(f, data[u]);
-				data_action[u] = UU(f, data_action[u]);
-				ifQ{
-					u = new_state(left[u], right[u], UT(f, data[u]));
-					data_action[u] = UU(f, data_action[u]);
-					return u;
-				}
-				else return new_state_action(left[u], right[u], UU(f, data_action[u]));
+				ifQ return _new_state(left[u], right[u], UT(f, data[u]), UU(f, data_action[u]));
+				else return _new_state_action(left[u], right[u], UU(f, data_action[u]));
 			}
-			u = push(u);
+			u = _push_copy(u);
 			int m = l + (r - l >> 1);
 			left[u] = self(self, left[u], l, m);
 			right[u] = self(self, right[u], m, r);
@@ -355,6 +340,7 @@ struct segment_tree_persistent_base{
 	// O(log(n))
 	pair<int, int> max_pref(int u, int ql, auto pred){
 		static_assert(HAS_QUERY);
+		assert(0 <= u && u <= _last_state());
 		assert(0 <= ql && ql <= n && pred(T_id));
 		if(ql == n) return {u, ql};
 		T pref = T_id;
@@ -365,20 +351,14 @@ struct segment_tree_persistent_base{
 				return {u, -1};
 			}
 			if(r - l == 1) return {u, l};
-			ifU{
-				u = push(u);
-				int m = l + (r - l >> 1);
-				auto [v, p] = self(self, left[u], l, m);
-				left[u] = v;
-				if(~p) return {u, p};
-				auto [w, q] = self(self, right[u], m, r);
-				right[u] = w;
-				return {u, q};
-			}
-			else{
-				int m = l + (r - l >> 1), p = self(self, left[u], l, m);
-				return ~p ? pair{u, p} : pair{u, self(self, right[u], m, r)};
-			}
+			ifU u = _push_copy(u);
+			int m = l + (r - l >> 1);
+			auto [v, p] = self(self, left[u], l, m);
+			left[u] = v;
+			if(~p) return {u, p};
+			auto [w, q] = self(self, right[u], m, r);
+			right[u] = w;
+			return {u, q};
 		};
 		auto [v, qr] = recurse(recurse, u, 0, n);
 		if(!~qr) qr = n;
@@ -390,6 +370,7 @@ struct segment_tree_persistent_base{
 	// O(log(n))
 	pair<int, int> min_suff(int u, int qr, auto pred){
 		static_assert(HAS_QUERY);
+		assert(0 <= u && u <= _last_state());
 		assert(0 <= qr && qr <= n && pred(T_id));
 		if(qr == 0) return {u, qr};
 		T suff = T_id;
@@ -400,36 +381,43 @@ struct segment_tree_persistent_base{
 				return {u, -1};
 			}
 			if(r - l == 1) return {u, r};
-			ifU{
-				u = push(u);
-				int m = l + (r - l >> 1);
-				auto [w, q] = self(self, right[u], m, r);
-				right[u] = w;
-				if(~q) return {u, q};
-				auto [v, p] = self(self, left[u], l, m);
-				left[u] = v;
-				return {u, p};
-			}
-			else{
-				int m = l + (r - l >> 1), p = self(self, right[u], m, r);
-				return ~p ? pair{u, p} : pair{u, self(self, left[u], l, m)};
-			}
+			ifU u = _push_copy(u);
+			int m = l + (r - l >> 1);
+			auto [w, q] = self(self, right[u], m, r);
+			right[u] = w;
+			if(~q) return {u, q};
+			auto [v, p] = self(self, left[u], l, m);
+			left[u] = v;
+			return {u, p};
 		};
 		auto [v, ql] = recurse(recurse, u, 0, n);
 		if(!~ql) ql = 0;
 		return {v, ql};
 	}
 	// Assumes u represents an interval of size n
-	template<class output_stream>
-	int print(output_stream &out, int u){
-		auto [v, arr] = to_array(u);
-		out << "{";
-		for(auto i = 0; i < (int)arr.size(); ++ i){
-			out << arr[i];
-			if(i + 1 < (int)arr.size()) out << ", ";
+	template<class ostream_t>
+	int print(ostream_t &out, int u){
+		assert(0 <= u && u <= _last_state());
+		ifQ{
+			auto [v, arr] = to_array(u);
+			out << "{";
+			for(auto i = 0; i < (int)arr.size(); ++ i){
+				out << arr[i];
+				if(i + 1 < (int)arr.size()) out << ", ";
+			}
+			out << "}";
+			return v;
 		}
-		out << "}";
-		return v;
+		else{
+			auto [v, arr] = to_array_of_updates(u);
+			out << "{";
+			for(auto i = 0; i < (int)arr.size(); ++ i){
+				out << arr[i];
+				if(i + 1 < (int)arr.size()) out << ", ";
+			}
+			out << "}";
+			return v;
+		}
 	}
 };
 
