@@ -1,0 +1,73 @@
+<snippet>
+	<content><![CDATA[
+template<class T>
+struct state_evolver{
+	map<T, int> dist;
+	map<T, T> prev;
+	vector<T> init_states;
+	optional<T> ending_state_ptr;
+	vector<T> _q;
+	void evolve(const vector<T> &init_states, auto adjacent_states, auto is_ending_state){
+		dist.clear();
+		prev.clear();
+		this->init_states = init_states;
+		ending_state_ptr = {};
+		_q.clear();
+		for(auto s: init_states){
+			dist[s] = 0;
+			if(is_ending_state(s)){
+				ending_state_ptr = s;
+				return;
+			}
+			_q.push_back(s);
+		}
+		for(auto qbeg = 0; qbeg < (int)_q.size(); ++ qbeg){
+			auto s = _q[qbeg];
+			int d = dist[s];
+			for(auto t: adjacent_states(s)){
+				if(dist.contains(t)) continue;
+				dist[t] = d + 1;
+				prev[t] = s;
+				if(is_ending_state(t)){
+					ending_state_ptr = t;
+					return;
+				}
+				_q.push_back(t);
+			}
+		}
+	}
+	void evolve(const vector<T> &init_states, auto adjacent_states){
+		evolve(init_states, adjacent_states, [&](auto){ return false; });
+	}
+	bool path_found() const{
+		return (bool)ending_state_ptr;
+	}
+	// list of {state, prev_state}
+	vector<vector<array<T, 2>>> get_all_states(){
+		vector<vector<array<T, 2>>> all_states;
+		for(auto [s, d]: dist){
+			if(d == 0) continue;
+			assert(prev.contains(s));
+			if((int)all_states.size() < d) all_states.resize(d);
+			all_states[d - 1].push_back({s, prev[s]});
+		}
+		return {init_states, all_states};
+	}
+	vector<T> get_path(){
+		assert(path_found());
+		vector<T> path;
+		for(auto s = *ending_state_ptr; ; ){
+			path.push_back(s);
+			if(!prev.contains(s)) break;
+			s = prev[s];
+		}
+		reverse(path.begin(), path.end());
+		return path;
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>state_evolver</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
