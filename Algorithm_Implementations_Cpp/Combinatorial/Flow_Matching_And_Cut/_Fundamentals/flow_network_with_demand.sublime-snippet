@@ -22,47 +22,42 @@ struct flow_network_with_demand{
 		}
 		return req;
 	}
-	// Destroys the network after getting called
-	optional<vector<T>> feasible_circulation(){
+	vector<T> _get_edge_flow() const{
 		vector<T> w = edge_demand;
-		T req = _setup();
-		if(req != D.maximum_flow(n, n + 1)) return {};
 		for(auto i = 0; i < m; ++ i) w[i] += F.edge[edge_id[i]].flow;
 		return w;
+	}
+	// Destroys the network after getting called
+	optional<vector<T>> feasible_circulation(){
+		if(T req = _setup(); req != D.maximum_flow(n, n + 1)) return {};
+		return _get_edge_flow();
 	}
 	// Destroys the network after getting called
 	optional<pair<T, vector<T>>> feasible_flow(int s, int t){
 		assert(0 <= min(s, t) && max(s, t) < n && s != t);
 		int id = F.orient(t, s, numeric_limits<T>::max());
-		auto resptr = feasible_circulation();
-		if(!resptr) return {};
-		return pair{F.edge[id].flow, *resptr};
+		if(!feasible_circulation()) return {};
+		return pair{F.edge[id].flow, _get_edge_flow()};
 	}
 	// Destroys the network after getting called
 	optional<pair<T, vector<T>>> maximum_feasible_flow(int s, int t){
 		assert(0 <= min(s, t) && max(s, t) < n && s != t);
 		int id = F.orient(t, s, numeric_limits<T>::max());
-		auto resptr = feasible_circulation();
-		if(!resptr) return {};
-		auto w = *resptr;
+		if(!feasible_circulation()) return {};
 		T flow = F.edge[id].flow;
 		F.edge[id].capacity = F.edge[id].flow = F.edge[id ^ 1].flow = 0;
 		flow += D.maximum_flow(s, t);
-		for(auto i = 0; i < m; ++ i) w[i] += F.edge[edge_id[i]].flow;
-		return pair{flow, w};
+		return pair{flow, _get_edge_flow()};
 	}
 	// Destroys the network after getting called
 	optional<pair<T, vector<T>>> minimum_feasible_flow(int s, int t){
 		assert(0 <= min(s, t) && max(s, t) < n && s != t);
 		int id = F.orient(t, s, numeric_limits<T>::max());
-		auto resptr = feasible_circulation();
-		if(!resptr) return {};
-		auto w = *resptr;
+		if(!feasible_circulation()) return {};
 		T flow = F.edge[id].flow;
 		F.edge[id].capacity = F.edge[id].flow = F.edge[id ^ 1].flow = 0;
 		flow -= D.maximum_flow(t, s);
-		for(auto i = 0; i < m; ++ i) w[i] += F.edge[edge_id[i]].flow;
-		return pair{flow, w};
+		return pair{flow, _get_edge_flow()};
 	}
 	int n, m = 0;
 	flow_network<T> F;
