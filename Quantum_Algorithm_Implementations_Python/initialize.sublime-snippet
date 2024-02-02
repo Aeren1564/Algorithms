@@ -1,13 +1,16 @@
 <snippet>
 	<content><![CDATA[
 from qiskit import QuantumCircuit, QuantumRegister
-from qiskit.circuit.library import ZGate, GlobalPhaseGate
+from qiskit.circuit.library import ZGate
 from math import sqrt, acos, pi
 
 def solve(n: int, L: int)->QuantumCircuit:
 	qc = QuantumCircuit(n)
 	if L == 1 << n:
-		qc.append(GlobalPhaseGate(pi))
+		qc.z(0)
+		qc.x(0)
+		qc.z(0)
+		qc.x(0)
 		return qc
 	controlled = []
 	ctrl_state = ""
@@ -19,15 +22,13 @@ def solve(n: int, L: int)->QuantumCircuit:
 			else:
 				qc.append(ZGate().control(len(controlled), ctrl_state = ctrl_state), controlled + [bit])
 			qc.x(bit)
-		controlled += [bit]
+		controlled = [bit] + controlled
 		ctrl_state += chr(ord('0') + (L >> bit & 1))
 	return qc
 
 def _check(n: int, L: int, qc: QuantumCircuit)->bool:
-	import qiskit.quantum_info as qi
-	import numpy as np
-	mat = np.array(qi.Operator(qc))
 	eps = 1e-12
+	mat = _qc_to_matrix(qc)
 	for i in range(1 << n):
 		for j in range(1 << n):
 			if i != j and abs(mat[i][j]) > eps:
@@ -39,6 +40,12 @@ def _check(n: int, L: int, qc: QuantumCircuit)->bool:
 					return False
 	return True
 
+def _qc_to_matrix(qc: QuantumCircuit):
+	import qiskit.quantum_info as qi
+	import numpy as np
+	np.set_printoptions(linewidth=np.inf)
+	return np.array(qi.Operator(qc))
+
 def _simulate(qc: QuantumCircuit):
 	from qiskit import Aer, execute
 	simulator = Aer.get_backend("statevector_simulator")
@@ -46,18 +53,13 @@ def _simulate(qc: QuantumCircuit):
 	print(statevector)
 
 def _print_circuit_info(qc: QuantumCircuit):
-	import qiskit.quantum_info as qi
-	import numpy as np
-	mat = np.array(qi.Operator(qc))
-	np.set_printoptions(linewidth=np.inf)
+	mat = _qc_to_matrix(qc)
 	print(qc.draw("text"))
-	print(np.array(qi.Operator(qc)))
+	print(mat)
 	print("depth = ", qc.depth())
 	_simulate(qc)
 
 def keep_running():
-	import qiskit.quantum_info as qi
-	import numpy as np
 	import sys
 	input = sys.stdin.readline
 	while True:
@@ -66,8 +68,6 @@ def keep_running():
 		_print_circuit_info(qc)
 
 def stress_test():
-	import qiskit.quantum_info as qi
-	import numpy as np
 	for n in range(1, 11):
 		for L in range(1, 1 << n | 1):
 			qc = solve(n, L)
@@ -75,11 +75,11 @@ def stress_test():
 				print(f"WA, n = {n}, L = {L}")
 				_print_circuit_info(qc)
 				exit(0)
-		print(f"AC, n = {n}")
+			print(f"AC, n = {n}, L = {L}")
 	print("AC")
 
-#keep_running()
-stress_test()
+keep_running()
+#stress_test()
 
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
