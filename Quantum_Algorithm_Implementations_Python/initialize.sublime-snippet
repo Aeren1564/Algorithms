@@ -4,11 +4,12 @@ from qiskit import QuantumCircuit, QuantumRegister
 from qiskit.circuit.library import XGate, ZGate, HGate, RYGate
 from math import sqrt, acos, pi
 
-def append_control_gate(qc: QuantumCircuit, gate, target_qubit: int, ctrl_state: int, controlled_qubits)->QuantumCircuit:
-	if len(controlled_qubits) == 0:
-		qc.append(gate, [target_qubit])
-	else:
-		qc.append(gate.control(len(controlled_qubits), ctrl_state = ctrl_state), controlled_qubits + [target_qubit])
+def append_control_gate(qc: QuantumCircuit, gate, target_qubits, ctrl_state: int, controlled_qubits)->QuantumCircuit:
+	for target_qubit in target_qubits:
+		if len(controlled_qubits) == 0:
+				qc.append(gate, [target_qubit])
+		else:
+			qc.append(gate.control(len(controlled_qubits), ctrl_state = ctrl_state), controlled_qubits + [target_qubit])
 	return qc
 
 def solve(n: int, L: int)->QuantumCircuit:
@@ -24,9 +25,8 @@ def solve(n: int, L: int)->QuantumCircuit:
 		if L >> bit & 1:
 			left, right = 1 << bit, L - (1 << bit)
 			theta = acos(sqrt(left) / sqrt(left + right)) * 2
-			append_control_gate(qc, RYGate(theta), bit, ctrl_state, controlled_qubits)
-			for bit_next in range(bit - 1, -1, -1):
-				append_control_gate(qc, HGate(), bit_next, ctrl_state, controlled_qubits + [bit])
+			append_control_gate(qc, RYGate(theta), [bit], ctrl_state, controlled_qubits)
+			append_control_gate(qc, HGate(), range(bit - 1, -1, -1), ctrl_state, controlled_qubits + [bit])
 			L ^= 1 << bit
 			ctrl_state |= 1 << len(controlled_qubits)
 		controlled_qubits += [bit]
