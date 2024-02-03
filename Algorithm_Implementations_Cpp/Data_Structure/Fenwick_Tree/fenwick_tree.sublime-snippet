@@ -6,8 +6,8 @@ struct fenwick_tree{
 	vector<T> data;
 	F TT;
 	T T_id;
-	I TinvT;
-	fenwick_tree(F TT, T T_id, I TinvT): TT(TT), T_id(T_id), TinvT(TinvT){ }
+	I Tinv;
+	fenwick_tree(F TT, T T_id, I Tinv): TT(TT), T_id(T_id), Tinv(Tinv){ }
 	fenwick_tree &operator=(const fenwick_tree &fw){
 		n = fw.n;
 		data = fw.data;
@@ -24,9 +24,11 @@ struct fenwick_tree{
 		for(auto i = 1; i <= n; ++ i) if(i + (i & -i) <= n) data[i + (i & -i) - 1] = TT(data[i + (i & -i) - 1], data[i - 1]);
 	}
 	// O(n)
-	void build(const vector<T> &a){
+	template<class U>
+	void build(const vector<U> &a){
 		n = (int)a.size();
-		data = a;
+		data.resize(n);
+		copy(a.begin(), a.end(), data.begin());
 		for(auto i = 1; i <= n; ++ i) if(i + (i & -i) <= n) data[i + (i & -i) - 1] = TT(data[i + (i & -i) - 1], data[i - 1]);
 	}
 	// O(log(n))
@@ -44,13 +46,16 @@ struct fenwick_tree{
 	T query(int l, int r) const{
 		static_assert(ALLOW_NON_PREFIX_QUERY);
 		assert(0 <= l && l <= r && r <= n);
-		return TinvT(pref(r), pref(l));
+		if(l == r) return T_id;
+		T sum_minus = T_id, sum_plus = T_id;
+		for(; l < r; r -= r & -r) sum_plus = TT(sum_plus, data[r - 1]);
+		for(; r < l; l -= l & -l) sum_minus = TT(sum_minus, data[l - 1]);
+		return TT(sum_plus, Tinv(sum_minus));
 	}
 	// O(log(n))
 	T query(int p) const{
 		static_assert(ALLOW_NON_PREFIX_QUERY);
-		assert(0 <= p && p < n);
-		return TinvT(pref(p + 1), pref(p));
+		return query(p, p + 1);
 	}
 	// pred(sum[0, r)) is T, T, ..., T, F, F, ..., F, returns max r with T
 	// O(log(n))
@@ -75,23 +80,28 @@ struct fenwick_tree{
 	}
 };
 
+template<class T, class F, class I>
+auto make_fenwick_tree(F TT, T T_id, I Tinv){
+	return fenwick_tree<true, T, F, I>(TT, T_id, Tinv);
+}
 template<class T>
 auto make_fenwick_tree_sum(){
-	return fenwick_tree<true, T, plus<>, minus<>>(plus<>(), T{0}, minus<>());
+	return fenwick_tree<true, T, plus<>, negate<>>(plus<>(), T{0}, negate<>());
 }
 template<class T>
 auto make_fenwick_tree_product(){
-	return fenwick_tree<true, T, multiplies<>, divides<>>(multiplies<>(), T{1}, divides<>());
+	auto inverse = [](const T &x){ return 1 / x; };
+	return fenwick_tree<true, T, multiplies<>, decltype(inverse)>(multiplies<>(), T{1}, inverse);
 }
 template<class T>
 auto make_fenwick_tree_min(){
 	auto TT = [&](const T &x, const T &y)->T{ return min(x, y); };
-	return fenwick_tree<false, T, decltype(TT), minus<>>(TT, numeric_limits<T>::max(), minus<>());
+	return fenwick_tree<false, T, decltype(TT), negate<>>(TT, numeric_limits<T>::max(), negate<>());
 }
 template<class T>
 auto make_fenwick_tree_max(){
 	auto TT = [&](const T &x, const T &y)->T{ return max(x, y); };
-	return fenwick_tree<false, T, decltype(TT), minus<>>(TT, numeric_limits<T>::max(), minus<>());
+	return fenwick_tree<false, T, decltype(TT), negate<>>(TT, numeric_limits<T>::max(), negate<>());
 }
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->

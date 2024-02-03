@@ -35,6 +35,7 @@ struct bidirectional_hash_base{
 		}
 	}
 	bidirectional_hash_base(){ }
+	bidirectional_hash_base(const modular_t &x, const modular_t &y, len_t len): data(x), rev_data(y), len(len){ }
 	template<class T, enable_if<is_integral_v<T>>::type* = nullptr>
 	bidirectional_hash_base(T x): data(x), rev_data(x), len(1){ }
 	template<class T, enable_if<is_integral_v<T>>::type* = nullptr>
@@ -98,12 +99,10 @@ struct bidirectional_hash_base{
 		return *this;
 	}
 	bidirectional_hash_base update(len_t pos, const bidirectional_hash_base &x) const{ return bidirectional_hash_base(*this).inplace_update(pos, x); }
-	bool operator==(const bidirectional_hash_base &x) const{ return len == x.len && data == x.data; }
-	bool operator!=(const bidirectional_hash_base &x) const{ return len != x.len || data != x.data; }
-	bool operator<(const bidirectional_hash_base &x) const{ return data != x.data ? data < x.data : len < x.len; }
-	bool operator<=(const bidirectional_hash_base &x) const{ return data != x.data ? data < x.data : len <= x.len; }
-	bool operator>(const bidirectional_hash_base &x) const{ return data != x.data ? data > x.data : len > x.len; }
-	bool operator>=(const bidirectional_hash_base &x) const{ return data != x.data ? data > x.data : len >= x.len; }
+#define COMPARE_OP(op)\
+bool operator op(const bidirectional_hash_base &x) const{ return data op x.data; }
+	COMPARE_OP(==) COMPARE_OP(!=) COMPARE_OP(<) COMPARE_OP(<=) COMPARE_OP(>) COMPARE_OP(>=)
+#undef COMPARE_OP
 	template<class T, enable_if<is_integral_v<T>>::type* = nullptr>
 	bidirectional_hash_base &operator*=(T x){
 		assert(x >= 0);
@@ -120,6 +119,7 @@ struct bidirectional_hash_base{
 	bidirectional_hash_base operator*(T x) const{ return bidirectional_hash_base(*this) *= x; }
 	template<class T, enable_if<is_integral_v<T>>::type* = nullptr>
 	friend bidirectional_hash_base operator*(T x, const bidirectional_hash_base &h){ return bidirectional_hash_base(h) *= x; }
+	friend ostream &operator<<(ostream &out, const bidirectional_hash_base &x){ return out << "{" << x.data << ", " << x.rev_data << ", " << x.len << "}"; }
 	modular_t data = 0, rev_data = 0;
 	len_t len = 0;
 };
@@ -127,7 +127,6 @@ template<class modular_t, class len_t, bool ALLOW_BINEXP> modular_t bidirectiona
 template<class modular_t, class len_t, bool ALLOW_BINEXP> modular_t bidirectional_hash_base<modular_t, len_t, ALLOW_BINEXP>::_inv_base;
 template<class modular_t, class len_t, bool ALLOW_BINEXP> vector<modular_t> bidirectional_hash_base<modular_t, len_t, ALLOW_BINEXP>::_power;
 template<class modular_t, class len_t, bool ALLOW_BINEXP> vector<modular_t> bidirectional_hash_base<modular_t, len_t, ALLOW_BINEXP>::_inv_power;
-template<class modular_t, class len_t, bool ALLOW_BINEXP> ostream &operator<<(ostream &out, const bidirectional_hash_base<modular_t, len_t, ALLOW_BINEXP> &x){ return out << "{" << x.data << ", " << x.rev_data << ", " << x.len << "}"; }
 
 using hash_t = bidirectional_hash_base<modular, int, false>;
 ]]></content>

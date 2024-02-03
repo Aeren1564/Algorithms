@@ -6,42 +6,26 @@ struct sqrt_decomposition_heavy_point_update_light_range_query_commutative_group
 	vector<T> data, dataB;
 	F TT; // commutative group operation
 	T T_id; // commutative group identity
-	I TinvT; // commutative group inverse operation
+	I Tinv; // commutative group inverse
 	// O(n)
-	sqrt_decomposition_heavy_point_update_light_range_query_commutative_group(int n, F TT, T T_id, I TinvT): TT(TT), T_id(T_id), TinvT(TinvT){
-		init(n);
+	sqrt_decomposition_heavy_point_update_light_range_query_commutative_group(F TT, T T_id, I Tinv): TT(TT), T_id(T_id), Tinv(Tinv){ }
+	// O(n)
+	void build(int n){
+		build(vector<T>(n, T_id));
 	}
 	// O(n)
-	sqrt_decomposition_heavy_point_update_light_range_query_commutative_group(int n, T x, F TT, T T_id, I TinvT): TT(TT), T_id(T_id), TinvT(TinvT){
-		init(n, x);
+	void build(int n, T x){
+		build(vector<T>(n, x));
 	}
 	// O(n)
-	sqrt_decomposition_heavy_point_update_light_range_query_commutative_group(const vector<T> &a, F TT, T T_id, I TinvT): TT(TT), T_id(T_id), TinvT(TinvT){
-		init(a);
-	}
-	// O(n)
-	void init(int n){
-		init(n, T_id);
-	}
-	// O(n)
-	void init(int n, T x){
-		this->n = n;
-		nB = (n + B) / B;
-		data.assign((B + 1) * nB, T_id);
-		dataB.assign(nB + 1, T_id);
-		for(auto iB = 0; iB < nB; ++ iB){
-			for(auto i = B * iB; i < B * (iB + 1); ++ i) data[iB + i + 1] = TT(data[iB + i], x);
-			dataB[iB + 1] = TT(dataB[iB], data[iB + B * (iB + 1)]);
-		}
-	}
-	// O(n)
-	void init(const vector<T> &a){
+	template<class U>
+	void build(const vector<U> &a){
 		n = (int)a.size();
 		nB = (n + B) / B;
 		data.assign((B + 1) * nB, T_id);
 		dataB.assign(nB + 1, T_id);
 		for(auto iB = 0; iB < nB; ++ iB){
-			for(auto i = B * iB; i < B * (iB + 1); ++ i) data[iB + i + 1] = TT(data[iB + i], i < n ? a[i] : T_id);
+			for(auto i = B * iB; i < B * (iB + 1); ++ i) data[iB + i + 1] = TT(data[iB + i], i < n ? (T)a[i] : T_id);
 			dataB[iB + 1] = TT(dataB[iB], data[iB + B * (iB + 1)]);
 		}
 	}
@@ -60,17 +44,24 @@ struct sqrt_decomposition_heavy_point_update_light_range_query_commutative_group
 	}
 	// O(1)
 	T query(int l, int r) const{
-		assert(l <= r);
-		return TinvT(prefix(r), prefix(l));
+		assert(0 <= l && l <= r && r <= n);
+		if(l == r) return T_id;
+		return TT(prefix(r), Tinv(prefix(l)));
 	}
 	friend ostream &operator<<(ostream &out, const sqrt_decomposition_heavy_point_update_light_range_query_commutative_group<B, T, F, I> &sqrt_decomp){
-		for(auto i = 0; i < sqrt_decomp.n; ++ i) out << sqrt_decomp.query(i, i + 1) << " ";
-		return out << "\n";
+		out << "{";
+		for(auto i = 0; i < sqrt_decomp.n; ++ i){
+			out << sqrt_decomp.query(i, i + 1);
+			if(i + 1 < sqrt_decomp.n) out << ", ";
+		}
+		return out << "}";
 	}
 };
 
-template<class T, class F, class I>
-using sqrt_decomposition = sqrt_decomposition_heavy_point_update_light_range_query_commutative_group<320, T, F, I>;
+template<int B, class T, class F = plus<>, class I = negate<>>
+auto make_sqrt_decomposition_hpu_lrq(F TT = plus<>(), T T_id = 0, I Tinv = negate<>()){
+	return sqrt_decomposition_heavy_point_update_light_range_query_commutative_group(TT, T_id, Tinv);
+}
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
 	<tabTrigger>sqrt_decomposition_heavy_point_update_light_range_query_commutative_group</tabTrigger> -->

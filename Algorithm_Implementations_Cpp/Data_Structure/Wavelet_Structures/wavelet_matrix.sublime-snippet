@@ -1,5 +1,61 @@
 <snippet>
 	<content><![CDATA[
+struct succinct_dictionary{
+	static constexpr unsigned int wsize = 64;
+	static unsigned int rank64(unsigned long long x, unsigned int i){
+		return __builtin_popcountll(x & ((1ULL << i) - 1));
+	}
+#pragma pack(4)
+	struct block_t{
+		unsigned long long bit;
+		unsigned int sum;
+	};
+#pragma pack()
+	unsigned int n, zeros;
+	vector<block_t> block;
+	succinct_dictionary(unsigned int n = 0) : n(n), block(n / wsize + 1){}
+	// O(1)
+	int operator[](unsigned int i) const{
+		return block[i / wsize].bit >> i % wsize & 1;
+	}
+	// O(1)
+	void set(unsigned int i){
+		block[i / wsize].bit |= 1ULL << i % wsize;
+	}
+	// O(n/w)
+	void build(){
+		for(auto i = 0; i < n / wsize; ++ i) block[i + 1].sum = block[i].sum + __builtin_popcountll(block[i].bit);
+		zeros = rank0(n);
+	}
+	// O(1)
+	unsigned int rank0(unsigned int i) const{
+		return i - rank1(i);
+	}
+	// O(1)
+	unsigned int rank1(unsigned int i) const{
+		auto &&e = block[i / wsize];
+		return e.sum + rank64(e.bit, i % wsize);
+	}
+	// O(log(n))
+	unsigned int select0(unsigned int k) const{
+		unsigned int low = 0, high = n;
+		while(high - low >= 2){
+			unsigned int mid = low + high >> 1;
+			(rank0(mid) <= k ? low : high) = mid;
+		}
+		return low;
+	}
+	// O(log(n))
+	unsigned int select1(unsigned int k) const{
+		unsigned int low = 0, high = n;
+		while(high - low >= 2){
+			unsigned int mid = low + high >> 1;
+			(rank1(mid) <= k ? low : high) = mid;
+		}
+		return low;
+	}
+};
+
 // nor orz
 // Requires succinct_dictionary
 template<bool HAS_QUERY, class B, class T, class F, class I>
@@ -10,8 +66,8 @@ struct wavelet_matrix_base{
 	vector<vector<T>> aggregate;
 	F TT; // commutative group operation
 	T T_id; // commutative group identity
-	I TinvT; // commutative group inverse operation
-	wavelet_matrix_base(F TT, T T_id, I TinvT): TT(TT), T_id(T_id), TinvT(TinvT){ }
+	I Tinv; // commutative group inverse
+	wavelet_matrix_base(F TT, T T_id, I Tinv): TT(TT), T_id(T_id), Tinv(Tinv){ }
 	wavelet_matrix_base &operator=(const wavelet_matrix_base &wm){
 		n = wm.n;
 		lg = wm.lg;
@@ -87,7 +143,7 @@ struct wavelet_matrix_base{
 			if(~x >> h & 1) ql = lcnt, qr = rcnt;
 			else ql += data[h].zeros - lcnt, qr += data[h].zeros - rcnt;
 		}
-		return {qr - ql, TinvT(aggregate[0][qr], aggregate[0][ql])};
+		return {qr - ql, TT(aggregate[0][qr], Tinv(aggregate[0][ql]))};
 	}
 	// Returns the number of occurrences of numbers in [0, xr) in the interval [ql, qr)
 	// O(log(sigma))
@@ -122,7 +178,7 @@ struct wavelet_matrix_base{
 			if(~xr >> h & 1) ql = lcnt, qr = rcnt;
 			else{
 				cnt += rcnt - lcnt;
-				sum = TT(sum, TinvT(aggregate[h + 1][qr], aggregate[h + 1][ql]));
+				sum = TT(sum, TT(aggregate[h + 1][qr], Tinv(aggregate[h + 1][ql])));
 				ql += data[h].zeros - lcnt, qr += data[h].zeros - rcnt;
 			}
 		}
@@ -143,7 +199,7 @@ struct wavelet_matrix_base{
 		if(xl == xr) return {0, T_id};
 		auto [lcnt, lsum] = count_query(ql, qr, xl);
 		auto [rcnt, rsum] = count_query(ql, qr, xr);
-		return {rcnt - lcnt, TinvT(rsum, lsum)};
+		return {rcnt - lcnt, TT(rsum, Tinv(lsum))};
 	}
 	// Find the k-th smallest element in the interval [ql, qr), sigma if no such element
 	// O(log(sigma))
@@ -176,12 +232,12 @@ struct wavelet_matrix_base{
 			else {
 				k -= rcnt - lcnt;
 				x |= (B)1 << h;
-				sum = TT(sum, TinvT(aggregate[h + 1][qr], aggregate[h + 1][ql]));
+				sum = TT(sum, TT(aggregate[h + 1][qr], Tinv(aggregate[h + 1][ql])));
 				ql += data[h].zeros - lcnt;
 				qr += data[h].zeros - rcnt;
 			}
 		}
-		return {x, TT(sum, TinvT(aggregate[0][ql + k], aggregate[0][ql]))};
+		return {x, TT(sum, TT(aggregate[0][ql + k], Tinv(aggregate[0][ql])))};
 	}
 	// Find the k-th smallest element in the interval [ql, qr) among elements >= xl, sigma if no such element
 	// O(log(sigma))
@@ -202,7 +258,7 @@ struct wavelet_matrix_base{
 		auto [cnt, sum] = count_query(ql, qr, 0, xl);
 		k += cnt;
 		auto [x, sum2] = find_by_order_query(ql, qr, k);
-		return {x, TinvT(sum2, sum)};
+		return {x, TT(sum2, Tinv(sum))};
 	}
 	// Find the smallest element >= x, sigma if no such element
 	// O(log(sigma))
@@ -234,12 +290,12 @@ struct wavelet_matrix_base{
 
 template<class B>
 auto make_wavelet_matrix(){
-	return wavelet_matrix_base<false, B, int, plus<>, minus<>>(plus<>(), 0, minus<>());
+	return wavelet_matrix_base<false, B, int, plus<>, negate<>>(plus<>(), 0, negate<>());
 }
 // Supports query
-template<class B, class T = long long, class F = plus<>, class I = minus<>>
-auto make_Q_wavelet_matrix(F TT = plus<>(), T T_id = 0, I TinvT = minus<>()){
-	return wavelet_matrix_base<true, B, T, F, I>(TT, T_id, TinvT);
+template<class B, class T = long long, class F = plus<>, class I = negate<>>
+auto make_Q_wavelet_matrix(F TT = plus<>(), T T_id = 0, I Tinv = negate<>()){
+	return wavelet_matrix_base<true, B, T, F, I>(TT, T_id, Tinv);
 }
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->

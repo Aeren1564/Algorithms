@@ -54,10 +54,11 @@ struct segment_tree_wide_base{
 		build(vector<T>(n, x));
 	}
 	[[gnu::target("avx2,bmi2,popcnt,lzcnt")]]
-	void build(const vector<T> &a){
+	template<class U>
+	void build(const vector<U> &a){
 		n = (int)a.size();
 		assert(round(n) + branching <= SIZE);
-		for(auto i = 0; i < ceil(n); ++ i) data[i] = i < n ? a[i] : T_id;
+		for(auto i = 0; i < ceil(n); ++ i) data[i] = i < n ? (T)a[i] : T_id;
 		for(auto h = 1; h < H; ++ h) for(auto i = 0; i < ceil(n >> branching_bits * h); ++ i) for(auto j = i << branching_bits, r = min(ceil(n >> branching_bits * (h - 1)), i + 1 << branching_bits); j < r; ++ j) data[offset[h] + i] = TT(data[offset[h] + i], data[offset[h - 1] + j]);
 		for(auto h = 0; h < H; ++ h){
 			T sum;

@@ -464,7 +464,8 @@ struct treap_base{
 	int build(int n, T init){
 		return build(vector<T>(n, init));
 	}
-	int build(const vector<T> &a){
+	template<class V>
+	int build(const vector<V> &a){
 		auto recurse = [&](auto self, int l, int r)->int{
 			if(l == r) return -1;
 			int m = l + (r - l >> 1);

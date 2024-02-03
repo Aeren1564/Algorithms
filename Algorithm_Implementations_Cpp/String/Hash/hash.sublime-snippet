@@ -35,6 +35,7 @@ struct hash_base{
 		}
 	}
 	hash_base(){ }
+	hash_base(const modular_t &x, len_t len): data(x), len(len){ }
 	template<class T, enable_if<is_integral_v<T>>::type* = nullptr>
 	hash_base(T x): data(x), len(1){ }
 	template<class T, enable_if<is_integral_v<T>>::type* = nullptr>
@@ -49,7 +50,7 @@ struct hash_base{
 		len += x.len;
 		return *this;
 	}
-	hash_base operator+(const hash_base &x) const{ /return hash_base(*this) += x; }
+	hash_base operator+(const hash_base &x) const{ return hash_base(*this) += x; }
 	hash_base &inplace_append_right(const hash_base &x){ return *this += x; }
 	hash_base append_right(const hash_base &x) const{ return hash_base(*this).inplace_append_right(x); }
 	hash_base &inplace_append_left(const hash_base &x){
@@ -86,12 +87,10 @@ struct hash_base{
 		return *this;
 	}
 	hash_base update(len_t pos, const hash_base &x) const{ return hash_base(*this).inplace_update(pos, x); }
-	bool operator==(const hash_base &x) const{ return len == x.len && data == x.data; }
-	bool operator!=(const hash_base &x) const{ return len != x.len || data != x.data; }
-	bool operator<(const hash_base &x) const{ return data != x.data ? data < x.data : len < x.len; }
-	bool operator<=(const hash_base &x) const{ return data != x.data ? data < x.data : len <= x.len; }
-	bool operator>(const hash_base &x) const{ return data != x.data ? data > x.data : len > x.len; }
-	bool operator>=(const hash_base &x) const{ return data != x.data ? data > x.data : len >= x.len; }
+#define COMPARE_OP(op)\
+bool operator op(const hash_base &x) const{ return data op x.data; }
+	COMPARE_OP(==) COMPARE_OP(!=) COMPARE_OP(<) COMPARE_OP(<=) COMPARE_OP(>) COMPARE_OP(>=)
+#undef COMPARE_OP
 	template<class T, enable_if<is_integral_v<T>>::type* = nullptr>
 	hash_base &operator*=(T x){
 		assert(x >= 0);
@@ -108,6 +107,7 @@ struct hash_base{
 	hash_base operator*(T x) const{ return hash_base(*this) *= x; }
 	template<class T, enable_if<is_integral_v<T>>::type* = nullptr>
 	friend hash_base operator*(T x, const hash_base &h){ return hash_base(h) *= x; }
+	friend ostream &operator<<(ostream &out, const hash_base &x){ return out << "{" << x.data << ", " << x.len << "}"; }
 	modular_t data = 0;
 	len_t len = 0;
 };
@@ -115,7 +115,6 @@ template<class modular_t, class len_t, bool ALLOW_BINEXP> modular_t hash_base<mo
 template<class modular_t, class len_t, bool ALLOW_BINEXP> modular_t hash_base<modular_t, len_t, ALLOW_BINEXP>::_inv_base;
 template<class modular_t, class len_t, bool ALLOW_BINEXP> vector<modular_t> hash_base<modular_t, len_t, ALLOW_BINEXP>::_power{1};
 template<class modular_t, class len_t, bool ALLOW_BINEXP> vector<modular_t> hash_base<modular_t, len_t, ALLOW_BINEXP>::_inv_power{1};
-template<class modular_t, class len_t, bool ALLOW_BINEXP> ostream &operator<<(ostream &out, const hash_base<modular_t, len_t, ALLOW_BINEXP> &x){ return out << "{" << x.data << ", " << x.len << "}"; }
 
 using hash_t = hash_base<modular_fixed_base<unsigned long long, (unsigned long long)1e18 + 9>, int, false>;
 ]]></content>

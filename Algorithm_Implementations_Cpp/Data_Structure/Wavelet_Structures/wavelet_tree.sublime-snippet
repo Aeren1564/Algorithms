@@ -8,8 +8,8 @@ struct wavelet_tree_base{
 	vector<vector<T>> aggregate;
 	F TT; // commutative group operation
 	T T_id; // commutative group identity
-	I TinvT; // commutative group inverse operation
-	wavelet_tree_base(F TT, T T_id, I TinvT): TT(TT), T_id(T_id), TinvT(TinvT){ }
+	I Tinv; // commutative group inverse
+	wavelet_tree_base(F TT, T T_id, I Tinv): TT(TT), T_id(T_id), Tinv(Tinv){ }
 	wavelet_tree_base &operator=(const wavelet_tree_base &wt){
 		n = wt.n;
 		lg = wt.lg;
@@ -81,7 +81,7 @@ struct wavelet_tree_base{
 			if(~x >> h & 1) ql = data[h][ql], qr = data[h][qr];
 			else ql += data[h][n] - data[h][ql], qr += data[h][n] - data[h][qr];
 		}
-		return {qr - ql, TinvT(aggregate[0][qr], aggregate[0][ql])};
+		return {qr - ql, TT(aggregate[0][qr], Tinv(aggregate[0][ql]))};
 	}
 	// Returns the number of occurrences of numbers in [0, xr) in the interval [ql, qr)
 	// O(log(sigma))
@@ -114,7 +114,7 @@ struct wavelet_tree_base{
 			if(~xr >> h & 1) ql = data[h][ql], qr = data[h][qr];
 			else{
 				cnt += data[h][qr] - data[h][ql];
-				sum = TT(sum, TinvT(aggregate[h + 1][qr], aggregate[h + 1][ql]));
+				sum = TT(sum, TT(aggregate[h + 1][qr], Tinv(aggregate[h + 1][ql])));
 				ql += data[h][n] - data[h][ql], qr += data[h][n] - data[h][qr];
 			}
 		}
@@ -135,7 +135,7 @@ struct wavelet_tree_base{
 		if(xl == xr) return {0, T_id};
 		auto [lcnt, lsum] = count_query(ql, qr, xl);
 		auto [rcnt, rsum] = count_query(ql, qr, xr);
-		return {rcnt - lcnt, TinvT(rsum, lsum)};
+		return {rcnt - lcnt, TT(rsum, Tinv(lsum))};
 	}
 	// Find the k-th smallest element in the interval [ql, qr), sigma if no such element
 	// O(log(sigma))
@@ -165,11 +165,11 @@ struct wavelet_tree_base{
 			else {
 				k -= data[h][qr] - data[h][ql];
 				x |= (B)1 << h;
-				sum = TT(sum, TinvT(aggregate[h + 1][qr], aggregate[h + 1][ql]));
+				sum = TT(sum, TT(aggregate[h + 1][qr], Tinv(aggregate[h + 1][ql])));
 				ql += data[h][n] - data[h][ql], qr += data[h][n] - data[h][qr];
 			}
 		}
-		return {x, TT(sum, TinvT(aggregate[0][ql + k], aggregate[0][ql]))};
+		return {x, TT(sum, TT(aggregate[0][ql + k], Tinv(aggregate[0][ql])))};
 	}
 	// Find the k-th smallest element in the interval [ql, qr) among elements >= xl, sigma if no such element
 	// O(log(sigma))
@@ -190,7 +190,7 @@ struct wavelet_tree_base{
 		auto [cnt, sum] = count_query(ql, qr, 0, xl);
 		k += cnt;
 		auto [x, sum2] = find_by_order_query(ql, qr, k);
-		return {x, TinvT(sum2, sum)};
+		return {x, TT(sum2, Tinv(sum))};
 	}
 	// Find the smallest element >= x, sigma if no such element
 	// O(log(sigma))
@@ -222,12 +222,12 @@ struct wavelet_tree_base{
 
 template<class B>
 auto make_wavelet_tree(){
-	return wavelet_tree_base<false, B, int, plus<>, minus<>>(plus<>(), 0, minus<>());
+	return wavelet_tree_base<false, B, int, plus<>, negate<>>(plus<>(), 0, negate<>());
 }
 // Supports query
-template<class B, class T = long long, class F = plus<>, class I = minus<>>
-auto make_Q_wavelet_tree(F TT = plus<>(), T T_id = 0, I TinvT = minus<>()){
-	return wavelet_tree_base<true, B, T, F, I>(TT, T_id, TinvT);
+template<class B, class T = long long, class F = plus<>, class I = negate<>>
+auto make_Q_wavelet_tree(F TT = plus<>(), T T_id = 0, I Tinv = negate<>()){
+	return wavelet_tree_base<true, B, T, F, I>(TT, T_id, Tinv);
 }
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->

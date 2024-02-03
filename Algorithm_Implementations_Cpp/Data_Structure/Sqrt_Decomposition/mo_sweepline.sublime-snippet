@@ -1,7 +1,7 @@
 <snippet>
 	<content><![CDATA[
 // Source: https://codeforces.com/blog/entry/83248
-// T must be a commutative ring
+// T must be a commutative group
 // Given some function op:\mathbb{Z}^2->T,
 // each query asks for \sum_{l<=i<j<r} op(i,j)
 //
@@ -17,14 +17,14 @@
 // Set BX = n/sqrt(qn) to achieve
 // O(n) insert() calls, and
 // O(n * sqrt(qn)) query_left() and query_right() calls.
-template<int BX, class T, class F = plus<>, class I = minus<>>
+template<int BX, class T, class F = plus<>, class I = negate<>>
 struct mo_sweepline_base{
 	int n;
 	mutable vector<array<int, 3>> q;
 	F TT;
 	T T_id;
-	I TinvT;
-	mo_sweepline_base(int n, F TT = plus<>(), T T_id = 0, I TinvT = minus<>()): n(n), TT(TT), T_id(T_id), TinvT(TinvT){ }
+	I Tinv;
+	mo_sweepline_base(int n, F TT = plus<>(), T T_id = 0, I Tinv = negate<>()): n(n), TT(TT), T_id(T_id), Tinv(Tinv){ }
 	void query(int qi, int ql, int qr){
 		assert(0 <= ql && ql <= qr && qr <= n);
 		q.push_back({ql, qr, qi});
@@ -63,7 +63,7 @@ struct mo_sweepline_base{
 				T sum = T_id;
 				if(coef & 1) for(auto i = from; i < to; ++ i) sum = TT(sum, query_right(i));
 				else for(auto i = from; i < to; ++ i) sum = TT(sum, query_left(i));
-				res[qi] = coef & 2 ? TinvT(res[qi], sum) : TT(res[qi], sum);
+				res[qi] = coef & 2 ? TT(res[qi], Tinv(sum)) : TT(res[qi], sum);
 			}
 			if(x < n){
 				pref_exc[x + 1] = TT(pref_exc[x], query_right(x));
@@ -76,12 +76,12 @@ struct mo_sweepline_base{
 		T aux = T_id;
 		for(auto [ql, qr, qi]: q){
 			aux = TT(aux, res[qi]);
-			res[qi] = TinvT(TT(pref_inc[ql], pref_exc[qr]), aux);
+			res[qi] = TT(TT(pref_inc[ql], pref_exc[qr]), Tinv(aux));
 		}
 		return res;
 	}
 };
-template<class T, class F = plus<>, class I = minus<>>
+template<class T, class F = plus<>, class I = negate<>>
 using mo_sweepline = mo_sweepline_base<500, T, F, I>;
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->

@@ -1,25 +1,37 @@
 <snippet>
 	<content><![CDATA[
 // Partition the sorted elements according to capacity, and track the sum of each blocks.
-template<class T, class U, class Compare = less<>, class Plus = plus<>, class Minus = minus<>>
+template<class T, class F, class I, class Compare>
 struct sorted_range_sum_tracker{
 	int B;
-	Plus op;
-	Minus inv_op;
-	vector<U> sum;
+	vector<T> sum;
 	vector<multiset<T, Compare>> data;
 	vector<int> capacity;
-	sorted_range_sum_tracker(int B = 2, U init = {}, Compare cmp = less<>(), Plus op = plus<>(), Minus inv_op = minus<>()): B(B), sum(B, init), data(B, multiset<T, Compare>{cmp}), capacity(B - 1), op(op), inv_op(inv_op){
+	F TT;
+	T T_id;
+	I Tinv;
+	sorted_range_sum_tracker(int B, F TT, T T_id, I Tinv, Compare cmp): B(B), sum(B, T_id), data(B, multiset<T, Compare>{cmp}), capacity(B - 1), TT(TT), T_id(T_id), Tinv(Tinv){
 		assert(B >= 2);
+	}
+	sorted_range_sum_tracker &operator=(const sorted_range_sum_tracker &srst){
+		B = srst.B;
+		sum = srst.sum;
+		data = srst.data;
+		capacity = srst.capacity;
+		return *this;
+	}
+	// O(size(a) * B * log(n))
+	void insert(const vector<T> &a){
+		for(auto x: a) insert(x);
 	}
 	// O(B * log(n))
 	void insert(T x){
-		sum[0] = op(sum[0], x);
+		sum[0] = TT(sum[0], x);
 		data[0].insert(x);
 		for(auto i = 0; i < B - 1 && (int)data[i].size() > capacity[i]; ++ i){
-			sum[i + 1] = op(sum[i + 1], *data[i].rbegin());
+			sum[i + 1] = TT(sum[i + 1], *data[i].rbegin());
 			data[i + 1].insert(data[i + 1].begin(), *data[i].rbegin());
-			sum[i] = inv_op(sum[i], *data[i].rbegin());
+			sum[i] = TT(sum[i], Tinv(*data[i].rbegin()));
 			data[i].erase(prev(data[i].end()));
 		}
 	}
@@ -29,37 +41,54 @@ struct sorted_range_sum_tracker{
 		while(i < B && data[i].find(x) == data[i].end()) ++ i;
 		assert(i < B);
 		data[i].erase(data[i].find(x));
-		sum[i] = inv_op(sum[i], x);
+		sum[i] = TT(sum[i], Tinv(x));
 		for(; i < B - 1 && (int)data[i].size() < capacity[i] && !data[i + 1].empty(); ++ i){
-			sum[i] = op(sum[i], *data[i + 1].begin());
+			sum[i] = TT(sum[i], *data[i + 1].begin());
 			data[i].insert(data[i].end(), *data[i + 1].begin());
-			sum[i + 1] = inv_op(sum[i + 1], *data[i + 1].begin());
+			sum[i + 1] = TT(sum[i + 1], Tinv(*data[i + 1].begin()));
 			data[i + 1].erase(data[i + 1].begin());
 		}
 	}
 	// Set the capacity of the b-th block to c
 	// O(abs(capacity[b] - c) * B * log(n))
-	void set_capacity(int c, int b = 0){
+	void set_capacity(int b, int c){
 		assert(0 <= b && b < B - 1 && c >= 0);
 		capacity[b] = c;
 		while((int)data[b].size() < capacity[b] && !data[b + 1].empty()){
 			for(auto i = b; i < B - 1 && (int)data[i].size() < capacity[i] && !data[i + 1].empty(); ++ i){
-				sum[i] = op(sum[i], *data[i + 1].begin());
+				sum[i] = TT(sum[i], *data[i + 1].begin());
 				data[i].insert(data[i].end(), *data[i + 1].begin());
-				sum[i + 1] = inv_op(sum[i + 1], *data[i + 1].begin());
+				sum[i + 1] = TT(sum[i + 1], Tinv(*data[i + 1].begin()));
 				data[i + 1].erase(data[i + 1].begin());
 			}
 		}
 		while((int)data[b].size() > capacity[b]){
 			for(auto i = b; i < B - 1 && (int)data[i].size() > capacity[i]; ++ i){
-				sum[i + 1] = op(sum[i + 1], *data[i].rbegin());
+				sum[i + 1] = TT(sum[i + 1], *data[i].rbegin());
 				data[i + 1].insert(data[i + 1].begin(), *data[i].rbegin());
-				sum[i] = inv_op(sum[i], *data[i].rbegin());
+				sum[i] = TT(sum[i], Tinv(*data[i].rbegin()));
 				data[i].erase(prev(data[i].end()));
 			}
 		}
 	}
+	friend ostream &operator<<(ostream &out, const sorted_range_sum_tracker &srst){
+		out << "{\n";
+		for(auto i = 0; i < srst.B; ++ i){
+			out << "sum = " << srst.sum[i] << ", {";
+			for(auto it = srst.data[i].begin(); it != srst.data[i].end(); ++ it){
+				out << *it;
+				if(next(it) != srst.data[i].end()) out << ", ";
+			}
+			i + 1 < srst.B ? out << "},\n" : out << "}\n";
+		}
+		return out << "}\n";
+	}
 };
+
+template<class T, class F = plus<>, class I = negate<>, class Compare = less<>>
+auto make_sorted_range_sum_tracker(int B = 2, F TT = plus<>(), T T_id = 0, I Tinv = negate<>(), Compare cmp = less<>()){
+	return sorted_range_sum_tracker<T, F, I, Compare>(B, TT, T_id, Tinv);
+}
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
 	<tabTrigger>sorted_range_sum_tracker</tabTrigger> -->
