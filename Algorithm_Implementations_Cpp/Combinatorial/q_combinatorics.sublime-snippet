@@ -1,26 +1,32 @@
 <snippet>
 	<content><![CDATA[
+// q-analog of combinatorics class
+// T must be of modular type
 template<class T>
 struct q_combinatorics{
-	T q;
+	T q, invq, invq1;
 	int SZ = 0;
-	vector<T> q_power; // q^i
+	vector<T> q_power;           // q^i
 	vector<T> q_quadratic_power; // q^{i*(i-1)/2}
-	vector<T> q_number; // 1 + q + ... + q^{i-1}
-	vector<T> q_inv; // 1 / q_number[i]
-	vector<T> q_fact; // q_number[1] * ... * q_number[i]
-	vector<T> q_invfact; // 1 / q_fact[i]
+	vector<T> q_number;          // 1 + q + ... + q^{i-1}
+	vector<T> q_inv;             // 1 / q_number[i]
+	vector<T> q_fact;            // q_number[1] * ... * q_number[i]
+	vector<T> q_invfact;         // 1 / q_fact[i]
 	q_combinatorics(T q): q(q){ }
 	// O(SZ)
-	q_combinatorics(T q, int SZ): q(q), SZ(SZ), q_power(SZ + 1, 1), q_quadratic_power(SZ + 1, 1), q_number(SZ + 1), q_inv(SZ + 1, 1), q_fact(SZ + 1, 1), q_invfact(SZ + 1, 1){
+	q_combinatorics(T q, int SZ): q(q), invq(1 / q), invq1(1 / (1 - q)), SZ(SZ), q_power(SZ + 1, 1), q_quadratic_power(SZ + 1, 1), q_number(SZ + 1), q_inv(SZ + 1, 1), q_fact(SZ + 1, 1), q_invfact(SZ + 1, 1){
+		assert(q >= 2);
 		for(auto i = 1; i <= SZ; ++ i){
 			q_power[i] = q_power[i - 1] * q;
 			q_quadratic_power[i] = q_quadratic_power[i - 1] * q_power[i - 1];
 			q_number[i] = q_number[i - 1] + q_power[i - 1];
 			q_fact[i] = q_fact[i - 1] * q_number[i];
 		}
-		q_invfact[SZ] = 1 / q_fact[SZ];
-		for(auto i = SZ - 1; i >= 0; -- i){
+		// Note: even when q_fact[start] = 0, this workaround allows us to correctly compute fixed_rank_sequence_count
+		int start = SZ;
+		while(start >= 0 && q_fact[start] == 0) -- start;
+		q_invfact[start] = 1 / q_fact[start];
+		for(auto i = start - 1; i >= 0; -- i){
 			q_invfact[i] = q_invfact[i + 1] * q_number[i + 1];
 			q_inv[i + 1] = q_invfact[i + 1] * q_fact[i];
 		}
@@ -29,6 +35,8 @@ struct q_combinatorics{
 	// C(n, k) =
 	//  ((1-q^n)*...*(1-q^{n-r+1})) / ((1-q)*...*(1-q^r))
 	// Number of subspaces of dimension k of an F_{q}-vector space of dimension n
+	// q-Binomial Theorem:
+	//  \prod_{i=0}^{n-1} (1+q^{i}X) = \sum_{i=0}^n q^{k(k-1)/2} * C(n,i) * X^i
 	// O(1)
 	T C(int n, int k) const{
 		assert(0 <= min(n, k) && max(n, k) <= SZ);
@@ -36,11 +44,17 @@ struct q_combinatorics{
 	}
 	// P(n, k) = (q^n-1)*...*(q^n-q^{k-1})
 	// Number of k-tuples of independent vectors of an F_{q}-vector space of dimension n
-	// = Number of 
+	// Number of n by k matrices of rank k
 	// O(1)
 	T P(int n, int k) const{
 		assert(0 <= min(n, k) && max(n, k) <= SZ);
 		return n >= k ? q_fact[n] * q_invfact[n - k] * q_quadratic_power[k] : T{0};
+	}
+	// q-Binomial Theorem for negative power
+	//  \prod_{i=0}^{n-1} 1/(1-q^{i}X) = \sum_{i=0}^\infty H(n,i) * X^i
+	T H(int n, int k) const{
+		assert(0 <= min(n, k));
+		return C(n + k - 1, k);
 	}
 	// O(n * m)
 	vector<vector<T>> precalc_C(int n, int m) const{
@@ -53,16 +67,53 @@ struct q_combinatorics{
 		assert(0 <= min(n, k));
 		if(n < k) return 0;
 		k = min(k, n - k);
+		assert(k <= SZ);
 		T res = 1, pow = q.power(n - k);
-		for(auto i = n - k + 1; i <= n; ++ i) res *= 1 - (q *= q);
+		for(auto i = n - k + 1; i <= n; ++ i) res *= (1 - (pow *= q)) * invq1;
 		return res * q_invfact[k];
 	}
 	// O(k)
 	T naive_P(long long n, int k) const{
-		assert(0 <= min<long long>(n, k));
+		assert(0 <= min<long long>(n, k) && k <= SZ);
 		if(n < k) return 0;
 		T res = 1, pow = q.power(n - k);
-		for(auto i = n - k + 1; i <= n; ++ i) res *= 1 - (q *= q);
+		for(auto i = n - k + 1; i <= n; ++ i) res *= (pow *= q) - 1;
+		return res * q_quadratic_power[k];
+	}
+	// O(k)
+	T naive_H(long long n, int k) const{
+		assert(0 <= min<long long>(n, k));
+		return naive_C(n + k - 1, k);
+	}
+	// Number of length len sequences of vectors in F_{q}-vector space of dimension n, where the sequence has rank r
+	// O(1)
+	T fixed_rank_sequence_count(int n, int len, int r) const{
+		assert(0 <= min({n, len, r}) && max({n, len, r}) <= SZ);
+		if(min(n, len) < r) return 0;
+		return P(n, r) * C(len, r);
+	}
+	// Compute fixed_rank_sequence_count(n, len, r) for all 0 <= r <= th
+	// O(log(n) + log(len) + log(mod) + th)
+	vector<T> precalc_fixed_rank_sequence_count(long long n, long long len, int th) const{
+		int actual_th = min<long long>({n, len, th});
+		assert(0 <= actual_th && th <= SZ);
+		vector<T> res(th + 1);
+		res[0] = 1;
+		T qn = q.power(n), qlen = q.power(len), qr = 1;
+		for(auto r = 1; r <= actual_th; ++ r){
+			res[r] = res[r - 1] * (qn - qr) * (qlen - qr);
+			qr *= q;
+		}
+		qn = 1;
+		for(auto r = 0; r <= actual_th; ++ r){
+			res[r] *= q_invfact[r] * qn;
+			qn *= -invq1;
+		}
+		qn = 1 / q_quadratic_power[actual_th];
+		for(auto r = actual_th; r >= 2; -- r){
+			res[r] *= qn;
+			qn *= q_power[r - 1];
+		}
 		return res;
 	}
 };
