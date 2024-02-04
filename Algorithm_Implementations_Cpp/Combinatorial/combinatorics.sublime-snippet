@@ -28,26 +28,33 @@ struct combinatorics{
 	}
 	// O(1)
 	T C(int n, int k) const{
-		return n < 0 ? C(-n + k - 1, k) * (k & 1 ? -1 : 1) : n < k || k < 0 ? T() : fact[n] * invfact[k] * invfact[n - k];
+		assert(0 <= min(n, k) && max(n, k) <= SZ);
+		return n >= k ? fact[n] * invfact[k] * invfact[n - k] : T{0};
 	}
 	// O(1)
 	T P(int n, int k) const{
-		return n < k ? T() : fact[n] * invfact[n - k];
+		assert(0 <= min(n, k) && max(n, k) <= SZ);
+		return n >= k ? fact[n] * invfact[n - k] : T{0};
 	}
 	// O(1)
 	T H(int n, int k) const{
+		assert(0 <= min(n, k));
+		if(n == 0) return 0;
 		return C(n + k - 1, k);
 	}
 	// O(min(k, n - k))
 	T naive_C(long long n, long long k) const{
+		assert(0 <= min(n, k));
 		if(n < k) return 0;
 		T res = 1;
 		k = min(k, n - k);
+		assert(k <= SZ);
 		for(auto i = n; i > n - k; -- i) res *= i;
 		return res * invfact[k];
 	}
 	// O(k)
 	T naive_P(long long n, int k) const{
+		assert(0 <= min<long long>(n, k));
 		if(n < k) return 0;
 		T res = 1;
 		for(auto i = n; i > n - k; -- i) res *= i;
@@ -55,11 +62,13 @@ struct combinatorics{
 	}
 	// O(k)
 	T naive_H(long long n, int k) const{
+		assert(0 <= min<long long>(n, k));
 		return naive_C(n + k - 1, k);
 	}
 	// O(1)
 	bool parity_C(long long n, long long k) const{
-		return n < k ? false : (n & k) == k;
+		assert(0 <= min(n, k));
+		return n >= k ? (n & k) == k : false;
 	}
 	// Number of ways to place n '('s and k ')'s starting with m copies of '(' such that in each prefix, number of '(' is equal or greater than ')'
 	// Catalan(n, n, 0): n-th catalan number
