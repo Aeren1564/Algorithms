@@ -1,0 +1,74 @@
+<snippet>
+	<content><![CDATA[
+template<class T>
+struct q_combinatorics{
+	T q;
+	int SZ = 0;
+	vector<T> q_power; // q^i
+	vector<T> q_quadratic_power; // q^{i*(i-1)/2}
+	vector<T> q_number; // 1 + q + ... + q^{i-1}
+	vector<T> q_inv; // 1 / q_number[i]
+	vector<T> q_fact; // q_number[1] * ... * q_number[i]
+	vector<T> q_invfact; // 1 / q_fact[i]
+	q_combinatorics(T q): q(q){ }
+	// O(SZ)
+	q_combinatorics(T q, int SZ): q(q), SZ(SZ), q_power(SZ + 1, 1), q_quadratic_power(SZ + 1, 1), q_number(SZ + 1), q_inv(SZ + 1, 1), q_fact(SZ + 1, 1), q_invfact(SZ + 1, 1){
+		for(auto i = 1; i <= SZ; ++ i){
+			q_power[i] = q_power[i - 1] * q;
+			q_quadratic_power[i] = q_quadratic_power[i - 1] * q_power[i - 1];
+			q_number[i] = q_number[i - 1] + q_power[i - 1];
+			q_fact[i] = q_fact[i - 1] * q_number[i];
+		}
+		q_invfact[SZ] = 1 / q_fact[SZ];
+		for(auto i = SZ - 1; i >= 0; -- i){
+			q_invfact[i] = q_invfact[i + 1] * q_number[i + 1];
+			q_inv[i + 1] = q_invfact[i + 1] * q_fact[i];
+		}
+	}
+	// Gaussian Binomial Coefficient (https://en.wikipedia.org/wiki/Gaussian_binomial_coefficient)
+	// C(n, k) =
+	//  ((1-q^n)*...*(1-q^{n-r+1})) / ((1-q)*...*(1-q^r))
+	// Number of subspaces of dimension k of an F_{q}-vector space of dimension n
+	// O(1)
+	T C(int n, int k) const{
+		assert(0 <= min(n, k) && max(n, k) <= SZ);
+		return n >= k ? q_fact[n] * q_invfact[k] * q_invfact[n - k] : T{0};
+	}
+	// P(n, k) = (q^n-1)*...*(q^n-q^{k-1})
+	// Number of k-tuples of independent vectors of an F_{q}-vector space of dimension n
+	// = Number of 
+	// O(1)
+	T P(int n, int k) const{
+		assert(0 <= min(n, k) && max(n, k) <= SZ);
+		return n >= k ? q_fact[n] * q_invfact[n - k] * q_quadratic_power[k] : T{0};
+	}
+	// O(n * m)
+	vector<vector<T>> precalc_C(int n, int m) const{
+		vector<vector<T>> c(n + 1, vector<T>(m + 1));
+		for(auto i = 0; i <= n; ++ i) for(auto j = 0; j <= min(i, m); ++ j) c[i][j] = i && j ? c[i - 1][j - 1] + q_power[j] * c[i - 1][j] : T(1);
+		return c;
+	}
+	// O(min(k, n - k))
+	T naive_C(long long n, long long k) const{
+		assert(0 <= min(n, k));
+		if(n < k) return 0;
+		k = min(k, n - k);
+		T res = 1, pow = q.power(n - k);
+		for(auto i = n - k + 1; i <= n; ++ i) res *= 1 - (q *= q);
+		return res * q_invfact[k];
+	}
+	// O(k)
+	T naive_P(long long n, int k) const{
+		assert(0 <= min<long long>(n, k));
+		if(n < k) return 0;
+		T res = 1, pow = q.power(n - k);
+		for(auto i = n - k + 1; i <= n; ++ i) res *= 1 - (q *= q);
+		return res;
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>q_combinatorics</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
