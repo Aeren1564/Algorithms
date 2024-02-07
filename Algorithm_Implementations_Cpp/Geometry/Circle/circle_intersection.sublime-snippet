@@ -1,35 +1,39 @@
 <snippet>
 	<content><![CDATA[
-// Returns the list of intersection points. (First value is the count, 3 if two circles coincide)
+// Returns the list of intersection points
 // In case of two intersections, the direction of list[0]->list[1] is equal to the direction you get after rotating c1->c2 by pi/4
 template<class T>
 pair<int, array<point<double>, 2>> circle_intersection(const circle<T> &c1, const circle<T> &c2){
-	if(c1 == c2) return {3, {}};
-	auto d = squared_distance(c1.center, c2.center);
-	auto l = (c1.radius - c2.radius) * (c1.radius - c2.radius);
-	auto r = (c1.radius + c2.radius) * (c1.radius + c2.radius);
-	if(d < l || r < d) return {};
-	if(l == d) return {1, (c2.radius * point<double>(c1.center) - c1.radius * point<double>(c2.center)) / (c1.radius - c2.radius)};
-	if(r == d) return {1, (c2.radius * point<double>(c1.center) + c1.radius * point<double>(c2.center)) / (c1.radius + c2.radius)};
-	auto x = (c1.radius * c1.radius - c2.radius * c2.radius + d) / (2 * sqrt(d)), y = d - x, h = sqrt(c1.center * c1.center - x * x);
-	auto m = (y * point<double>(c1.center) + x * point<double>(c2.center)) / d;
-	auto p = (c2 - c1).perp().unit() * h;
+	assert(c1 != c2);
+	T d_sq = squared_distance(c1.center, c2.center);
+	T l = (c1.radius - c2.radius) * (c1.radius - c2.radius);
+	T r = (c1.radius + c2.radius) * (c1.radius + c2.radius);
+	if(d_sq < l || r < d_sq) return {};
+	if(l == d_sq) return {1, {(c2.radius * point<double>(c1.center) - c1.radius * point<double>(c2.center)) / (c2.radius - c1.radius)}};
+	if(r == d_sq) return {1, {(c2.radius * point<double>(c1.center) + c1.radius * point<double>(c2.center)) / (c2.radius + c1.radius)}};
+	double d = sqrt(d_sq);
+	double x = (c1.radius * c1.radius - c2.radius * c2.radius + d * d) / (2 * d);
+	double y = d - x;
+	double h = sqrt(max(0.0, c1.radius * c1.radius - x * x));
+	pointd m = (y * point<double>(c1.center) + x * point<double>(c2.center)) / (x + y);
+	pointd p = (c2.center - c1.center).perp().unit() * h;
 	return {2, {m - p, m + p}};
 }
-// Returns the list of intersection points. (First value is the count, 3 if two circles coincide)
-// In case of two intersections, the direction of list[0]->list[1] is equal to the direction you get after rotating c1->c2 by pi/4
 template<class T>
 pair<int, array<point<long double>, 2>> circle_intersectionl(const circle<T> &c1, const circle<T> &c2){
-	if(c1 == c2) return {3, {}};
-	auto d = squared_distance(c1.center, c2.center);
-	auto l = (c1.radius - c2.radius) * (c1.radius - c2.radius);
-	auto r = (c1.radius + c2.radius) * (c1.radius + c2.radius);
-	if(d < l || r < d) return {};
-	if(l == d) return {1, (c2.radius * point<long double>(c1.center) - c1.radius * point<long double>(c2.center)) / (c1.radius - c2.radius)};
-	if(r == d) return {1, (c2.radius * point<long double>(c1.center) + c1.radius * point<long double>(c2.center)) / (c1.radius + c2.radius)};
-	auto x = (c1.radius * c1.radius - c2.radius * c2.radius + d) / (2 * sqrt(d)), y = d - x, h = sqrt(c1.center * c1.center - x * x);
-	auto m = (y * point<long double>(c1.center) + x * point<long double>(c2.center)) / d;
-	auto p = (c2 - c1).perpl().unitl() * h;
+	assert(c1 != c2);
+	T d_sq = squared_distance(c1.center, c2.center);
+	T l = (c1.radius - c2.radius) * (c1.radius - c2.radius);
+	T r = (c1.radius + c2.radius) * (c1.radius + c2.radius);
+	if(d_sq < l || r < d_sq) return {};
+	if(l == d_sq) return {1, {(c2.radius * point<long double>(c1.center) - c1.radius * point<long double>(c2.center)) / (c2.radius - c1.radius)}};
+	if(r == d_sq) return {1, {(c2.radius * point<long double>(c1.center) + c1.radius * point<long double>(c2.center)) / (c2.radius + c1.radius)}};
+	long double d = sqrtl(d_sq);
+	long double x = (c1.radius * c1.radius - c2.radius * c2.radius + d * d) / (2 * d);
+	long double y = d - x;
+	long double h = sqrtl(max(0.0L, c1.radius * c1.radius - x * x));
+	pointd m = (y * point<long double>(c1.center) + x * point<long double>(c2.center)) / (x + y);
+	pointd p = (c2.center - c1.center).perp().unit() * h;
 	return {2, {m - p, m + p}};
 }
 ]]></content>
