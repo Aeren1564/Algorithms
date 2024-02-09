@@ -20,8 +20,7 @@ optional<vector<int>> euler_walk(const graph<T> &g, int s, int edge_cnt){
 		}
 		int id_next = g.adj[u][it ++];
 		if(!used[id_next]){
-			auto &e = g.edge[id_next];
-			int v = u ^ e.from ^ e.to;
+			int v = g(u, id_next);
 			-- deg[u], ++ deg[v];
 			used[id_next] = 1, st.push_back({v, id_next});
 		}

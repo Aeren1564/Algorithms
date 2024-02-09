@@ -22,8 +22,7 @@ struct centroid_decomposition{
 			while(true){
 				for(auto id: g.adj[u]){
 					if(id == pe || g.ignore && g.ignore(id)) continue;
-					auto &e = g.edge[id];
-					int v = u ^ e.from ^ e.to;
+					int v = g(u, id);
 					if(dead[v]) continue;
 					if(size[v] > size[s] >> 1){
 						u = v, pe = id;
@@ -39,8 +38,7 @@ struct centroid_decomposition{
 			size[u] = 1;
 			for(auto id: g.adj[u]){
 				if(g.ignore && g.ignore(id)) continue;
-				auto &e = g.edge[id];
-				int v = u ^ e.from ^ e.to;
+				int v = g(u, id);
 				if(p == v || dead[v]) continue;
 				self(self, v, u);
 				size[u] += size[v];
@@ -58,8 +56,7 @@ struct centroid_decomposition{
 			else root = u;
 			for(auto id: g.adj[u]){
 				if(g.ignore && g.ignore(id)) continue;
-				auto &e = g.edge[id];
-				int v = u ^ e.from ^ e.to;
+				int v = g(u, id);
 				if(!dead[v]) self(self, v, u);
 			}
 		};
@@ -83,8 +80,7 @@ struct centroid_decomposition{
 		auto set_step = [&](auto self, int u, int pe, int d)->void{
 			for(auto id: g.adj[u]){
 				if(id == pe || g.ignore && g.ignore(id)) continue;
-				auto &e = g.edge[id];
-				int v = u ^ e.from ^ e.to;
+				int v = g(u, id);
 				if(depth[v] <= d) continue;
 				step[v].push_back(step[u].back() + 1);
 				self(self, v, id, d);

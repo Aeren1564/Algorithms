@@ -7,8 +7,7 @@ optional<vector<int>> topological_sort(const graph<T> &g){
 	vector<int> indeg(n), res;
 	for(int u = 0; u < n; ++ u) for(auto id: g.adj[u]){
 		if(g.ignore && g.ignore(id)) continue;
-		auto &e = g.edge[id];
-		int v = u ^ e.from ^ e.to;
+		int v = g(u, id);
 		++ indeg[v];
 	}
 	deque<int> dq;
@@ -18,8 +17,7 @@ optional<vector<int>> topological_sort(const graph<T> &g){
 		res.push_back(u);
 		for(auto id: g.adj[u]){
 			if(g.ignore && g.ignore(id)) continue;
-			auto &e = g.edge[id];
-			int v = u ^ e.from ^ e.to;
+			int v = g(u, id);
 			if(!-- indeg[v]) dq.push_back(v);
 		}
 	}

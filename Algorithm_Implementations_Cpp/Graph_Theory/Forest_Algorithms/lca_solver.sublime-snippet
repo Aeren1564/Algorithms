@@ -5,7 +5,7 @@ struct lca_solver{
 	int n;
 	vector<int> pv, pe, pos, end, depth, order, pos_order;
 	range_minmax_query_solver<int> rmq;
-	// O(|V| log |V|)
+	// O(n * log(n))
 	template<class T>
 	lca_solver(const graph<T> &g, const vector<int> &roots): n(g.n), pv(n, -1), pe(n, -1), depth(n), pos(n, -1), end(n, -1){
 		int it = 0;
@@ -14,10 +14,8 @@ struct lca_solver{
 			order.push_back(u), pos_order.push_back(pos[u]);
 			for(auto id: g.adj[u]){
 				if(id == pe[u] || g.ignore && g.ignore(id)) continue;
-				auto &e = g.edge[id];
-				int v = u ^ e.from ^ e.to;
-				pv[v] = u;
-				pe[v] = id;
+				int v = g(u, id);
+				pv[v] = u, pe[v] = id;
 				depth[v] = depth[u] + 1;
 				self(self, v);
 				order.push_back(u), pos_order.push_back(pos[u]);

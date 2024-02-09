@@ -52,7 +52,7 @@ struct functional_graph_processor{
 			for(auto id: g.adj[u]){
 				if(g.ignore && g.ignore(id)) continue;
 				auto &e = g.edge[id];
-				int v = u ^ e.from ^ e.to;
+				int v = g(u, id);
 				if(v == p) continue;
 				if(state[v] == 1){
 					cycle.emplace_back();
@@ -81,7 +81,7 @@ struct functional_graph_processor{
 			for(auto id: g.adj[u]){
 				if(g.ignore && g.ignore(id)) continue;
 				auto &e = g.edge[id];
-				int v = u ^ e.from ^ e.to;
+				int v = g(u, id);
 				if(v == p || on_cycle[v]) continue;
 				next[v] = u;
 				self(self, v, u);

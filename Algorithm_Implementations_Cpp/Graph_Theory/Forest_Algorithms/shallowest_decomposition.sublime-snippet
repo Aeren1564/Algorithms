@@ -36,8 +36,7 @@ struct shallowest_decomposition{
 			int seen = 0, seen_twice = 0;
 			for(auto id: g.adj[u]){
 				if(id == pe || g.ignore && g.ignore(id)) continue;
-				auto &e = g.edge[id];
-				int v = u ^ e.from ^ e.to;
+				int v = g(u, id);
 				self(self, v, id);
 				seen_twice |= seen & dp[v];
 				seen |= dp[v];
@@ -49,8 +48,7 @@ struct shallowest_decomposition{
 			for(auto t = (int)g.adj[u].size() - 1; t >= 0; -- t){
 				int id = g.adj[u][t];
 				if(g.ignore && g.ignore(id)) continue;
-				auto &e = g.edge[id];
-				int v = u ^ e.from ^ e.to;
+				int v = g(u, id);
 				create_chain(dp[v] & label - 1, u);
 			}
 		};
@@ -78,8 +76,7 @@ struct shallowest_decomposition{
 		auto set_step = [&](auto self, int u, int pe, int d)->void{
 			for(auto id: g.adj[u]){
 				if(id == pe || g.ignore && g.ignore(id)) continue;
-				auto &e = g.edge[id];
-				int v = u ^ e.from ^ e.to;
+				int v = g(u, id);
 				if(depth[v] <= d) continue;
 				step[v].push_back(step[u].back() + 1);
 				self(self, v, id, d);

@@ -16,8 +16,7 @@ vector<int> almost_uniformly_partitionable(const graph<T> &g, const vector<U> &w
 		dp[0].push_back({weight[u], weight[u] + 1});
 		for(auto id: g.adj[u]){
 			if(id == pe || g.ignore && g.ignore(id)) continue;
-			auto &e = g.edge[id];
-			int v = u ^ e.from ^ e.to;
+			int v = g(u, id);
 			auto dpv = self(self, v, id);
 			vector<int> valid(p);
 			for(auto i = 0; i < (int)dpv.size(); ++ i) for(auto [l, r]: dpv[i]) if(low < r && l < high){
