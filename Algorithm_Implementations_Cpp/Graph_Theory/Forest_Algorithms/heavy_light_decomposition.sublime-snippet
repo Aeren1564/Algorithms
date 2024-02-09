@@ -117,7 +117,7 @@ struct heavy_light_decomposition{
 		f(pos[u] + VALS_IN_EDGES, end[u]);
 	}
 	// f(left, right, (left->right ?))
-	// O(log n) applications of f
+	// O(log(n)) applications of f
 	template<int VALS_IN_EDGES = 0>
 	void access_path(int u, int v, auto f) const{
 		bool dir = true;
@@ -129,7 +129,7 @@ struct heavy_light_decomposition{
 		f(pos[u] + VALS_IN_EDGES, pos[v] + 1, dir);
 	}
 	// Pair of indices {l, r} in the data structure. resr is reversed(v->next[v], pv[next[v]]-> ...)
-	// O(log n)
+	// O(log(n))
 	auto get_path(int u, int v) const{
 		vector<pair<int, int>> resl, resr;
 		access_path(u, v, [&](int l, int r, bool dir){ (dir ? resl : resr).push_back({l, r}); });
