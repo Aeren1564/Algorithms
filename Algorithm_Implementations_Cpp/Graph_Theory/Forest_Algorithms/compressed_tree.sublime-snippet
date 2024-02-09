@@ -3,7 +3,7 @@
 // Build the minimal tree containing all the nodes
 // Returns {vertex list in dfs order of lca_solver, downward-directed edge list}
 // O(|subset| * log(|subset|))
-// Requires graph, range_minmax_query_solver, and lca_solver
+// Requires graph and lca_solver
 pair<vector<int>, vector<array<int, 2>>> compressed_tree(const lca_solver &ls, const vector<int> &subset){
 	auto order = subset;
 	const auto &p = ls.pos;

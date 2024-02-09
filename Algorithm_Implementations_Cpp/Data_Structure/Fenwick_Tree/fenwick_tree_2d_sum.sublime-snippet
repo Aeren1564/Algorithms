@@ -20,7 +20,7 @@ struct fenwick_tree_2d_sum{
 	}
 	// Returns the sum of a[i][j] on [0, xr) X [0, yr)
 	// O(log(n) * log(m))
-	T pref(int xr, int yr){
+	T prefix(int xr, int yr){
 		assert(0 <= xr && xr <= n && 0 <= yr && yr <= m);
 		T res{};
 		for(auto i = xr; i > 0; i -= i & -i) for(auto j = yr; j > 0; j -= j & -j) res += data[i - 1][j - 1];
@@ -30,11 +30,11 @@ struct fenwick_tree_2d_sum{
 	// O(log(n) * log(m))
 	T query(int xl, int xr, int yl, int yr){
 		assert(xl <= xr && yl <= yr);
-		return pref(xr, yr) - pref(xr, yl) - pref(xl, yr) + pref(xl, yl);
+		return prefix(xr, yr) - prefix(xr, yl) - prefix(xl, yr) + prefix(xl, yl);
 	}
 	// O(log(n) * log(m))
 	T query(int x, int y){
-		return pref(x + 1, y + 1) - pref(x + 1, y) - pref(x, y + 1) + pref(x, y);
+		return prefix(x + 1, y + 1) - prefix(x + 1, y) - prefix(x, y + 1) + prefix(x, y);
 	}
 	template<class output_stream>
 	friend output_stream &operator<<(output_stream &out, const fenwick_tree_2d_sum<T> &fw){

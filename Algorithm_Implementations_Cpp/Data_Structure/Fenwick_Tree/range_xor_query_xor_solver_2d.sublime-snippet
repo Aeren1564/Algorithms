@@ -45,7 +45,7 @@ struct range_xor_query_xor_solver_2d{
 		}
 	}
 	// O(log(n) * log(m))
-	T pref(int xr, int yr) const{
+	T prefix(int xr, int yr) const{
 		assert(0 <= xr && xr <= n);
 		assert(0 <= yr && yr <= m);
 		T sum0 = {}, sum1 = {}, sum2 = {}, sum3 = {};
@@ -62,7 +62,7 @@ struct range_xor_query_xor_solver_2d{
 		assert(0 <= xl && xl <= xr && xr <= n);
 		assert(0 <= yl && yl <= yr && yr <= m);
 		if(xl == xr || yl == yr) return {};
-		return pref(xl, yl) ^ pref(xl, yr) ^ pref(xr, yl) ^ pref(xr, yr);
+		return prefix(xl, yl) ^ prefix(xl, yr) ^ prefix(xr, yl) ^ prefix(xr, yr);
 	}
 	template<class output_stream>
 	friend output_stream &operator<<(output_stream &out, const range_xor_query_xor_solver_2d<T> &solver){

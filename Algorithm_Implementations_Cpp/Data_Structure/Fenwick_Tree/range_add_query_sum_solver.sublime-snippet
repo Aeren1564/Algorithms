@@ -19,7 +19,7 @@ struct range_add_query_sum_solver{
 		for(auto l = ql + 1; l <= n; l += l & -l) data0[l - 1] += x, data1[l - 1] -= ql * x;
 		for(auto r = qr + 1; r <= n; r += r & -r) data0[r - 1] -= x, data1[r - 1] += qr * x;
 	}
-	T pref(int qr) const{
+	T prefix(int qr) const{
 		assert(0 <= qr && qr <= n);
 		T sum0 = {}, sum1 = {};
 		for(auto r = qr; r > 0; r -= r & -r) sum0 += data0[r - 1], sum1 += data1[r - 1];
@@ -27,7 +27,7 @@ struct range_add_query_sum_solver{
 	}
 	T query(int l, int r) const{
 		assert(0 <= l && l <= r && r <= n);
-		return pref(r) - pref(l);
+		return prefix(r) - prefix(l);
 	}
 	template<class output_stream>
 	friend output_stream &operator<<(output_stream &out, const range_add_query_sum_solver &solver){

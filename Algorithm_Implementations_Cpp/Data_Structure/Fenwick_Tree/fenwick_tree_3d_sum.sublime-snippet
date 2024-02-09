@@ -19,7 +19,7 @@ struct fenwick_tree_3d_sum{
 	}
 	// Returns the sum of a[i][j][k] on [0, xr) X [0, yr) X [0, zr)
 	// O(log(n) * log(m) * log(l))
-	T pref(int xr, int yr, int zr){
+	T prefix(int xr, int yr, int zr){
 		assert(0 <= xr && xr <= n && 0 <= yr && yr <= m && 0 <= zr && zr <= l);
 		T res{};
 		for(auto i = xr; i > 0; i -= i & -i) for(auto j = yr; j > 0; j -= j & -j) for(auto k = zr; k > 0; k -= k & -k) res += data[i - 1][j - 1][k - 1];
@@ -29,11 +29,11 @@ struct fenwick_tree_3d_sum{
 	// O(log(n) * log(m) * log(l))
 	T query(int xl, int xr, int yl, int yr, int zl, int zr){
 		assert(xl <= xr && yl <= yr && zl <= zr);
-		return pref(xr, yr, zr) - pref(xl, yr, zr) - pref(xr, yl, zr) - pref(xr, yr, zl) + pref(xl, yl, zr) + pref(xl, yr, zl) + pref(xr, yl, zl) - pref(xl, yl, zl);
+		return prefix(xr, yr, zr) - prefix(xl, yr, zr) - prefix(xr, yl, zr) - prefix(xr, yr, zl) + prefix(xl, yl, zr) + prefix(xl, yr, zl) + prefix(xr, yl, zl) - prefix(xl, yl, zl);
 	}
 	// O(log(n) * log(m) * log(l))
 	T query(int x, int y, int z){
-		return pref(x + 1, y + 1, z + 1) - pref(x, y + 1, z + 1) - pref(x + 1, y, z + 1) - pref(x + 1, y + 1, z) + pref(x, y, z + 1) + pref(x, y + 1, z) + pref(x + 1, y, z) - pref(x, y, z);
+		return prefix(x + 1, y + 1, z + 1) - prefix(x, y + 1, z + 1) - prefix(x + 1, y, z + 1) - prefix(x + 1, y + 1, z) + prefix(x, y, z + 1) + prefix(x, y + 1, z) + prefix(x + 1, y, z) - prefix(x, y, z);
 	}
 	template<class output_stream>
 	friend output_stream &operator<<(output_stream &out, const fenwick_tree_3d_sum<T> &fw){

@@ -7,15 +7,25 @@ struct forest_path_query_solver_commutative_group{
 	vector<int> pos;
 	vector<int> end;
 	vector<int> root_of;
-	vector<int> root;
 	vector<int> was;
+	forest_path_query_solver_commutative_group(){ }
+	template<class T>
+	forest_path_query_solver_commutative_group(const graph<T> &g){
+		vector<int> src(g.n);
+		iota(src.begin(), src.end(), 0);
+		*this = forest_path_query_solver_commutative_group(g, src);
+	}
+	template<class T>
+	forest_path_query_solver_commutative_group(const graph<T> &g, const vector<int> &src){
+		init(g.n);
+		build(g, src);
+	}
 	void init(int n){
 		this->n = n;
 		pv.assign(n, -1);
 		pos.assign(n, -1);
 		end.assign(n, -1);
 		root_of.assign(n, -1);
-		root.clear();
 		was.assign(n, -2);
 		attempt = -1;
 	}
@@ -25,7 +35,6 @@ struct forest_path_query_solver_commutative_group{
 	void build(const graph<T> &g, const vector<int> &src){
 		assert(g.n <= n);
 		++ attempt;
-		root.clear();
 		int it = 0;
 		auto dfs = [&](auto self, int u, int pe)->void{
 			assert(was[u] != attempt);
@@ -42,8 +51,6 @@ struct forest_path_query_solver_commutative_group{
 		};
 		for(auto r: src){
 			if(was[r] == attempt) continue;
-			pv[r] = -1;
-			root.push_back(r);
 			root_of[r] = r;
 			dfs(dfs, r, -1);
 		}
@@ -61,7 +68,7 @@ struct forest_path_query_solver_commutative_group{
 	// f(p, c): DS[p] += c * x
 	// Represents updating value of node u / parent edge of u by x
 	void update(int u, auto f) const{
-		assert(visited(u));
+		assert(0 <= u && u < n);
 		f(pos[u], 1), f(end[u], -1);
 	}
 	// Let res = identity

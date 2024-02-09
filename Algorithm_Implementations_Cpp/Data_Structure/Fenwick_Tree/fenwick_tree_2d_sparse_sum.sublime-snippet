@@ -56,7 +56,7 @@ struct fenwick_tree_2d_sparse_sum{
 		}
 	}
 	// O(log^2(n))
-	T pref(B _xr, B _yr) const{
+	T prefix(B _xr, B _yr) const{
 		int xr = lower_bound(X.begin(), X.end(), _xr) - X.begin();
 		T res = 0;
 		for(auto i = xr; i > 0; i -= i & -i){
@@ -69,11 +69,11 @@ struct fenwick_tree_2d_sparse_sum{
 	}
 	// O(log^2(n))
 	T query(B _xl, B _xr, B _yl, B _yr) const{
-		return pref(_xr, _yr) - pref(_xl, _yr) - pref(_xr, _yl) + pref(_xl, _yl);
+		return prefix(_xr, _yr) - prefix(_xl, _yr) - prefix(_xr, _yl) + prefix(_xl, _yl);
 	}
 	// O(log^2(n))
 	T query(B _x, B _y) const{
-		return pref(_x + 1, _y + 1) - pref(_x + 1, _y) - pref(_x, _y + 1) + pref(_x, _y);
+		return prefix(_x + 1, _y + 1) - prefix(_x + 1, _y) - prefix(_x, _y + 1) + prefix(_x, _y);
 	}
 };
 ]]></content>
