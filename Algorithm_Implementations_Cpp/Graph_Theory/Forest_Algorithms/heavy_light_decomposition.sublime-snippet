@@ -4,58 +4,96 @@
 struct heavy_light_decomposition{
 	int n;
 	vector<vector<int>> adj; // stores edge ids
-	vector<int> roots; // root of the component
 	vector<int> pv;
 	vector<int> pe;
 	vector<int> size;
+	vector<int> root_of;
+	vector<int> root;
 	vector<int> depth;
 	vector<int> next; // highest point of the heavy path
 	vector<int> prev; // lowest point of the heavy path
 	vector<int> pos;
 	vector<int> end;
 	vector<int> order;
+	vector<int> was;
+	void init(int n){
+		assert(n >= 1);
+		this->n = n;
+		adj.assign(n, {});
+		pv.assign(n, -1);
+		pe.assign(n, -1);
+		order.clear();
+		pos.assign(n, -1);
+		end.assign(n, -1);
+		size.assign(n, 1);
+		root_of.assign(n, -1);
+		root.clear();
+		depth.assign(n, -1);
+		next.assign(n, -1);
+		prev.assign(n, -1);
+		was.assign(n, -2);
+		attempt = -1;
+	}
+	int attempt;
 	template<class T>
-	heavy_light_decomposition(const graph<T> &g, const vector<int> &roots): n(g.n), roots(roots), adj(n), pv(n, -1), pe(n, -1), size(n, 1), depth(n), next(n), prev(n), pos(n), end(n){
-		iota(prev.begin(), prev.end(), 0);
+	void build(const graph<T> &g, const vector<int> &src){
+		assert(g.n <= n);
+		++ attempt;
+		root.clear(), order.clear();
 		for(auto id = 0; id < (int)g.edge.size(); ++ id){
 			if(g.ignore && g.ignore(id)) continue;
 			auto &e = g.edge[id];
 			adj[e.from].push_back(id), adj[e.to].push_back(id);
 		}
-		auto dfs_init = [&](auto self, int u, int root)->void{
-			next[u] = root;
-			if(~pe[u]) adj[u].erase(find(adj[u].begin(), adj[u].end(), pe[u]));
+		auto dfs_init = [&](auto self, int u)->void{
+			assert(was[u] != attempt); // CYCLE FOUND
+			was[u] = attempt;
+			prev[u] = u;
+			size[u] = 1;
+			if(root_of[u] != u){
+				adj[u].erase(find(adj[u].begin(), adj[u].end(), pe[u]));
+			}
 			for(auto &id: adj[u]){
-				auto &e = g.edge[id];
-				int v = u ^ e.from ^ e.to;
-				pv[v] = u, pe[v] = id, depth[v] = depth[u] + 1;
-				self(self, v, u);
+				int v = g(u, id);
+				pv[v] = u;
+				pe[v] = id;
+				depth[v] = depth[u] + 1;
+				root_of[v] = root_of[u];
+				next[v] = u;
+				self(self, v);
 				size[u] += size[v];
-				auto &f = g.edge[adj[u][0]];
-				if(size[v] > size[u ^ f.from ^ f.to]) swap(id, adj[u][0]);
+				if(size[v] > size[g(u, adj[u][0])]) swap(id, adj[u][0]);
 			}
-			if(!adj[u].empty()){
-				auto &e = g.edge[adj[u][0]];
-				prev[u] = prev[u ^ e.from ^ e.to];
-			}
+			if(!adj[u].empty()) prev[u] = prev[g(u, adj[u][0])];
 		};
-		int timer = 0;
 		auto dfs_hld = [&](auto self, int u)->void{
-			pos[u] = timer ++;
+			pos[u] = (int)order.size();
 			order.push_back(u);
 			if(!adj[u].empty()){
-				auto &f = g.edge[adj[u][0]];
-				int hv = u ^ f.from ^ f.to;
+				int hv = g(u, adj[u][0]);
 				for(auto id: adj[u]){
-					auto &e = g.edge[id];
-					int v = u ^ e.from ^ e.to;
+					int v = g(u, id);
 					next[v] = (v == hv ? next[u] : v);
 					self(self, v);
 				}
 			}
-			end[u] = timer;
+			end[u] = (int)order.size();
 		};
-		for(auto r: roots) assert(!~pv[r]), dfs_init(dfs_init, r, r), dfs_hld(dfs_hld, r);
+		for(auto r: src){
+			if(was[r] == attempt) continue;
+			pv[r] = pe[r] = -1;
+			depth[r] = 0;
+			root_of[r] = r;
+			root.push_back(r);
+			next[r] = r;
+			dfs_init(dfs_init, r);
+			dfs_hld(dfs_hld, r);
+		}
+	}
+	// Check if u is visited during the last build call
+	bool visited(int u) const{
+		assert(0 <= u && u < n);
+		return was[u] == attempt;
 	}
 	// O(1)
 	bool ancestor_of(int u, int v) const{
