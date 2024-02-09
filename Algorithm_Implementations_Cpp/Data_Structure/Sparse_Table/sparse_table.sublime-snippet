@@ -7,7 +7,7 @@ struct sparse_table{
 	F TT;
 	T T_id;
 	sparse_table(){ }
-	// O(n log n)
+	// O(n * log(n))
 	sparse_table(const vector<T> &a, F TT, T T_id): n((int)a.size()), TT(TT), T_id(T_id), data({a}){
 		for(auto p = 1, i = 1; p << 1 <= n; p <<= 1, ++ i){
 			data.emplace_back(n - (p << 1) + 1);

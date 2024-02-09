@@ -126,7 +126,7 @@ struct suffix_array{
 			lcp[rank[i] - 1] = h;
 		}
 	}
-	// O(n log n) time, O(n) space
+	// O(n * log(n)) time, O(n) space
 	template<class T>
 	suffix_array(const vector<T> &s): n((int)s.size()), rank(n + 1), lcp(n){
 		vector<int> idx(n);

@@ -1,16 +1,17 @@
 <snippet>
 	<content><![CDATA[
-// Returns O(n log n) tuples {l, r, p} indicating that [i, i + p) equals [i + p, i + 2 * p) for all i in [l, r)
-// O(n log n)
-// Requires range_minmax_query_solver and suffix_array
-template<class Char_Type>
+// Returns O(n * log(n)) tuples {l, r, p} indicating that [i, i + p) equals [i + p, i + 2 * p) for all i in [l, r)
+// O(n * log(n))
+// Requires suffix_array
+template<class Char_Type, class RMQ>
 vector<array<int, 3>> main_lorentz(const vector<Char_Type> &s){
 	int n = (int)s.size();
 	suffix_array sa(s, true), rsa(vector<int>{s.rbegin(), s.rend()}, true);
+	RMQ rmq(sa.lcp), rrmq(rsa.lcp);
 	vector<array<int, 3>> res;
 	for(auto p = 1; p << 1 <= n; ++ p){
 		for(auto i = 0, last = -1; i + p <= n; i += p){
-			int l = i - rsa.longest_common_prefix(n - i - p, n - i), r = i - p + sa.longest_common_prefix(i, i + p);
+			int l = i - rsa.longest_common_prefix(n - i - p, n - i, rmq), r = i - p + sa.longest_common_prefix(i, i + p, rrmq);
 			if(l > r || l == last) continue;
 			res.push_back({last = l, r + 1, p});
 		}

@@ -6,7 +6,7 @@ struct suffix_array_slow{
 	// rank[i]: position of the suffix i in the suffix array
 	// lcp[i]: longest common prefix of data[i] and data[i + 1]
 	vector<int> data, rank, lcp;
-	// O(n log n)
+	// O(n * log(n))
 	template<class T>
 	suffix_array_slow(vector<T> s){
 		auto cmpr = s;
@@ -15,7 +15,7 @@ struct suffix_array_slow{
 		*this = suffix_array_slow(s, (int)s.size());
 	}
 	// Assumes every element in s lies in [0, sigma)
-	// O(n log n + sigma)
+	// O(n * log(n) + sigma)
 	template<class T>
 	suffix_array_slow(vector<T> s, int sigma): n((int)s.size()), lcp(n){
 		++ sigma;
@@ -36,7 +36,7 @@ struct suffix_array_slow{
 			if(k) -- k;
 		}
 	}
-	// O(n log n)
+	// O(n * log(n))
 	pair<vector<int>, vector<int>> sort_cyclic_shift(const vector<int> &s, int sigma){
 		int n = (int)s.size();
 		vector<int> sa(n), rank(n), cnt(max(sigma, n));
