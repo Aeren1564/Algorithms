@@ -1,0 +1,21 @@
+<snippet>
+	<content><![CDATA[
+// Returns g=gcd(a,b), and x and y store values with ax+by=g
+// O(log(min(abs(a), abs(b))))
+template<class T>
+T extended_euclidean(T a, T b, T &x, T &y){
+	if(a < 0) a = -a;
+	if(b < 0) b = -b;
+	x = 1, y = 0;
+	for(T q, r, u = 0, v = 1; b; ){
+		q = a / b, r = a % b;
+		tie(a, b, x, y, u, v) = tuple{b, r, u, v, x - u * q, y - v * q};
+	}
+	return a;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>extended_euclidean</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
