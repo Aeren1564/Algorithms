@@ -22,6 +22,14 @@ struct segment_tree_base{
 		data = seg.data;
 		data_action = seg.data_action;
 	}
+	// O(1)
+	friend void swap(segment_tree_base &x, segment_tree_base &y){
+		swap(x.n, y.n);
+		swap(x.size, y.size);
+		swap(x.log, y.log);
+		swap(x.data, y.data);
+		swap(x.data_action, y.data_action);
+	}
 	// O(n)
 	void build(int n){
 		assert(n >= 1);
