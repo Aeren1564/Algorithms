@@ -1,6 +1,5 @@
 <snippet>
 	<content><![CDATA[
-// Requires segment_tree
 struct range_mex_query_solver_offline{
 	int n;
 	vector<int> a;
@@ -13,18 +12,39 @@ struct range_mex_query_solver_offline{
 		queries.push_back({l, r, qi});
 	}
 	// f(query id, answer)
+	// O((n + q) * log(n))
 	void solve(auto f){
 		sort(queries.begin(), queries.end());
-		segment_tree seg(n + 1, n, [&](int x, int y){ return max(x, y); }, -1);
+		int size = 1;
+		while(size <= n) size <<= 1;
+		int log = __lg(size);
+		vector<int> seg(size << 1, n);
 		while(!queries.empty() && queries.back()[0] == n){
 			f(queries.back()[2], 0);
 			queries.pop_back();
 		}
 		for(auto l = n - 1; l >= 0; -- l){
-			int x = min(a[l], n);
-			seg.set(x, l);
+			int x = size + min(a[l], n);
+			seg[x] = l;
+			for(auto i = 1; i <= log; ++ i) seg[x >> i] = max(
+				seg[(x >> i) << 1], seg[(x >> i) << 1 | 1]);
 			while(!queries.empty() && queries.back()[0] == l){
-				f(queries.back()[2], seg.max_pref(0, [&](auto mx){ return mx < queries.back()[1]; }));
+				int mx = -1, ql = size;
+				do{
+					while(~ql & 1) ql >>= 1;
+					if(max(mx, seg[ql]) >= queries.back()[1]){
+						while(ql < size){
+							ql <<= 1;
+							if(max(mx, seg[ql]) < queries.back()[1]) mx = max(mx, seg[ql ++]);
+						}
+						f(queries.back()[2], ql - size);
+						goto _RANGE_MEX_QUERY_SOLVER_NEXT;
+					}
+					mx = max(mx, seg[ql]);
+					++ ql;
+				}while((ql & -ql) != ql);
+				f(queries.back()[2], n + 1);
+				_RANGE_MEX_QUERY_SOLVER_NEXT:;
 				queries.pop_back();
 			}
 		}
