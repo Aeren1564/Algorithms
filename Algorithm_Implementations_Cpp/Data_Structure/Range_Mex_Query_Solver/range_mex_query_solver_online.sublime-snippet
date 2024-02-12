@@ -1,20 +1,59 @@
 <snippet>
 	<content><![CDATA[
-// Requires persistent_segment_tree_max
 struct range_mex_query_solver_online{
 	int n;
-	vector<int> a, root;
-	persistent_segment_tree_max<int> pseg;
-	range_mex_query_solver_online(const vector<int> &a): n((int)a.size()), a(a), root(n), pseg(n + 1, n, -1){
+	vector<int> a;
+	vector<int> root;
+	vector<int> left;
+	vector<int> right;
+	vector<int> data;
+	// O(n * log(n)) time and memory
+	range_mex_query_solver_online(const vector<int> &a): n((int)a.size()), a(a), root(n){
+		for(auto x: a) assert(x >= 0);
+		auto new_state = [&](int l, int r, int x)->int{
+			left.push_back(l);
+			right.push_back(r);
+			data.push_back(x);
+			return (int)data.size() - 1;
+		};
+		auto build = [&](auto self, int l, int r)->int{
+			if(r - l == 1) return new_state(-1, -1, n);
+			int m = l + (r - l >> 1);
+			int v = self(self, l, m), w = self(self, m, r);
+			return new_state(v, w, n);
+		};
+		int u = build(build, 0, n + 1);
 		for(auto i = n - 1; i >= 0; -- i){
-			int u = pseg.last_state(), x = min(a[i], n);
-			root[i] = pseg.set(u, x, i);
+			int x = min(a[i], n);
+			auto set = [&](auto self, int u, int l, int r)->int{
+				if(r - l == 1) return new_state(-1, -1, i);
+				int m = l + (r - l >> 1), v = left[u], w = right[u];
+				if(x < m) v = self(self, v, l, m);
+				else w = self(self, w, m, r);
+				return new_state(v, w, max(data[v], data[w]));
+			};
+			u = root[i] = set(set, u, 0, n + 1);
 		}
 	}
-	int query(int l, int r) const{
-		assert(0 <= l && l <= r && r <= n);
-		if(l == n) return 0;
-		return pseg.max_pref(root[l], 0, [&](auto mx){ return mx < r; });
+	// O(log(n))
+	int query(int ql, int qr) const{
+		assert(0 <= ql && ql <= qr && qr <= n);
+		if(ql == n) return 0;
+		int pref = -1;
+		auto recurse = [&](auto self, int u, int l, int r)->int{
+			if(r == 0) return -1;
+			if(max(pref, data[u]) < qr){
+				pref = max(pref, data[u]);
+				return -1;
+			}
+			if(r - l == 1) return l;
+			int m = l + (r - l >> 1), p = self(self, left[u], l, m);
+			if(~p) return p;
+			return self(self, right[u], m, r);
+		};
+		auto res = recurse(recurse, root[ql], 0, n + 1);
+		if(!~res) res = n;
+		return res;
 	}
 };
 ]]></content>
