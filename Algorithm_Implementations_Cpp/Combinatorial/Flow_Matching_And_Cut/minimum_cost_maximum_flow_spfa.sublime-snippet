@@ -11,8 +11,7 @@ struct minimum_cost_maximum_flow_spfa{
 	vector<C> d;
 	vector<int> in_queue, q, pe;
 	template<bool type>
-	T expath(int source, int sink, T threshold = numeric_limits<T>::max()){
-		assert(threshold > 0);
+	T _expath(int source, int sink, T threshold){
 		fill(d.begin(), d.end(), numeric_limits<C>::max());
 		q = {source};
 		d[source] = 0;
@@ -117,11 +116,11 @@ struct minimum_cost_maximum_flow_spfa{
 	// O(Augmenting_Paths * SPFA), additional O(SPFA * Cycle_cnt) if negative cycle exists
 	template<bool type = false, bool negative_cycle_presence = false>
 	pair<T, C> solve(int source, int sink, T threshold = numeric_limits<T>::max()){
-		assert(threshold >= 0);
+		assert(0 <= min(source, sink) && max(source, sink) < F.n && source != sink && threshold >= 0);
 		F.clear_flow();
 		if(negative_cycle_presence) while(try_cycle_cancelling());
 		T flow = 0;
-		for(T delta; threshold > 0 && (delta = expath<type>(source, sink, threshold)); flow += delta, threshold -= delta);
+		for(T delta; threshold > 0 && (delta = _expath<type>(source, sink, threshold)); flow += delta, threshold -= delta);
 		return {flow, F.cost};
 	}
 };
