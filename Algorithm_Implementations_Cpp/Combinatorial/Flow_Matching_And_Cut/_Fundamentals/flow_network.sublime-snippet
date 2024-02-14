@@ -14,6 +14,7 @@ struct flow_network{
 		for(auto &e: edge) e.flow = 0;
 	}
 	int link(int from, int to, T cap){
+		assert(0 <= min(from, to) && max(from, to) < n && cap >= 0);
 		int ind = (int)edge.size();
 		adj[from].push_back(ind);
 		edge.push_back({from, to, cap, 0});
@@ -22,6 +23,7 @@ struct flow_network{
 		return ind;
 	}
 	int orient(int from, int to, T cap){
+		assert(0 <= min(from, to) && max(from, to) < n && cap >= 0);
 		int ind = (int)edge.size();
 		adj[from].push_back(ind);
 		edge.push_back({from, to, cap, 0});
