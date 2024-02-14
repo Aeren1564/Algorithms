@@ -64,6 +64,7 @@ struct minimum_cost_maximum_flow_push_relabel{
 	}
 	// O(flow * log(n * max_edge_cost)) = O(n^3 * log(n * C))
 	pair<T, C> solve(int source, int sink){
+		assert(0 <= min(source, sink) && max(source, sink) < F.n && source != sink);
 		static constexpr int scale = 2;
 		F.clear_flow();
 		for(auto &e: F.edge) e.cost *= F.n;
