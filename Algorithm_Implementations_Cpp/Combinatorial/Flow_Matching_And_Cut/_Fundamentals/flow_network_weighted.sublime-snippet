@@ -17,13 +17,13 @@ struct flow_network_weighted{
 		cost = 0;
 	}
 	int link(int from, int to, T cap, C cost){
-		assert(0 <= from && from < n && 0 <= to && to < n);
+		assert(0 <= min(from, to) && max(from, to) < n && cap >= 0 && cost >= 0);
 		int ind = orient(from, to, cap, cost);
 		orient(to, from, cap, cost);
 		return ind;
 	}
 	int orient(int from, int to, T cap, C cost){
-		assert(0 <= from && from < n && 0 <= to && to < n);
+		assert(0 <= min(from, to) && max(from, to) < n && cap >= 0);
 		int ind = (int)edge.size();
 		adj[from].push_back((int)edge.size());
 		edge.push_back({from, to, cap, 0, cost});
