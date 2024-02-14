@@ -4,12 +4,12 @@
 template<class T, class Flow_Solver>
 struct flow_network_with_demand{
 	flow_network_with_demand(int n): n(n), F(n + 2), D(F), demand(n){}
-	int orient(int u, int v, T d, T c){
-		assert(0 <= d && d <= c);
+	int orient(int from, int to, T d, T c){
+		assert(0 <= min(from, to) && max(from, to) < n && 0 <= d && d <= c);
 		++ m;
-		int id = F.orient(u, v, c - d);
-		demand[u] -= d;
-		demand[v] += d;
+		int id = F.orient(from, to, c - d);
+		demand[from] -= d;
+		demand[to] += d;
 		edge_id.push_back(id);
 		edge_demand.push_back(d);
 		return id;
