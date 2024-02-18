@@ -13,7 +13,7 @@ U floor_sum(T n, T m, T a, T b){
 		auto prev = floor_sum<T, U>(n2, ra, m, m - rb - 1);
 		res += U(n - 1) * n2 - prev;
 	}
-	res += U(n - 1) * n / 2 * qa + U(n) * qb;
+	res += (n & 1 ? U(n - 1 >> 1) * n : U(n >> 1) * (n - 1)) * qa + U(n) * qb;
 	return res;
 }
 ]]></content>
