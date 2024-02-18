@@ -1,0 +1,31 @@
+<snippet>
+	<content><![CDATA[
+// Returns
+// \sum_{i=0}^{n-1} floor((a*i+b)/m),
+// \sum_{i=0}^{n-1} i*floor((a*i+b)/m), and
+// \sum_{i=0}^{n-1} floor((a*i+b)/m)^2
+// T must be able to hold the square of arguments
+// O(log(min(m, a)))
+template<class T, class U>
+array<U, 3> floor_sum_weighted(T n, T m, T a, T b){
+	assert(n >= 0 && m > 0 && a >= 0 && b >= 0);
+	array<U, 3> res{};
+	auto [qa, ra] = div(a, m);
+	auto [qb, rb] = div(b, m);
+	if(T n2 = (ra * n + rb) / m){
+		auto prev = floor_sum_weighted<T, U>(n2, ra, m, m - rb - 1);
+		res[0] += U(n - 1) * n2 - prev[0];
+		res[1] += (U(n - 1) * n * n2 - prev[0] - prev[2]) / 2;
+		res[2] += U(n - 1) * (n2 - 1) * n2 - 2 * prev[1] + res[0];
+	}
+	res[2] += U(n - 1) * n * (2 * n - 1) / 6 * qa * qa + U(n) * qb * qb + U(n - 1) * n * qa * qb + 2 * res[0] * qb + 2 * res[1] * qa;
+	res[0] += U(n - 1) * n / 2 * qa + U(n) * qb;
+	res[1] += U(n - 1) * n * (2 * n - 1) / 6 * qa + U(n - 1) * n / 2 * qb;
+	return res;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>floor_sum_weighted</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
