@@ -1,0 +1,115 @@
+<snippet>
+	<content><![CDATA[
+struct radial_sweepline_sorter{
+	vector<int> order;
+	vector<int> pos;
+	vector<int> was;
+	radial_sweepline_sorter(){ }
+	int it = -1;
+	// Rotate the directed line in counterclockwise order by pi, starting from dir
+	// Whenever linear order of points defined by dot product of each points with dir changes by i and j exchanging positions, process(i, j) gets called
+	// O(n^2 * log(n))
+	// Requires point
+	template<class T>
+	void run(const point<T> &o, const vector<point<T>> &a, const point<T> &dir, auto process){
+		assert(dir != point<T>{});
+		int n = (int)a.size();
+		order.resize(n);
+		pos.resize(n);
+		was.resize(n, -2);
+		iota(order.begin(), order.end(), 0);
+		sort(order.begin(), order.end(), [&](int i, int j){
+			const point<T> &p = a[i], &q = a[j];
+			return (p - o) * dir != (q - o) * dir ? (p - o) * dir < (q - o) * dir : (p - o ^ dir) < (q - o ^ dir);
+		});
+		for(auto t = 0; t < n; ++ t) pos[order[t]] = t;
+		auto compare = [&](const auto &x, const auto &y)->bool{
+			return clockwise(o, get<0>(x), get<0>(y));
+		};
+		priority_queue<tuple<point<T>, int, int>, vector<tuple<point<T>, int, int>>, decltype(compare)> pq{compare};
+		++ it;
+		fill(was.begin(), was.end(), it);
+		for(auto t = 0; t < n - 1; ++ t){
+			auto d = (a[order[t + 1]] - a[order[t]]).perp();
+			assert(d != point<T>{});
+			if((dir ^ d) > 0 || (dir ^ d) == 0 && dir * d > 0) pq.push({d, t, it});
+		}
+		while(!pq.empty()){
+			auto [d, t, timer] = pq.top();
+			pq.pop();
+			if(was[t] > timer || was[t + 1] > timer) continue;
+			process(order[t], order[t + 1]);
+			swap(order[t], order[t + 1]);
+			int i = order[t], j = order[t + 1];
+			swap(pos[i], pos[j]);
+			was[t] = was[t + 1] = ++ it;
+			if(t > 0){
+				auto e = (a[order[t]] - a[order[t - 1]]).perp();
+				assert(e != point<T>{});
+				if((dir ^ e) > 0 || (dir ^ e) == 0 && dir * e > 0) pq.push({e, t - 1, it});
+			}
+			if(t + 2 < n){
+				auto e = (a[order[t + 2]] - a[order[t + 1]]).perp();
+				assert(e != point<T>{});
+				if((dir ^ e) > 0 || (dir ^ e) == 0 && dir * e > 0) pq.push({e, t + 1, it});
+			}
+		}
+	}
+	// Same as above, but the memory usage is linear with the cost of higher constant factor
+	template<class T>
+	void run_linear_memory(const point<T> &o, const vector<point<T>> &a, const point<T> &dir, auto process){
+		assert(dir != point<T>{});
+		int n = (int)a.size();
+		order.resize(n);
+		pos.resize(n);
+		iota(order.begin(), order.end(), 0);
+		sort(order.begin(), order.end(), [&](int i, int j){
+			const point<T> &p = a[i], &q = a[j];
+			return (p - o) * dir != (q - o) * dir ? (p - o) * dir < (q - o) * dir : (p - o ^ dir) < (q - o ^ dir);
+		});
+		for(auto t = 0; t < n; ++ t) pos[order[t]] = t;
+		auto compare = [&](const auto &x, const auto &y)->bool{
+			return !colinear(o, x.first, y.first) ? counterclockwise(o, x.first, y.first) : x.second < y.second;
+		};
+		set<pair<point<T>, int>, decltype(compare)> s{compare};
+		for(auto t = 0; t < n - 1; ++ t){
+			auto d = (a[order[t + 1]] - a[order[t]]).perp();
+			assert(d != point<T>{});
+			if((dir ^ d) > 0 || (dir ^ d) == 0 && dir * d > 0) s.insert({d, t});
+		}
+		while(!s.empty()){
+			auto [d, t] = *s.begin();
+			s.erase(s.begin());
+			process(order[t], order[t + 1]);
+			if(t > 0){
+				auto e = (a[order[t]] - a[order[t - 1]]).perp();
+				assert(e != point<T>{});
+				if((dir ^ e) > 0 || (dir ^ e) == 0 && dir * e > 0) s.erase({e, t - 1});
+			}
+			if(t + 2 < n){
+				auto e = (a[order[t + 2]] - a[order[t + 1]]).perp();
+				assert(e != point<T>{});
+				if((dir ^ e) > 0 || (dir ^ e) == 0 && dir * e > 0) s.erase({e, t + 1});
+			}
+			swap(order[t], order[t + 1]);
+			int i = order[t], j = order[t + 1];
+			swap(pos[i], pos[j]);
+			if(t > 0){
+				auto e = (a[order[t]] - a[order[t - 1]]).perp();
+				assert(e != point<T>{});
+				if((dir ^ e) > 0 || (dir ^ e) == 0 && dir * e > 0) s.insert({e, t - 1});
+			}
+			if(t + 2 < n){
+				auto e = (a[order[t + 2]] - a[order[t + 1]]).perp();
+				assert(e != point<T>{});
+				if((dir ^ e) > 0 || (dir ^ e) == 0 && dir * e > 0) s.insert({e, t + 1});
+			}
+		}
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>radial_sweepline_sorter</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
