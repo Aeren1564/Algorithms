@@ -1,0 +1,60 @@
+<snippet>
+	<content><![CDATA[
+struct radial_sweepline_grouper{
+	vector<int> order;
+	vector<int> group;
+	radial_sweepline_grouper(){ }
+	// Rotate the directed line in counterclockwise order by pi, starting from dir
+	// Whenever there's a new state defined by 4-tuple of {head(0), left(1), tail(2), right(3)} appear, process() gets called
+	// The points overlapping with o are not counted
+	// insert(g, i): insert the i-th point to group g
+	// -> Guaranteed that the i-th point is not assigned
+	// erase(g, i): erase the i-th point from group g
+	// -> Guaranteed that the i-th point is assigned to group g
+	// process(i): report that a new state has been found with the line parallel to o-a[i]
+	// O(n * log(n))
+	// Requires point
+	template<class T>
+	void run(const point<T> &o, const vector<point<T>> &a, const point<T> &dir, auto insert, auto erase, auto process){
+		assert(dir != point<T>{});
+		int n = (int)a.size();
+		order.resize(n), group.resize(n);
+		iota(order.begin(), order.end(), 0);
+		order.erase(remove_if(order.begin(), order.end(), [&](int i){ return o == a[i]; }), order.end());
+		for(auto i: order){
+			if(colinear(o, o + dir, a[i])){
+				if(dir * (a[i] - o) > 0) insert(group[i] = 0, i);
+				else insert(group[i] = 2, i);
+			}
+			else{
+				if(counterclockwise(o, o + dir, a[i])) insert(group[i] = 1, i);
+				else insert(group[i] = 3, i);
+			}
+		}
+		auto cmp = [&](int i, int j)->bool{
+			return (
+				(group[i] < 2 ? a[i] - o : o - a[i]) ^
+				(group[j] < 2 ? a[j] - o : o - a[j])
+			) > 0;
+		};
+		sort(order.begin(), order.end(), cmp);
+		for(auto l = 0, m = (int)(find_if(order.begin(), order.end(), [&](int i){ return group[i] & 1; }) - order.begin()), r = 0; l < (int)order.size(); ){
+			if(l < m) process(order[l]);
+			r = m;
+			while(r < (int)order.size() && !cmp(order[m], order[r])) ++ r;
+			for(auto t = l; t < r; ++ t){
+				int i = order[t];
+				erase(group[i], i);
+				insert(group[i] = group[i] + 3 & 3, i);
+			}
+			l = m;
+			m = r;
+		}
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>radial_sweepline_grouper</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
