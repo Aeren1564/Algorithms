@@ -1,0 +1,28 @@
+<snippet>
+	<content><![CDATA[
+// Requires modular and (hash or hash_bidirectional)
+template<class hash_t>
+struct substring_hasher{
+	int n;
+	vector<hash_t> prefix;
+	template<class T>
+	substring_hasher(){ }
+	template<class T>
+	substring_hasher(const vector<T> &a){ build(a); }
+	template<class T>
+	void build(const vector<T> &a){
+		n = (int)a.size();
+		prefix.resize(n + 1);
+		for(auto i = 0; i < n; ++ i) prefix[i + 1] = prefix[i] + a[i];
+	}
+	hash_t hash(int l, int r) const{
+		assert(0 <= l && l <= r && r <= n);
+		return prefix[r].pop_left(prefix[l]);
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>substring_hasher</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
