@@ -5,7 +5,6 @@ template<class hash_t>
 struct substring_hasher{
 	int n;
 	vector<hash_t> prefix;
-	template<class T>
 	substring_hasher(){ }
 	// O(n)
 	template<class T>
