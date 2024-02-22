@@ -1,0 +1,275 @@
+<snippet>
+	<content><![CDATA[
+// Requires graph
+template<bool ENABLE_LCA_SOLVER, bool ENABLE_LEVEL_ANCESTOR_SOLVER>
+struct forest_query_solver_base{
+	static_assert(ENABLE_LCA_SOLVER || ENABLE_LEVEL_ANCESTOR_SOLVER);
+#ifdef LOCAL
+	#define ASSERT(c) assert(c)
+#else
+	#define ASSERT(c) 42
+#endif
+#define ifLCA if constexpr(ENABLE_LCA_SOLVER)
+#define ifLA if constexpr(ENABLE_LEVEL_ANCESTOR_SOLVER)
+	int n;
+	// For LCA Solver
+	vector<int> label;
+	vector<int> ascendant;
+	vector<int> head;
+	// For LA Solver
+	static constexpr int kappa = 3;
+	static constexpr int kappa_prime = (3 * kappa - 1) / (kappa - 2);
+	vector<array<int, 3>> stack;
+	vector<int> valley;
+	vector<int> valley_cnt;
+	vector<int> right;
+	vector<int> jump;
+	vector<vector<int>> ladder;
+	// Common
+	vector<int> order;
+	vector<int> pos;
+	vector<int> end;
+	vector<int> pv;
+	vector<int> root_of;
+	vector<int> depth;
+	vector<int> was;
+	void init(int n){
+		assert(n >= 1);
+		this->n = n;
+		ifLCA{
+			label.assign(n, -1);
+			ascendant.assign(n, -1);
+			head.assign(n + 1, -1);
+		}
+		ifLA{
+			stack.assign(2 * n - 1, {});
+			valley.assign(2 * n, -1);
+			valley_cnt.assign(2 * n - 1, -1);
+			right.assign(n + 1, -1);
+			jump.assign(2 * n - 1, -1);
+			ladder.assign(2 * n - 1, {});
+		}
+		order.clear();
+		pos.assign(n, -1);
+		end.assign(n, -1);
+		pv.assign(n, -1);
+		root_of.assign(n, -1);
+		depth.assign(n, -1);
+		was.assign(n, -2);
+		attempt = -1;
+	}
+	int attempt;
+	// O(n)
+	template<class T>
+	void build(const graph<T> &g, const vector<int> &src){
+		assert(g.n <= n);
+		++ attempt;
+		order.clear();
+		int timer = 1;
+		auto dfs = [&](auto self, int u, int pe)->void{
+			assert(was[u] != attempt);
+			was[u] = attempt;
+			pos[u] = (int)order.size();
+			order.push_back(u);
+			ifLCA label[u] = timer ++;
+			for(auto id: g.adj[u]){
+				if(id == pe || g.ignore && g.ignore(id)) continue;
+				int v = g(u, id);
+				pv[v] = u;
+				root_of[v] = root_of[u];
+				depth[v] = depth[u] + 1;
+				self(self, v, id);
+				ifLCA if(__builtin_ctz(label[u]) < __builtin_ctz(label[v])) label[u] = label[v];
+				order.push_back(u);
+			}
+			end[u] = (int)order.size();
+		};
+		for(auto r: src){
+			if(was[r] == attempt) continue;
+			pv[r] = -1;
+			depth[r] = 0;
+			root_of[r] = r;
+			dfs(dfs, r, -1);
+		}
+		ifLCA for(auto i = 0; i < (int)order.size(); ++ i){
+			int u = order[i];
+			if(pos[u] != i) continue;
+			if(root_of[u] == u) ascendant[u] = label[u];
+			for(auto id: g.adj[u]){
+				if(g.ignore && g.ignore(id)) continue;
+				int v = g(u, id);
+				if(pos[v] < pos[u] || end[u] < end[v]) continue;
+				ascendant[v] = ascendant[u];
+				if(label[v] != label[u]){
+					head[label[v]] = u;
+					ascendant[v] += label[v] & -label[v];
+				}
+			}
+		}
+		ifLA{
+			int si = 0, ymin = numeric_limits<int>::max(), ymax = numeric_limits<int>::min();
+			stack[si ++] = {0, numeric_limits<int>::min(), numeric_limits<int>::max()};
+			for(auto i = 0; i < (int)order.size(); ++ i){
+				int u = order[i], y = n - 1 - depth[u];
+				valley_cnt[i] = 0;
+				ymin = min(ymin, y);
+				ymax = max(ymax, y);
+				while(stack[si - 1][1] >= y) -- si;
+				if(stack[si - 1][2] >= y){
+					valley[i] = i;
+					if(stack[si - 1][2] > y) stack[si ++] = {i, y, y};
+				}
+				else{
+					while(stack[si - 2][2] < y) -- si;
+					valley[i] = stack[si - 1][1];
+					if(stack[si - 2][2] > y) stack[si - 1][2] = y;
+					else -- si;
+				}
+			}
+			valley[(int)order.size()] = (int)order.size() - 1;
+			for(auto i = 0; i < (int)order.size(); ++ i) ++ valley_cnt[valley[i]];
+			for(auto y = ymin; y <= ymax + 1; ++ y) right[y] = (int)order.size();
+			for(auto i = (int)order.size() - 1; i >= 0; -- i){
+				int u = order[i], y = n - 1 - depth[u];
+				right[y] = i;
+				int h = ymax - y;
+				if(0 < i && i < n - 1) h = min(h, max(kappa - 1, kappa_prime * (valley_cnt[i] - 1) - 2));
+				ladder[i].resize(h);
+				for(auto yi = 0; yi < h; ++ yi) ladder[i][yi] = right[y + yi + 1];
+				jump[i] = i ? valley[right[min(ymax + 1, y + (kappa - 2) * (1 << __lg(i)))]] : 0;
+			}
+		}
+	}
+	template<class T>
+	void build_all(const graph<T> &g){
+		vector<int> src(g.n);
+		iota(src.begin(), src.end(), 0);
+		build(g, src);
+	}
+	// Check if u is visited during the last build call
+	bool visited(int u) const{
+		ASSERT(0 <= u && u < n);
+		return was[u] == attempt;
+	}
+	// O(1)
+	bool ancestor_of(int u, int v) const{
+		#ifdef LOCAL
+		ASSERT(visited(u) && visited(v));
+		#endif
+		return pos[u] <= pos[v] && end[v] <= end[u];
+	}
+	// Assumes u and v are on the same component
+	// O(1)
+	int lca(int u, int v) const{
+		static_assert(ENABLE_LCA_SOLVER);
+		ASSERT(visited(u) && visited(v) && root_of[u] == root_of[v]);
+		auto [x, y] = minmax(label[u], label[v]);
+		int k = ascendant[u] & ascendant[v] & -(1 << __lg(x - 1 ^ y));
+		if(ascendant[u] != k){
+			int t = 1 << __lg(ascendant[u] ^ k);
+			u = head[label[u] & -t | t];
+		}
+		if(ascendant[v] != k){
+			int t = 1 << __lg(ascendant[v] ^ k);
+			v = head[label[v] & -t | t];
+		}
+		return depth[u] < depth[v] ? u : v;
+	}
+	// Assumes u and v are on the same component
+	// O(1)
+	int steps(int u, int v, int w = -1) const{
+		static_assert(ENABLE_LCA_SOLVER);
+		ASSERT(visited(u) && visited(v) && root_of[u] == root_of[v]);
+		return -2 * depth[~w ? w : lca(u, v)] + depth[u] + depth[v];
+	}
+	// Check if w lies in u-v path
+	// O(1)
+	bool on_path(int u, int v, int w) const{
+		static_assert(ENABLE_LCA_SOLVER);
+		ASSERT(visited(u) && visited(v) && visited(w) && root_of[u] == root_of[v] && root_of[v] == root_of[w]);
+		return steps(u, v) == steps(u, w) + steps(w, v);
+	}
+	// Check if u-v path and w-x path intersect, and find their interseciton if they intersect
+	// O(1)
+	optional<pair<int, int>> intersect_path(int u, int v, int w, int x) const{
+		static_assert(ENABLE_LCA_SOLVER);
+		ASSERT(visited(u) && visited(v) && visited(w) && visited(x) && root_of[u] == root_of[v] && root_of[v] == root_of[w] && root_of[w] == root_of[x]);
+		int optl = -1, optr = -1;
+		for(auto y: {lca(u, w), lca(u, x), lca(v, w), lca(v, x)}){
+			if(!on_path(u, v, y) || !on_path(w, x, y)) continue;
+			if(!~optl) optl = optr = y;
+			else if(depth[optl] < depth[y]) optr = optl, optl = y;
+			else if(depth[optr] < depth[y]) optr = y;
+		}
+		if(!~optl) return {};
+		return pair{optl, optr};
+	}
+	// Get the k-th ancestor of u
+	// O(1)
+	int find_ancestor_by_order(int u, int k) const{
+		static_assert(ENABLE_LEVEL_ANCESTOR_SOLVER);
+		ASSERT(visited(u) && 0 <= k && k <= depth[u]);
+		if(k == 0) return u;
+		int y = n - depth[u], qy = n - (depth[u] - k);
+		if(qy < y + kappa) return ladder[pos[u]][qy - y - 1];
+		int p = 1 << __lg((qy - y) / kappa), x = pos[u] / p * p;
+		if(x > 0 && x % (p << 1) == 0) x -= p;
+		return ladder[jump[x]][qy - (n - depth[order[jump[x]]]) - 1];
+	}
+	// Get the k-th vertex in the u-v path
+	// Assumes u and v are on the same component
+	// O(1)
+	int find_vertex_by_order(int u, int v, int k) const{
+		static_assert(ENABLE_LCA_SOLVER && ENABLE_LEVEL_ANCESTOR_SOLVER);
+		ASSERT(visited(u) && visited(v) && root_of[u] == root_of[v] && 0 <= k);
+		if(k == 0) return u;
+		int w = lca(u, v);
+		if(k <= depth[u] - depth[w]) return find_ancestor_by_order(u, k);
+		else return find_ancestor_by_order(v, k - (depth[u] - depth[w]));
+	}
+	// For an ancestor p of u, pred(p) is T, ..., T, F, ..., F in decreasing order of depth
+	// Returns the furthest p with T
+	// O(log(n))
+	int find_furthest_ancestor(int u, auto pred) const{
+		static_assert(ENABLE_LEVEL_ANCESTOR_SOLVER);
+		ASSERT(visited(u) && pred(u));
+		if(root_of[u] == u) return u;
+		for(auto bit = __lg(depth[u]); bit >= 0; -- bit) if(1 << bit <= depth[u]){
+			int v = find_ancestor_by_order(u, 1 << bit);
+			if(pred(v)) u = v;
+		}
+		return u;
+	}
+	// For a vertex w in u-v path, pred(w) is T, ..., T, F, ..., F in order from u to v
+	// Returns the furthest w with T
+	// O(log(n))
+	int find_furthest_vertex(int u, int v, auto pred) const{
+		static_assert(ENABLE_LCA_SOLVER && ENABLE_LEVEL_ANCESTOR_SOLVER);
+		ASSERT(visited(u) && visited(v) && root_of[u] == root_of[v] && pred(u));
+		if(pred(v)) return v;
+		int w = lca(u, v);
+		if(!pred(w)) return find_furthest_ancestor(u, pred);
+		else return pv[find_furthest_ancestor(v, [&](int v){ return !pred(v); })];
+	}
+#undef ASSERT
+#undef ifLCA
+#undef ifLA
+};
+
+// Source: https://github.com/programming-team-code/programming_team_code/blob/main/graphs/linear_lca/linear_lca.hpp
+auto make_lca_solver(){
+	return forest_query_solver_base<true, false>();
+}
+// Source: Still Simpler Static Level Ancestors
+auto make_la_solver(){
+	return forest_query_solver_base<false, true>();
+}
+auto make_forest_query_solver(){
+	return forest_query_solver_base<true, true>();
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>forest_query_solver</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
