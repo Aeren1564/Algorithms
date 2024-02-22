@@ -7,14 +7,17 @@ struct substring_hasher{
 	vector<hash_t> prefix;
 	template<class T>
 	substring_hasher(){ }
+	// O(n)
 	template<class T>
 	substring_hasher(const vector<T> &a){ build(a); }
+	// O(n)
 	template<class T>
 	void build(const vector<T> &a){
 		n = (int)a.size();
 		prefix.resize(n + 1);
 		for(auto i = 0; i < n; ++ i) prefix[i + 1] = prefix[i] + a[i];
 	}
+	// O(1)
 	hash_t hash(int l, int r) const{
 		assert(0 <= l && l <= r && r <= n);
 		return prefix[r].pop_left(prefix[l]);
