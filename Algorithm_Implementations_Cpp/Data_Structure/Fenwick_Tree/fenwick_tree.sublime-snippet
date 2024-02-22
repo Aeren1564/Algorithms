@@ -37,6 +37,10 @@ struct fenwick_tree{
 		for(++ p; p <= n; p += p & -p) data[p - 1] = TT(data[p - 1], x);
 	}
 	// O(log(n))
+	void set(int p, T x){
+		update(p, TT(x, Tinv(query(p))));
+	}
+	// O(log(n))
 	T prefix(int r) const{
 		T s = T_id;
 		for(; r > 0; r -= r & -r) s = TT(s, data[r - 1]);
