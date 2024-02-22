@@ -1,0 +1,137 @@
+<snippet>
+	<content><![CDATA[
+// Requires modular
+template<class modular_t, class len_t, bool ALLOW_BINEXP>
+struct hash_bidirectional{
+	static modular_t _base, _inv_base;
+	template<class T = int>
+	static void setup(T base = 0){
+		if constexpr(modular_t::VARIATE_MOD_FLAG) modular_t::setup((unsigned long long)1e18 + 9);
+		if(!base) base = mt19937(chrono::high_resolution_clock::now().time_since_epoch().count())() % 100'000'000 + 100'000'000;
+		_base = base, _inv_base = modular_t(1) / base;
+	}
+	static vector<modular_t> _power, _inv_power;
+	static void setup_power(size_t len){
+		if(_power.empty()) _power.push_back(1), _inv_power.push_back(1);
+		while((int)_power.size() <= len){
+			_power.push_back(_power.back() * _base);
+			_inv_power.push_back(_inv_power.back() * _inv_base);
+		}
+	}
+	static modular_t power(len_t e){
+		assert(e >= 0);
+		if constexpr(ALLOW_BINEXP) return e < (int)_power.size() ? _power[e] : _base.power(e);
+		else{
+			if((int)_power.size() <= e) setup_power(e);
+			return _power[e];
+		}
+	}
+	static modular_t inv_power(len_t e){
+		assert(e >= 0);
+		if constexpr(ALLOW_BINEXP) return e < (int)_inv_power.size() ? _inv_power[e] : _inv_base.power(e);
+		else{
+			if((int)_power.size() <= e) setup_power(e);
+			return _inv_power[e];
+		}
+	}
+	hash_bidirectional(){ }
+	hash_bidirectional(const modular_t &x, const modular_t &y, len_t len): data(x), rev_data(y), len(len){ }
+	template<class T, enable_if<is_integral_v<T>>::type* = nullptr>
+	hash_bidirectional(T x): data(x), rev_data(x), len(1){ }
+	template<class T, enable_if<is_integral_v<T>>::type* = nullptr>
+	hash_bidirectional(const vector<T> &s){ for(auto c: s) *this += hash_bidirectional(c); }
+	hash_bidirectional(const string &s){ for(auto c: s) *this += hash_bidirectional(c); }
+	hash_bidirectional &inplace_flip(){
+		swap(data, rev_data);
+		return *this;
+	}
+	hash_bidirectional flip() const{ return hash_bidirectional(*this).inplace_flip(); }
+	bool is_palindrome() const{ return data == rev_data; }
+	hash_bidirectional &operator=(const hash_bidirectional &x){
+		data = x.data, rev_data = x.rev_data, len = x.len;
+		return *this;
+	}
+	hash_bidirectional &operator+=(const hash_bidirectional &x){
+		data = power(x.len) * data + x.data;
+		rev_data += power(len) * x.rev_data;
+		len += x.len;
+		return *this;
+	}
+	hash_bidirectional operator+(const hash_bidirectional &x) const{ return hash_bidirectional(*this) += x; }
+	hash_bidirectional &inplace_append_right(const hash_bidirectional &x){ return *this += x; }
+	hash_bidirectional append_right(const hash_bidirectional &x) const{ return hash_bidirectional(*this).inplace_append_right(x); }
+	hash_bidirectional &inplace_append_left(const hash_bidirectional &x){
+		data += power(len) * x.data;
+		rev_data = x.rev_data + power(x.len) * rev_data;
+		len += x.len;
+		return *this;
+	}
+	hash_bidirectional append_left(const hash_bidirectional &x) const{ return hash_bidirectional(*this).inplace_append_left(x); }
+	hash_bidirectional &inplace_pop_right(const hash_bidirectional &x){
+		assert(len >= x.len);
+		data = inv_power(x.len) * (data - x.data);
+		rev_data -= power(len - x.len) * x.rev_data;
+		len -= x.len;
+		return *this;
+	}
+	hash_bidirectional pop_right(const hash_bidirectional &x) const{ return hash_bidirectional(*this).inplace_pop_right(x); }
+	hash_bidirectional &inplace_pop_left(const hash_bidirectional &x){
+		assert(len >= x.len);
+		data -= power(len - x.len) * x.data;
+		rev_data = inv_power(x.len) * (rev_data - x.rev_data);
+		len -= x.len;
+		return *this;
+	}
+	hash_bidirectional pop_left(const hash_bidirectional &x) const{ return hash_bidirectional(*this).inplace_pop_left(x); }
+	template<class T, enable_if<is_integral_v<T>>::type* = nullptr>
+	hash_bidirectional &inplace_update(len_t pos, T x){
+		assert(0 <= pos && pos < len);
+		data += power(len - pos - 1) * x;
+		rev_data += power(pos) * x;
+		return *this;
+	}
+	template<class T, enable_if<is_integral_v<T>>::type* = nullptr>
+	hash_bidirectional update(len_t pos, T x) const{ return hash_bidirectional(*this).inplace_update(pos, x); }
+	hash_bidirectional &inplace_update(len_t pos, const hash_bidirectional &x){
+		assert(0 <= pos && pos + x.len <= len);
+		data += power(len - pos - x.len) * x.data;
+		rev_data += power(pos) * x.rev_data;
+		return *this;
+	}
+	hash_bidirectional update(len_t pos, const hash_bidirectional &x) const{ return hash_bidirectional(*this).inplace_update(pos, x); }
+#define COMPARE_OP(op)\
+bool operator op(const hash_bidirectional &x) const{ return data op x.data; }
+	COMPARE_OP(==) COMPARE_OP(!=) COMPARE_OP(<) COMPARE_OP(<=) COMPARE_OP(>) COMPARE_OP(>=)
+#undef COMPARE_OP
+	template<class T, enable_if<is_integral_v<T>>::type* = nullptr>
+	hash_bidirectional &operator*=(T x){
+		assert(x >= 0);
+		if(x == 0) return *this = {};
+		if(x == 1) return *this;
+		hash_bidirectional res{};
+		for(auto e = x; e; e >>= 1){
+			if(e & 1) res += *this;
+			*this += *this;
+		}
+		return *this = res;
+	}
+	template<class T, enable_if<is_integral_v<T>>::type* = nullptr>
+	hash_bidirectional operator*(T x) const{ return hash_bidirectional(*this) *= x; }
+	template<class T, enable_if<is_integral_v<T>>::type* = nullptr>
+	friend hash_bidirectional operator*(T x, const hash_bidirectional &h){ return hash_bidirectional(h) *= x; }
+	friend ostream &operator<<(ostream &out, const hash_bidirectional &x){ return out << "{" << x.data << ", " << x.rev_data << ", " << x.len << "}"; }
+	modular_t data = 0, rev_data = 0;
+	len_t len = 0;
+};
+template<class modular_t, class len_t, bool ALLOW_BINEXP> modular_t hash_bidirectional<modular_t, len_t, ALLOW_BINEXP>::_base;
+template<class modular_t, class len_t, bool ALLOW_BINEXP> modular_t hash_bidirectional<modular_t, len_t, ALLOW_BINEXP>::_inv_base;
+template<class modular_t, class len_t, bool ALLOW_BINEXP> vector<modular_t> hash_bidirectional<modular_t, len_t, ALLOW_BINEXP>::_power;
+template<class modular_t, class len_t, bool ALLOW_BINEXP> vector<modular_t> hash_bidirectional<modular_t, len_t, ALLOW_BINEXP>::_inv_power;
+
+using hash_t = hash_bidirectional<modular, int, false>;
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>hash_bidirectional</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
