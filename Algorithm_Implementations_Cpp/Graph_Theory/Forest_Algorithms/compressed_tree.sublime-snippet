@@ -1,12 +1,12 @@
 <snippet>
 	<content><![CDATA[
-// Requires graph and lca_solver
 struct compressed_tree: graph<int>{
 	int root; // arborescence rooted at root
 	vector<int> order; // dfs-order of compressed tree
 	// Build the smallest tree containing all nodes in the subset
 	// O(size(subset) * log(n))
-	void compress(const lca_solver &ls, const vector<int> &subset){
+	template<class lca_solver_t>
+	void compress(const lca_solver_t &ls, const vector<int> &subset){
 		assert(ls.n <= n);
 		assert(!subset.empty());
 		for(auto u: order) adj[u].clear();
