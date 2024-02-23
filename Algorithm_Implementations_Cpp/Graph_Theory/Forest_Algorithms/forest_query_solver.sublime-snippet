@@ -220,7 +220,7 @@ struct forest_query_solver_base{
 		if(k == 0) return u;
 		int w = lca(u, v);
 		if(k <= depth[u] - depth[w]) return find_ancestor_by_order(u, k);
-		else return find_ancestor_by_order(v, k - (depth[u] - depth[w]));
+		else return find_ancestor_by_order(v, depth[u] + depth[v] - 2 * depth[w] - k);
 	}
 	// For an ancestor p of u, pred(p) is T, ..., T, F, ..., F in decreasing order of depth
 	// Returns the furthest p with T
@@ -243,8 +243,20 @@ struct forest_query_solver_base{
 		ASSERT(visited(u) && visited(v) && root_of[u] == root_of[v] && pred(u));
 		if(pred(v)) return v;
 		int w = lca(u, v);
-		if(!pred(w)) return find_furthest_ancestor(u, pred);
-		else return order[pos[find_furthest_ancestor(v, [&](int v){ return !pred(v); })] - 1];
+		if(!pred(w)){
+			for(auto bit = __lg(depth[u] - depth[w]); bit >= 0; -- bit) if(1 << bit <= depth[u] - depth[w]){
+				int v = find_ancestor_by_order(u, 1 << bit);
+				if(pred(v)) u = v;
+			}
+			return u;
+		}
+		else{
+			for(auto bit = __lg(depth[v] - depth[w]); bit >= 0; -- bit) if(1 << bit <= depth[v] - depth[w]){
+				int u = find_ancestor_by_order(v, 1 << bit);
+				if(!pred(u)) v = u;
+			}
+			return order[pos[v] - 1];
+		}
 	}
 #undef ASSERT
 #undef ifLCA
