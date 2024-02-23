@@ -149,12 +149,23 @@ struct suffix_array{
 			lcp[rank[i] - 1] = h;
 		}
 	}
-	// RMQ must be built over lcp
+	// rmq must be built over lcp
 	// O(1)
-	template<class RMQ>
-	int longest_common_prefix(int i, int j, const RMQ &rmq) const{
+	template<class RangeMinQuery_t>
+	int longest_common_prefix(int i, int j, const RangeMinQuery_t &rmq) const{
 		assert(0 <= i && i <= n && 0 <= j && j <= n);
 		return i == j ? n - i : rmq.query(min(rank[i], rank[j]), max(rank[i], rank[j]));
+	}
+	// rmq must be built over lcp
+	// Compares s[p, p + len) and s[q, q + len)
+	// O(1)
+	template<class RangeMinQuery_t>
+	bool compare(int p, int q, int len, const RangeMinQuery_t &rmq) const{
+		assert(0 <= min({p, q, len}) && p + len <= n && q + len <= n);
+		if(len == 0 || p == q) return false;
+		int common_len = longest_common_prefix(p, q, rmq);
+		if(common_len >= len) return false;
+		return data[p] < data[q];
 	}
 };
 ]]></content>
