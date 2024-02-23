@@ -17,7 +17,7 @@ struct forest_query_solver_base{
 	vector<int> ascendant;
 	vector<int> head;
 	// For LA Solver
-	static constexpr int kappa = 3;
+	static constexpr int kappa = 4;
 	static constexpr int kappa_prime = (3 * kappa - 1) / (kappa - 2);
 	vector<array<int, 3>> stack;
 	vector<int> valley;
@@ -29,7 +29,6 @@ struct forest_query_solver_base{
 	vector<int> order;
 	vector<int> pos;
 	vector<int> end;
-	vector<int> pv;
 	vector<int> root_of;
 	vector<int> depth;
 	vector<int> was;
@@ -42,7 +41,7 @@ struct forest_query_solver_base{
 			head.assign(n + 1, -1);
 		}
 		ifLA{
-			stack.assign(2 * n - 1, {});
+			stack.assign(2 * n, {});
 			valley.assign(2 * n, -1);
 			valley_cnt.assign(2 * n - 1, -1);
 			right.assign(n + 1, -1);
@@ -52,7 +51,6 @@ struct forest_query_solver_base{
 		order.clear();
 		pos.assign(n, -1);
 		end.assign(n, -1);
-		pv.assign(n, -1);
 		root_of.assign(n, -1);
 		depth.assign(n, -1);
 		was.assign(n, -2);
@@ -75,7 +73,6 @@ struct forest_query_solver_base{
 			for(auto id: g.adj[u]){
 				if(id == pe || g.ignore && g.ignore(id)) continue;
 				int v = g(u, id);
-				pv[v] = u;
 				root_of[v] = root_of[u];
 				depth[v] = depth[u] + 1;
 				self(self, v, id);
@@ -86,7 +83,6 @@ struct forest_query_solver_base{
 		};
 		for(auto r: src){
 			if(was[r] == attempt) continue;
-			pv[r] = -1;
 			depth[r] = 0;
 			root_of[r] = r;
 			dfs(dfs, r, -1);
@@ -121,7 +117,7 @@ struct forest_query_solver_base{
 				}
 				else{
 					while(stack[si - 2][2] < y) -- si;
-					valley[i] = stack[si - 1][1];
+					valley[i] = stack[si - 1][0];
 					if(stack[si - 2][2] > y) stack[si - 1][2] = y;
 					else -- si;
 				}
@@ -133,10 +129,10 @@ struct forest_query_solver_base{
 				int u = order[i], y = n - 1 - depth[u];
 				right[y] = i;
 				int h = ymax - y;
-				if(0 < i && i < n - 1) h = min(h, max(kappa - 1, kappa_prime * (valley_cnt[i] - 1) - 2));
+				if(0 < i && i < (int)order.size() - 2) h = min(h, max(kappa - 1, kappa_prime * (valley_cnt[i] - 1) - 2));
 				ladder[i].resize(h);
 				for(auto yi = 0; yi < h; ++ yi) ladder[i][yi] = right[y + yi + 1];
-				jump[i] = i ? valley[right[min(ymax + 1, y + (kappa - 2) * (1 << __lg(i)))]] : 0;
+				jump[i] = i ? valley[right[min(ymax + 1, y + (kappa - 2 << __builtin_ctz(i)))]] : 0;
 			}
 		}
 	}
@@ -210,11 +206,10 @@ struct forest_query_solver_base{
 		static_assert(ENABLE_LEVEL_ANCESTOR_SOLVER);
 		ASSERT(visited(u) && 0 <= k && k <= depth[u]);
 		if(k == 0) return u;
-		int y = n - depth[u], qy = n - (depth[u] - k);
-		if(qy < y + kappa) return ladder[pos[u]][qy - y - 1];
-		int p = 1 << __lg((qy - y) / kappa), x = pos[u] / p * p;
-		if(x > 0 && x % (p << 1) == 0) x -= p;
-		return ladder[jump[x]][qy - (n - depth[order[jump[x]]]) - 1];
+		if(k < kappa) return order[ladder[pos[u]][k - 1]];
+		int p = __lg(k / kappa), x = pos[u] >> p << p;
+		if(x > 0 && (x & (1 << p + 1) - 1) == 0) x -= 1 << p;
+		return order[ladder[jump[x]][k + depth[order[jump[x]]] - depth[u] - 1]];
 	}
 	// Get the k-th vertex in the u-v path
 	// Assumes u and v are on the same component
@@ -249,7 +244,7 @@ struct forest_query_solver_base{
 		if(pred(v)) return v;
 		int w = lca(u, v);
 		if(!pred(w)) return find_furthest_ancestor(u, pred);
-		else return pv[find_furthest_ancestor(v, [&](int v){ return !pred(v); })];
+		else return order[pos[find_furthest_ancestor(v, [&](int v){ return !pred(v); })] - 1];
 	}
 #undef ASSERT
 #undef ifLCA
