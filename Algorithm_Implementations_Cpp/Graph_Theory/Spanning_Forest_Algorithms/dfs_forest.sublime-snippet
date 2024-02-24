@@ -115,6 +115,22 @@ struct dfs_forest{
 		assert(visited(u) && visited(v));
 		return pos[u] <= pos[v] && end[v] <= end[u];
 	}
+	vector<int> get_path(int u, int v) const{
+		assert(visited(u) && visited(v) && root_of[u] == root_of[v]);
+		vector<int> left, right;
+		while(u != v){
+			if(depth[u] >= depth[v]){
+				left.push_back(u);
+				u = pv[u];
+			}
+			else{
+				right.push_back(v);
+				v = pv[v];
+			}
+		}
+		left.insert(left.end(), right.rbegin(), right.rend());
+		return left;
+	}
 	// Check if any cycle is found during the last dfs-like call.
 	// If must_contain_root = true, the sought cycle is forced to contain one of the root of the trees.
 	template<class U>
