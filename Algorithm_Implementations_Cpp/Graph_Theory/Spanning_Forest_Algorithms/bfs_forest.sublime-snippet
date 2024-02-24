@@ -96,6 +96,22 @@ struct bfs_forest{
 		assert(0 <= u && u < n);
 		return was[u] == attempt;
 	}
+	vector<int> get_path(int u, int v) const{
+		assert(visited(u) && visited(v) && root_of[u] == root_of[v]);
+		vector<int> left, right;
+		while(u != v){
+			if(depth[u] >= depth[v]){
+				left.push_back(u);
+				u = pv[u];
+			}
+			else{
+				right.push_back(v);
+				v = pv[v];
+			}
+		}
+		left.insert(left.end(), right.rbegin(), right.rend());
+		return left;
+	}
 };
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
