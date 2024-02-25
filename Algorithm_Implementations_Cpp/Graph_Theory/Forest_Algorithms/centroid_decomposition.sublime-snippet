@@ -2,28 +2,39 @@
 	<content><![CDATA[
 // Requires graph
 struct centroid_decomposition{
-	int n, root; // the root of the arborescence
-	graph<int> abr; // stores the arborescence
-	vector<int> pv; // Parent vertex in the decomposition
-	vector<int> pe; // Parent eedge in the decomposition
-	vector<int> order; // DFS order of the decomposition tree
-	vector<int> pos; // Starting position in the DFS order
-	vector<int> end; // Ending position in the DFS order
-	vector<int> size; // Size of the subtree in the decomposition
-	vector<int> depth; // Depth in the decomposition
-	vector<int> pos_as_child; // u is the pos_as_child[u]-th child
+	void init(int n){
+		assert(n >= 1);
+		this->n = n;
+		root.clear();
+		abr = graph<int>{n};
+		pv.assign(n, -1);
+		pe.assign(n, -1);
+		order.clear();
+		pos.assign(n, -1);
+		end.assign(n, -1);
+		size.assign(n, -1);
+		depth.assign(n, -1);
+		pos_as_child.assign(n, -1);
+		was.assign(n, -2);
+		attempt = -1;
+	}
+	vector<int> was;
+	int attempt;
 	// g must be a tree
-	// O(n log n)
+	// O(n * log(n))
 	template<class T>
-	centroid_decomposition(const graph<T> &g): n(g.n), abr(n), pv(n, -1), pe(n, -1), pos(n, -1), end(n, -1), size(n), depth(n), pos_as_child(n, -1){
-		vector<int> dead(n), size(n);
+	void build(const graph<T> &g, const vector<int> &src){
+		assert(g.n <= n);
+		++ attempt;
+		root.clear();
+		order.clear();
 		auto centroid = [&](int s){
 			int u = s, pe = -1;
 			while(true){
 				for(auto id: g.adj[u]){
 					if(id == pe || g.ignore && g.ignore(id)) continue;
 					int v = g(u, id);
-					if(dead[v]) continue;
+					if(was[v] == attempt) continue;
 					if(size[v] > size[s] >> 1){
 						u = v, pe = id;
 						goto NEXT;
@@ -39,28 +50,28 @@ struct centroid_decomposition{
 			for(auto id: g.adj[u]){
 				if(g.ignore && g.ignore(id)) continue;
 				int v = g(u, id);
-				if(p == v || dead[v]) continue;
+				if(p == v || was[v] == attempt) continue;
 				self(self, v, u);
 				size[u] += size[v];
 			}
 		};
 		auto construct = [&](auto self, int u, int p)->void{
 			dfs_size(dfs_size, u, p);
-			dead[u = centroid(u)] = true;
+			was[u = centroid(u)] = attempt;
 			this->size[u] = size[u];
 			if(~p){
 				pv[u] = p;
 				pos_as_child[u] = (int)abr.adj[p].size();
 				pe[u] = abr.orient(p, u);
 			}
-			else root = u;
+			else root.push_back(u);
 			for(auto id: g.adj[u]){
 				if(g.ignore && g.ignore(id)) continue;
 				int v = g(u, id);
-				if(!dead[v]) self(self, v, u);
+				if(was[v] != attempt) self(self, v, u);
 			}
 		};
-		construct(construct, 0, -1);
+		for(auto r: src) if(was[r] != attempt) construct(construct, r, -1);
 		auto dfs = [&](auto self, int u)->void{
 			pos[u] = (int)order.size();
 			order.push_back(u);
@@ -71,12 +82,20 @@ struct centroid_decomposition{
 			}
 			end[u] = (int)order.size();
 		};
-		dfs(dfs, root);
+		for(auto r: root){
+			depth[r] = 0;
+			dfs(dfs, r);
+		}
 	}
-	vector<vector<int>> step; // step[u][i]: # of edges from u to its i-th decomposition parent
+	template<class T>
+	void build_all(const graph<T> &g){
+		vector<int> src(g.n);
+		iota(src.begin(), src.end(), 0);
+		build(g, src);
+	}
 	template<class T>
 	void init_step(const graph<T> &g){
-		step.assign(n, {});
+		step.assign(g.n, {});
 		auto set_step = [&](auto self, int u, int pe, int d)->void{
 			for(auto id: g.adj[u]){
 				if(id == pe || g.ignore && g.ignore(id)) continue;
@@ -86,12 +105,24 @@ struct centroid_decomposition{
 				self(self, v, id, d);
 			}
 		};
-		for(auto t = n - 1; t >= 0; -- t){
+		for(auto t = (int)order.size() - 1; t >= 0; -- t){
 			int u = order[t];
 			step[u].push_back(0);
 			set_step(set_step, u, -1, depth[u]);
 		}
 	}
+	int n;
+	vector<int> root; // the roots of the arborescence
+	graph<int> abr; // stores the arborescence
+	vector<int> pv; // parent vertex in the decomposition
+	vector<int> pe; // parent edge in the decomposition
+	vector<int> order; // dfs order of the decomposition tree
+	vector<int> pos; // starting position in the dfs order
+	vector<int> end; // ending position in the dfs order
+	vector<int> size; // size of the subtree in the decomposition
+	vector<int> depth; // depth in the decomposition
+	vector<int> pos_as_child; // u is the pos_as_child[u]-th child
+	vector<vector<int>> step; // step[u][i]: # of edges from u to its i-th decomposition parent, must call init_step() to initialize
 };
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
