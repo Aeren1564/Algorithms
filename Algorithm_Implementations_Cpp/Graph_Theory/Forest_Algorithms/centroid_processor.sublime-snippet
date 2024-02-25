@@ -1,0 +1,68 @@
+<snippet>
+	<content><![CDATA[
+struct centroid_processor{
+	int n;
+	vector<int> size;
+	vector<int> was;
+	int attempt;
+	void init(int n){
+		assert(n >= 1);
+		this->n = n;
+		size.assign(n, -1);
+		was.assign(n, -2);
+		attempt = -1;
+	}
+	// g must be a forest
+	template<class T>
+	int find_a_centroid(const graph<T> &g, int src){
+		assert(g.n <= n);
+		assert(0 <= src && src < n);
+		++ attempt;
+		auto dfs_size = [&](auto self, int u)->void{
+			was[u] = attempt;
+			size[u] = 1;
+			for(auto id: g.adj[u]){
+				if(g.ignore && g.ignore(id)) continue;
+				int v = g(u, id);
+				if(was[v] == attempt) continue;
+				self(self, v);
+				size[u] += size[v];
+			}
+		};
+		dfs_size(dfs_size, src);
+		for(auto u = src, pe = -1; ; ){
+			for(auto id: g.adj[u]){
+				if(id == pe || g.ignore && g.ignore(id)) continue;
+				int v = g(u, id);
+				if(size[v] > size[src] >> 1){
+					u = v, pe = id;
+					goto NEXT;
+				}
+			}
+			return u;
+			NEXT:;
+		}
+		assert(false);
+	}
+	// g must be a forest
+	template<class T>
+	vector<int> find_all_centroids(const graph<T> &g, int src){
+		assert(g.n <= n);
+		assert(0 <= src && src < n);
+		int u = find_a_centroid(g, src);
+		for(auto id: g.adj[u]){
+			if(g.ignore && g.ignore(id)) continue;
+			int v = g(u, id);
+			assert(was[v] == attempt);
+			if(size[u] < size[v]) continue;
+			if(size[src] - size[v] <= size[src] >> 1) return {u, v};
+		}
+		return {u};
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>centroids</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
