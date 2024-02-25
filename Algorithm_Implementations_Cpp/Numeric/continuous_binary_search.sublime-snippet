@@ -1,0 +1,20 @@
+<snippet>
+	<content><![CDATA[
+// pred(x) is [T...T][F...F] for [low, high]
+// Returns the point where pred changes
+// O(iter)
+template<int iter = 100>
+double continuous_binary_search(double low, double high, auto pred){
+	assert(low <= high);
+	while(high - low >= 3){
+		double mid = (low + high) / 2;
+		pred(mid) ? low = mid : high = mid;
+	}
+	return (low + high) / 2;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>continuous_binary_search</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
