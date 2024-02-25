@@ -1,19 +1,18 @@
 <snippet>
 	<content><![CDATA[
-// Returns O(n * log(n)) tuples {l, r, p} indicating that [i, i + p) equals [i + p, i + 2 * p) for all i in [l, r)
+// Returns O(n * log(n)) tuples {l, r, len} indicating that [i, i + len) equals [i + len, i + 2 * len) for all i in [l, r)
 // O(n * log(n))
-// Requires suffix_array
-template<class Char_Type, class RMQ>
+template<class Char_Type, class SuffixArray_t, class RangeMinQuery_t>
 vector<array<int, 3>> main_lorentz(const vector<Char_Type> &s){
 	int n = (int)s.size();
-	suffix_array sa(s, true), rsa(vector<int>{s.rbegin(), s.rend()}, true);
-	RMQ rmq(sa.lcp), rrmq(rsa.lcp);
+	SuffixArray_t sa(s), rsa(vector<int>{s.rbegin(), s.rend()});
+	RangeMinQuery_t rmq(sa.lcp), rrmq(rsa.lcp);
 	vector<array<int, 3>> res;
-	for(auto p = 1; p << 1 <= n; ++ p){
-		for(auto i = 0, last = -1; i + p <= n; i += p){
-			int l = i - rsa.longest_common_prefix(n - i - p, n - i, rmq), r = i - p + sa.longest_common_prefix(i, i + p, rrmq);
+	for(auto len = 1; len << 1 <= n; ++ len){
+		for(auto i = 0, last = -1; i + len <= n; i += len){
+			int l = i - rsa.longest_common_prefix(n - i - len, n - i, rrmq), r = i - len + sa.longest_common_prefix(i, i + len, rmq);
 			if(l > r || l == last) continue;
-			res.push_back({last = l, r + 1, p});
+			res.push_back({last = l, r + 1, len});
 		}
 	}
 	return res;
