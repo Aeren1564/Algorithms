@@ -3,48 +3,66 @@
 // pajenegod orz
 // Requires graph
 struct shallowest_decomposition{
-	int n, root; // the root of the arborescence
-	graph<int> abr; // stores the arborescence
-	vector<int> pv; // Parent vertex in the decomposition
-	vector<int> pe; // Parent eedge in the decomposition
-	vector<int> order; // DFS order of the decomposition tree
-	vector<int> pos; // Starting position in the DFS order
-	vector<int> end; // Ending position in the DFS order
-	vector<int> size; // Size of the subtree in the decomposition
-	vector<int> depth; // Depth in the decomposition
-	vector<int> pos_as_child; // u is the pos_as_child[u]-th child
+	void init(int n){
+		assert(n >= 1);
+		this->n = n;
+		root.clear();
+		abr = graph<int>{n};
+		pv.assign(n, -1);
+		pe.assign(n, -1);
+		order.clear();
+		pos.assign(n, -1);
+		end.assign(n, -1);
+		size.assign(n, -1);
+		depth.assign(n, -1);
+		pos_as_child.assign(n, -1);
+		was.assign(n, -2);
+		attempt = -1;
+		dp.assign(n, -1);
+		stack.assign(__lg(n) + 1, {});
+	}
+	vector<int> was;
+	int attempt;
+	vector<int> dp;
+	vector<vector<int>> stack;
 	// g must be a tree
 	// O(n)
 	template<class T>
-	shallowest_decomposition(const graph<T> &g): n(g.n), abr(n), pv(n, -1), pe(n, -1), pos(n, -1), end(n, -1), size(n, 1), depth(n), pos_as_child(n, -1){
-		assert(n);
+	void build(const graph<T> &g, const vector<int> &src){
+		assert(g.n <= n);
+		++ attempt;
+		root.clear();
+		order.clear();
 		vector<int> dp(n);
-		vector<vector<int>> stacks(__lg(n) + 1);
+		vector<vector<int>> stack(__lg(n) + 1);
 		auto create_chain = [&](int labels, int u)->void{
 			while(labels){
 				int label = __lg(labels);
 				labels ^= 1 << label;
-				int v = stacks[label].back();
-				stacks[label].pop_back();
+				int v = stack[label].back();
+				stack[label].pop_back();
 				pv[v] = u;
 				pos_as_child[v] = (int)abr.adj[u].size();
 				pe[v] = abr.orient(u, v);
 				u = v;
 			}
 		};
-		auto construct = [&](auto self, int u, int pe)->void{
+		auto construct = [&](auto self, int u)->void{
+			was[u] = attempt;
+			dp[u] = 0;
 			int seen = 0, seen_twice = 0;
 			for(auto id: g.adj[u]){
-				if(id == pe || g.ignore && g.ignore(id)) continue;
+				if(g.ignore && g.ignore(id)) continue;
 				int v = g(u, id);
-				self(self, v, id);
+				if(was[v] == attempt) continue;
+				self(self, v);
 				seen_twice |= seen & dp[v];
 				seen |= dp[v];
 			}
 			int temp = ~seen & -(1 << (seen_twice ? __lg(seen_twice) + 1: 0));
 			int label = temp & -temp;
 			dp[u] = (label | seen) & -label;
-			stacks[__lg(label)].push_back(u);
+			stack[__lg(label)].push_back(u);
 			for(auto t = (int)g.adj[u].size() - 1; t >= 0; -- t){
 				int id = g.adj[u][t];
 				if(g.ignore && g.ignore(id)) continue;
@@ -52,10 +70,12 @@ struct shallowest_decomposition{
 				create_chain(dp[v] & label - 1, u);
 			}
 		};
-		construct(construct, 0, -1);
-		root = stacks[__lg(dp[0])].back();
-		stacks[__lg(dp[0])].pop_back();
-		create_chain(dp[0] ^ dp[root], root);
+		for(auto r: src){
+			construct(construct, r);
+			root.push_back(stack[__lg(dp[r])].back());
+			stack[__lg(dp[r])].pop_back();
+			create_chain(dp[r] ^ dp[root.back()], root.back());
+		}
 		auto dfs = [&](auto self, int u)->void{
 			pos[u] = (int)order.size();
 			order.push_back(u);
@@ -67,12 +87,20 @@ struct shallowest_decomposition{
 			}
 			end[u] = (int)order.size();
 		};
-		dfs(dfs, root);
+		for(auto r: root){
+			depth[r] = 0;
+			dfs(dfs, r);
+		}
 	}
-	vector<vector<int>> step; // step[u][i]: # of edges from u to its i-th decomposition parent
+	template<class T>
+	void build_all(const graph<T> &g){
+		vector<int> src(g.n);
+		iota(src.begin(), src.end(), 0);
+		build(g, src);
+	}
 	template<class T>
 	void init_step(const graph<T> &g){
-		step.assign(n, {});
+		step.assign(g.n, {});
 		auto set_step = [&](auto self, int u, int pe, int d)->void{
 			for(auto id: g.adj[u]){
 				if(id == pe || g.ignore && g.ignore(id)) continue;
@@ -82,12 +110,24 @@ struct shallowest_decomposition{
 				self(self, v, id, d);
 			}
 		};
-		for(auto t = n - 1; t >= 0; -- t){
+		for(auto t = (int)order.size() - 1; t >= 0; -- t){
 			int u = order[t];
 			step[u].push_back(0);
 			set_step(set_step, u, -1, depth[u]);
 		}
 	}
+	int n;
+	vector<int> root; // the roots of the arborescence
+	graph<int> abr; // stores the arborescence
+	vector<int> pv; // parent vertex in the decomposition
+	vector<int> pe; // parent edge in the decomposition
+	vector<int> order; // dfs order of the decomposition tree
+	vector<int> pos; // starting position in the dfs order
+	vector<int> end; // ending position in the dfs order
+	vector<int> size; // size of the subtree in the decomposition
+	vector<int> depth; // depth in the decomposition
+	vector<int> pos_as_child; // u is the pos_as_child[u]-th child
+	vector<vector<int>> step; // step[u][i]: # of edges from u to its i-th decomposition parent, must call init_step() to initialize
 };
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
