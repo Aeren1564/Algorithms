@@ -1,0 +1,32 @@
+<snippet>
+	<content><![CDATA[
+#include <string>
+#include <bits/functexcept.h>
+#include <iosfwd>
+#include <bits/cxxabi_forced.h>
+#include <bits/functional_hash.h>
+
+#pragma push_macro("__SIZEOF_LONG__")
+#pragma push_macro("__cplusplus")
+#undef __SIZEOF_LONG__
+#define __SIZEOF_LONG__ __SIZEOF_LONG_LONG__
+#define unsigned unsigned long
+#undef __cplusplus
+#define __cplusplus 201102L
+
+#define __builtin_popcountl __builtin_popcountll
+#define __builtin_ctzl __builtin_ctzll
+
+#include <bitset>
+
+#pragma pop_macro("__cplusplus")
+#pragma pop_macro("__SIZEOF_LONG__")
+#undef unsigned
+#undef __builtin_popcountl
+#undef __builtin_ctzl
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>bitset64</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
