@@ -6,7 +6,7 @@
 template<int iter = 100>
 double continuous_binary_search(double low, double high, auto pred){
 	assert(low <= high);
-	while(high - low >= 3){
+	for(auto rep = 0; rep < iter; ++ rep){
 		double mid = (low + high) / 2;
 		pred(mid) ? low = mid : high = mid;
 	}
