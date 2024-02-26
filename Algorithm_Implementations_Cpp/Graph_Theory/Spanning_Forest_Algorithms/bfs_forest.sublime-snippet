@@ -109,6 +109,7 @@ struct bfs_forest{
 				v = pv[v];
 			}
 		}
+		left.push_back(u);
 		left.insert(left.end(), right.rbegin(), right.rend());
 		return left;
 	}
