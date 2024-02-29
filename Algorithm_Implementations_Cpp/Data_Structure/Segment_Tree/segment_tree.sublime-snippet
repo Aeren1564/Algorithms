@@ -32,7 +32,7 @@ struct segment_tree_base{
 	}
 	// O(n)
 	void build(int n){
-		assert(n >= 1);
+		assert(n >= 0);
 		this->n = n;
 		size = 1;
 		while(size < n) size <<= 1;
@@ -43,7 +43,7 @@ struct segment_tree_base{
 	// O(n)
 	void build(int n, T x){
 		static_assert(HAS_QUERY);
-		assert(n >= 1);
+		assert(n >= 0);
 		this->n = n;
 		size = 1;
 		while(size < n) size <<= 1;
@@ -57,7 +57,6 @@ struct segment_tree_base{
 	template<class V>
 	void build(const vector<V> &a){
 		static_assert(HAS_QUERY);
-		assert(!a.empty());
 		n = (int)a.size();
 		size = 1;
 		while(size < n) size <<= 1;
@@ -70,11 +69,13 @@ struct segment_tree_base{
 	// O(n)
 	void build_action(int n){
 		static_assert(!HAS_QUERY && HAS_UPDATE);
+		assert(n >= 0);
 		build(n);
 	}
 	// O(n)
 	void build_action(int n, U f){
 		static_assert(!HAS_QUERY && HAS_UPDATE);
+		assert(n >= 0);
 		this->n = n;
 		size = 1;
 		while(size < n) size <<= 1;
