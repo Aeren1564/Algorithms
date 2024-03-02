@@ -3,6 +3,11 @@
 template<bool HAS_QUERY, bool HAS_UPDATE, class T, class U, class F1, class F2, class F3>
 struct segment_tree_base{
 	static_assert(HAS_QUERY || HAS_UPDATE);
+#ifdef LOCAL
+	#define ASSERT(c) assert(c)
+#else
+	#define ASSERT(c) 42
+#endif
 #define ifQ if constexpr(HAS_QUERY)
 #define ifU if constexpr(HAS_UPDATE)
 	int n, size, log;
@@ -32,7 +37,7 @@ struct segment_tree_base{
 	}
 	// O(n)
 	void build(int n){
-		assert(n >= 0);
+		ASSERT(n >= 0);
 		this->n = n;
 		size = 1;
 		while(size < n) size <<= 1;
@@ -43,7 +48,7 @@ struct segment_tree_base{
 	// O(n)
 	void build(int n, T x){
 		static_assert(HAS_QUERY);
-		assert(n >= 0);
+		ASSERT(n >= 0);
 		this->n = n;
 		size = 1;
 		while(size < n) size <<= 1;
@@ -69,13 +74,13 @@ struct segment_tree_base{
 	// O(n)
 	void build_action(int n){
 		static_assert(!HAS_QUERY && HAS_UPDATE);
-		assert(n >= 0);
+		ASSERT(n >= 0);
 		build(n);
 	}
 	// O(n)
 	void build_action(int n, U f){
 		static_assert(!HAS_QUERY && HAS_UPDATE);
-		assert(n >= 0);
+		ASSERT(n >= 0);
 		this->n = n;
 		size = 1;
 		while(size < n) size <<= 1;
@@ -114,7 +119,7 @@ struct segment_tree_base{
 	// O(log(n)) if HAS_UPDATE, O(1) otherwise.
 	T query(int p){
 		static_assert(HAS_QUERY);
-		assert(0 <= p && p < n);
+		ASSERT(0 <= p && p < n);
 		p += size;
 		ifU for(auto i = log; i >= 1; -- i) push(p >> i);
 		return data[p];
@@ -122,7 +127,7 @@ struct segment_tree_base{
 	// O(log(n))
 	U query_action(int p){
 		static_assert(!HAS_QUERY && HAS_UPDATE);
-		assert(0 <= p && p < n);
+		ASSERT(0 <= p && p < n);
 		p += size;
 		ifU for(auto i = log; i >= 1; -- i) push(p >> i);
 		return data_action[p];
@@ -130,7 +135,7 @@ struct segment_tree_base{
 	// O(log(n))
 	T query(int ql, int qr){
 		static_assert(HAS_QUERY);
-		assert(0 <= ql && ql <= qr && qr <= n);
+		ASSERT(0 <= ql && ql <= qr && qr <= n);
 		if(ql == qr) return T_id;
 		ql += size, qr += size;
 		ifU for(auto i = log; i >= 1; -- i){
@@ -164,7 +169,7 @@ struct segment_tree_base{
 	// O(log(n))
 	void set(int p, T x){
 		static_assert(HAS_QUERY);
-		assert(0 <= p && p < n);
+		ASSERT(0 <= p && p < n);
 		p += size;
 		ifU for(auto i = log; i >= 1; -- i) push(p >> i);
 		data[p] = x;
@@ -173,7 +178,7 @@ struct segment_tree_base{
 	// O(log(n))
 	void set_action(int p, U f){
 		static_assert(!HAS_QUERY && HAS_UPDATE);
-		assert(0 <= p && p < n);
+		ASSERT(0 <= p && p < n);
 		p += size;
 		for(auto i = log; i >= 1; -- i) push(p >> i);
 		data_action[p] = f;
@@ -181,7 +186,7 @@ struct segment_tree_base{
 	// O(log(n))
 	void update(int p, U f){
 		static_assert(HAS_UPDATE);
-		assert(0 <= p && p < n);
+		ASSERT(0 <= p && p < n);
 		p += size;
 		for(auto i = log; i >= 1; -- i) push(p >> i);
 		ifQ{
@@ -193,7 +198,7 @@ struct segment_tree_base{
 	// O(log(n))
 	void update(int ql, int qr, U f){
 		static_assert(HAS_UPDATE);
-		assert(0 <= ql && ql <= qr && qr <= n);
+		ASSERT(0 <= ql && ql <= qr && qr <= n);
 		if(ql == qr) return;
 		ql += size, qr += size;
 		for(auto i = log; i >= 1; -- i){
@@ -213,7 +218,7 @@ struct segment_tree_base{
 	}
 	void update_beats(int ql, int qr, auto exit_rule, auto enter_rule, auto update_rule){
 		static_assert(HAS_QUERY && HAS_UPDATE);
-		assert(0 <= ql && ql <= qr && qr <= n);
+		ASSERT(0 <= ql && ql <= qr && qr <= n);
 		if(ql == qr) return;
 		ql += size, qr += size;
 		for(auto i = log; i >= 1; -- i){
@@ -246,7 +251,7 @@ struct segment_tree_base{
 	// O(log(n))
 	int max_pref(int ql, auto pred){
 		static_assert(HAS_QUERY);
-		assert(0 <= ql && ql <= n && pred(T_id));
+		ASSERT(0 <= ql && ql <= n && pred(T_id));
 		if(ql == n) return n;
 		ql += size;
 		ifU for(auto i = log; i >= 1; -- i) push(ql >> i);
@@ -271,7 +276,7 @@ struct segment_tree_base{
 	// O(log(n))
 	int min_suff(int qr, auto pred){
 		static_assert(HAS_QUERY);
-		assert(0 <= qr && qr <= n && pred(T_id));
+		ASSERT(0 <= qr && qr <= n && pred(T_id));
 		if(qr == 0) return 0;
 		qr += size;
 		ifU for(auto i = log; i >= 1; -- i) push(qr - 1 >> i);
@@ -301,6 +306,7 @@ struct segment_tree_base{
 		}
 		return out << '}';
 	}
+#undef ASSERT
 #undef ifQ
 #undef ifU
 };
