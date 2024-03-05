@@ -1,0 +1,193 @@
+<snippet>
+	<content><![CDATA[
+// Given an array of distinct integers,
+// a subarray S is said to be consecutive if max(S) - min(S) = len(S), and
+// a consecutive subarray S is said to be primitive if for any other consecutive subarray T, either S and T are disjoint or one contains the other
+// A consecutive subarray can be partitioned uniquely into maximum primitive consecutive subarrays.
+// There are O(n) primitive consecutive subarrays.
+// They form a forest of arboresence according to inclusion relation
+// Cut: Childs of the node are not sorted in either order. Here, any consecutive interval of childs of length >= 2 is not a consecutive subarray.
+// Join: Childs of the node are sorted in either order. Here, any consecutive interval of childs form a consecutive subarray
+template<class T>
+struct cut_join_tree{
+	static_assert(is_integral_v<T>);
+	int _size, _log;
+	vector<pair<T, int>> _min_stack;
+	vector<pair<T, int>> _max_stack;
+	int _new_node(int t, array<int, 2> ind, array<T, 2> val){
+		int u = (int)type.size();
+		type.push_back(t);
+		index_range.push_back(ind);
+		value_range.push_back(val);
+		adj.emplace_back();
+		return u;
+	}
+	vector<array<T, 2>> _seg;
+	array<T, 2> _TT(const array<T, 2> &x, const array<T, 2> &y) const{
+		return {min(x[0], x[1] + y[0]), x[1] + y[1]};
+	}
+	void _update(int p, T x){
+		if(p >= capacity) return;
+		p += _size;
+		_seg[p] = {_seg[p][0] + x, _seg[p][1] + x};
+		for(auto i = 1; i <= _log; ++ i) _seg[p >> i] = _TT(_seg[(p >> i) << 1], _seg[(p >> i) << 1 | 1]);
+	}
+	T _query(int ql, int qr) const{
+		array<T, 2> res_l{numeric_limits<T>::max() / 2, 0};
+		array<T, 2> res_r{numeric_limits<T>::max() / 2, 0};
+		for(ql += _size, qr += _size; ql < qr; ql >>= 1, qr >>= 1){
+			if(ql & 1) res_l = _TT(res_l, _seg[ql ++]);
+			if(qr & 1) res_r = _TT(_seg[-- qr], res_r);
+		}
+		return min(res_l[0], res_l[1] + res_r[0]);
+	}
+	T _sum(int ql, int qr) const{
+		T res = 0;
+		for(ql += _size, qr += _size; ql < qr; ql >>= 1, qr >>= 1){
+			if(ql & 1) res += _seg[ql ++][1];
+			if(qr & 1) res += _seg[-- qr][1];
+		}
+		return res;
+	}
+	int _locate(const T &x) const{
+		int qr = (int)root.size() + _size;
+		array<T, 2> suff = {numeric_limits<T>::max() / 2, 0};
+		T tot_sum = _sum(0, (int)root.size());
+		const auto pred = [&](const array<T, 2> &suff)->bool{
+			return tot_sum - suff[1] + suff[0] > x;
+		};
+		do{
+			-- qr;
+			while(qr > 1 && qr & 1) qr >>= 1;
+			if(!pred(_TT(_seg[qr], suff))){
+				while(qr < _size){
+					qr = qr << 1 | 1;
+					if(pred(_TT(_seg[qr], suff))) suff = _TT(_seg[qr --], suff);
+				}
+				return qr + 1 - _size;
+			}
+			suff = _TT(_seg[qr], suff);
+		}while((qr & -qr) != qr);
+		assert(false);
+	}
+	vector<int> _used;
+	// Assumes x has never been inserted before
+	// Amortized O(log(n))
+	void extend(const T &x){
+		assert(n < capacity);
+		assert(0 <= x && x < capacity && !_used[x]);
+		_used[x] = true;
+		_update(0, -1), _update((int)root.size(), 1);
+		while(!_min_stack.empty() && _min_stack.back().first > x){
+			auto [px, r] = _min_stack.back();
+			_min_stack.pop_back();
+			_update(_min_stack.empty() ? 0 : _min_stack.back().second + 1, px - x);
+			_update(r + 1, x - px);
+		}
+		_min_stack.push_back({x, (int)root.size()});
+		while(!_max_stack.empty() && _max_stack.back().first < x){
+			auto [px, r] = _max_stack.back();
+			_max_stack.pop_back();
+			_update(_max_stack.empty() ? 0 : _max_stack.back().second + 1, x - px);
+			_update(r + 1, px - x);
+		}
+		_max_stack.push_back({x, (int)root.size()});
+		int u = _new_node(0, {n, n + 1}, {x, x + 1});
+		while(!root.empty()){
+			int v = root.back();
+			if(type[v] == 2 && value_range[v][1] == value_range[u][0]){
+				adj[v].push_back(u);
+				index_range[v][1] = n + 1;
+				value_range[v][1] = value_range[u][1];
+				u = v;
+				root.pop_back();
+			}
+			else if(type[root.back()] == 3 && value_range[u][1] == value_range[v][0]){
+				adj[v].push_back(u);
+				index_range[v][1] = n + 1;
+				value_range[v][0] = value_range[u][0];
+				u = v;
+				root.pop_back();
+			}
+			else if(T minval = _query(0, (int)root.size()); !minval){
+				int i = min((int)root.size() - 1, _locate(minval) - 1);
+				if(i == (int)root.size() - 1){
+					int w = _new_node(2 + (value_range[v][0] > value_range[u][0]), {index_range[v][0], n + 1}, {min(value_range[v][0], value_range[u][0]), max(value_range[v][1], value_range[u][1])});
+					adj[w] = {v, u};
+					u = w;
+					root.pop_back();
+				}
+				else{
+					int w = _new_node(1, {index_range[root[i]][0], n + 1}, accumulate(root.begin() + i, root.end(), value_range[u], [&](const array<T, 2> &val, int u){ return array{min(val[0], value_range[u][0]), max(val[1], value_range[u][1])}; }));
+					adj[w] = {root.begin() + i, root.end()};
+					adj[w].push_back(u);
+					u = w;
+					root.resize(i);
+				}
+			}
+			else break;
+		}
+		root.push_back(u);
+		T last = -1;
+		while(!_min_stack.empty() && (int)root.size() <= _min_stack.back().second){
+			last = _min_stack.back().first;
+			_min_stack.pop_back();
+		}
+		if(~last) _min_stack.push_back({last, (int)root.size() - 1});
+		last = -1;
+		while(!_max_stack.empty() && (int)root.size() <= _max_stack.back().second){
+			last = _max_stack.back().first;
+			_max_stack.pop_back();
+		}
+		if(~last) _max_stack.push_back({last, (int)root.size() - 1});
+		T delta = (value_range[u][1] - value_range[u][0]) - (index_range[u][1] - index_range[u][0]) - _sum(0, (int)root.size());
+		_update((int)root.size() - 1, delta);
+		_update((int)root.size(), -delta);
+		++ n;
+	}
+	void extend(const vector<T> &a){
+		for(auto x: a) extend(x);
+	}
+	void init(int capacity){
+		assert(capacity >= 0);
+		n = 0;
+		type.clear();
+		index_range.clear();
+		value_range.clear();
+		adj.clear();
+		root.clear();
+		_min_stack.clear();
+		_max_stack.clear();
+		this->capacity = capacity;
+		_size = 1;
+		while(_size < capacity) _size <<= 1;
+		_log = __lg(_size);
+		_seg.assign(_size << 1, array{0, 0});
+		_used.assign(capacity, false);
+	}
+	int size() const{
+		return (int)type.size();
+	}
+	cut_join_tree(){ }
+	cut_join_tree(const vector<T> &a){
+		init((int)a.size());
+		extend(a);
+	}
+	int n = 0, capacity;
+	// 0: leaf, 1: cut, 2: join(increasing), 3: join(decreasing)
+	vector<int> type;
+	// index range of a node u
+	vector<array<int, 2>> index_range;
+	// value range of a node u
+	vector<array<T, 2>> value_range;
+	// childs of a node u
+	vector<vector<int>> adj;
+	// set of root of the forest
+	vector<int> root;
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>cut_join_tree</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
