@@ -3,24 +3,6 @@
 // pajenegod orz
 // Requires graph
 struct shallowest_decomposition{
-	void init(int n){
-		assert(n >= 1);
-		this->n = n;
-		root.clear();
-		abr = graph<int>{n};
-		pv.assign(n, -1);
-		pe.assign(n, -1);
-		order.clear();
-		pos.assign(n, -1);
-		end.assign(n, -1);
-		size.assign(n, -1);
-		depth.assign(n, -1);
-		pos_as_child.assign(n, -1);
-		was.assign(n, -2);
-		attempt = -1;
-		dp.assign(n, -1);
-		stack.assign(__lg(n) + 1, {});
-	}
 	vector<int> was;
 	int attempt;
 	vector<int> dp;
@@ -33,23 +15,22 @@ struct shallowest_decomposition{
 		++ attempt;
 		root.clear();
 		order.clear();
-		vector<int> dp(n);
-		vector<vector<int>> stack(__lg(n) + 1);
+		for(auto &s: stack) s.clear();
+		abr.edge.clear();
 		auto create_chain = [&](int labels, int u)->void{
 			while(labels){
 				int label = __lg(labels);
 				labels ^= 1 << label;
 				int v = stack[label].back();
 				stack[label].pop_back();
-				pv[v] = u;
-				pos_as_child[v] = (int)abr.adj[u].size();
-				pe[v] = abr.orient(u, v);
+				abr.orient(u, v);
 				u = v;
 			}
 		};
 		auto construct = [&](auto self, int u)->void{
 			was[u] = attempt;
 			dp[u] = 0;
+			abr.adj[u].clear();
 			int seen = 0, seen_twice = 0;
 			for(auto id: g.adj[u]){
 				if(g.ignore && g.ignore(id)) continue;
@@ -71,6 +52,7 @@ struct shallowest_decomposition{
 			}
 		};
 		for(auto r: src){
+			if(was[r] == attempt) continue;
 			construct(construct, r);
 			root.push_back(stack[__lg(dp[r])].back());
 			stack[__lg(dp[r])].pop_back();
@@ -82,13 +64,16 @@ struct shallowest_decomposition{
 			for(auto id: abr.adj[u]){
 				int v = abr.edge[id].to;
 				depth[v] = depth[u] + 1;
+				pv[v] = u;
+				pe[v] = id;
 				self(self, v);
-				size[u] += size[v];
 			}
 			end[u] = (int)order.size();
+			size[u] = end[u] - pos[u];
 		};
 		for(auto r: root){
 			depth[r] = 0;
+			pv[r] = pe[r] = -1;
 			dfs(dfs, r);
 		}
 	}
@@ -97,6 +82,30 @@ struct shallowest_decomposition{
 		vector<int> src(g.n);
 		iota(src.begin(), src.end(), 0);
 		build(g, src);
+	}
+	void init(int n){
+		assert(n >= 1);
+		this->n = n;
+		root.clear();
+		abr = graph<int>{n};
+		pv.assign(n, -1);
+		pe.assign(n, -1);
+		order.clear();
+		pos.assign(n, -1);
+		end.assign(n, -1);
+		size.assign(n, -1);
+		depth.assign(n, -1);
+		was.assign(n, -2);
+		attempt = -1;
+		dp.assign(n, -1);
+		stack.assign(__lg(n) + 1, {});
+		spv.assign(n, -1);
+		spe.assign(n, -1);
+		sorder.clear();
+		spos.assign(n, -1);
+		send.assign(n, -1);
+		ssize.assign(n, -1);
+		sdepth.assign(n, -1);
 	}
 	template<class T>
 	void init_step(const graph<T> &g){
@@ -116,6 +125,27 @@ struct shallowest_decomposition{
 			set_step(set_step, u, -1, depth[u]);
 		}
 	}
+	// Check if u is visited during the last build-like call.
+	bool visited(int u) const{
+		assert(0 <= u && u < n);
+		return was[u] == attempt;
+	}
+	// Check if u is an ancestor of v in the decomposition
+	bool ancestor_of(int u, int v) const{
+		assert(visited(u) && visited(v));
+		return pos[u] <= pos[v] && end[v] <= end[u];
+	}
+	shallowest_decomposition(){ }
+	template<class T>
+	shallowest_decomposition(const graph<T> &g){
+		init(g.n);
+		build_all(g);
+	}
+	template<class T>
+	shallowest_decomposition(const graph<T> &g, const vector<int> &src){
+		init(g.n);
+		build(g, src);
+	}
 	int n;
 	vector<int> root; // the roots of the arborescence
 	graph<int> abr; // stores the arborescence
@@ -126,8 +156,36 @@ struct shallowest_decomposition{
 	vector<int> end; // ending position in the dfs order
 	vector<int> size; // size of the subtree in the decomposition
 	vector<int> depth; // depth in the decomposition
-	vector<int> pos_as_child; // u is the pos_as_child[u]-th child
 	vector<vector<int>> step; // step[u][i]: # of edges from u to its i-th decomposition parent, must call init_step() to initialize
+	template<class T>
+	void focus_subdecomposition(const graph<T> &g, int r){
+		spv[r] = spe[r] = -1;
+		sorder.clear();
+		sdepth[r] = 0;
+		auto dfs = [&](auto self, int u)->void{
+			spos[u] = (int)sorder.size();
+			sorder.push_back(u);
+			for(auto id: g.adj[u]){
+				if(id == spe[u] || g.ignore && g.ignore(id)) continue;
+				int v = g(u, id);
+				if(!ancestor_of(r, v)) continue;
+				spv[v] = u;
+				spe[v] = id;
+				sdepth[v] = sdepth[u] + 1;
+				self(self, v);
+			}
+			send[u] = (int)sorder.size();
+			ssize[u] = send[u] - spos[u];
+		};
+		dfs(dfs, r);
+	}
+	vector<int> spv;
+	vector<int> spe;
+	vector<int> sorder;
+	vector<int> spos;
+	vector<int> send;
+	vector<int> ssize;
+	vector<int> sdepth;
 };
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
