@@ -51,7 +51,7 @@ struct combinatorics{
 		return res;
 	}
 	// Multinomial Coefficient
-	template<class... U>
+	template<class... U, enable_if<(is_integral_v<U> && ...)>::type* = nullptr>
 	T mC(int n, U... pack){
 		assert(sizeof...(pack) >= 2 && (... + pack) == n);
 		return (fact[n] * ... * invfact[pack]);
