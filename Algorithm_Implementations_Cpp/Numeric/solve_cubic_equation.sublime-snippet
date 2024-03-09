@@ -22,9 +22,9 @@ optional<vector<complex<long double>>> solve_cubic_equation(T a, T b, T c, T d, 
 	}
 	else if(abs(b) > eps){
 		cld D = c * c - 4.0l * b * d;
-		return {(-c + sqrt(D)) / (2.0l * b), (-c - sqrt(D)) / (2.0l * b)};
+		return {{(-c + sqrt(D)) / (2.0l * b), (-c - sqrt(D)) / (2.0l * b)}};
 	}
-	else if(abs(c) > eps) return {-d / c};
+	else if(abs(c) > eps) return {{-d / c}};
 	else if(abs(d) > eps) return vector<complex<long double>>{};
 	else return {};
 }

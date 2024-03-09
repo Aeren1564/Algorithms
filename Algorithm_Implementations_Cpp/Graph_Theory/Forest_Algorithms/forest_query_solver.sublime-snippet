@@ -4,11 +4,6 @@
 template<bool ENABLE_LCA_SOLVER, bool ENABLE_LEVEL_ANCESTOR_SOLVER>
 struct forest_query_solver_base{
 	static_assert(ENABLE_LCA_SOLVER || ENABLE_LEVEL_ANCESTOR_SOLVER);
-#ifdef LOCAL
-	#define ASSERT(c) assert(c)
-#else
-	#define ASSERT(c) 42
-#endif
 #define ifLCA if constexpr(ENABLE_LCA_SOLVER)
 #define ifLA if constexpr(ENABLE_LEVEL_ANCESTOR_SOLVER)
 	int n;
@@ -144,13 +139,13 @@ struct forest_query_solver_base{
 	}
 	// Check if u is visited during the last build call
 	bool visited(int u) const{
-		ASSERT(0 <= u && u < n);
+		assert(0 <= u && u < n);
 		return was[u] == attempt;
 	}
 	// O(1)
 	bool ancestor_of(int u, int v) const{
 		#ifdef LOCAL
-		ASSERT(visited(u) && visited(v));
+		assert(visited(u) && visited(v));
 		#endif
 		return pos[u] <= pos[v] && end[v] <= end[u];
 	}
@@ -158,7 +153,7 @@ struct forest_query_solver_base{
 	// O(1)
 	int lca(int u, int v) const{
 		static_assert(ENABLE_LCA_SOLVER);
-		ASSERT(visited(u) && visited(v) && root_of[u] == root_of[v]);
+		assert(visited(u) && visited(v) && root_of[u] == root_of[v]);
 		auto [x, y] = minmax(label[u], label[v]);
 		int k = ascendant[u] & ascendant[v] & -(1 << __lg(x - 1 ^ y));
 		if(ascendant[u] != k){
@@ -175,21 +170,21 @@ struct forest_query_solver_base{
 	// O(1)
 	int steps(int u, int v, int w = -1) const{
 		static_assert(ENABLE_LCA_SOLVER);
-		ASSERT(visited(u) && visited(v) && root_of[u] == root_of[v]);
+		assert(visited(u) && visited(v) && root_of[u] == root_of[v]);
 		return -2 * depth[~w ? w : lca(u, v)] + depth[u] + depth[v];
 	}
 	// Check if w lies in u-v path
 	// O(1)
 	bool on_path(int u, int v, int w) const{
 		static_assert(ENABLE_LCA_SOLVER);
-		ASSERT(visited(u) && visited(v) && visited(w) && root_of[u] == root_of[v] && root_of[v] == root_of[w]);
+		assert(visited(u) && visited(v) && visited(w) && root_of[u] == root_of[v] && root_of[v] == root_of[w]);
 		return steps(u, v) == steps(u, w) + steps(w, v);
 	}
 	// Check if u-v path and w-x path intersect, and find their interseciton if they intersect
 	// O(1)
 	optional<pair<int, int>> intersect_path(int u, int v, int w, int x) const{
 		static_assert(ENABLE_LCA_SOLVER);
-		ASSERT(visited(u) && visited(v) && visited(w) && visited(x) && root_of[u] == root_of[v] && root_of[v] == root_of[w] && root_of[w] == root_of[x]);
+		assert(visited(u) && visited(v) && visited(w) && visited(x) && root_of[u] == root_of[v] && root_of[v] == root_of[w] && root_of[w] == root_of[x]);
 		int optl = -1, optr = -1;
 		for(auto y: {lca(u, w), lca(u, x), lca(v, w), lca(v, x)}){
 			if(!on_path(u, v, y) || !on_path(w, x, y)) continue;
@@ -204,7 +199,7 @@ struct forest_query_solver_base{
 	// O(1)
 	int find_ancestor_by_order(int u, int k) const{
 		static_assert(ENABLE_LEVEL_ANCESTOR_SOLVER);
-		ASSERT(visited(u) && 0 <= k && k <= depth[u]);
+		assert(visited(u) && 0 <= k && k <= depth[u]);
 		if(k == 0) return u;
 		if(k < kappa) return order[ladder[pos[u]][k - 1]];
 		int p = __lg(k / kappa), x = pos[u] >> p << p;
@@ -216,7 +211,7 @@ struct forest_query_solver_base{
 	// O(1)
 	int find_vertex_by_order(int u, int v, int k) const{
 		static_assert(ENABLE_LCA_SOLVER && ENABLE_LEVEL_ANCESTOR_SOLVER);
-		ASSERT(visited(u) && visited(v) && root_of[u] == root_of[v] && 0 <= k);
+		assert(visited(u) && visited(v) && root_of[u] == root_of[v] && 0 <= k);
 		if(k == 0) return u;
 		int w = lca(u, v);
 		if(k <= depth[u] - depth[w]) return find_ancestor_by_order(u, k);
@@ -227,7 +222,7 @@ struct forest_query_solver_base{
 	// O(log(n))
 	int find_furthest_ancestor(int u, auto pred) const{
 		static_assert(ENABLE_LEVEL_ANCESTOR_SOLVER);
-		ASSERT(visited(u) && pred(u));
+		assert(visited(u) && pred(u));
 		if(root_of[u] == u) return u;
 		for(auto bit = __lg(depth[u]); bit >= 0; -- bit) if(1 << bit <= depth[u]){
 			int v = find_ancestor_by_order(u, 1 << bit);
@@ -240,7 +235,7 @@ struct forest_query_solver_base{
 	// O(log(n))
 	int find_furthest_vertex(int u, int v, auto pred) const{
 		static_assert(ENABLE_LCA_SOLVER && ENABLE_LEVEL_ANCESTOR_SOLVER);
-		ASSERT(visited(u) && visited(v) && root_of[u] == root_of[v] && pred(u));
+		assert(visited(u) && visited(v) && root_of[u] == root_of[v] && pred(u));
 		if(pred(v)) return v;
 		int w = lca(u, v);
 		if(!pred(w)){
@@ -258,7 +253,6 @@ struct forest_query_solver_base{
 			return order[pos[v] - 1];
 		}
 	}
-#undef ASSERT
 #undef ifLCA
 #undef ifLA
 };

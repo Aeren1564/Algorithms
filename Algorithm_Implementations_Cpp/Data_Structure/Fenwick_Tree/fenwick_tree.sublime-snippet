@@ -2,11 +2,6 @@
 	<content><![CDATA[
 template<bool ALLOW_NON_PREFIX_QUERY, class T, class F, class I>
 struct fenwick_tree{
-#ifdef LOCAL
-	#define ASSERT(c) assert(c)
-#else
-	#define ASSERT(c) 42
-#endif
 	int n;
 	vector<T> data;
 	F TT;
@@ -19,13 +14,13 @@ struct fenwick_tree{
 	}
 	// O(n)
 	void build(int n){
-		ASSERT(n >= 0);
+		assert(n >= 0);
 		this->n = n;
 		data.assign(n, T_id);
 	}
 	// O(n)
 	void build(int n, T x){
-		ASSERT(n >= 0);
+		assert(n >= 0);
 		this->n = n;
 		data.assign(n, x);
 		for(auto i = 1; i <= n; ++ i) if(i + (i & -i) <= n) data[i + (i & -i) - 1] = TT(data[i + (i & -i) - 1], data[i - 1]);
@@ -40,7 +35,7 @@ struct fenwick_tree{
 	}
 	// O(log(n))
 	void update(int p, T x){
-		ASSERT(0 <= p && p < n);
+		assert(0 <= p && p < n);
 		for(++ p; p <= n; p += p & -p) data[p - 1] = TT(data[p - 1], x);
 	}
 	// O(log(n))
@@ -49,7 +44,7 @@ struct fenwick_tree{
 	}
 	// O(log(n))
 	T prefix(int r) const{
-		ASSERT(0 <= r && r <= n);
+		assert(0 <= r && r <= n);
 		T s = T_id;
 		for(; r > 0; r -= r & -r) s = TT(s, data[r - 1]);
 		return s;
@@ -57,7 +52,7 @@ struct fenwick_tree{
 	// O(log(n))
 	T query(int l, int r) const{
 		static_assert(ALLOW_NON_PREFIX_QUERY);
-		ASSERT(0 <= l && l <= r && r <= n);
+		assert(0 <= l && l <= r && r <= n);
 		if(l == r) return T_id;
 		T sum_minus = T_id, sum_plus = T_id;
 		for(; l < r; r -= r & -r) sum_plus = TT(sum_plus, data[r - 1]);
@@ -76,7 +71,7 @@ struct fenwick_tree{
 	// pred(sum[0, r)) is T, T, ..., T, F, F, ..., F, returns max r with T
 	// O(log(n))
 	int max_pref(auto pred) const{
-		ASSERT(pred(T_id));
+		assert(pred(T_id));
 		int p = 0;
 		T sum = T_id;
 		for(auto i = __lg(n + 1); i >= 0; -- i) if(p + (1 << i) <= n && pred(TT(sum, data[p + (1 << i) - 1]))){
@@ -94,7 +89,6 @@ struct fenwick_tree{
 		}
 		return out << '}';
 	}
-#undef ASSERT
 };
 
 template<class T, class F, class I>
