@@ -1,7 +1,7 @@
 <snippet>
 	<content><![CDATA[
 #ifndef LOCAL
-#define NDEBUG
+	#define NDEBUG
 #endif
 // #pragma GCC optimize("O3,unroll-loops")
 #include <bits/stdc++.h>
