@@ -87,7 +87,7 @@ struct bigint{
 		return _karatsuba_multiplication(x, y);
 	}
 	bigint(){ }
-	template<class U, typename enable_if<is_integral<U>::value>::type* = nullptr>
+	template<class U, typename enable_if<is_integral_v<U>>::type* = nullptr>
 	bigint(U x){
 		if(x < 0){
 			*this = -bigint(-x);
@@ -98,8 +98,10 @@ struct bigint{
 			x /= T_large(1) << width;
 		}
 	}
+	template<class U, typename enable_if<is_floating_point_v<U>>::type* = nullptr>
+	bigint(U x): bigint(llround(x)){ }
 	// MSB at a.back()
-	template<class U, typename enable_if<is_integral<U>::value>::type* = nullptr>
+	template<class U, typename enable_if<is_integral_v<U>>::type* = nullptr>
 	bigint(bool sign, const vector<U> &a, U base){
 		bigint x{};
 		for(auto d: a){
@@ -163,7 +165,7 @@ struct bigint{
 		assert(_is_valid());
 	}
 	// MSB at back()
-	template<class U, typename enable_if<is_integral<U>::value>::type* = nullptr>
+	template<class U, typename enable_if<is_integral_v<U>>::type* = nullptr>
 	friend pair<bool, vector<U>> to_vector(const bigint &x, U base){
 		assert(base >= 2);
 		if(x < 0) return {1, to_vector(-x, base).second};
@@ -207,7 +209,7 @@ struct bigint{
 	operator bool() const{
 		return sign || !data.empty();
 	}
-	template<class U, typename enable_if<is_integral<U>::value && !is_same<U, bool>::value>::type* = nullptr>
+	template<class U, typename enable_if<is_integral_v<U> && !is_same<U, bool>::value>::type* = nullptr>
 	operator U() const{
 		U x = 0;
 		if(!sign) for(auto i = (int)data.size() - 1; i >= 0; -- i) x = x << min<int>(width, sizeof(U)) | data[i];
@@ -234,11 +236,11 @@ struct bigint{
 	bool operator>=(const bigint &x) const{ return !(*this < x); }
 	bool operator>(const bigint &x) const{ return x < *this; }
 #define COMPARE_OP(OP)\
-template<class U, typename enable_if<is_integral<U>::value>::type* = nullptr>\
+template<class U, typename enable_if<is_integral_v<U>>::type* = nullptr>\
 bool operator OP(U x) const{\
 	return *this OP bigint(x);\
 }\
-template<class U, typename enable_if<is_integral<U>::value>::type* = nullptr>\
+template<class U, typename enable_if<is_integral_v<U>>::type* = nullptr>\
 friend bool operator OP(U x, const bigint &y){\
 	return bigint(x) OP y;\
 }
@@ -353,14 +355,14 @@ COMPARE_OP(==) COMPARE_OP(!=) COMPARE_OP(<) COMPARE_OP(<=) COMPARE_OP(>=) COMPAR
 	bigint operator*(const bigint &x) const{
 		return bigint(*this) *= x;
 	}
-	template<class U, typename enable_if<is_integral<U>::value>::type* = nullptr>
+	template<class U, typename enable_if<is_integral_v<U>>::type* = nullptr>
 	bigint &inplace_power(U e){
 		assert(e >= 0);
 		bigint res(1);
 		for(; e; e >>= 1, *this *= *this) if(e & 1) res *= *this;
 		return *this = res;
 	}
-	template<class U, typename enable_if<is_integral<U>::value>::type* = nullptr>
+	template<class U, typename enable_if<is_integral_v<U>>::type* = nullptr>
 	bigint power(U e) const{
 		return bigint(*this).inplace_power(e);
 	}
@@ -465,15 +467,15 @@ COMPARE_OP(==) COMPARE_OP(!=) COMPARE_OP(<) COMPARE_OP(<=) COMPARE_OP(>=) COMPAR
 		return bigint(*this) %= x;
 	}
 #define BINARY_OP(APPLY_OP, OP)\
-template<class U, typename enable_if<is_integral<U>::value>::type* = nullptr>\
+template<class U, typename enable_if<is_integral_v<U>>::type* = nullptr>\
 bigint &operator APPLY_OP(U x){\
 	return *this APPLY_OP bigint(x);\
 }\
-template<class U, typename enable_if<is_integral<U>::value>::type* = nullptr>\
+template<class U, typename enable_if<is_integral_v<U>>::type* = nullptr>\
 bigint operator OP(U x) const{\
 	return bigint(*this) APPLY_OP bigint(x);\
 }\
-template<class U, typename enable_if<is_integral<U>::value>::type* = nullptr>\
+template<class U, typename enable_if<is_integral_v<U>>::type* = nullptr>\
 friend bigint operator OP(U x, const bigint &y){\
 	return bigint(y) APPLY_OP bigint(x);\
 }
