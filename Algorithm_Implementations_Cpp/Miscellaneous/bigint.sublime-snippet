@@ -217,10 +217,7 @@ struct bigint{
 	template<class U, typename enable_if<is_floating_point_v<U>>::type* = nullptr>
 	operator U() const{
 		U x = 0;
-		if(!sign) for(auto i = (int)data.size() - 1; i >= 0; -- i){
-			for(auto j = 0; j < width; ++ j) x = x * 2;
-			x += data[i];
-		}
+		if(!sign) for(auto i = (int)data.size() - 1; i >= 0; -- i) x = x * (T_large(1) << width) + data[i];
 		else x = -U(-*this);
 		return x;
 	}
