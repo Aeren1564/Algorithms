@@ -1,96 +1,76 @@
 <snippet>
 	<content><![CDATA[
-// Each node represents an endpos-equivalent class
-// Each class consists of some consecutive suffixes of the longest substring in it
-// The suffix corresponding to minlen - 1 can be obtained by following the suffix link and looking at the longest substring in it
-// Adjacency_Type: array<int, X> or map<Char_Type, int> where X is the size of the alphabet
+// Adamant orz (https://codeforces.com/blog/entry/62331)
+// Requires suffix_automaton
 template<class Char_Type, class Adjacency_Type>
-struct suffix_automaton{
-	// Begin States
-	vector<int> max_len{0}; // Length of the longest string in the class.
-	vector<int> link{-1};
-	vector<int> firstpos{-1}; // Index of the first occurences of the strings in the class.
-	vector<int> is_clone{false};
-	vector<Adjacency_Type> next{{}};
-	// End States
-	suffix_automaton(){ }
-	suffix_automaton(const vector<Char_Type> &s){ extend(s); }
-	int new_state(int l, int sl, int fp, bool c, const Adjacency_Type &adj){
-		max_len.push_back(l);
-		link.push_back(sl);
-		firstpos.push_back(fp);
-		is_clone.push_back(c);
-		next.push_back(adj);
-		return (int)max_len.size() - 1;
+struct distinct_substring_count_query_solver_offline{
+	vector<int> &s;
+	suffix_automaton<Char_Type, Adjacency_Type> &aut;
+	vector<array<int, 3>> queries;
+	distinct_substring_count_query_solver_offline(vector<Char_Type> &s, suffix_automaton<Char_Type, Adjacency_Type> &aut): s(s), aut(aut){ }
+	// Query qi asks for the # of distinct substrings of the substring s[ql, qr).
+	void query(int qi, int ql, int qr){
+		assert(0 <= ql && ql <= qr && qr <= aut.max_len[aut.last]);
+		queries.push_back({qr, ql, qi});
 	}
-	int last = 0;
-	void extend(const vector<Char_Type> &s){
-		for(auto c: s) extend(c);
-	}
-	void extend(Char_Type c){
-		int cur = new_state(max_len[last] + 1, -1, max_len[last], false, {}), p = last;
-		while(~p && !next[p][c]) next[p][c] = cur, p = link[p];
-		if(!~p) link[cur] = 0;
-		else{
-			int q = next[p][c];
-			if(max_len[p] + 1 == max_len[q]) link[cur] = q;
-			else{
-				int clone = new_state(max_len[p] + 1, link[q], firstpos[q], true, next[q]);
-				while(~p && next[p][c] == q) next[p][c] = clone, p = link[p];
-				link[q] = link[cur] = clone;
+	// answer(qi, x): report that the answer to the query qi is x.
+	// O(n * log^2(n))
+	void solve(auto answer){
+		int n = aut.max_len[aut.last], m = (int)aut.size();
+		long long fw_tot = 0;
+		vector<long long> fw0(n + 1), fw1(n + 1);
+		auto range_add = [&](int ql, int qr, int x)->void{
+			long long y = 1LL * ql * x, z = 1LL * qr * x;
+			fw_tot += z - y;
+			for(auto l = ql + 1; l <= n; l += l & -l) fw0[l] += x, fw1[l] += y;
+			for(auto r = qr + 1; r <= n; r += r & -r) fw0[r] -= x, fw1[r] -= z;
+		};
+		auto query_sum = [&](int ql)->long long{
+			long long sum0 = 0, sum1 = 0;
+			for(auto l = ql; l; l -= l & -l) sum0 += fw0[l], sum1 += fw1[l];
+			return fw_tot - (sum0 * ql - sum1);
+		};
+		vector<int> seg_max(m << 1);
+		auto set_point = [&](int p, int x)->void{
+			for(seg_max[p += m] = x; p >>= 1; ) seg_max[p] = max(seg_max[p << 1], seg_max[p << 1 | 1]);
+		};
+		auto query_max = [&](int l, int r)->int{
+			int maxv = 0;
+			for(l += m, r += m; l < r; l >>= 1, r >>= 1){
+				if(l & 1) maxv = max(maxv, seg_max[l ++]);
+				if(r & 1) maxv = max(maxv, seg_max[-- r]);
 			}
-		}
-		last = cur;
-		count.clear();
-		inv_link.clear();
-	}
-	int next_state(int u, int c){
-		assert(0 <= u && u < (int)next.size());
-		while(u && !next[u][c]) u = link[u];
-		if(next[u][c]) u = next[u][c];
-		return u;
-	}
-	pair<int, int> next_state(int u, int len, int c){
-		assert(0 <= u && u < (int)next.size());
-		while(u && !next[u][c]) u = link[u], len = max_len[u];
-		if(next[u][c]) u = next[u][c], ++ len;
-		return {u, len};
-	}
-	int size() const{ // # of states
-		return (int)max_len.size();
-	}
-	int min_len(int u) const{ // length of the shortest string in the endpos equivalent class
-		return u ? max_len[link[u]] + 1 : 0;
-	}
-	vector<int> terminals() const{
-		vector<int> t;
-		for(auto u = last; ~u; u = link[u]) t.push_back(u);
-		return t;
-	}
-	vector<int> count; // # of occurrences of substring represented by each states in the string. Calling extend invalidates the array.
-	vector<vector<int>> inv_link;
-	void precalc_count(){
-		int sz = (int)size();
-		count.assign(sz, 0), inv_link.assign(sz, {});
-		for(auto u = 1; u < sz; ++ u) inv_link[link[u]].push_back(u);
+			return maxv;
+		};
+		int it = 0;
+		vector<int> pos(m), end(m);
+		aut.precalc_count();
 		auto dfs = [&](auto self, int u)->void{
-			count[u] = !is_clone[u];
-			for(auto v: inv_link[u]){
-				self(self, v);
-				count[u] += count[v];
-			}
+			pos[u] = it ++;
+			for(auto v: aut.inv_link[u]) self(self, v);
+			end[u] = it;
 		};
 		dfs(dfs, 0);
-	}
-	vector<int> find_all_occurrences(int u){
-		assert(!count.empty() && u < size());
-		vector<int> res;
-		auto dfs = [&](auto self, int u)->void{
-			if(!is_clone[u]) res.push_back(firstpos[u]);
-			for(auto v: inv_link[u]) self(self, v);
-		};
-		dfs(dfs, u);
-		return res;
+		vector<vector<array<int, 2>>> has(n);
+		for(auto [qr, ql, qi]: queries){
+			if(qr - ql <= 1) answer(qi, qr - ql);
+			else has[qr - 1].push_back({ql, qi});
+		}
+		vector<int> upto(n), used(m);
+		used[0] = true;
+		for(auto qr = 1, u_cur = 0; qr <= n; ++ qr){
+			u_cur = aut.next_state(u_cur, s[qr - 1]);
+			range_add(qr - aut.max_len[u_cur], qr, 1);
+			int u = u_cur;
+			while(!used[u]) used[u] = true, u = aut.link[u];
+			while(u){
+				int qr = query_max(pos[u], end[u]);
+				range_add(qr - aut.max_len[u], qr - aut.max_len[upto[qr - 1]], -1);
+				swap(upto[qr - 1], u);
+			}
+			set_point(pos[u_cur], qr);
+			for(auto [ql, qi]: has[qr - 1]) answer(qi, query_sum(ql));
+		}
 	}
 };
 ]]></content>
