@@ -14,19 +14,19 @@ struct suffix_array{
 	}
 	vector<int> sa_doubling(const vector<int> &s){
 		int n = (int)s.size();
-		vector<int> sa(n), rank = s, tmp(n);
+		vector<int> sa(n), pos = s, tmp(n);
 		iota(sa.begin(), sa.end(), 0);
 		for(auto k = 1; k < n; k <<= 1){
 			auto cmp = [&](int x, int y){
-				if(rank[x] != rank[y]) return rank[x] < rank[y];
-				int rx = x + k < n ? rank[x + k] : -1;
-				int ry = y + k < n ? rank[y + k] : -1;
+				if(pos[x] != pos[y]) return pos[x] < pos[y];
+				int rx = x + k < n ? pos[x + k] : -1;
+				int ry = y + k < n ? pos[y + k] : -1;
 				return rx < ry;
 			};
 			sort(sa.begin(), sa.end(), cmp);
 			tmp[sa[0]] = 0;
 			for(auto i = 1; i < n; ++ i) tmp[sa[i]] = tmp[sa[i - 1]] + (cmp(sa[i - 1], sa[i]) ? 1 : 0);
-			swap(tmp, rank);
+			swap(tmp, pos);
 		}
 		return sa;
 	}
@@ -108,27 +108,27 @@ struct suffix_array{
 	}
 	int n;
 	// data: sorted sequence of suffices including the empty suffix
-	// rank[i]: position of the suffix i in the suffix array
+	// pos[i]: position of the suffix i in the suffix array
 	// lcp[i]: longest common prefix of data[i] and data[i + 1]
-	vector<int> data, rank, lcp;
+	vector<int> data, pos, lcp;
 	// O(n + sigma)
-	suffix_array(const vector<int> &s, int sigma): n((int)s.size()), rank(n + 1), lcp(n){
+	suffix_array(const vector<int> &s, int sigma): n((int)s.size()), pos(n + 1), lcp(n){
 		assert(0 <= sigma);
 		for(auto d: s) assert(0 <= d && d < sigma);
 		data = sa_is(s, sigma);
 		data.insert(data.begin(), n);
-		for(auto i = 0; i <= n; ++ i) rank[data[i]] = i;
+		for(auto i = 0; i <= n; ++ i) pos[data[i]] = i;
 		for(auto i = 0, h = 0; i <= n; ++ i){
 			if(h > 0) -- h;
-			if(rank[i] == 0) continue;
-			int j = data[rank[i] - 1];
+			if(pos[i] == 0) continue;
+			int j = data[pos[i] - 1];
 			for(; j + h <= n && i + h <= n; ++ h) if((j + h == n) != (i + h == n) || j + h < n && s[j + h] != s[i + h]) break;
-			lcp[rank[i] - 1] = h;
+			lcp[pos[i] - 1] = h;
 		}
 	}
 	// O(n * log(n)) time, O(n) space
 	template<class T>
-	suffix_array(const vector<T> &s): n((int)s.size()), rank(n + 1), lcp(n){
+	suffix_array(const vector<T> &s): n((int)s.size()), pos(n + 1), lcp(n){
 		vector<int> idx(n);
 		iota(idx.begin(), idx.end(), 0);
 		sort(idx.begin(), idx.end(), [&](int l, int r){ return s[l] < s[r]; });
@@ -140,13 +140,13 @@ struct suffix_array{
 		}
 		data = sa_is(s2, now + 1);
 		data.insert(data.begin(), n);
-		for(auto i = 0; i <= n; ++ i) rank[data[i]] = i;
+		for(auto i = 0; i <= n; ++ i) pos[data[i]] = i;
 		for(auto i = 0, h = 0; i <= n; ++ i){
 			if(h > 0) -- h;
-			if(rank[i] == 0) continue;
-			int j = data[rank[i] - 1];
+			if(pos[i] == 0) continue;
+			int j = data[pos[i] - 1];
 			for(; j + h <= n && i + h <= n; ++ h) if((j + h == n) != (i + h == n) || j + h < n && s[j + h] != s[i + h]) break;
-			lcp[rank[i] - 1] = h;
+			lcp[pos[i] - 1] = h;
 		}
 	}
 	// rmq must be built over lcp
@@ -154,7 +154,7 @@ struct suffix_array{
 	template<class RangeMinQuery_t>
 	int longest_common_prefix(int i, int j, const RangeMinQuery_t &rmq) const{
 		assert(0 <= i && i <= n && 0 <= j && j <= n);
-		return i == j ? n - i : rmq.query(min(rank[i], rank[j]), max(rank[i], rank[j]));
+		return i == j ? n - i : rmq.query(min(pos[i], pos[j]), max(pos[i], pos[j]));
 	}
 	// rmq must be built over lcp
 	// Compares s[p, p + len) and s[q, q + len)
