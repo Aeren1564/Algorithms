@@ -11,7 +11,7 @@ struct disjoint_set{
 	}
 	int make_set(){
 		p.push_back(-1);
-		group.push_back(list<int>{p});
+		group.push_back(list<int>{n});
 		++ _group_count;
 		return n ++;
 	}
