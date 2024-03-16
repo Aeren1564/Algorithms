@@ -7,7 +7,7 @@ template<class L, class R> ostream &operator<<(ostream &out, const pair<L, R> &p
 template<class Tuple, size_t N> struct _tuple_printer;
 template<class... Args> ostream &_print_tuple(ostream &out, const tuple<Args...> &t);
 template<class ...Args> ostream &operator<<(ostream &out, const tuple<Args...> &t);
-template<class T> ostream &operator<<(class enable_if<!is_same<T, string>::value, ostream>::type &out, const T &arr);
+template<class T> ostream &operator<<(typename enable_if<!is_same<T, string>::value, ostream>::type &out, const T &arr);
 ostream &operator<<(ostream &out, const _Bit_reference &bit);
 template<size_t SZ> ostream &operator<<(ostream &out, const bitset<SZ> &b);
 template<class T, class A, class C>
@@ -28,7 +28,7 @@ template<class... Args> ostream &_print_tuple(ostream &out, const tuple<Args...>
 template<class ...Args> ostream &operator<<(ostream &out, const tuple<Args...> &t){
 	return _print_tuple(out, t);
 }
-template<class T> ostream &operator<<(class enable_if<!is_same<T, string>::value, ostream>::type &out, const T &arr){
+template<class T> ostream &operator<<(typename enable_if<!is_same<T, string>::value, ostream>::type &out, const T &arr){
 	if(arr.empty()) return out << "{}";
 	out << "{";
 	for(auto it = arr.begin(); it != arr.end(); ++ it){
