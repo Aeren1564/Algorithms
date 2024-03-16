@@ -45,13 +45,13 @@ struct bfs_forest{
 			root.push_back(u);
 			pv[u] = -1;
 			pe[u] = -1;
-			size[u] = 1;
 		}
 		int init_size = (int)order.size();
 		for(auto it = 0; it < (int)q.size(); ++ it){
 			int u = q[it];
 			pos[u] = (int)order.size();
 			order.push_back(u);
+			size[u] = 1;
 			for(auto id: g.adj[u]){
 				if(g.ignore && g.ignore(id)) continue;
 				int v = g(u, id);
@@ -67,10 +67,7 @@ struct bfs_forest{
 		}
 		for(auto i = (int)order.size() - 1; i >= init_size; -- i){
 			int u = order[i];
-			for(auto id: g.adj[u]){
-				if(g.ignore && g.ignore(id)) continue;
-				if(~pv[u]) size[pv[u]] += size[u];
-			}
+			if(~pv[u]) size[pv[u]] += size[u];
 		}
 		q.clear();
 	}
