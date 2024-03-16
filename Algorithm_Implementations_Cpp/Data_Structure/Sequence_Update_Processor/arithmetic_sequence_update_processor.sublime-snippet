@@ -3,20 +3,26 @@
 template<class T>
 struct arithmetic_sequence_update_processor{
 	int n;
-	vector<T> data;
+	vector<T> data, res;
 	arithmetic_sequence_update_processor(int n): n(n), data(n + 2){ }
+	// O(n)
+	void clear(){
+		fill(data.begin(), data.end(), 0);
+	}
 	// Add start, start + step, start + step * 2, ... on [l, r)
 	// O(1)
 	void update(int l, int r, T start, T step){
 		assert(0 <= l && l <= r && r <= n);
+		if(l == r) return;
 		data[l] += start;
 		data[l + 1] -= start - step;
 		data[r] -= start + (r - l) * step;
 		data[r + 1] += start + (r - l - 1) * step;
 	}
 	// O(n)
-	vector<T> snapshot() const{
-		vector<T> res(data.begin(), data.end() - 2);
+	const vector<T> &snapshot(){
+		res.resize(n);
+		copy(data.begin(), data.end() - 2, res.begin());
 		for(auto i = 1; i < n; ++ i) res[i] += res[i - 1];
 		for(auto i = 1; i < n; ++ i) res[i] += res[i - 1];
 		return res;
