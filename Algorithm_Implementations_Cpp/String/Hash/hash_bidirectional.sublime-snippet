@@ -36,9 +36,9 @@ struct hash_bidirectional{
 	}
 	hash_bidirectional(){ }
 	hash_bidirectional(const modular_t &x, const modular_t &y, len_t len): data(x), rev_data(y), len(len){ }
-	template<class T, enable_if<is_integral_v<T>>::type* = nullptr>
+	template<class T, typename enable_if<is_integral_v<T>>::type* = nullptr>
 	hash_bidirectional(T x): data(x), rev_data(x), len(1){ }
-	template<class T, enable_if<is_integral_v<T>>::type* = nullptr>
+	template<class T, typename enable_if<is_integral_v<T>>::type* = nullptr>
 	hash_bidirectional(const vector<T> &s){ for(auto c: s) *this += hash_bidirectional(c); }
 	hash_bidirectional(const string &s){ for(auto c: s) *this += hash_bidirectional(c); }
 	hash_bidirectional &inplace_flip(){
@@ -83,14 +83,14 @@ struct hash_bidirectional{
 		return *this;
 	}
 	hash_bidirectional pop_left(const hash_bidirectional &x) const{ return hash_bidirectional(*this).inplace_pop_left(x); }
-	template<class T, enable_if<is_integral_v<T>>::type* = nullptr>
+	template<class T, typename enable_if<is_integral_v<T>>::type* = nullptr>
 	hash_bidirectional &inplace_update(len_t pos, T x){
 		assert(0 <= pos && pos < len);
 		data += power(len - pos - 1) * x;
 		rev_data += power(pos) * x;
 		return *this;
 	}
-	template<class T, enable_if<is_integral_v<T>>::type* = nullptr>
+	template<class T, typename enable_if<is_integral_v<T>>::type* = nullptr>
 	hash_bidirectional update(len_t pos, T x) const{ return hash_bidirectional(*this).inplace_update(pos, x); }
 	hash_bidirectional &inplace_update(len_t pos, const hash_bidirectional &x){
 		assert(0 <= pos && pos + x.len <= len);
@@ -103,7 +103,7 @@ struct hash_bidirectional{
 bool operator op(const hash_bidirectional &x) const{ return data op x.data; }
 	COMPARE_OP(==) COMPARE_OP(!=) COMPARE_OP(<) COMPARE_OP(<=) COMPARE_OP(>) COMPARE_OP(>=)
 #undef COMPARE_OP
-	template<class T, enable_if<is_integral_v<T>>::type* = nullptr>
+	template<class T, typename enable_if<is_integral_v<T>>::type* = nullptr>
 	hash_bidirectional &operator*=(T x){
 		assert(x >= 0);
 		if(x == 0) return *this = {};
@@ -115,9 +115,9 @@ bool operator op(const hash_bidirectional &x) const{ return data op x.data; }
 		}
 		return *this = res;
 	}
-	template<class T, enable_if<is_integral_v<T>>::type* = nullptr>
+	template<class T, typename enable_if<is_integral_v<T>>::type* = nullptr>
 	hash_bidirectional operator*(T x) const{ return hash_bidirectional(*this) *= x; }
-	template<class T, enable_if<is_integral_v<T>>::type* = nullptr>
+	template<class T, typename enable_if<is_integral_v<T>>::type* = nullptr>
 	friend hash_bidirectional operator*(T x, const hash_bidirectional &h){ return hash_bidirectional(h) *= x; }
 	friend ostream &operator<<(ostream &out, const hash_bidirectional &x){ return out << "{" << x.data << ", " << x.rev_data << ", " << x.len << "}"; }
 	modular_t data = 0, rev_data = 0;
