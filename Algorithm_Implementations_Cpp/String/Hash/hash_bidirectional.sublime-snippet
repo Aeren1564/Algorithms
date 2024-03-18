@@ -3,6 +3,11 @@
 // Requires modular
 template<class modular_t, class len_t, bool ALLOW_BINEXP>
 struct hash_bidirectional{
+#ifdef LOCAL
+	#define ASSERT(c) assert(c)
+#else
+	#define ASSERT(c) 42
+#endif
 	static modular_t _base, _inv_base;
 	template<class T = int>
 	static void setup(T base = 0){
@@ -34,13 +39,19 @@ struct hash_bidirectional{
 			return _inv_power[e];
 		}
 	}
-	hash_bidirectional(){ }
-	hash_bidirectional(const modular_t &x, const modular_t &y, len_t len): data(x), rev_data(y), len(len){ }
+	hash_bidirectional(){ ASSERT(_base >= 1); }
+	hash_bidirectional(const modular_t &x, const modular_t &y, len_t len): data(x), rev_data(y), len(len){ ASSERT(_base >= 1); }
 	template<class T, typename enable_if<is_integral_v<T>>::type* = nullptr>
-	hash_bidirectional(T x): data(x), rev_data(x), len(1){ }
+	hash_bidirectional(T x): data(x), rev_data(x), len(1){ ASSERT(_base >= 1); }
 	template<class T, typename enable_if<is_integral_v<T>>::type* = nullptr>
-	hash_bidirectional(const vector<T> &s){ for(auto c: s) *this += hash_bidirectional(c); }
-	hash_bidirectional(const string &s){ for(auto c: s) *this += hash_bidirectional(c); }
+	hash_bidirectional(const vector<T> &s){
+		ASSERT(_base >= 1);
+		for(auto c: s) *this += hash_bidirectional(c);
+	}
+	hash_bidirectional(const string &s){
+		ASSERT(_base >= 1);
+		for(auto c: s) *this += hash_bidirectional(c);
+	}
 	hash_bidirectional &inplace_flip(){
 		swap(data, rev_data);
 		return *this;
@@ -122,6 +133,7 @@ bool operator op(const hash_bidirectional &x) const{ return data op x.data; }
 	friend ostream &operator<<(ostream &out, const hash_bidirectional &x){ return out << "{" << x.data << ", " << x.rev_data << ", " << x.len << "}"; }
 	modular_t data = 0, rev_data = 0;
 	len_t len = 0;
+#undef ASSERT
 };
 template<class modular_t, class len_t, bool ALLOW_BINEXP> modular_t hash_bidirectional<modular_t, len_t, ALLOW_BINEXP>::_base;
 template<class modular_t, class len_t, bool ALLOW_BINEXP> modular_t hash_bidirectional<modular_t, len_t, ALLOW_BINEXP>::_inv_base;
