@@ -151,7 +151,7 @@ friend bool operator op(const T &x, const modular_fixed_base &y){ return modular
 	data_t data = 0;
 #undef _SHOW_FRACTION
 #undef IS_INTEGRAL
-#undef IS_SIGNED
+#undef IS_UNSIGNED
 };
 template<class data_t, data_t _mod> vector<modular_fixed_base<data_t, _mod>> modular_fixed_base<data_t, _mod>::_INV;
 template<class data_t, data_t _mod> modular_fixed_base<data_t, _mod> modular_fixed_base<data_t, _mod>::_primitive_root;
