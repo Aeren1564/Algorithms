@@ -172,7 +172,7 @@ friend bool operator op(const T &x, const modular_unfixed_base &y){ return modul
 	data_t data = 0;
 #undef _SHOW_FRACTION
 #undef IS_INTEGRAL
-#undef IS_SIGNED
+#undef IS_UNSIGNED
 };
 template<int id, class data_t, class wider_data_t> data_t modular_unfixed_base<id, data_t, wider_data_t>::_mod;
 template<int id, class data_t, class wider_data_t> wider_data_t modular_unfixed_base<id, data_t, wider_data_t>::_inverse_mod;
