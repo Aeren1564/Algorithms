@@ -1,0 +1,158 @@
+<snippet>
+	<content><![CDATA[
+template<class T, class _transform_1D>
+struct fast_fourier_transform_multidimensional_wrapper_base{
+	static vector<T> buffer1, buffer2;
+	// Assumes that n is a power of _transform_1D::length
+	// O(n * log(n))
+	static void transform(int n, T *p, bool invert = false){
+		#ifdef LOCAL
+		int power = 1;
+		while(power < n) power *= _transform_1D::length;
+		assert(power == n);
+		#endif
+		if(!invert){
+			for(auto len = 1; len < n; len *= _transform_1D::length)
+				for(auto i = 0; i < n; i += _transform_1D::length * len)
+					for(auto j = 0; j < len; ++ j) _transform_1D::transform(p + i + j, len);
+		}
+		else{
+			for(auto len = 1; len < n; len *= _transform_1D::length)
+				for(auto i = 0; i < n; i += _transform_1D::length * len)
+					for(auto j = 0; j < len; ++ j) _transform_1D::inverse_transform(p + i + j, len);
+			T inv = 1 / _transform_1D::coefficient(n);
+			if(inv != T{1}) for(auto i = 0; i < n; ++ i) p[i] *= inv;
+		}
+	}
+	// O(n * log(n))
+	static void transform(vector<T> &p, bool invert = false){
+		transform((int)p.size(), p.data(), invert);
+	}
+	// O(n * log(n))
+	static vector<T> convolute(const vector<T> &p, const vector<T> &q){
+		int n = (int)p.size();
+		assert((int)q.size() == n);
+		buffer1.resize(n, 0);
+		copy(p.begin(), p.end(), buffer1.begin());
+		transform(buffer1);
+		buffer2.resize(n, 0);
+		copy(q.begin(), q.end(), buffer2.begin());
+		transform(buffer2);
+		for(auto i = 0; i < n; ++ i) buffer1[i] *= buffer2[i];
+		transform(buffer1, true);
+		return vector<T>(buffer1.begin(), buffer1.begin() + n);
+	}
+	// Destroy p and q
+	// Store the result on p
+	// O(n * log(n))
+	static void inplace_convolute(int n, T *p, T *q){
+		transform(n, p), transform(n, q);
+		for(auto i = 0; i < n; ++ i) p[i] *= q[i];
+		transform(n, p, true);
+	}
+	// Destroy p and q
+	// Store the result on p
+	// O(n * log(n))
+	static void inplace_square(int n, T *p){
+		transform(n, p);
+		for(auto i = 0; i < n; ++ i) p[i] *= p[i];
+		transform(n, p, true);
+	}
+};
+template<class T, class U>
+vector<T> fast_fourier_transform_multidimensional_wrapper_base<T, U>::buffer1;
+template<class T, class U>
+vector<T> fast_fourier_transform_multidimensional_wrapper_base<T, U>::buffer2;
+
+template<class T>
+struct _transform_1D_bitwise_xor{
+	static constexpr int length = 2;
+	static void transform(T *a, int len){
+		tie(a[0], a[len]) = tuple{
+			a[0] + a[len],
+			a[0] - a[len],
+		};
+	}
+	static void inverse_transform(T *a, int len){
+		tie(a[0], a[len]) = tuple{
+			a[0] + a[len],
+			a[0] - a[len],
+		};
+	}
+	// inverse_transform(transform(p)) = coefficient(len(p)) * p
+	static T coefficient(int n){
+		return n;
+	}
+};
+template<class T>
+struct _transform_1D_bitwise_and{
+	static constexpr int length = 2;
+	static void transform(T *a, int len){
+		a[0] += a[len];
+	}
+	static void inverse_transform(T *a, int len){
+		a[0] -= a[len];
+	}
+	// inverse_transform(transform(p)) = coefficient(len(p)) * p
+	static T coefficient(int n){
+		return 1;
+	}
+};
+template<class T>
+struct _transform_1D_bitwise_or{
+	static constexpr int length = 2;
+	static void transform(T *a, int len){
+		a[len] += a[0];
+	}
+	static void inverse_transform(T *a, int len){
+		a[len] -= a[0];
+	}
+	// inverse_transform(transform(p)) = coefficient(len(p)) * p
+	static T coefficient(int n){
+		return 1;
+	}
+};
+template<class T>
+struct _transform_1D_tritwise_addition_modular{
+	static_assert(T::mod() % 3 == 1);
+	static constexpr int length = 3;
+	static const T root;
+	static const T root_sq;
+	static void transform(T *a, int len){
+		tie(a[0], a[len], a[len << 1]) = tuple{
+			a[0] + a[len] + a[len << 1],
+			a[0] + root * a[len] + root_sq * a[len << 1],
+			a[0] + root_sq * a[len] + root * a[len << 1]
+		};
+	}
+	static void inverse_transform(T *a, int len){
+		tie(a[0], a[len], a[len << 1]) = tuple{
+			a[0] + a[len] + a[len << 1],
+			a[0] + root_sq * a[len] + root * a[len << 1],
+			a[0] + root * a[len] + root_sq * a[len << 1]
+		};
+	}
+	// inverse_transform(transform(p)) = coefficient(len(p)) * p
+	static T coefficient(int n){
+		return n;
+	}
+};
+template<class T>
+const T _transform_1D_tritwise_addition_modular<T>::root = T::primitive_root().power((T::mod() - 1) / 3);
+template<class T>
+const T _transform_1D_tritwise_addition_modular<T>::root_sq = root * root;
+
+template<class T>
+using fwht = fast_fourier_transform_multidimensional_wrapper_base<T, _transform_1D_bitwise_xor<T>>;
+template<class T>
+using bitwise_and_transform = fast_fourier_transform_multidimensional_wrapper_base<T, _transform_1D_bitwise_and<T>>;
+template<class T>
+using bitwise_or_transform = fast_fourier_transform_multidimensional_wrapper_base<T, _transform_1D_bitwise_or<T>>;
+template<class T>
+using tritwise_addition_transform = fast_fourier_transform_multidimensional_wrapper_base<T, _transform_1D_tritwise_addition_modular<T>>;
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>fast_fourier_transform_multidimensional</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
