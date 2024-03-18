@@ -3,6 +3,11 @@
 // Requires modular
 template<class modular_t, class len_t, bool ALLOW_BINEXP>
 struct hash_base{
+#ifdef LOCAL
+	#define ASSERT(c) assert(c)
+#else
+	#define ASSERT(c) 42
+#endif
 	static modular_t _base, _inv_base;
 	template<class T = int>
 	static void setup(T base = 0){
@@ -34,13 +39,19 @@ struct hash_base{
 			return _inv_power[e];
 		}
 	}
-	hash_base(){ }
-	hash_base(const modular_t &x, len_t len): data(x), len(len){ }
+	hash_base(){ ASSERT(_base >= 1); }
+	hash_base(const modular_t &x, len_t len): data(x), len(len){ ASSERT(_base >= 1); }
 	template<class T, typename enable_if<is_integral_v<T>>::type* = nullptr>
-	hash_base(T x): data(x), len(1){ }
+	hash_base(T x): data(x), len(1){ ASSERT(_base >= 1); }
 	template<class T, typename enable_if<is_integral_v<T>>::type* = nullptr>
-	hash_base(const vector<T> &s){ for(auto c: s) *this += hash_base(c); }
-	hash_base(const string &s){ for(auto c: s) *this += hash_base(c); }
+	hash_base(const vector<T> &s){
+		ASSERT(_base >= 1);
+		for(auto c: s) *this += hash_base(c);
+	}
+	hash_base(const string &s){
+		ASSERT(_base >= 1);
+		for(auto c: s) *this += hash_base(c);
+	}
 	hash_base &operator=(const hash_base &x){
 		data = x.data, len = x.len;
 		return *this;
@@ -110,6 +121,7 @@ bool operator op(const hash_base &x) const{ return data op x.data; }
 	friend ostream &operator<<(ostream &out, const hash_base &x){ return out << "{" << x.data << ", " << x.len << "}"; }
 	modular_t data = 0;
 	len_t len = 0;
+#undef ASSERT
 };
 template<class modular_t, class len_t, bool ALLOW_BINEXP> modular_t hash_base<modular_t, len_t, ALLOW_BINEXP>::_base;
 template<class modular_t, class len_t, bool ALLOW_BINEXP> modular_t hash_base<modular_t, len_t, ALLOW_BINEXP>::_inv_base;
