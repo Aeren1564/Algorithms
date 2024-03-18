@@ -70,10 +70,10 @@ struct number_theoric_transform_wrapper{
 	static vector<T> convolute(const vector<T> &p, const vector<T> &q){
 		if(min(p.size(), q.size()) < 55) return convolute_naive(p, q);
 		int m = (int)p.size() + (int)q.size() - 1, n = 1 << __lg(m) + 1;
-		buffer1.assign(n, 0);
+		buffer1.resize(n, 0);
 		copy(p.begin(), p.end(), buffer1.begin());
 		transform(buffer1);
-		buffer2.assign(n, 0);
+		buffer2.resize(n, 0);
 		copy(q.begin(), q.end(), buffer2.begin());
 		transform(buffer2);
 		for(auto i = 0; i < n; ++ i) buffer1[i] *= buffer2[i];
@@ -84,7 +84,7 @@ struct number_theoric_transform_wrapper{
 	static vector<T> square(const vector<T> &p){
 		if((int)p.size() < 40) return convolute_naive(p, p);
 		int m = 2 * (int)p.size() - 1, n = 1 << __lg(m) + 1;
-		buffer1.assign(n, 0);
+		buffer1.resize(n, 0);
 		copy(p.begin(), p.end(), buffer1.begin());
 		transform(buffer1);
 		for(auto i = 0; i < n; ++ i) buffer1[i] *= buffer1[i];
