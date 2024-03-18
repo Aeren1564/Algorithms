@@ -1,0 +1,116 @@
+<snippet>
+	<content><![CDATA[
+// T must be able to hold lcm of mods
+template<class T>
+struct chinese_remainder_theorem_linear{
+#define IS_INTEGRAL(T) (is_integral_v<T> || is_same_v<T, __int128_t> || is_same_v<T, __uint128_t>)
+#define IS_SIGNED(T) (is_signed_v<T> || is_same_v<T, __int128_t>)
+	static_assert(IS_SIGNED(T));
+#ifdef LOCAL
+	#define ASSERT(c) assert(c)
+#else
+	#define ASSERT(c) 42
+#endif
+	vector<T> mod;
+	vector<T> mod_prefix = {1};
+	vector<T> q;
+	vector<T> gcd;
+	vector<T> coef;
+	template<class U>
+	pair<U, U> _inv_gcd(U a, U b){
+		a %= b;
+		if(a < 0) a += b;
+		if(a == 0) return {b, 0};
+		U s = b, t = a, m0 = 0, m1 = 1, u, tmp;
+		while(t){
+			m0 -= m1 * (u = s / t);
+			tmp = s -= t * u;
+			s = t, t = tmp, tmp = m0, m0 = m1, m1 = tmp;
+		}
+		if(m0 < 0) m0 += b / s;
+		return {s, m0};
+	}
+	// O(n * log(MAXVAL))
+	template<class U>
+	chinese_remainder_theorem_linear(const vector<U> &mod){ init(mod); }
+	// O(n * log(MAXVAL))
+	template<class... U, typename enable_if<(IS_INTEGRAL(U) && ...)>::type* = nullptr>
+	chinese_remainder_theorem_linear(const U &... mods): chinese_remainder_theorem_linear(vector<T>({(T)mods...})){ }
+	template<class U>
+	void init(const vector<U> &mod){
+		this->mod.resize((int)mod.size());
+		copy(mod.begin(), mod.end(), this->mod.begin());
+		mod_prefix.resize((int)mod.size() + 1, 1);
+		q.resize((int)mod.size());
+		gcd.resize((int)mod.size());
+		coef.resize((int)mod.size());
+		T m0 = 1;
+		for(auto i = 0; i < (int)mod.size(); ++ i){
+			ASSERT(mod[i] >= 1);
+			T m1 = mod[i];
+			if(m0 < m1) swap(m0, m1);
+			if(m0 % m1 == 0) continue;
+			tie(gcd[i], coef[i]) = _inv_gcd(m0, m1);
+			m0 *= q[i] = m1 / gcd[i];
+			mod_prefix[i + 1] = m0;
+		}
+	}
+	// O(n * log(MAXVAL))
+	template<class... U, typename enable_if<(IS_INTEGRAL(U) && ...)>::type* = nullptr>
+	void init(const U &... mods){
+		init<T>(vector<T>({(T)mods...}));
+	}
+	// Returns {0, 0} if no solution, otherwise {unique solution, lcm(mods...)}
+	// O(n)
+	template<class U>
+	array<T, 2> run(const vector<U> &rem){
+		T r0 = 0, m0 = 1;
+		for(auto i = 0; i < (int)mod.size(); ++ i){
+			T r1 = rem[i], m1 = mod[i];
+			ASSERT(0 <= r1 && r1 < m1);
+			if(m0 < m1) swap(r0, r1), swap(m0, m1);
+			if(m0 % m1 == 0){
+				if(r0 % m1 != r1) return {0, 0};
+				continue;
+			}
+			if((r1 - r0) % gcd[i]) return {0, 0};
+			r0 += (r1 - r0) / gcd[i] % q[i] * coef[i] % q[i] * m0;
+			m0 *= q[i];
+			if(r0 < 0) r0 += m0;
+		}
+		return {r0, m0};
+	}
+	// Returns {0, 0} if no solution, otherwise {unique solution, lcm(mods...)}
+	// O(n)
+	template<class... U, typename enable_if<(IS_INTEGRAL(U) && ...)>::type* = nullptr>
+	array<T, 2> run(const U &... rems){
+		ASSERT(sizeof...(rems) == (int)mod.size());
+		T r0 = 0, m0 = 1;
+		int i = 0;
+		for(auto r1: {(T)rems...}){
+			T m1 = mod[i];
+			ASSERT(0 <= r1 && r1 < m1);
+			if(m0 < m1) swap(r0, r1), swap(m0, m1);
+			if(m0 % m1 == 0){
+				if(r0 % m1 != r1) return {0, 0};
+				++ i;
+				continue;
+			}
+			if((r1 - r0) % gcd[i]) return {0, 0};
+			r0 += (r1 - r0) / gcd[i] % q[i] * coef[i] % q[i] * m0;
+			m0 *= q[i];
+			if(r0 < 0) r0 += m0;
+			++ i;
+		}
+		return {r0, m0};
+	}
+#undef IS_INTEGRAL
+#undef IS_SIGNED
+#undef ASSERT
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>chinese_remainder_theorem_linear</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
