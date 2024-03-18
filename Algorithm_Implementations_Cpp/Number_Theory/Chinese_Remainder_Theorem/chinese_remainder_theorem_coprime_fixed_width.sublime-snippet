@@ -1,0 +1,59 @@
+<snippet>
+	<content><![CDATA[
+// Assumes all the mods are coprime to eachother
+// Requires modular
+template<class return_t, class... modular_ts>
+struct chinese_remainder_theorem_coprime_fixed_width{
+	static constexpr size_t N = sizeof...(modular_ts);
+	template<size_t I>
+	using modular_t = tuple_element_t<I, tuple<modular_ts...>>;
+	tuple<array<modular_ts, N>...> inverse;
+	template<size_t... Is>
+	void _constexpr_for_impl(auto f, index_sequence<Is...>) const{
+		(f(integral_constant<size_t, Is>{}), ...);
+	}
+	template<size_t N>
+	void _constexpr_for(auto f) const{
+		_constexpr_for_impl(f, make_index_sequence<N>{});
+	}
+	array<return_t, N + 1> mod_prefix;
+	chinese_remainder_theorem_coprime_fixed_width(){
+		mod_prefix[0] = 1;
+		_constexpr_for<N>([&](auto i_t){
+			constexpr size_t i = i_t.value;
+			_constexpr_for<i>([&](auto j_t){
+				constexpr size_t j = j_t.value;
+				get<i>(inverse)[j] = modular_t<i>(1) / modular_t<j>::mod();
+			});
+			if constexpr(i >= 2) for(auto j = i - 1; j >= 1; -- j) get<i>(inverse)[j - 1] *= get<i>(inverse)[j];
+			mod_prefix[i + 1] = mod_prefix[i] * modular_t<i>::mod();
+		});
+	}
+	return_t run(const tuple<modular_ts...> &rem) const{
+		return_t res = 0;
+		tuple<modular_ts...> coef;
+		_constexpr_for<N>([&](auto i_t){
+			constexpr size_t i = i_t.value;
+			if constexpr(i == 0) get<i>(coef) = get<i>(rem);
+			else{
+				get<i>(coef) = get<i>(rem).data * get<i>(inverse)[0];
+				_constexpr_for<i>([&](auto j_t){
+					constexpr size_t j = j_t.value;
+					get<i>(coef) -= get<j>(coef).data * get<i>(inverse)[j];
+				});
+			}
+			if constexpr(i == 0) res += get<i>(coef).data;
+			else res += get<i>(coef).data * mod_prefix[i];
+		});
+		return res;
+	}
+	return_t run(const modular_ts &... rems) const{
+		return run(tuple<modular_ts...>{rems...});
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>chinese_remainder_theorem_coprime_fixed_width</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
