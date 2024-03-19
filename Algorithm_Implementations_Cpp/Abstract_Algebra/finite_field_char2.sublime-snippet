@@ -100,7 +100,7 @@ template<size_t D>
 using FF2Large = finite_field_char2_base<D, unsigned long long, __uint128_t>;
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
-	<tabTrigger>finite_field_char2_base</tabTrigger> -->
+	<tabTrigger>finite_field_char2</tabTrigger> -->
 	<!-- Optional: Set a scope to limit where the snippet will trigger -->
 	<scope>source.c++</scope> -->
 </snippet>
