@@ -104,9 +104,10 @@ struct modular_unfixed_base{
 	modular_unfixed_base &inplace_power(T e){
 		if(e == 0) return *this = 1;
 		if(data == 0) return *this = {};
-		if(data == 1) return *this;
+		if(data == 1 || e == 1) return *this;
 		if(data == mod() - 1) return e % 2 ? *this : *this = -*this;
 		if(e < 0) *this = 1 / *this, e = -e;
+		if(e == 1) return *this;
 		modular_unfixed_base res = 1;
 		for(; e; *this *= *this, e >>= 1) if(e & 1) res *= *this;
 		return *this = res;
