@@ -48,24 +48,26 @@ struct treap_base{
 	template<bool UPDATE_STRUCTURE = true>
 	void refresh(int u){
 		if constexpr(UPDATE_STRUCTURE) internal_size[u] = 1;
-		ifQ{
-			subtr_data[u] = T_id;
-			if(auto v = left[u]; ~v){
-				if constexpr(UPDATE_STRUCTURE){
-					pv[v] = u;
-					internal_size[u] += internal_size[v];
-				}
+		ifQ subtr_data[u] = T_id;
+		if(auto v = left[u]; ~v){
+			if constexpr(UPDATE_STRUCTURE){
+				pv[v] = u;
+				internal_size[u] += internal_size[v];
+			}
+			ifQ{
 				auto x = subtr_data[v];
 				ifU if(lazy[u] != U_id) x = UT(lazy[u], x);
 				ifF ifNC if(lazy_flip[u]) x = FlipT(x);
 				subtr_data[u] = x;
 			}
-			subtr_data[u] = TT(subtr_data[u], data[u]);
-			if(auto w = right[u]; ~w){
-				if constexpr(UPDATE_STRUCTURE){
-					pv[w] = u;
-					internal_size[u] += internal_size[w];
-				}
+		}
+		ifQ subtr_data[u] = TT(subtr_data[u], data[u]);
+		if(auto w = right[u]; ~w){
+			if constexpr(UPDATE_STRUCTURE){
+				pv[w] = u;
+				internal_size[u] += internal_size[w];
+			}
+			ifQ{
 				auto x = subtr_data[w];
 				ifU if(lazy[u] != U_id) x = UT(lazy[u], x);
 				ifF ifNC if(lazy_flip[u]) x = FlipT(x);
