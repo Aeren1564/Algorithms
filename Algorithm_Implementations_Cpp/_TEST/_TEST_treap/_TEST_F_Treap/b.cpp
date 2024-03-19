@@ -372,6 +372,12 @@ int main(){
 			assert(0 <= l && l <= r && r <= (int)a.size());
 			reverse(a.begin() + l, a.begin() + r);
 		}
+		else if(type == 3){ // split
+			int l, r;
+			cin >> l >> r;
+			assert(0 <= l && l <= r && r <= (int)a.size());
+			a = vector<int>(a.begin() + l, a.begin() + r);
+		}
 		else{ // query
 			int p;
 			cin >> p;

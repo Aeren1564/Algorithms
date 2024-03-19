@@ -742,7 +742,7 @@ auto make_F_treap(F1 FlipT){
 	auto _UT = [&](U, T)->T{ return T{}; };
 	return treap_base<true, false, true, false, T, U, decltype(_TT), decltype(_UU), decltype(_UT), F1>(_TT, T{}, _UU, U{}, _UT, FlipT);
 }
-// Supports query.
+// Supports query
 template<class T, class F1>
 auto make_Q_treap(F1 TT, T T_id){
 	using U = int;
@@ -751,19 +751,19 @@ auto make_Q_treap(F1 TT, T T_id){
 	auto _FlipT = [&](T)->T{ return T{}; };
 	return treap_base<true, false, false, false, T, U, F1, decltype(_UU), decltype(_UT), decltype(_FlipT)>(TT, T_id, _UU, U{}, _UT, _FlipT);
 }
-// Supports query and update.
+// Supports query and update
 template<class T, class F1, class F2, class U, class F3>
 auto make_QU_treap(F1 TT, T T_id, F2 UU, U U_id, F3 UT){
 	auto _FlipT = [&](T)->T{ return T{}; };
 	return treap_base<true, true, false, false, T, U, F1, F2, F3, decltype(_FlipT)>(TT, T_id, UU, U_id, UT, _FlipT);
 }
-// Supports commutative query, update, and flip.
+// Supports commutative query, update, and flip
 template<class T, class U, class F1, class F2, class F3>
 auto make_cQUF_treap(F1 TT, T T_id, F2 UU, U U_id, F3 UT){
 	auto _FlipT = [&](T)->T{ return T{}; };
 	return treap_base<true, true, true, true, T, U, F1, F2, F3, decltype(_FlipT)>(TT, T_id, UU, U_id, UT, _FlipT);
 }
-// Supports query, update, and flip.
+// Supports query, update, and flip
 template<class T, class U, class F1, class F2, class F3, class F4>
 auto make_QUF_treap(F1 TT, T T_id, F2 UU, U U_id, F3 UT, F4 FlipT){
 	return treap_base<true, true, true, false, T, U, F1, F2, F3, F4>(TT, T_id, UU, U_id, UT, FlipT);
@@ -796,6 +796,12 @@ int main(){
 			cin >> l >> r;
 			assert(0 <= l && l <= r && r <= treap.size(root));
 			treap.flip(root, l, r);
+		}
+		else if(type == 3){
+			int l, r;
+			cin >> l >> r;
+			assert(0 <= l && l <= r && r <= treap.size(root));
+			root = treap.split_to_three(root, l, r)[1];
 		}
 		else{ // query
 			int p;

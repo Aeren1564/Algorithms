@@ -60,6 +60,12 @@ int main(){
 				break;
 			}
 			else if(type == 3){
+				auto [l, r] = get_range(n, true);
+				cout << type << " " << l << " " << r << " " << "\n";
+				n = r - l;
+				break;
+			}
+			else if(type == 3){
 				if(n){
 					int p = rng() % n;
 					cout << type << " " << p << "\n";
