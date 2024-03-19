@@ -797,7 +797,7 @@ int main(){
 			assert(0 <= l && l <= r && r <= treap.size(root));
 			treap.flip(root, l, r);
 		}
-		else if(type == 3){
+		else if(type == 3){ // split
 			int l, r;
 			cin >> l >> r;
 			assert(0 <= l && l <= r && r <= treap.size(root));

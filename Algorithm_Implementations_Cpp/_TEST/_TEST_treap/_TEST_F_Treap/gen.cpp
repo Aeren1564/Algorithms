@@ -39,8 +39,8 @@ int main(){
 	for(auto qi = 0; qi < qn; ++ qi){
 		int type;
 		while(true){
-			type = rng() % 5;
-			if(type == 0 || type >= 4){
+			type = rng() % 6;
+			if(type == 0 || type >= 5){
 				int p = rng() % (n + 1);
 				cout << "0 " << p << " " << rng() % mx << "\n";
 				++ n;
@@ -65,7 +65,7 @@ int main(){
 				n = r - l;
 				break;
 			}
-			else if(type == 3){
+			else if(type == 4){
 				if(n){
 					int p = rng() % n;
 					cout << type << " " << p << "\n";
