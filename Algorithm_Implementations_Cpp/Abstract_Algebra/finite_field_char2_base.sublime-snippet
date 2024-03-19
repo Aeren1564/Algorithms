@@ -24,7 +24,7 @@ struct finite_field_char2_base{
 		if(x > 1) divs[cnt ++] = x;
 		for(auto g = 2; ; ++ g){
 			bool ok = true;
-			for(auto i = 0; i < cnt; ++ i) if((finite_field_char2_base{g}.power(full_mask / divs[i])) == 1){
+			for(auto i = 0; i < cnt; ++ i) if(finite_field_char2_base{g}.power(full_mask / divs[i]) == 1){
 				ok = false;
 				break;
 			}
