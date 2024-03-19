@@ -740,7 +740,7 @@ auto make_F_treap(F1 FlipT){
 	auto _TT = [&](T, T)->T{ return T{}; };
 	auto _UU = [&](U, U)->U{ return U{}; };
 	auto _UT = [&](U, T)->T{ return T{}; };
-	return treap_base<true, false, true, false, T, U, decltype(_TT), decltype(_UU), decltype(_UT), F1>(_TT, T{}, _UU, U{}, _UT, FlipT);
+	return treap_base<false, false, true, false, T, U, decltype(_TT), decltype(_UU), decltype(_UT), F1>(_TT, T{}, _UU, U{}, _UT, FlipT);
 }
 // Supports query
 template<class T, class F1>
