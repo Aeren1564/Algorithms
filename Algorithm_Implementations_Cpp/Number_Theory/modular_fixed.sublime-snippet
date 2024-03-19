@@ -42,7 +42,7 @@ struct modular_fixed_base{
 		for(auto g = 2; ; ++ g){
 			bool ok = true;
 			for(auto i = 0; i < cnt; ++ i){
-				if((modular_fixed_base(g).power((_mod - 1) / divs[i])) == 1){
+				if(modular_fixed_base(g).power((_mod - 1) / divs[i]) == 1){
 					ok = false;
 					break;
 				}
