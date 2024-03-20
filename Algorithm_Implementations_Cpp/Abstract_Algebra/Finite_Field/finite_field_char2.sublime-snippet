@@ -33,6 +33,7 @@ struct finite_field_char2_base{
 			if(ok) return _primitive_root = g;
 		}
 	}
+	finite_field_char2_base(){ }
 	template<class U, typename enable_if<IS_INTEGRAL(U)>::type* = nullptr>
 	finite_field_char2_base(U x): data(x){ }
 	template<class U, typename enable_if<IS_INTEGRAL(U)>::type* = nullptr> operator U() const{ return data; }
