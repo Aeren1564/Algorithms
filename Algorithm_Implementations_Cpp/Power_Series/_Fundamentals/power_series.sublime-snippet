@@ -294,7 +294,7 @@ struct power_series_base: vector<T>{
 		int n = (int)p.size();
 		while(n && p[n - 1] == T{0}) -- n;
 		assert(n >= 1);
-		reduce();
+		inplace_reduce();
 		if(data.size() < n){
 			data.clear();
 			return *this;
@@ -345,7 +345,7 @@ struct power_series_base: vector<T>{
 		int n = (int)p.size();
 		while(n && p[n - 1] == T{0}) -- n;
 		assert(n >= 1);
-		reduce();
+		inplace_reduce();
 		if(data.size() < n) return *this;
 		if(n - count(p.begin(), p.begin() + n, 0) <= 100){
 			T inv = 1 / p[n - 1];
@@ -357,7 +357,7 @@ struct power_series_base: vector<T>{
 				for(auto j: indices) data[i - (n - 1 - j)] -= x * p[j];
 			}
 			indices.clear();
-			return reduce();
+			return inplace_reduce();
 		}
 		return *this = this->divrem(p).second;
 	}
@@ -472,7 +472,8 @@ struct power_series_base: vector<T>{
 		}
 		data.erase(data.begin(), data.begin() + pivot);
 		n -= pivot * e;
-		T pivot_c = data[0].power(e);
+		T pivot_c = T{1}, base = data[0];
+		for(auto x = e; x; x >>= 1, base *= base) if(x & 1) pivot_c *= base;
 		((*this /= data[0]).inplace_log(n) *= e).inplace_exp(n);
 		data.insert(data.begin(), pivot * e, T{0});
 		return *this *= pivot_c;
@@ -519,6 +520,13 @@ struct power_series_base: vector<T>{
 			return self(self, l, m) * self(self, m, r);
 		};
 		return solve(solve, 0, (int)a.size());
+	}
+	friend power_series_base gcd(power_series_base p, power_series_base q){
+		while(q) p = exchange(q, p % q);
+		return p;
+	}
+	friend power_series_base lcm(power_series_base p, power_series_base q){
+		return p / gcd(p, q) * q;
 	}
 #undef data
 };
