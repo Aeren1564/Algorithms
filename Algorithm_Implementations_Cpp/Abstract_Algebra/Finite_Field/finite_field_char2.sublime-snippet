@@ -33,6 +33,15 @@ struct finite_field_char2_base{
 			if(ok) return _primitive_root = g;
 		}
 	}
+	static finite_field_char2_base generate(auto &&rng){
+		T res = 0;
+		for(auto rem = D; rem; ){
+			auto w = min<size_t>(32, rem);
+			res = res << w | rng() & full_mask;
+			rem -= w;
+		}
+		return res;
+	}
 	finite_field_char2_base(){ }
 	template<class U, typename enable_if<IS_INTEGRAL(U)>::type* = nullptr>
 	finite_field_char2_base(U x): data(x){ }
