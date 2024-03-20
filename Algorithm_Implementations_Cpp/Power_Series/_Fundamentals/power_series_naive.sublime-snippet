@@ -263,7 +263,7 @@ struct power_series_naive_base: vector<T>{
 		int n = (int)p.size();
 		while(n && p[n - 1] == T{0}) -- n;
 		assert(n >= 1);
-		reduce();
+		inplace_reduce();
 		if(data.size() < n){
 			data.clear();
 			return *this;
@@ -314,7 +314,7 @@ struct power_series_naive_base: vector<T>{
 		int n = (int)p.size();
 		while(n && p[n - 1] == T{0}) -- n;
 		assert(n >= 1);
-		reduce();
+		inplace_reduce();
 		if(data.size() < n) return *this;
 		if(n - count(p.begin(), p.begin() + n, 0) <= 100){
 			T inv = 1 / p[n - 1];
@@ -326,7 +326,7 @@ struct power_series_naive_base: vector<T>{
 				for(auto j: indices) data[i - (n - 1 - j)] -= x * p[j];
 			}
 			indices.clear();
-			return reduce();
+			return inplace_reduce();
 		}
 		return *this = this->divrem(p).second;
 	}
@@ -414,7 +414,8 @@ struct power_series_naive_base: vector<T>{
 		}
 		data.erase(data.begin(), data.begin() + pivot);
 		n -= pivot * e;
-		T pivot_c = data[0].power(e);
+		T pivot_c = T{1}, base = data[0];
+		for(auto x = e; x; x >>= 1, base *= base) if(x & 1) pivot_c *= base;
 		((*this /= data[0]).inplace_log(n) *= e).inplace_exp(n);
 		data.insert(data.begin(), pivot * e, T{0});
 		return *this *= pivot_c;
@@ -461,11 +462,18 @@ struct power_series_naive_base: vector<T>{
 		};
 		return solve(solve, 0, (int)a.size());
 	}
+	friend power_series_naive_base gcd(power_series_naive_base p, power_series_naive_base q){
+		while(q) p = exchange(q, p % q);
+		return p;
+	}
+	friend power_series_naive_base lcm(power_series_naive_base p, power_series_naive_base q){
+		return p / gcd(p, q) * q;
+	}
 #undef data
 };
 
 template<class T>
-struct __quadratic{
+struct _quadratic{
 	static vector<T> multiply(const vector<T> &a, const vector<T> &b){
 		if(a.empty() || b.empty()) return {};
 		vector<T> q((int)a.size() + (int)b.size() - 1);
@@ -474,7 +482,7 @@ struct __quadratic{
 	}
 };
 template<class T, class FFT>
-struct __with_fft{
+struct _with_fft{
 	static vector<T> multiply_naively(const vector<T> &a, const vector<T> &b){
 		vector<T> q((int)a.size() + (int)b.size() - 1);
 		for(auto i = 0; i < (int)a.size(); ++ i) for(auto j = 0; j < (int)b.size(); ++ j) q[i + j] += a[i] * b[j];
@@ -487,8 +495,8 @@ struct __with_fft{
 	}
 };
 
-// template<class T> using power_series = power_series_naive_base<T, __quadratic<T>>;
-using power_series = power_series_naive_base<modular, __with_fft<modular, ntt>>;
+template<class T> using power_series = power_series_naive_base<T, _quadratic<T>>;
+// using power_series = power_series_naive_base<modular, _with_fft<modular, ntt>>;
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
 	<tabTrigger>power_series_naive</tabTrigger> -->
