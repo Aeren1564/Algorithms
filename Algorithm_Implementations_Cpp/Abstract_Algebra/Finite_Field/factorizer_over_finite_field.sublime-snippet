@@ -1,0 +1,79 @@
+<snippet>
+	<content><![CDATA[
+// Requires finite_field and power_series_naive
+template<class FF>
+struct factorizer_over_finite_field{
+	using P = power_series_naive_base<FF, _quadratic<FF>>;
+	static constexpr size_t characteristic = FF::characteristic();
+	// Given p,
+	// find factorization p = \prod{f^e} where f is square-free
+	static vector<pair<P, int>> square_free_factorization(P p){
+		p.inplace_reduce();
+		assert(p && p.back() == 1);
+		if((int)p.size() == 1) return {};
+		if(!p.derivative()){
+			assert(((int)p.size() - 1) % characteristic == 0);
+			P q(((int)p.size() - 1) / characteristic + 1);
+			for(auto i = 0; i < (int)q.size(); ++ i) q[i] = p[characteristic * i];
+			auto fact = square_free_factorization(q);
+			for(auto &[_, e]: fact) e *= characteristic;
+			return fact;
+		}
+		P g = gcd(p, p.derivative()).reduce();
+		if((int)g.size() == 1) return {{p, 1}};
+		auto fact_left = square_free_factorization(g);
+		auto fact_right = square_free_factorization(p / g);
+		fact_left.insert(fact_left.end(), fact_right.begin(), fact_right.end());
+		return fact_left;
+	}
+	// Given square-free p,
+	// find factorization p = \prod{f} where f is a product of irreducible polynomials of equal degree d
+	static vector<pair<P, int>> distinct_degree_factorization(P p){
+		p.inplace_reduce();
+		assert(p && p.back() == 1);
+		vector<pair<P, int>> res;
+		for(auto i = 1; 2 * i <= (int)p.size() - 1; ++ i){
+			P q = p, base;
+			for(auto j = 1; j <= i; ++ j){
+				base = q, q = {1};
+				for(auto e = characteristic; e; e >>= 1, base = base * base % p) if(e & 1) q = q * base % p;
+			}
+			P g = gcd(p, q).reduce();
+			assert(g);
+			if((int)g.size() != 1){
+				res.push_back({g, i});
+				(p /= g).inplace_reduce();
+			}
+		}
+		if((int)p.size() >= 2) res.push_back({p, (int)p.size() - 1});
+		return res;
+	}
+	// Given square-free p which is a product of irreducible polynomials of equal degree d,
+	// find factorization of it into irreducible polynomials
+	static vector<P> equal_degree_factorization(int d, P p){
+		p.inplace_reduce();
+		assert(p && p.back() == 1);
+		// TODO: finish
+		return p;
+	}
+	static vector<pair<P, int>> factorization(const P &p){
+		p.inplace_reduce();
+		assert(p && p.back() == 1);
+		vector<pair<P, int>> res;
+		auto fact_square_free = square_free_factorization(p);
+		for(auto [f0, e]: fact_square_free){
+			auto fact_distinct_degree = distinct_degree_factorization(p);
+			for(auto &[f1, d]: fact_distinct_degree){
+				auto fact_equal_degree = equal_degree_factorization(d, f1);
+				for(auto &f2: fact_equal_degree) res.push_back({f2, e});
+			}
+		}
+		return res;
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>factorizer_over_finite_field</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
