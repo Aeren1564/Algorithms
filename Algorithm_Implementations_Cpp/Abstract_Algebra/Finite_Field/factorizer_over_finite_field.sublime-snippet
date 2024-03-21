@@ -53,6 +53,8 @@ struct factorizer_over_finite_field{
 		if((int)p.size() >= 2) res.push_back({p, (int)p.size() - 1});
 		return res;
 	}
+	// WARNING: Success rate 1/ground_field_size for finite fields of order 2^{2k+1}
+	// For fiels of order 2^{2k}, success rate is 1/3, and for odd characteristics, 1/2
 	// Given square-free p which is a product of irreducible polynomials of equal degree d,
 	// find factorization of it into irreducible polynomials
 	static vector<P> factorize_equal_degree(int d, P p){
@@ -69,31 +71,38 @@ struct factorizer_over_finite_field{
 			_reduce_and_monicify(g);
 			if((int)g.size() == 1){
 				if(FF::characteristic >= 3){
-					P base = P{0, 1}.power_mod((FF::size - 1) / 2, p);
+					P base = q.power_mod((FF::size - 1) / 2, p);
 					g = base;
 					for(auto i = 0; i < d - 1; ++ i) (g = g.power_mod(FF::size, p) * base % p).inplace_reduce();
 					++ g;
 				}
 				else{
-					g = q;
-					for(auto i = 0; i < d - 1; ++ i) g = q + g.power_mod(FF::size, p);
-					(g %= p).inplace_reduce();
+					if(FF::dimension % 2 == 0){
+						P base = q.power_mod((FF::size - 1) / 3, p);
+						g = base;
+						for(auto i = 0; i < d - 1; ++ i) (g = g.power_mod(FF::size, p) * base % p).inplace_reduce();
+						++ g;
+					}
+					else{
+						g = q;
+						for(auto i = 0; i < d - 1; ++ i) g = q + g.power_mod(FF::size, p);
+						(g %= p).inplace_reduce();
+					}
 				}
 			}
-			_reduce_and_monicify(g);
 			res_next.clear();
 			for(auto p: res){
-				p.inplace_reduce();
+				_reduce_and_monicify(p);
 				if((int)p.size() == d + 1){
 					res_next.push_back(p);
 					continue;
 				}
 				P h = gcd(g, p);
-				_reduce_and_monicify(h);
 				if((int)h.size() == 1 || (int)h.size() == (int)p.size()){
 					res_next.push_back(p);
 					continue;
 				}
+				_reduce_and_monicify(h);
 				res_next.insert(res_next.end(), {h, p / h});
 			}
 			swap(res, res_next);
@@ -108,9 +117,7 @@ struct factorizer_over_finite_field{
 			auto fact_distinct_degree = factorize_distinct_degree(f0);
 			for(auto &[f1, d]: fact_distinct_degree){
 				auto fact_equal_degree = factorize_equal_degree(d, f1);
-				for(auto &f2: fact_equal_degree){
-					res.push_back({f2, e});
-				}
+				for(auto &f2: fact_equal_degree) res.push_back({f2, e});
 			}
 		}
 		return res;
