@@ -12,8 +12,6 @@ struct finite_field_char2_base{
 	static constexpr size_t dimension = D;
 	static constexpr T_large size = T_large(1) << D;
 	static constexpr unsigned int irreducible[] = {0, 0, 3, 3, 3, 5, 3, 3, 27, 3, 9, 5, 9, 27, 33, 3, 43, 9, 9, 39, 9, 5, 3, 33, 27, 9, 27, 39, 3, 5, 3, 9, 141, 75, 27, 5, 53, 63, 99, 17, 57, 9, 39, 89, 33, 27, 3, 33, 45, 113, 29, 75, 9, 71, 125, 71, 149, 17, 99, 123, 3, 39, 105, 3, 27, 27, 9, 39, 163, 101, 43};
-	template<size_t degree>
-	using extension = finite_field_char2_base<D * degree, T, T_large>;
 	static constexpr T _full_mask = size - 1;
 	static finite_field_char2_base _primitive_root;
 	static finite_field_char2_base primitive_root(){
