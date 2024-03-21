@@ -4,40 +4,37 @@
 template<class FF>
 struct factorizer_over_finite_field{
 	using P = power_series_naive_base<FF, _quadratic<FF>>;
-	static constexpr size_t characteristic = FF::characteristic();
 	// Given p,
 	// find factorization p = \prod{f^e} where f is square-free
-	static vector<pair<P, int>> square_free_factorization(P p){
+	static vector<pair<P, int>> factorize_square_free(P p){
 		p.inplace_reduce();
 		assert(p && p.back() == 1);
 		if((int)p.size() == 1) return {};
 		if(!p.derivative()){
-			assert(((int)p.size() - 1) % characteristic == 0);
-			P q(((int)p.size() - 1) / characteristic + 1);
-			for(auto i = 0; i < (int)q.size(); ++ i) q[i] = p[characteristic * i];
-			auto fact = square_free_factorization(q);
-			for(auto &[_, e]: fact) e *= characteristic;
+			assert(((int)p.size() - 1) % FF::characteristic == 0);
+			P q(((int)p.size() - 1) / FF::characteristic + 1);
+			for(auto i = 0; i < (int)q.size(); ++ i) q[i] = p[FF::characteristic * i];
+			auto fact = factorize_square_free(q);
+			for(auto &[_, e]: fact) e *= FF::characteristic;
 			return fact;
 		}
 		P g = gcd(p, p.derivative()).reduce();
 		if((int)g.size() == 1) return {{p, 1}};
-		auto fact_left = square_free_factorization(g);
-		auto fact_right = square_free_factorization(p / g);
+		auto fact_left = factorize_square_free(g);
+		auto fact_right = factorize_square_free(p / g);
 		fact_left.insert(fact_left.end(), fact_right.begin(), fact_right.end());
 		return fact_left;
 	}
 	// Given square-free p,
 	// find factorization p = \prod{f} where f is a product of irreducible polynomials of equal degree d
-	static vector<pair<P, int>> distinct_degree_factorization(P p){
+	static vector<pair<P, int>> factorize_distinct_degree(P p){
 		p.inplace_reduce();
 		assert(p && p.back() == 1);
 		vector<pair<P, int>> res;
 		for(auto i = 1; 2 * i <= (int)p.size() - 1; ++ i){
-			P q = p, base;
-			for(auto j = 1; j <= i; ++ j){
-				base = q, q = {1};
-				for(auto e = characteristic; e; e >>= 1, base = base * base % p) if(e & 1) q = q * base % p;
-			}
+			P q{0, 1};
+			for(auto j = 1; j <= i; ++ j) q = q.power_mod(FF::size, p);
+			q -= P{0, 1};
 			P g = gcd(p, q).reduce();
 			assert(g);
 			if((int)g.size() != 1){
@@ -50,21 +47,57 @@ struct factorizer_over_finite_field{
 	}
 	// Given square-free p which is a product of irreducible polynomials of equal degree d,
 	// find factorization of it into irreducible polynomials
-	static vector<P> equal_degree_factorization(int d, P p){
+	static vector<P> factorize_equal_degree(int d, P p){
+		assert(d >= 1);
 		p.inplace_reduce();
-		assert(p && p.back() == 1);
-		// TODO: finish
-		return p;
+		assert(p && p.back() == 1 && ((int)p.size() - 1) % d == 0);
+		if((int)p.size() == 1) return {};
+		int obj = ((int)p.size() - 1) / d;
+		vector<P> res{p}, res_next;
+		for(mt19937 rng(1564); (int)res.size() < obj; ){
+			P q((int)p.size() - 1);
+			for(auto &x: q) x = FF::generate(rng);
+			P g = gcd(p, q);
+			if((int)g.size() == 1){
+				if(FF::characteristic >= 3){
+					P base = P{0, 1}.power_mod((FF::size - 1) / 2, p);
+					g = base;
+					for(auto i = 0; i < d - 1; ++ i) (g = g.power_mod(FF::size, p) * base % p).inplace_reduce();
+					++ g;
+				}
+				else{
+					g = q;
+					for(auto i = 0; i < d - 1; ++ i) g = q + g.power_mod(FF::size, p);
+					(g %= p).inplace_reduce();
+				}
+			}
+			res_next.clear();
+			for(auto p: res){
+				p.inplace_reduce();
+				if((int)p.size() == d + 1){
+					res_next.push_back(p);
+					continue;
+				}
+				P h = gcd(g, p).reduce();
+				if((int)h.size() == 1 || (int)h.size() == (int)p.size()){
+					res_next.push_back(p);
+					continue;
+				}
+				res_next.insert(res_next.end(), {h, p / h});
+			}
+			swap(res, res_next);
+		}
+		return res;
 	}
-	static vector<pair<P, int>> factorization(const P &p){
+	static vector<pair<P, int>> factorize(P p){
 		p.inplace_reduce();
 		assert(p && p.back() == 1);
 		vector<pair<P, int>> res;
-		auto fact_square_free = square_free_factorization(p);
+		auto fact_square_free = factorize_square_free(p);
 		for(auto [f0, e]: fact_square_free){
-			auto fact_distinct_degree = distinct_degree_factorization(p);
+			auto fact_distinct_degree = factorize_distinct_degree(f0);
 			for(auto &[f1, d]: fact_distinct_degree){
-				auto fact_equal_degree = equal_degree_factorization(d, f1);
+				auto fact_equal_degree = factorize_equal_degree(d, f1);
 				for(auto &f2: fact_equal_degree) res.push_back({f2, e});
 			}
 		}
