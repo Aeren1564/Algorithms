@@ -550,7 +550,8 @@ struct power_series_base: vector<T>{
 		return solve(solve, 0, (int)a.size());
 	}
 	friend power_series_base gcd(power_series_base p, power_series_base q){
-		while(q) p = exchange(q, p % q);
+		p.inplace_reduce(), q.inplace_reduce();
+		while(q) p = exchange(q, (p % q).reduce());
 		return p;
 	}
 	friend power_series_base lcm(power_series_base p, power_series_base q){
