@@ -3,6 +3,7 @@
 // Specialized for FFT
 template<class T, class FFT>
 struct power_series_base: vector<T>{
+#define IS_INTEGRAL(T) (is_integral_v<T> || is_same_v<T, __int128_t> || is_same_v<T, __uint128_t>)
 #define data (*this)
 	power_series_base &_inplace_transform(bool invert = false){
 		FFT::transform(data, invert);
@@ -140,7 +141,7 @@ struct power_series_base: vector<T>{
 		return p;
 	}
 	// Compute p^e mod x^n - 1.
-	template<class U>
+	template<class U, typename enable_if<IS_INTEGRAL(U)>::type* = nullptr>
 	power_series_base &inplace_power_circular(U e, int n){
 		assert(n >= 1);
 		power_series_base p = *this;
@@ -152,7 +153,7 @@ struct power_series_base: vector<T>{
 		}
 		return *this;
 	}
-	template<class U>
+	template<class U, typename enable_if<IS_INTEGRAL(U)>::type* = nullptr>
 	power_series_base power_circular(U e, int len) const{
 		return power_series_base(*this).inplace_power_circular(e, len);
 	}
@@ -456,11 +457,14 @@ struct power_series_base: vector<T>{
 		return *this = this->exp(n);
 	}
 	// O(n * log(n))
-	template<class U>
+	template<class U, typename enable_if<IS_INTEGRAL(U)>::type* = nullptr>
 	power_series_base &inplace_power(U e, int n){
+		assert(n >= 0);
 		data.resize(n, T{0});
-		if(e == 0 || n == 0){
-			if(n) data[0] = T{1};
+		if(n == 0) return *this;
+		if(e == 0){
+			fill(data.begin(), data.end(), T{0});
+			data[0] = T{1};
 			return *this;
 		}
 		if(e < 0) return inplace_inverse(n).inplace_power(-e, n);
@@ -479,9 +483,33 @@ struct power_series_base: vector<T>{
 		return *this *= pivot_c;
 	}
 	// O(n * log(n))
-	template<class U>
+	template<class U, typename enable_if<IS_INTEGRAL(U)>::type* = nullptr>
 	power_series_base power(U e, int n) const{
 		return power_series_base(*this).inplace_power(e, n);
+	}
+	// O(n * log(n) * log(e))
+	template<class U, typename enable_if<IS_INTEGRAL(U)>::type* = nullptr>
+	power_series_base &inplace_power_mod(U e, power_series_base mod){
+		mod.inplace_reduce();
+		assert(mod);
+		if((int)mod.size() == 1){
+			data.clear();
+			return *this;
+		}
+		if(e == 0){
+			data = {T{1}};
+			return *this;
+		}
+		if(e < 0) return inplace_inverse((int)mod.size()).inplace_power_mod(-e, mod);
+		if(!*this) return *this;
+		power_series_base res{1};
+		for(; e; e >>= 1, *this = *this * *this % mod) if(e & 1) res = res * *this % mod;
+		return *this = res;
+	}
+	// O(n * log(n) * log(e))
+	template<class U, typename enable_if<IS_INTEGRAL(U)>::type* = nullptr>
+	power_series_base power_mod(U e, const power_series_base &mod) const{
+		return power_series_base(*this).inplace_power_mod(e, mod);
 	}
 	// Suppose there are data[i] distinct objects with weight i.
 	// Returns a power series where i-th coefficient represents # of ways to select a set of objects with sum of weight i.
@@ -528,6 +556,7 @@ struct power_series_base: vector<T>{
 	friend power_series_base lcm(power_series_base p, power_series_base q){
 		return p / gcd(p, q) * q;
 	}
+#undef IS_INTEGRAL
 #undef data
 };
 
