@@ -84,6 +84,8 @@ struct factorizer_over_finite_field{
 						++ g;
 					}
 					else{
+						// TODO: Success rate for this part is 1/field_size
+						// Improve it to 1/3 by factorizing over quadratic extension and merging conjugates
 						g = q;
 						for(auto i = 0; i < d - 1; ++ i) g = q + g.power_mod(FF::size, p);
 						(g %= p).inplace_reduce();
