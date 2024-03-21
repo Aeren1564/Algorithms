@@ -152,7 +152,7 @@ struct power_series_naive_base: vector<T>{
 		return power_series_naive_base(*this).inplace_power_circular(e, len);
 	}
 	power_series_naive_base &operator+=(const power_series_naive_base &p){
-		resize(max(data.size(), p.size()), T{0});
+		data.resize(max(data.size(), p.size()), T{0});
 		for(auto i = 0; i < (int)p.size(); ++ i) data[i] += p[i];
 		return *this;
 	}
@@ -491,7 +491,8 @@ struct power_series_naive_base: vector<T>{
 		return solve(solve, 0, (int)a.size());
 	}
 	friend power_series_naive_base gcd(power_series_naive_base p, power_series_naive_base q){
-		while(q) p = exchange(q, p % q);
+		p.inplace_reduce(), q.inplace_reduce();
+		while(q) p = exchange(q, (p % q).reduce());
 		return p;
 	}
 	friend power_series_naive_base lcm(power_series_naive_base p, power_series_naive_base q){
