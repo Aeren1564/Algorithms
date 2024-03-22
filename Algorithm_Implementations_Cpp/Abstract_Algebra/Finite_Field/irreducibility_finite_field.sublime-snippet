@@ -1,0 +1,27 @@
+<snippet>
+	<content><![CDATA[
+// Requires finite_field and power_series_naive
+template<class FF>
+bool irreducibility_finite_field(power_series<FF> p){
+	assert(p);
+	p.reduce();
+	if((int)p.size() == 1) return true;
+	int n = (int)p.size() - 1;
+	auto gen = [&](int m){
+		power_series<FF> q{0, 1};
+		for(auto i = 0; i < m; ++ i) q.inplace_power_mod(FF::size, p);
+		q += power_series<FF>{0, 1};
+		return q % p;
+	};
+	for(auto pf = 2, x = n; pf <= x; ++ pf) if(x % pf == 0){
+		if((int)gcd(gen(n / pf), p).size() != 1) return false;
+		while(x % pf == 0) x /= pf;
+	}
+	return !gen(n);
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>irreducibility_finite_field</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
