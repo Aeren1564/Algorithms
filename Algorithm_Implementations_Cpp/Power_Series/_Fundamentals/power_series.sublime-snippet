@@ -524,9 +524,10 @@ struct power_series_base: vector<T>{
 	// O(n * log(n))
 	power_series_base &inplace_set(int n){
 		assert(!data.empty() && data[0] == T{0});
+		_precalc_inverse(n);
 		data.resize(n);
 		for(auto i = n - 1; i >= 1; -- i) for(auto j = 2 * i; j < n; j += i) data[j] += data[i];
-		for(auto i = 1; i < n; ++ i) (data[i] /= i) *= (i & 1 ? 1 : -1);
+		for(auto i = 1; i < n; ++ i) (data[i] *= _inv[i]) *= (i & 1 ? 1 : -1);
 		return inplace_exp(n);
 	}
 	power_series_base set(int n) const{
@@ -537,8 +538,8 @@ struct power_series_base: vector<T>{
 	// O(n * log(n))
 	power_series_base &inplace_multiset(int n){
 		assert(!data.empty() && data[0] == T{0});
-		data.resize(n);
 		_precalc_inverse(n);
+		data.resize(n);
 		for(auto i = n - 1; i >= 1; -- i) for(auto j = 2 * i; j < n; j += i) data[j] += data[i] * _inv[j / i];
 		return inplace_exp(n);
 	}
