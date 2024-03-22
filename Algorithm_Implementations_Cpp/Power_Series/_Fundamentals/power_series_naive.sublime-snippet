@@ -25,6 +25,14 @@ struct power_series_naive_base: vector<T>{
 		for(auto i = 1; i < n; ++ i) a[i] = a[i - 1] * coef;
 		return EGF(a);
 	}
+	static vector<T> _inv;
+	static void _precalc_inverse(int obj){
+		while((int)_inv.size() < obj){
+			T x{(int)_inv.size()};
+			assert(x);
+			_inv.push_back(1 / x);
+		}
+	}
 	vector<T> EGF_to_seq() const{
 		int n = (int)data.size();
 		vector<T> seq(n);
@@ -354,9 +362,9 @@ struct power_series_naive_base: vector<T>{
 		return power_series_naive_base(*this).inplace_derivative_shift();
 	}
 	power_series_naive_base &inplace_antiderivative(){
-		T::precalc_inverse(data.size());
+		_precalc_inverse((int)data.size());
 		data.push_back(0);
-		for(auto i = (int)data.size() - 1; i >= 1; -- i) data[i] = data[i - 1] / i;
+		for(auto i = (int)data.size() - 1; i >= 1; -- i) data[i] = data[i - 1] * _inv[i];
 		data[0] = 0;
 		return *this;
 	}
@@ -365,9 +373,9 @@ struct power_series_naive_base: vector<T>{
 		return power_series_naive_base(*this).inplace_antiderivative();
 	}
 	power_series_naive_base &inplace_shifted_antiderivative(){
-		T::precalc_inverse(data.size());
+		_precalc_inverse((int)data.size());
 		if(!data.empty()) data[0] = 0;
-		for(auto i = 1; i < data.size(); ++ i) data[i] /= i;
+		for(auto i = 1; i < data.size(); ++ i) data[i] *= _inv[i];
 		return *this;
 	}
 	// Integral(P/x)
@@ -418,6 +426,13 @@ struct power_series_naive_base: vector<T>{
 		}
 		data.erase(data.begin(), data.begin() + pivot);
 		n -= pivot * e;
+		for(auto i = 1; i <= n; ++ i) if(!T{i}){
+			power_series_naive_base res{1};
+			for(; e; e >>= 1, (*this *= *this).inplace_take(n)) if(e & 1) (res *= *this).inplace_take(n);
+			*this = res;
+			data.insert(data.begin(), pivot * e, T{0});
+			return *this;
+		}
 		T pivot_c = T{1}, base = data[0];
 		for(auto x = e; x; x >>= 1, base *= base) if(x & 1) pivot_c *= base;
 		((*this /= data[0]).inplace_log(n) *= e).inplace_exp(n);
@@ -501,6 +516,8 @@ struct power_series_naive_base: vector<T>{
 #undef IS_INTEGRAL
 #undef data
 };
+template<class T, class multiplication_functor>
+vector<T> power_series_naive_base<T, multiplication_functor>::_inv{T{1}};
 
 template<class T>
 struct _quadratic{
