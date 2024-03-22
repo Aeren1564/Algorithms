@@ -41,7 +41,7 @@ struct factorizer_over_finite_field{
 		vector<pair<P, int>> res;
 		for(auto i = 1; 2 * i <= (int)p.size() - 1; ++ i){
 			P q{0, 1};
-			for(auto j = 1; j <= i; ++ j) q = q.power_mod(FF::size, p);
+			for(auto j = 1; j <= i; ++ j) q.inplace_power_mod(FF::size, p);
 			q -= P{0, 1};
 			P g = gcd(p, q);
 			_reduce_and_monicify(g);
@@ -121,6 +121,14 @@ struct factorizer_over_finite_field{
 				auto fact_equal_degree = factorize_equal_degree(d, f1);
 				for(auto &f2: fact_equal_degree) res.push_back({f2, e});
 			}
+		}
+		sort(res.begin(), res.end());
+		auto temp = res;
+		res.clear();
+		for(auto [f, e]: temp){
+			_reduce_and_monicify(f);
+			if(res.empty() || res.back().first != f) res.push_back({f, e});
+			else res.back().second += e;
 		}
 		return res;
 	}
