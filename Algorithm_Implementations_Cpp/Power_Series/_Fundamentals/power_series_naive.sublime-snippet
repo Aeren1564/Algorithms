@@ -486,11 +486,8 @@ struct power_series_naive_base: vector<T>{
 	power_series_naive_base &inplace_multiset(int n){
 		assert(!data.empty() && data[0] == T{0});
 		data.resize(n);
-		static vector<T> inv;
-		inv.resize(n);
-		for(auto i = 1; i < n; ++ i) inv[i] = T{1} / i;
-		for(auto i = n - 1; i >= 1; -- i) for(auto j = 2 * i; j < n; j += i) data[j] += data[i] * inv[j / i];
-		inv.clear(), inv.shrink_to_fit();
+		_precalc_inverse(n);
+		for(auto i = n - 1; i >= 1; -- i) for(auto j = 2 * i; j < n; j += i) data[j] += data[i] * _inv[j / i];
 		return inplace_exp(n);
 	}
 	power_series_naive_base multiset(int n) const{
