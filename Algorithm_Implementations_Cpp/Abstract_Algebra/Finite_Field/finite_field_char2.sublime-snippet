@@ -45,7 +45,7 @@ struct finite_field_char2_base{
 	}
 	finite_field_char2_base(){ }
 	template<class U, typename enable_if<IS_INTEGRAL(U)>::type* = nullptr>
-	finite_field_char2_base(U x): data(x){ }
+	finite_field_char2_base(U x): data(x & _full_mask){ }
 	template<class U, typename enable_if<IS_INTEGRAL(U)>::type* = nullptr> operator U() const{ return data; }
 	finite_field_char2_base &operator+=(const finite_field_char2_base &otr){ data ^= otr.data; return *this; }
 	finite_field_char2_base &operator-=(const finite_field_char2_base &otr){ data ^= otr.data; return *this; }
