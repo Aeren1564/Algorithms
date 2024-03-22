@@ -1,0 +1,119 @@
+<snippet>
+	<content><![CDATA[
+// Unique finite field of size 2^D
+template<size_t D, class T, class T_large>
+struct finite_field_char2_small_base{
+#define IS_INTEGRAL(T) (is_integral_v<T> || is_same_v<T, __int128_t> || is_same_v<T, __uint128_t>)
+#define IS_UNSIGNED(T) (is_unsigned_v<T> || is_same_v<T, __uint128_t>)
+	static_assert(IS_UNSIGNED(T) && IS_UNSIGNED(T_large));
+	static_assert(1 <= D && D <= sizeof(T) * 8);
+	static_assert(2 * D <= sizeof(T_large) * 8);
+	static constexpr size_t characteristic = 2;
+	static constexpr size_t dimension = D;
+	static constexpr T_large size = T_large(1) << D;
+	static constexpr unsigned int irreducible[] = {0, 0, 3, 3, 3, 5, 3, 3, 27, 3, 9, 5, 9, 27, 33, 3, 43, 9, 9, 39, 9, 5, 3, 33, 27, 9, 27, 39, 3, 5, 3, 9, 141, 75, 27, 5, 53, 63, 99, 17, 57, 9, 39, 89, 33, 27, 3, 33, 45, 113, 29, 75, 9, 71, 125, 71, 149, 17, 99, 123, 3, 39, 105, 3, 27, 27, 9, 39, 163, 101, 43};
+	static constexpr T _full_mask = size - 1;
+	static finite_field_char2_small_base _primitive_root;
+	static finite_field_char2_small_base primitive_root(){
+		if(_primitive_root) return _primitive_root;
+		if(D == 1) return _primitive_root = 1;
+		T divs[20] = {};
+		int cnt = 0;
+		T x = _full_mask;
+		for(auto i = 3; 1LL * i * i <= x; i += 2) if(x % i == 0){
+			divs[cnt ++] = i;
+			while(x % i == 0) x /= i;
+		}
+		if(x > 1) divs[cnt ++] = x;
+		for(auto g = 2; ; ++ g){
+			bool ok = true;
+			for(auto i = 0; i < cnt; ++ i) if(finite_field_char2_small_base{g}.power(_full_mask / divs[i]) == 1){
+				ok = false;
+				break;
+			}
+			if(ok) return _primitive_root = g;
+		}
+	}
+	static finite_field_char2_small_base generate(auto &&rng){
+		T res = 0;
+		for(auto rem = D; rem; ){
+			auto w = min<size_t>(32, rem);
+			res = res << w | rng() & _full_mask;
+			rem -= w;
+		}
+		return res;
+	}
+	finite_field_char2_small_base(){ }
+	template<class U, typename enable_if<IS_INTEGRAL(U)>::type* = nullptr>
+	finite_field_char2_small_base(U x): data(x & _full_mask){ }
+	template<class U, typename enable_if<IS_INTEGRAL(U)>::type* = nullptr> operator U() const{ return data; }
+	finite_field_char2_small_base &operator+=(const finite_field_char2_small_base &otr){ data ^= otr.data; return *this; }
+	finite_field_char2_small_base &operator-=(const finite_field_char2_small_base &otr){ data ^= otr.data; return *this; }
+	template<class U, typename enable_if<IS_INTEGRAL(U)>::type* = nullptr> finite_field_char2_small_base &operator+=(const U &otr){ return *this += finite_field_char2_small_base(otr); }
+	template<class U, typename enable_if<IS_INTEGRAL(U)>::type* = nullptr> finite_field_char2_small_base &operator-=(const U &otr){ return *this -= finite_field_char2_small_base(otr); }
+	finite_field_char2_small_base &operator++(){ data ^= 1; return *this; }
+	finite_field_char2_small_base &operator--(){ data ^= 1; return *this; }
+	finite_field_char2_small_base operator-() const{ return *this; }
+	finite_field_char2_small_base &operator*=(const finite_field_char2_small_base &rhs){
+		T_large res = 0;
+		for(auto i = 0; i < D; ++ i) if(rhs.data >> i & 1) res ^= (T_large)data << i;
+		for(auto i = 2 * D - 1; i >= D; -- i) if(res >> i & 1) res ^= (T_large)irreducible[D] << i - D;
+		data = res & _full_mask;
+		return *this;
+	}
+	template<class U, typename enable_if<IS_INTEGRAL(U)>::type* = nullptr>
+	finite_field_char2_small_base &inplace_power(U e){
+		if(e == 0) return *this = 1;
+		if(data == 0) return *this = {};
+		if(data == 1 || e == 1) return *this;
+		e %= _full_mask;
+		if(e < 0) e += _full_mask;
+		finite_field_char2_small_base res = 1;
+		for(; e; *this *= *this, e >>= 1) if(e & 1) res *= *this;
+		return *this = res;
+	}
+	template<class U, typename enable_if<IS_INTEGRAL(U)>::type* = nullptr>
+	finite_field_char2_small_base power(U e) const{
+		return finite_field_char2_small_base(*this).inplace_power(e);
+	}
+	finite_field_char2_small_base &operator/=(const finite_field_char2_small_base &otr){
+		assert(otr);
+		return *this *= otr.power(_full_mask - 1);
+	}
+#define ARITHMETIC_OP(op, apply_op)\
+finite_field_char2_small_base operator op(const finite_field_char2_small_base &x) const{ return finite_field_char2_small_base(*this) apply_op x; }\
+template<class U, typename enable_if<IS_INTEGRAL(U)>::type* = nullptr>\
+finite_field_char2_small_base operator op(const U &x) const{ return finite_field_char2_small_base(*this) apply_op finite_field_char2_small_base(x); }\
+template<class U, typename enable_if<IS_INTEGRAL(U)>::type* = nullptr>\
+friend finite_field_char2_small_base operator op(const U &x, const finite_field_char2_small_base &y){ return finite_field_char2_small_base(x) apply_op y; }
+	ARITHMETIC_OP(+, +=) ARITHMETIC_OP(-, -=) ARITHMETIC_OP(*, *=) ARITHMETIC_OP(/, /=)
+#undef ARITHMETIC_OP
+#define COMPARE_OP(op)\
+bool operator op(const finite_field_char2_small_base &x) const{ return data op x.data; }\
+template<class U, typename enable_if<IS_INTEGRAL(U)>::type* = nullptr>\
+bool operator op(const U &x) const{ return data op finite_field_char2_small_base(x).data; }\
+template<class U, typename enable_if<IS_INTEGRAL(U)>::type* = nullptr>\
+friend bool operator op(const U &x, const finite_field_char2_small_base &y){ return finite_field_char2_small_base(x).data op y.data; }
+	COMPARE_OP(==) COMPARE_OP(!=) COMPARE_OP(<) COMPARE_OP(<=) COMPARE_OP(>) COMPARE_OP(>=)
+#undef COMPARE_OP
+	friend istream &operator>>(istream &in, finite_field_char2_small_base &number){
+		return in >> number.data;
+	}
+	friend ostream &operator<<(ostream &out, const finite_field_char2_small_base &x){
+		return out << x.data;
+	}
+	T data = 0;
+#undef IS_INTEGRAL
+#undef IS_UNSIGNED
+};
+
+template<size_t D>
+using FF2 = finite_field_char2_small_base<D, unsigned int, unsigned long long>;
+template<size_t D>
+using FF2L = finite_field_char2_small_base<D, unsigned long long, __uint128_t>;
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>finite_field_char2_small</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
