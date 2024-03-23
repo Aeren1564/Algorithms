@@ -1,14 +1,10 @@
 <snippet>
 	<content><![CDATA[
 struct disjoint_set_rollback{
-	int n, _classes;
+	int n, _group_count;
 	vector<int> p;
 	vector<pair<int, int>> recover;
-	disjoint_set_rollback(int n): n(n), _classes(n), p(n, -1){ assert(n >= 0); }
-	// O(1)
-	int classes() const{
-		return _classes;
-	}
+	disjoint_set_rollback(int n): n(n), _group_count(n), p(n, -1){ assert(n >= 0); }
 	// O(log(n))
 	int root(int u){
 		return p[u] < 0 ? u : root(p[u]);
@@ -25,7 +21,7 @@ struct disjoint_set_rollback{
 	bool merge(int u, int v){
 		u = root(u), v = root(v);
 		if(u == v) return false;
-		-- _classes;
+		-- _group_count;
 		if(p[u] > p[v]) swap(u, v);
 		recover.emplace_back(v, p[v]);
 		p[u] += p[v], p[v] = u;
@@ -35,13 +31,17 @@ struct disjoint_set_rollback{
 	bool merge(int u, int v, auto act){
 		u = root(u), v = root(v);
 		if(u == v) return false;
-		-- _classes;
+		-- _group_count;
 		bool swapped = false;
 		if(p[u] > p[v]) swap(u, v), swapped = true;
+		act(u, v, swapped);
 		recover.emplace_back(v, p[v]);
 		p[u] += p[v], p[v] = u;
-		act(u, v, swapped);
 		return true;
+	}
+	// O(1)
+	int group_count() const{
+		return _group_count;
 	}
 	// Log the current state into recover
 	void refresh(int signal){
@@ -55,7 +55,7 @@ struct disjoint_set_rollback{
 	void reverse_to(int s){
 		assert(s <= (int)recover.size());
 		while((int)recover.size() > s){
-			++ _classes;
+			++ _group_count;
 			auto [u, su] = recover.back();
 			recover.pop_back();
 			p[p[u]] -= su, p[u] = su;
@@ -70,7 +70,7 @@ struct disjoint_set_rollback{
 			recover.pop_back();
 			if(!~u) act(u, su);
 			else{
-				++ _classes;
+				++ _group_count;
 				int pu = p[u];
 				p[p[u]] -= su, p[u] = su;
 				act(pu, u);
@@ -78,7 +78,7 @@ struct disjoint_set_rollback{
 		}
 	}
 	void clear(){
-		_classes = n;
+		_group_count = n;
 		fill(p.begin(), p.end(), -1);
 		recover.clear();
 	}
