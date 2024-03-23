@@ -91,10 +91,10 @@ struct line{
 		return x <= 0 ? distance_l(p, r) : x >= d.squared_norm() ? distance_l(q(), r) : distance_to_line_l(r);
 	}
 	point<double> projection(const point<T> &r) const{
-		return point<double>(p) + (r - p) * d / d.squared_norm() * point<double>(d);
+		return point<double>(p) + (point<double>(r) - point<double>(p)) * d / d.squared_norm() * point<double>(d);
 	}
 	point<long double> projection_l(const point<T> &r) const{
-		return point<long double>(p) + (r - p) * d / d.squared_norm() * point<long double>(d);
+		return point<long double>(p) + (point<long double>(r) - point<long double>(p)) * d / d.squared_norm() * point<long double>(d);
 	}
 	// T must be a field.
 	point<T> projection_f(const point<T> &r) const{
