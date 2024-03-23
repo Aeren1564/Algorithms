@@ -39,9 +39,9 @@ struct disjoint_set{
 		-- _group_count;
 		bool swapped = false;
 		if constexpr(Enable_small_to_large) if(p[u] > p[v]) swap(u, v), swapped = true;
+		act(u, v, swapped);
 		p[u] += p[v], p[v] = u;
 		group[u].splice(group[u].end(), group[v]);
-		act(u, v, swapped);
 		return true;
 	}
 	int group_count() const{
