@@ -96,7 +96,7 @@ struct dijkstra_dense{
 		for(auto u: src) assert(0 <= u && u < n);
 		root.clear(), order.clear();
 		++ attempt;
-		_run_dense(edge_length, src, act_greater, act_equal);
+		_run(edge_length, src, act_greater, act_equal);
 	}
 	// edge_length = -1 implies no edge
 	template<class U>
