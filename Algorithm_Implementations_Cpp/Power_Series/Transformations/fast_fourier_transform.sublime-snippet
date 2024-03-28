@@ -50,12 +50,12 @@ struct fast_fourier_transform_wrapper{
 	static vector<T> convolute(const vector<T> &p, const vector<T> &q){
 		if(min(p.size(), q.size()) < 60) return convolute_naive(p, q);
 		int n = 1 << __lg((int)p.size() + (int)q.size() - 1) + 1;
-		buffer1.resize(n, 0);
+		buffer1.assign(n, 0);
 		for(auto i = 0; i < (int)p.size(); ++ i) buffer1[i].real(p[i]);
 		for(auto i = 0; i < (int)q.size(); ++ i) buffer1[i].imag(q[i]);
 		transform(buffer1);
 		for(auto &x: buffer1) x *= x;
-		buffer2.resize(n, 0);
+		buffer2.assign(n, 0);
 		for(auto i = 0; i < n; ++ i) buffer2[i] = buffer1[i] - conj(buffer1[-i & n - 1]);
 		transform(buffer2, true);
 		vector<T> res((int)p.size() + (int)q.size() - 1);
@@ -67,7 +67,7 @@ struct fast_fourier_transform_wrapper{
 		if(min(p.size(), q.size()) < 60) return convolute_naive(p, q);
 		int n = 1 << __lg((int)p.size() + (int)q.size() - 1) + 1;
 		buffer1 = p, buffer2 = q;
-		buffer1.resize(n), buffer2.resize(n);
+		buffer1.assign(n), buffer2.assign(n);
 		transform(buffer1), transform(buffer2);
 		for(auto i = 0; i < n; ++ i) buffer1[i] *= buffer2[i];
 		transform(buffer1, true);
@@ -80,10 +80,10 @@ struct fast_fourier_transform_wrapper{
 		if(min(p.size(), q.size()) < 80) return convolute_naive(p, q);
 		int n = 1 << __lg((int)p.size() + (int)q.size() - 1) + 1;
 		const int cut = 32000;
-		buffer1.resize(n, 0);
+		buffer1.assign(n, 0);
 		for(auto i = 0; i < (int)p.size(); ++ i) buffer1[i] = {(int)p[i] / cut, (int)p[i] % cut};
 		transform(buffer1);
-		buffer2.resize(n, 0);
+		buffer2.assign(n, 0);
 		for(auto i = 0; i < (int)q.size(); ++ i) buffer2[i] = {(int)q[i] / cut, (int)q[i] % cut};
 		transform(buffer2);
 		for(auto i = 0; i <= n >> 1; ++ i){
