@@ -67,7 +67,7 @@ struct fast_fourier_transform_wrapper{
 		if(min(p.size(), q.size()) < 60) return convolute_naive(p, q);
 		int n = 1 << __lg((int)p.size() + (int)q.size() - 1) + 1;
 		buffer1 = p, buffer2 = q;
-		buffer1.assign(n), buffer2.assign(n);
+		buffer1.resize(n), buffer2.resize(n);
 		transform(buffer1), transform(buffer2);
 		for(auto i = 0; i < n; ++ i) buffer1[i] *= buffer2[i];
 		transform(buffer1, true);
