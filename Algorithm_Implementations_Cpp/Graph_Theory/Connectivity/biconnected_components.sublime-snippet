@@ -12,6 +12,10 @@ struct biconnected_components{
 	vector<vector<int>> comp_vertex; // list of vertices in a 2-vertex-connected component
 	vector<vector<int>> comp_edge; // list of edges in a 2-vertex-connected component
 	vector<int> bridge;
+	biconnected_components(){ }
+	biconnected_components(int n){ init(n); }
+	template<class T>
+	biconnected_components(const graph<T> &g){ init(g.n); run_all(g); }
 	void init(int n){
 		this->n = n;
 		pos.assign(n, -1);
