@@ -11,6 +11,10 @@ struct strongly_connected_components{
 	vector<int> belongs; // vertex -> component
 	vector<vector<int>> comp; // in topological order
 	graph<int> condensation; // edge weights are the original edge id
+	strongly_connected_components(){ }
+	strongly_connected_components(int n){ init(n); }
+	template<class T>
+	strongly_connected_components(const graph<T> &g){ init(g.n); run_all(g); }
 	void init(int n){
 		this->n = n;
 		dp.assign(n, -1);
