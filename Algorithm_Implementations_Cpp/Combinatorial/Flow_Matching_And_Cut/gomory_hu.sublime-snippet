@@ -1,7 +1,6 @@
 <snippet>
 	<content><![CDATA[
-// Returns a tree T where for all s!=t, min s-t cut of g equals
-// min_{e is in s-t path in T}( (capacity of S_e-T_e cut in G) = (capacity of s-t edge in T) ) 
+// Returns a tree T where for all s!=t, min s-t cut of g equals the min weight of edges in the s-t path in T
 // n - 1 dinic_maximum_flow.minimum_cut() calls
 // Requires flow_network and dinic_maximum_flow
 template<class T>

@@ -3,13 +3,13 @@
 // Implementation of https://www2.eecs.berkeley.edu/Pubs/TechRpts/1984/CSD-84-171.pdf
 // Density of a graph is sum of edge weights plus vertex weights, divided by the number of vertices. Returns a subgraph with the maximum density
 // U must be able to hold 4 * |V|^2 * (sum(edge weight) + max(vertex weight))
-// O(log |V|) computations of min cut on a graph with |V| vertices and |V| + |E| edges
+// O(log(|V|)) computations of min cut on a graph with |V| vertices and |V| + |E| edges
 // Requires flow_network, dinic, and graph
 template<class T, class U>
 vector<int> maximum_density_subset(const graph<T> &g, vector<U> vertex_weight = {}){
 	for(auto e: g.edge) assert(e.cost >= 0);
 	int n = g.n;
-	if(n <= 1) return {0};
+	if(n == 1) return {0};
 	const U scale = (U)2 * n * (n - 1);
 	if(vertex_weight.empty()) vertex_weight.assign(n, 0);
 	for(auto &x: vertex_weight) x *= scale;
