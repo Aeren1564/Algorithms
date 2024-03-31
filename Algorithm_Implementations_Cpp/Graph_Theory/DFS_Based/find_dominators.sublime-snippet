@@ -30,14 +30,14 @@ vector<int> find_dominators(const graph<T> &g, int root){
 		if(sdom[best[p[x]]] < sdom[best[x]]) best[x] = best[p[x]];
 		return best[x];
 	};
-	graph<int> g_rev = g.transposed();
+	graph<int> rg = g.transpose();
 	vector<int> idom(n, -1), link(n, -1);
 	vector<vector<int>> bucket(n);
 	for(auto it = (int)order.size() - 1; it >= 0; -- it){
 		int w = order[it];
-		for(auto id : g_rev.adj[w]){
-			if(g_rev.ignore != nullptr && g_rev.ignore(id)) continue;
-			auto &e = g_rev.edge[id];
+		for(auto id: rg.adj[w]){
+			if(rg.ignore && rg.ignore(id)) continue;
+			auto &e = rg.edge[id];
 			int u = e.to;
 			if(~pos[u]) sdom[w] = min(sdom[w], sdom[find_best(find_best, u)]);
 		}
