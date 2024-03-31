@@ -1,0 +1,97 @@
+<snippet>
+	<content><![CDATA[
+// Source: https://codeforces.com/contest/1942/submission/254134735
+template<class T>
+struct successive_shortest_path_solver{
+	template<class K_t, class V_t>
+	struct leftist_heap{
+		int rank;
+		K_t key;
+		V_t value;
+		leftist_heap *left, *right;
+		leftist_heap(int rank, K_t key, V_t value, leftist_heap* left, leftist_heap *right): rank{rank}, key{key}, value{value}, left{left}, right{right}{ }
+		inline static deque<leftist_heap> alloc;
+		static leftist_heap* insert(leftist_heap* a, const K_t &k, const V_t &v){
+			if(not a or k < a->key){
+				alloc.emplace_back(1, k, v, a, nullptr);
+				return &alloc.back();
+			}
+			auto l = a->left, r = insert(a->right, k, v);
+			if(not l or r->rank > l->rank) swap(l, r);
+			alloc.emplace_back(r ? r->rank + 1 : 0, a->key, a->value, l, r);
+			return &alloc.back();
+		}
+	};
+	// Returns the lengths of min(k, # of source-sink paths) shortest source-sink paths
+	// O((m + k) * log(m))
+	template<class U>
+	vector<T> run(const graph<U> &g, int source, int sink, int k) const{
+		int n = g.n;
+		assert(0 <= min(source, sink) && max(source, sink) < n);
+		assert(0 <= k);
+		for(auto id = 0; id < (int)g.edge.size(); ++ id) if(!g.ignore || !g.ignore(id)) assert(g.edge[id].cost >= 0);
+		vector<T> dist(n, numeric_limits<T>::max());
+		vector<int> prev(n, -1);
+		vector<vector<int>> forest(n);
+		{
+			priority_queue<pair<T, int>, vector<pair<T, int>>, greater<>> pq;
+			pq.push({dist[sink] = 0, sink});
+			auto rg = g.transpose();
+			while(!pq.empty()){
+				auto [x, u] = pq.top();
+				pq.pop();
+				if(dist[u] != x) continue;
+				for(auto id: rg.adj[u]){
+					int v = rg(u, id);
+					if(dist[v] > dist[u] + rg.edge[id].cost){
+						prev[v] = u;
+						pq.push({dist[v] = dist[u] + rg.edge[id].cost, v});
+					}
+				}
+			}
+			if(dist[source] == numeric_limits<T>::max()) return {};
+			for(auto u = 0; u < n; ++ u) if(~prev[u]) forest[prev[u]].push_back(u);
+		}
+		vector<leftist_heap<T, int> *> h(n);
+		{
+			vector<int> q{sink};
+			for(auto qi = 0; qi < (int)q.size(); ++ qi){
+				int u = q[qi];
+				bool seen = false;
+				for(auto id: g.adj[u]){
+					if(g.ignore && g.ignore(id)) continue;
+					int v = g(u, id);
+					if(dist[v] == numeric_limits<T>::max()) continue;
+					auto c = g.edge[id].cost + dist[v] - dist[u];
+					if(!seen && v == prev[u] && c == 0){
+						seen = true;
+						continue;
+					}
+					h[u] = leftist_heap<T, int>::insert(h[u], c, v);
+				}
+				for(auto v: forest[u]) h[v] = h[u], q.push_back(v);
+			}
+		}
+		vector<T> res{dist[source]};
+		if(!h[source]) return res;
+		{
+			priority_queue<pair<T, leftist_heap<T, int> *>, vector<pair<T, leftist_heap<T, int> *>>, greater<>> pq;
+			pq.push({dist[source] + h[source]->key, h[source]});
+			while(!pq.empty() and (int) res.size() < k){
+				auto [cd, ch] = pq.top();
+				pq.pop();
+				res.push_back(cd);
+				if(h[ch->value]) pq.push({cd + h[ch->value]->key, h[ch->value]});
+				if(ch->left) pq.push({cd + ch->left->key - ch->key, ch->left});
+				if(ch->right) pq.push({cd + ch->right->key - ch->key, ch->right});
+			}
+		}
+		return res;
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<!-- <tabTrigger>hello</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<!-- <scope>source.python</scope> -->
+</snippet>
