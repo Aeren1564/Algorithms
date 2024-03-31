@@ -10,7 +10,7 @@ template<class T, int C = 2>
 void greedy_coloring(const graph<T> &g, auto act){
 	int n = g.n;
 	vector<int> was(n, -1);
-	auto rg = g.transposed();
+	auto rg = g.transpose();
 	for(auto u = 0; u < n; ++ u){
 		if(~was[u]) continue;
 		bool perfect = true;
