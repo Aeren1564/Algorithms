@@ -7,7 +7,10 @@ struct subinterval_sum_processor{
 #else
 	#define ASSERT(x) 42
 #endif
-	vector<int> size;
+	array<int, 3> size;
+#define D1(i) data[(i)]
+#define D2(i, j) data[(size[1] + 1) * (i) + (j)]
+#define D3(i, j, k) data[(size[2] + 1) * ((size[1] + 1) * (i) + (j)) + (k)]
 	vector<T> data;
 	F TT;
 	T T_id;
@@ -23,7 +26,7 @@ struct subinterval_sum_processor{
 		ASSERT((int)a.size() == n);
 		size = {n};
 		data.assign(n + 1, T_id);
-		for(auto i = 0; i < n; ++ i) data[i + 1] = TT(data[i], a[i]);
+		for(auto i = 0; i < n; ++ i) D1(i + 1) = TT(D1(i), a[i]);
 	}
 	template<class U>
 	void build(int n, int m, const vector<vector<U>> &a){
@@ -31,9 +34,9 @@ struct subinterval_sum_processor{
 		for(const auto &b: a) ASSERT((int)b.size() == m);
 		size = {n, m};
 		data.assign((n + 1) * (m + 1), T_id);
-		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) data[(m + 1) * (i + 1) + j + 1] = a[i][j];
-		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) data[(m + 1) * (i + 1) + j + 1] = TT(data[(m + 1) * i + j + 1], data[(m + 1) * (i + 1) + j + 1]);
-		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) data[(m + 1) * (i + 1) + j + 1] = TT(data[(m + 1) * (i + 1) + j], data[(m + 1) * (i + 1) + j + 1]);
+		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) D2(i + 1, j + 1) = a[i][j];
+		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) D2(i + 1, j + 1) = TT(D2(i, j + 1), D2(i + 1, j + 1));
+		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) D2(i + 1, j + 1) = TT(D2(i + 1, j), D2(i + 1, j + 1));
 	}
 	template<class U>
 	void build(int n, int m, int l, const vector<vector<vector<U>>> &a){
@@ -43,50 +46,53 @@ struct subinterval_sum_processor{
 			for(const auto &c: b) ASSERT((int)c.size() == l);
 		}
 		size = {n, m, l};
-		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) for(auto k = 0; k < l; ++ k) data[(m + 1) * (l + 1) * (i + 1) + (l + 1) * (j + 1) + k + 1] = a[i][j][k];
-		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) for(auto k = 0; k < l; ++ k) data[(m + 1) * (l + 1) * (i + 1) + (l + 1) * (j + 1) + k + 1] = TT(data[(m + 1) * (l + 1) * i + (l + 1) * (j + 1) + k + 1], data[(m + 1) * (l + 1) * (i + 1) + (l + 1) * (j + 1) + k + 1]);
-		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) for(auto k = 0; k < l; ++ k) data[(m + 1) * (l + 1) * (i + 1) + (l + 1) * (j + 1) + k + 1] = TT(data[(m + 1) * (l + 1) * (i + 1) + (l + 1) * j + k + 1], data[(m + 1) * (l + 1) * (i + 1) + (l + 1) * (j + 1) + k + 1]);
-		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) for(auto k = 0; k < l; ++ k) data[(m + 1) * (l + 1) * (i + 1) + (l + 1) * (j + 1) + k + 1] = TT(data[(m + 1) * (l + 1) * (i + 1) + (l + 1) * (j + 1) + k], data[(m + 1) * (l + 1) * (i + 1) + (l + 1) * (j + 1) + k + 1]);
+		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) for(auto k = 0; k < l; ++ k) D3(i + 1, j + 1, k + 1) = a[i][j][k];
+		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) for(auto k = 0; k < l; ++ k) D3(i + 1, j + 1, k + 1) = TT(D3(i, j + 1, k + 1), D3(i + 1, j + 1, k + 1));
+		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) for(auto k = 0; k < l; ++ k) D3(i + 1, j + 1, k + 1) = TT(D3(i + 1, j, k + 1), D3(i + 1, j + 1, k + 1));
+		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) for(auto k = 0; k < l; ++ k) D3(i + 1, j + 1, k + 1) = TT(D3(i + 1, j + 1, k), D3(i + 1, j + 1, k + 1));
 	}
 	T prefix(int xr) const{
 		ASSERT((int)size.size() == 1);
 		ASSERT(0 <= xr && xr <= size[0]);
-		return data[xr];
+		return D1(xr);
 	}
 	T query(int xl, int xr) const{
 		ASSERT((int)size.size() == 1);
 		ASSERT(0 <= xl && xl <= xr && xr <= size[0]);
-		return TT(Tinv(data[xl]), data[xr]);
+		return TT(Tinv(D1(xl)), D1(xr));
 	}
 	T prefix(int xr, int yr) const{
 		ASSERT((int)size.size() == 2);
 		ASSERT(0 <= xr && xr <= size[0]);
 		ASSERT(0 <= yr && yr <= size[1]);
-		return data[(size[1] + 1) * xr + yr];
+		return D2(xr, yr);
 	}
 	T query(int xl, int xr, int yl, int yr) const{
 		ASSERT((int)size.size() == 2);
 		ASSERT(0 <= xl && xl <= xr && xr <= size[0]);
-		return TT(
-			TT(
-				data[(size[1] + 1) * xl + yl],
-				Tinv(data[(size[1] + 1) * xl + yr])
-			),
-			TT(
-				Tinv(data[(size[1] + 1) * xr + yl]),
-				data[(size[1] + 1) * xr + yr]
-			)
-		);
+		return TT(TT(D2(xl, yl), Tinv(D2(xl, yr))), TT(Tinv(D2(xr, yl)), D2(xr, yr)));
 	}
 	T prefix(int xr, int yr, int zr) const{
 		ASSERT((int)size.size() == 3);
 		ASSERT(0 <= xr && xr <= size[0]);
 		ASSERT(0 <= yr && yr <= size[1]);
 		ASSERT(0 <= zr && zr <= size[2]);
-		return data[(size[1] + 1) * (size[2] + 1) * zr + (size[2] + 1) * yr + xr];
+		return D3(xr, yr, zr);
+	}
+	T query(int xl, int xr, int yl, int yr, int zl, int zr) const{
+		ASSERT((int)size.size() == 3);
+		ASSERT(0 <= xl && xl <= xr && xr <= size[0]);
+		ASSERT(0 <= yl && yl <= yr && yr <= size[1]);
+		ASSERT(0 <= zl && zl <= zr && zr <= size[2]);
+		return TT(TT(TT(Tinv(D3(xl, yl, zl)), D3(xl, yl, zr)), TT(D3(xl, yr, zl), Tinv(D3(xl, yr, zr)))), TT(TT(D3(xr, yl, zl), Tinv(D3(xr, yl, zr))), TT(Tinv(D3(xr, yr, zl)), D3(xr, yr, zr)))
+		);
 	}
 #undef ASSERT
+#undef D1
+#undef D2
+#undef D3
 };
+
 template<class T, class F = plus<>, class I = negate<>>
 auto make_subinterval_sum_processor(F TT = plus<>(), T T_id = T{}, I Tinv = negate<>()){
 	return subinterval_sum_processor(TT, T_id, Tinv);
