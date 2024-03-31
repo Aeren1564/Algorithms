@@ -61,10 +61,12 @@ struct graph{
 		edge.clear();
 		ignore = {};
 	}
-	graph transposed() const{ // the transpose of the directed graph
+	graph transpose() const{ // the transpose of the directed graph
 		graph res(n);
-		for(auto &e: edge) res.orient(e.to, e.from, e.cost);
-		res.ignore = ignore;
+		for(auto id = 0; id < (int)edge.size(); ++ id){
+			if(ignore && ignore(id)) continue;
+			res.orient(edge[id].to, edge[id].from, edge[id].cost);
+		}
 		return res;
 	}
 	int degree(int u) const{ // the degree (outdegree if directed) of u (without the ignoration rule)
