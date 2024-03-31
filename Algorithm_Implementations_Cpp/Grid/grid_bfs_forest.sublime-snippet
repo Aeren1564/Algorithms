@@ -22,6 +22,7 @@ struct grid_bfs_forest{
 		this->n = accumulate(ncs.begin(), ncs.end(), 0);
 		this->nr = nr;
 		this->ncs = ncs;
+		locate.clear();
 		index.assign(nr, {});
 		for(auto x = 0; x < nr; ++ x){
 			int nc = ncs[x];
