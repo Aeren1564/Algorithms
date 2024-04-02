@@ -1,6 +1,6 @@
 <snippet>
 	<content><![CDATA[
-// Count # of standard young tableau with the given shape uising hook length formula
+// Count # of standard young tableau with the given shape with hook length formula
 // O(\sum(lambda))
 template<class T>
 T count_young_tableaux(const vector<int> &lambda){
