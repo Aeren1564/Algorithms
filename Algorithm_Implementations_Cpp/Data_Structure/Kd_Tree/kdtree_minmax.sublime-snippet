@@ -45,7 +45,7 @@ struct kdtree_minmax{
 		delete root;
 	}
 	// returns {squared_distance, nearest point}
-	// O(log n) on average for randomly distributed points
+	// O(log(n)) on average for randomly distributed points
 	template<bool IGNORE_ITSELF = false>
 	pair<T, int> nearest(const point<T> &p){
 		auto search = [&](node *u, auto search)->pair<T, int>{
