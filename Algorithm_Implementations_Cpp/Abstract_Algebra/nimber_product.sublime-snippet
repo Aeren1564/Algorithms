@@ -1,9 +1,9 @@
 <snippet>
 	<content><![CDATA[
 // Source: https://github.com/ecnerwala/cp-book/blob/master/src/nim_prod.hpp
-struct nimber_product_type{
+struct nimber_product{
 	uint64_t bit_prod[64][64]{};
-	constexpr nimber_product_type(){
+	constexpr nimber_product(){
 		for(auto i = 0; i < 64; ++ i) for(auto j = 0; j < 64; ++ j){
 			if((i & j) == 0) bit_prod[i][j] = uint64_t(1) << (i | j);
 			else{
