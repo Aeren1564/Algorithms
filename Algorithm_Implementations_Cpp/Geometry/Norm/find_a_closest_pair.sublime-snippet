@@ -2,7 +2,7 @@
 	<content><![CDATA[
 // Find a closest pair of points where the metric is given by L^p norm, 1 <= p <= inf
 // Returns the pair of squared distance and pair of point indices
-// O(n log n)
+// O(n * log(n))
 // Requires point
 template<class T, class F1 = decltype(squared_distance<T>), class F2 = decltype(::sqrt)>
 pair<T, pair<int, int>> find_a_closest_pair(const vector<point<T>> &a, F1 distance_powered = squared_distance, F2 get_distance = sqrt){

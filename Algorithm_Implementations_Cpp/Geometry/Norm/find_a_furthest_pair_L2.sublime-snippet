@@ -1,7 +1,7 @@
 <snippet>
 	<content><![CDATA[
 // Returns the pair of squared distance and pair of point indices
-// O(n log n)
+// O(n * log(n))
 // Requires point and convex_hull
 template<class T>
 pair<T, pair<int, int>> find_a_furthest_pair_L2(const vector<point<T>> &a){

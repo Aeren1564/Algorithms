@@ -14,8 +14,7 @@ void decompose_into_paths_of_length_2(const graph<T> &g, auto process_p3, auto p
 		depth[u] = d;
 		for(auto id: g.adj[u]){
 			if(id == pe || g.ignore && g.ignore(id)) continue;
-			auto &e = g.edge[id];
-			int v = u ^ e.from ^ e.to;
+			int v = g(u, id);
 			if(~depth[v] && !used[id] || !~depth[v] && self(self, v, id, depth[u] + 1)){
 				used[id] = true;
 				if(~rem){

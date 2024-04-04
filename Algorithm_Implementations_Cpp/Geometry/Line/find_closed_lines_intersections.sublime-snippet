@@ -1,9 +1,6 @@
 <snippet>
 	<content><![CDATA[
-// act_while(i, j): line i and j intersects where i were below j before the intersection
-// Each intersections are visited in increasing order of x-coordinate
-// Assumes that after extending each segments by 1e-5, no endpoint of a line lies on another line.
-// Requires point, line, and line_intersection
+// TODO: Fix this
 /*
 Warning: currently, the following case blows up this impl
 4

@@ -3,7 +3,7 @@
 // Each half planes are identified by the left side of the given directed line
 // If the intersection is unbounded or empty, returns an empty list
 // Equivalent to finding convex hull by duality
-// O(n log n) (or O(n) if is_sorted is true)
+// O(n * log(n)) (or O(n) if is_sorted is true)
 // T must be able to hold max_coordinate ^ 4
 // Requires point and line
 template<class T>
