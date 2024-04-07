@@ -26,13 +26,13 @@ pair<vector<T>, vector<int>> monotone_queue_optimization(const vector<T> &init, 
 			}
 		}
 		else{
-			while(q.size() > 1 && dp[q[0]] + cost(q[0], i) > dp[q[1]] + cost(q[1], i)) q.pop_front();
+			while((int)q.size() > 1 && dp[q[0]] + cost(q[0], i) > dp[q[1]] + cost(q[1], i)) q.pop_front();
 			if(dp[i] > dp[q.front()] + x){
 				dp[i] = dp[q.front()] + x;
 				prev[i] = q.front();
 			}
 		}
-		while(int(q.size()) > 1 && cross(*next(q.rbegin()), *q.rbegin()) >= cross(*q.rbegin(), i)) q.pop_back();
+		while((int)q.size() > 1 && cross(*next(q.rbegin()), *q.rbegin()) >= cross(*q.rbegin(), i)) q.pop_back();
 		q.push_back(i);
 	}
 	return {dp, prev};

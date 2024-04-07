@@ -1,7 +1,7 @@
 <snippet>
 	<content><![CDATA[
 // Given a grid with obstacles, for each 1 <= X <= H and 1 <= Y <= W, find the number of ways to place an X x Y rectangle within the grid.
-// O(n m)
+// O(n * m)
 vector<vector<int>> count_rectangles_within_grid(const vector<vector<int>> &grid){
 	int n = (int)grid.size(), m = (int)grid[0].size();
 	vector<vector<int>> cnt(n + 3, vector<int>(m + 3));

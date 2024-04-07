@@ -1,6 +1,6 @@
 <snippet>
 	<content><![CDATA[
-// Let M = {0, ..., m-1}.
+// Let M = {0, ..., m-1}
 // Given
 // 1. a cost funciton with cost(l, r) either -1, indicating invalid, or in M for 0 <= l <= r <= n, and
 // 2. a monoid operation TT over M with identity T_id,
