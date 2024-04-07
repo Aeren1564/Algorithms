@@ -1,64 +1,90 @@
 <snippet>
 	<content><![CDATA[
-// Solves the canonical form: maximize c^T x, subject to ax <= b and x >= 0.
-// T must be of floating type
 template<class T>
 struct linear_programming_solver_simplex{
-	int m, n;
+	static_assert(is_floating_point_v<T>);
+#define LTJ(X) if(!~s || pair{X[j], nn[j]} < pair{X[s], nn[s]}) s = j
+	static constexpr T eps = 1e-8;
 	vector<int> nn, bb;
 	vector<vector<T>> mat;
-	static constexpr T eps = 1e-8;
-	linear_programming_solver_simplex(const vector<vector<T>> &a, const vector<T> &b, const vector<T> &c): m((int)b.size()), n((int)c.size()), nn(n + 1), bb(m), mat(m + 2, vector<T>(n + 2)){
-		for(auto i = 0; i < m; ++ i) for(auto j = 0; j < n; ++ j) mat[i][j] = a[i][j];
-		for(auto i = 0; i < m; ++ i) bb[i] = n + i, mat[i][n] = -1, mat[i][n + 1] = b[i];
-		for(auto j = 0; j < n; ++ j) nn[j] = j, mat[m][j] = -c[j];
-		nn[n] = -1, mat[m + 1][n] = 1;
-	}
-	void pivot(int r, int s){
+	void _pivot(int r, int s){
 		T *a = mat[r].data(), inv = 1 / a[s];
-		for(auto i = 0; i < m + 2; ++ i) if(i != r && abs(mat[i][s]) > eps){
+		for(auto i = 0; i < nc + 2; ++ i) if(i != r && abs(mat[i][s]) > eps){
 			T *b = mat[i].data(), inv2 = b[s] * inv;
-			for(auto j = 0; j < n + 2; ++ j) b[j] -= a[j] * inv2;
+			for(auto j = 0; j < nv + 2; ++ j) b[j] -= a[j] * inv2;
 			b[s] = a[s] * inv2;
 		}
-		for(auto j = 0; j < n + 2; ++ j) if(j != s) mat[r][j] *= inv;
-		for(auto i = 0; i < m + 2; ++ i) if(i != r) mat[i][s] *= -inv;
+		for(auto j = 0; j < nv + 2; ++ j) if(j != s) mat[r][j] *= inv;
+		for(auto i = 0; i < nc + 2; ++ i) if(i != r) mat[i][s] *= -inv;
 		mat[r][s] = inv;
 		swap(bb[r], nn[s]);
 	}
-	bool simplex(int phase){
-		for(auto x = m + phase - 1; ; ){
+	bool _simplex(int phase){
+		for(auto x = nc + phase - 1; ; ){
 			int s = -1;
-			for(auto j = 0; j < n + 1; ++ j) if(nn[j] != -phase) if(s == -1 || pair(mat[x][j], nn[j]) < pair(mat[x][s], nn[s])) s = j;
+			for(auto j = 0; j < nv + 1; ++ j) if(nn[j] != -phase) LTJ(mat[x]);
 			if(mat[x][s] >= -eps) return true;
 			int r = -1;
-			for(auto i = 0; i < m; ++ i){
+			for(auto i = 0; i < nc; ++ i){
 				if(mat[i][s] <= eps) continue;
-				if(r == -1 || pair(mat[i][n + 1] / mat[i][s], bb[i]) < pair(mat[r][n + 1] / mat[r][s], bb[r])) r = i;
+				if(r == -1 || pair{mat[i][nv + 1] / mat[i][s], bb[i]} < pair{mat[r][nv + 1] / mat[r][s], bb[r]}) r = i;
 			}
 			if(r == -1) return false;
-			pivot(r, s);
+			_pivot(r, s);
 		}
 	}
-	// Returns -inf if no solution, {inf, a vector satisfying the constraints} if there are abritrarily good solutions, or {maximum c^T x, x} otherwise.
-	// O(n * m * (# of pivots)), O(2^n) in general.
-	pair<T, vector<T>> solve(){
+	// returns nullptr if no solution, {nullptr, a vector satisfying the constraints} if there are abritrarily good solutions, and {max c^T * x, x} otherwise
+	// O(nv * nc * (# of pivots)), O(2^nv) in general
+	optional<pair<optional<T>, vector<T>>> solve(){
+		nn.resize(nv + 1);
+		bb.resize(nc);
+		mat.assign(nc + 2, vector<T>(nv + 2));
+		for(auto i = 0; i < nc; ++ i) for(auto j = 0; j < nv; ++ j) mat[i][j] = a[i][j];
+		for(auto i = 0; i < nc; ++ i) bb[i] = nv + i, mat[i][nv] = -1, mat[i][nv + 1] = b[i];
+		for(auto j = 0; j < nv; ++ j) nn[j] = j, mat[nc][j] = -c[j];
+		nn[nv] = -1, mat[nc + 1][nv] = 1;
 		int r = 0;
-		for(auto i = 1; i < m; ++ i) if(mat[i][n + 1] < mat[r][n + 1]) r = i;
-		if(mat[r][n + 1] < -eps){
-			pivot(r, n);
-			if(!simplex(2) || mat[m + 1][n + 1] < -eps) return {numeric_limits<T>::min(), {}};
-			for(auto i = 0; i < m; ++ i) if(bb[i] == -1){
+		for(auto i = 1; i < nc; ++ i) if(mat[i][nv + 1] < mat[r][nv + 1]) r = i;
+		if(mat[r][nv + 1] < -eps){
+			_pivot(r, nv);
+			if(!_simplex(2) || mat[nc + 1][nv + 1] < -eps) return {};
+			for(auto i = 0; i < nc; ++ i) if(bb[i] == -1){
 				int s = 0;
-				for(auto j = 1; j < n + 1; ++ j) if(s == -1 || pair(mat[i][j], nn[j]) < pair(mat[i][s], nn[s]));
-				pivot(i, s);
+				for(auto j = 1; j < nv + 1; ++ j) LTJ(mat[i]);
+				_pivot(i, s);
 			}
 		}
-		bool ok = simplex(1);
-		vector<T> x(n);
-		for(auto i = 0; i < m; ++ i) if(bb[i] < n) x[bb[i]] = mat[i][n + 1];
-		return {ok ? mat[m][n + 1] : numeric_limits<T>::max(), x};
+		bool ok = _simplex(1);
+		vector<T> x(nv);
+		for(auto i = 0; i < nc; ++ i) if(bb[i] < nv) x[bb[i]] = mat[i][nv + 1];
+		return pair<optional<T>, vector<T>>{ok ? mat[nc][nv + 1] : optional<T>{}, x};
 	}
+	int nc = 0, nv;
+	vector<vector<T>> a;
+	vector<T> b, c;
+	// maximizes c^T * x for x >= 0
+	template<class U>
+	linear_programming_solver_simplex(const vector<U> &c): nv((int)c.size()), c(c.begin(), c.end()){}
+	// _a^T * x <= _b
+	template<class U, class V>
+	void add_constraint(const vector<U> &_a, V _b){
+		assert((int)_a.size() == nv);
+		++ nc;
+		a.push_back(vector<T>(_a.begin(), _a.end()));
+		b.push_back((T)_b);
+	}
+	template<class U, class V>
+	void add_constraint_by_mapping(initializer_list<pair<int, U>> mapping, V _b){
+		++ nc;
+		vector<T> _a(nv);
+		for(auto [i, x]: mapping){
+			assert(0 <= i && i < nv);
+			_a[i] = x;
+		}
+		a.push_back(_a);
+		b.push_back((T)_b);
+	}
+#undef LTJ
 };
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
