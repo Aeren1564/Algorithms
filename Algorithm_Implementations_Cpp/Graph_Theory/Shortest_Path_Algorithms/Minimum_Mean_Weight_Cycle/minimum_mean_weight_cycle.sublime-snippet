@@ -20,10 +20,10 @@ optional<vector<int>> minimum_mean_weight_cycle(const graph<T> &g){
 	array<U, 2> cost{1, 0};
 	for(auto u = 0; u < n; ++ u) if(dp[n][u] != inf){
 		array<U, 2> cur{-1, 0};
-		for(auto x = 0; x <= n; ++ x) if(cur[0] * (n - x) < (dp[n][u] - dp[x][u]) * cur[1]) cur = {dp[n][u] - dp[x][u], n - x};
+		for(auto x = 0; x <= n; ++ x) if(cur[0] * (n - x) < (dp[n][u] - dp[x][u]) * cur[1]) cur = {dp[n][u] - dp[x][u], U(n - x)};
 		if(cost[0] * cur[1] > cur[0] * cost[1]) src = u, cost = cur;
 	}
-	if(!cost[1]) return {};
+	if(!~src) return {};
 	vector<int> path, was(n, -1);
 	for(auto u = src, x = n; ; u = g.edge[pe[x --][u]].from){
 		if(~was[u]) return vector<int>{path.rbegin(), path.rend() - was[u]};
