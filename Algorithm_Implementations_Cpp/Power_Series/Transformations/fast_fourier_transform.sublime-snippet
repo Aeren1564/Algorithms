@@ -92,13 +92,13 @@ struct fast_fourier_transform_wrapper{
 		for(auto i = 0; i <= n >> 1; ++ i){
 			int j = -i & n - 1;
 			if(i == j){
-				tie(buffer1[i], buffer2[i]) = pair<CD, CD>{
+				tie(buffer1[i], buffer2[i]) = pair{
 					(buffer1[i] + conj(buffer1[i])) * buffer2[i] / 2.0,
 					(buffer1[i] - conj(buffer1[i])) * buffer2[i] / 2i
 				};
 			}
 			else{
-				tie(buffer1[i], buffer2[i], buffer1[j], buffer2[j]) = tuple<CD, CD, CD, CD>{
+				tie(buffer1[i], buffer2[i], buffer1[j], buffer2[j]) = tuple{
 					(buffer1[i] + conj(buffer1[j])) * buffer2[i] / 2.0,
 					(buffer1[i] - conj(buffer1[j])) * buffer2[i] / 2i,
 					(buffer1[j] + conj(buffer1[i])) * buffer2[j] / 2.0,
