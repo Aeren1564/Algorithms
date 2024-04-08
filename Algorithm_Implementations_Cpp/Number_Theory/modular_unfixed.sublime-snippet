@@ -15,6 +15,7 @@ struct modular_unfixed_base{
 		_inverse_mod = (wider_data_t)-1 / _mod + 1;
 	}
 	static void setup(data_t mod = 0){
+		_primitive_root.data = 0;
 		if(!mod) cin >> mod;
 		_mod = mod;
 		assert(_mod >= 1);
