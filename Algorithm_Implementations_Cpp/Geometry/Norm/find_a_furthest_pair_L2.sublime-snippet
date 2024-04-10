@@ -2,11 +2,11 @@
 	<content><![CDATA[
 // Returns the pair of squared distance and pair of point indices
 // O(n * log(n))
-// Requires point and convex_hull
+// Requires point and convex_polygon
 template<class T>
 pair<T, pair<int, int>> find_a_furthest_pair_L2(const vector<point<T>> &a){
 	pair<T, point<T>> res;
-	for(auto p: (convex_hull(a) - convex_hull(a)).get_hull()) res = max(res, pair{p.squared_norm(), p});
+	for(auto p: (convex_polygon(a) - convex_polygon(a)).data) res = max(res, pair{p.squared_norm(), p});
 	vector<int> order((int)a.size());
 	iota(order.begin(), order.end(), 0);
 	sort(order.begin(), order.end(), [&](int i, int j){ return a[i] < a[j]; });
