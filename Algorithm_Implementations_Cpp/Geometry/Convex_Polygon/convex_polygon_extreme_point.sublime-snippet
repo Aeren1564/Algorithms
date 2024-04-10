@@ -1,7 +1,7 @@
 <snippet>
 	<content><![CDATA[
 // Returns a point with the maximum inner product with p
-// Assumes the polygon is not empty
+// Assumes the convex polygon contains at least one point
 // Requires point and convex_polygon
 // O(log(n))
 template<class T>

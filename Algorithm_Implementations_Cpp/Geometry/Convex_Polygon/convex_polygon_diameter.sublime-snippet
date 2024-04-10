@@ -1,6 +1,6 @@
 <snippet>
 	<content><![CDATA[
-// Assumes the convex polygon is not empty
+// Assumes the convex polygon contains at least one point
 // Requires point and convex_polygon
 // O(n)
 template<class T>
