@@ -2,13 +2,33 @@
 	<content><![CDATA[
 template<class T, class F>
 struct sparse_table_2d{
+#ifdef LOCAL
+	#define ASSERT(x) assert(x)
+#else
+	#define ASSERT(x) 42
+#endif
 	int n, m;
 	vector<vector<vector<vector<T>>>> data;
 	F TT;
 	T T_id;
-	sparse_table_2d(){ }
+	sparse_table_2d(F TT, T T_id): TT(TT), T_id(T_id){ }
+	sparse_table_2d &operator=(const sparse_table_2d &st){
+		n = st.n;
+		m = st.m;
+		data = st.data;
+		return *this;
+	}
+	friend void swap(sparse_table_2d &stl, sparse_table_2d &str){
+		swap(stl.n, str.n);
+		swap(stl.m, str.m);
+		swap(stl.data, str.data);
+	}
 	// O(n * log(n) * m * log(m))
-	sparse_table_2d(const vector<vector<T>> &a, F TT, T T_id): n((int)a.size()), m((int)a[0].size()), TT(TT), T_id(T_id), data({{a}}){
+	void build(const vector<vector<T>> &a){
+		ASSERT(!a.empty());
+		n = (int)a.size(), m = (int)a[0].size();
+		for(auto b: a) ASSERT(m == (int)b.size());
+		data.assign({{a}});
 		for(auto q = 1, j = 1; q << 1 <= m; q <<= 1, ++ j){
 			data[0].push_back(vector<vector<T>>(n, vector<T>(m - (q << 1) + 1)));
 			for(auto ii = 0; ii < (int)data[0][j].size(); ++ ii) for(auto jj = 0; jj < (int)data[0][j][ii].size(); ++ jj) data[0][j][ii][jj] = TT(data[0][j - 1][ii][jj], data[0][j - 1][ii][jj + q]);
@@ -24,13 +44,26 @@ struct sparse_table_2d{
 	}
 	// O(1)
 	T query(int xl, int xr, int yl, int yr) const{
-		assert(0 <= xl && xl <= xr && xr <= n);
-		assert(0 <= yl && yl <= yr && yr <= m);
+		ASSERT(0 <= xl && xl <= xr && xr <= n);
+		ASSERT(0 <= yl && yl <= yr && yr <= m);
 		if(xl == xr || yl == yr) return T_id;
 		int xd = __lg(xr - xl), yd = __lg(yr - yl);
 		return TT(TT(data[xd][yd][xl][yl], data[xd][yd][xl][yr - (1 << yd)]), TT(data[xd][yd][xr - (1 << xd)][yl], data[xd][yd][xr - (1 << xd)][yr - (1 << yd)]));
 	}
+#undef ASSERT
 };
+template<class T, class F>
+auto make_sparse_table_2d(F TT, T T_id){
+	return sparse_table_2d(TT, T_id);
+}
+template<class T>
+auto make_rminq_2d(T inf = numeric_limits<T>::max()){
+	return sparse_table_2d([&](const T &x, const T &y){ return min(x, y); }, inf);
+}
+template<class T>
+auto make_rmaxq_2d(T minf = numeric_limits<T>::min()){
+	return sparse_table_2d([&](const T &x, const T &y){ return max(x, y); }, minf);
+}
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
 	<tabTrigger>sparse_table_2d</tabTrigger> -->

@@ -1,0 +1,18 @@
+<snippet>
+	<content><![CDATA[
+// Returns indices i<j such that a[i]+a[j]<a[i&j]+a[i|j]
+// O(n * log(n)^2)
+template<class T>
+optional<array<int, 2>> check_antisubmodularity(const vector<T> &a){
+	int n = (int)a.size();
+	assert(n >= 1 && __builtin_popcount(n) == 1);
+	int w = __lg(n);
+	for(auto x = 0; x < n; ++ x) for(auto i = 0; i < w; ++ i) if(~x >> i & 1) for(auto j = i + 1; j < w; ++ j) if(~x >> j & 1) if(a[x | 1 << i] + a[x | 1 << j] < a[x] + a[x | 1 << i | 1 << j]) return array{x | 1 << i, x | 1 << j};
+	return {};
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>check_antisubmodularity</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

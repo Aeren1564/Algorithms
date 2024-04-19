@@ -1,0 +1,66 @@
+<snippet>
+	<content><![CDATA[
+template<class T, class F>
+struct sparse_table_2d_square{
+#ifdef LOCAL
+	#define ASSERT(x) assert(x)
+#else
+	#define ASSERT(x) 42
+#endif
+	int n, m;
+	vector<vector<vector<T>>> data;
+	F TT;
+	T T_id;
+	sparse_table_2d_square(F TT, T T_id): TT(TT), T_id(T_id){ }
+	sparse_table_2d_square &operator=(const sparse_table_2d_square &st){
+		n = st.n;
+		m = st.m;
+		data = st.data;
+		return *this;
+	}
+	friend void swap(sparse_table_2d_square &stl, sparse_table_2d_square &str){
+		swap(stl.n, str.n);
+		swap(stl.m, str.m);
+		swap(stl.data, str.data);
+	}
+	// O(n * m * log(min(n, m)))
+	void build(const vector<vector<T>> &a){
+		ASSERT(!a.empty());
+		n = (int)a.size(), m = (int)a[0].size();
+		for(auto b: a) ASSERT(m == (int)b.size());
+		data.assign({a});
+		for(auto p = 1, i = 1; p << 1 <= min(n, m); p <<= 1, ++ i){
+			data.push_back(vector(n - (p << 1) + 1, vector<T>(m - (p << 1) + 1)));
+			for(auto j = 0; j < (int)data[i].size(); ++ j) for(auto k = 0; k < (int)data[i][j].size(); ++ k) data[i][j][k] = TT(TT(data[i - 1][j][k], data[i - 1][j][k + p]), TT(data[i - 1][j + p][k], data[i - 1][j + p][k + p]));
+		}
+	}
+	// Returns the aggregate in [x, x + len) x [y, y + len)
+	// O(1)
+	T query(int x, int y, int len) const{
+		ASSERT(len >= 0);
+		ASSERT(0 <= x && x + len <= n);
+		ASSERT(0 <= y && y + len <= m);
+		if(len == 0) return T_id;
+		int d = __lg(len);
+		return TT(TT(data[d][x][y], data[d][x][y + len - (1 << d)]), TT(data[d][x + len - (1 << d)][y], data[d][x + len - (1 << d)][y + len - (1 << d)]));
+	}
+#undef ASSERT
+};
+template<class T, class F>
+auto make_sparse_table_2d_square(F TT, T T_id){
+	return sparse_table_2d_square(TT, T_id);
+}
+template<class T>
+auto make_rminq_2d_square(T inf = numeric_limits<T>::max()){
+	return sparse_table_2d_square([&](const T &x, const T &y){ return min(x, y); }, inf);
+}
+template<class T>
+auto make_rmaxq_2d_square(T minf = numeric_limits<T>::min()){
+	return sparse_table_2d_square([&](const T &x, const T &y){ return max(x, y); }, minf);
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>sparse_table_2d_square</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

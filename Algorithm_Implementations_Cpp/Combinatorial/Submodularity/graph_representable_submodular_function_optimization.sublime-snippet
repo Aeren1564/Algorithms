@@ -1,0 +1,158 @@
+<snippet>
+	<content><![CDATA[
+// Source: https://theory-and-me.hatenablog.com/entry/2020/03/13/180935 and https://theory-and-me.hatenablog.com/entry/2020/03/17/180157
+// Requires flow_network and dinic_maximum_flow
+template<class T>
+struct graph_representable_submodular_function_optimization{
+	bool minimize;
+	int n, m;
+	T const_term;
+	vector<T> linear_term;
+	map<array<int, 2>, T> edge;
+	map<pair<vector<int>, int>, T> split_from_source, merge_to_sink;
+	// Optimize k + \sum_{i} f_i(x_i) + \sum_{i<j} g_{i,j}(x_i,x_j) + \sum_{i<j<k} h_{i,j,k}(x_i,x_j,x_k) + \sum t(x, ...) for
+	// 1. binary variables x_0, ..., x_{n-1},
+	// 2. submodular functions f, g, and h, and
+	// 3. function t that either
+	//  takes a negative value when all arguments are 1, and 0 otherwise, or
+	//  tkaes a negative value when all arguments are 0, and 0 otherwise
+	graph_representable_submodular_function_optimization(int n, bool minimize = true){ init(n, minimize); }
+	void init(int n, bool minimize = true){
+		this->n = this->m = n;
+		this->minimize = minimize;
+		const_term = {};
+		linear_term.assign(n, T{});
+		edge.clear();
+	}
+	// x_i = 1 implies x_j = 1
+	void add_requirement(int i, int j){
+		assert(0 <= min(i, j) && max(i, j) < n);
+		assert(i != j);
+		edge[{j, i}] = minimize ? numeric_limits<T>::max() / 2 : numeric_limits<T>::min() / 2;
+	}
+	void add_const_term(const T &k){
+		const_term += k;
+	}
+	// automatically submodular
+	void add_linear_term(int i, const array<T, 2> &f){
+		assert(0 <= i && i < n);
+		add_const_term(f[0]);
+		linear_term[i] += f[1] - f[0];
+	}
+	// g_{i,j}, must be submodular
+	void add_quadratic_term(int i, int j, const array<array<T, 2>, 2> &g){
+		assert(0 <= min(i, j) && max(i, j) < n);
+		assert(i != j);
+		if(minimize) assert(g[1][0] + g[0][1] >= g[0][0] + g[1][1]);
+		else assert(g[1][0] + g[0][1] <= g[0][0] + g[1][1]);
+		add_const_term(g[0][0]);
+		add_linear_term(i, {0, g[1][0] - g[0][0]});
+		add_linear_term(j, {0, g[1][1] - g[1][0]});
+		edge[{i, j}] += g[1][0] + g[0][1] - g[0][0] - g[1][1];
+	}
+	// h_{i,j,k}, must be submodular
+	void add_cubic_term(int i, int j, int k, const array<array<array<T, 2>, 2>, 2> &h){
+		assert(0 <= min({i, j, k}) && max({i, j, k}) < n);
+		assert(i != j && i != k && j != k);
+		auto eval = [&](int mask)->T{ return h[mask >> 2 & 1][mask >> 1 & 1][mask & 1]; };
+		for(auto mask = 0; mask < 8; ++ mask)
+			for(auto p = 0; p < 3; ++ p) if(~mask >> p & 1)
+				for(auto q = p + 1; q < n; ++ q) if(~mask >> q & 1)
+					if(minimize) assert(eval(mask | 1 << p) + eval(mask | 1 << q) >= eval(mask) + eval(mask | 1 << p | 1 << q));
+					else assert(eval(mask | 1 << p) + eval(mask | 1 << q) <= eval(mask) + eval(mask | 1 << p | 1 << q));
+		T c = 0;
+		for(auto mask = 0; mask < 8; ++ mask) c += (mask & 1 ? -1 : 1) * eval(mask);
+		if(c >= 0){
+			add_const_term(eval(0));
+			add_linear_term(i, {0, eval(5) - eval(1)});
+			add_linear_term(j, {0, eval(6) - eval(4)});
+			add_linear_term(k, {0, eval(3) - eval(2)});
+			add_quadratic_term(i, j, {{{0, eval(2) + eval(4) - eval(0) - eval(6)}, {0, 0}}});
+			add_quadratic_term(j, k, {{{0, eval(1) + eval(2) - eval(0) - eval(3)}, {0, 0}}});
+			add_quadratic_term(k, i, {{{0, eval(1) + eval(4) - eval(0) - eval(5)}, {0, 0}}});
+			const_term -= c;
+			linear_term.push_back(T{0});
+			merge_to_sink[{vector{i, j, k}, m ++}] += c;
+		}
+		else{
+			add_const_term(eval(7));
+			add_linear_term(i, {eval(2) - eval(6), 0});
+			add_linear_term(j, {eval(1) - eval(3), 0});
+			add_linear_term(k, {eval(4) - eval(5), 0});
+			add_quadratic_term(j, i, {{{0, eval(3) + eval(5) - eval(1) - eval(7)}, {0, 0}}});
+			add_quadratic_term(k, j, {{{0, eval(5) + eval(6) - eval(4) - eval(7)}, {0, 0}}});
+			add_quadratic_term(i, k, {{{0, eval(3) + eval(6) - eval(2) - eval(7)}, {0, 0}}});
+			const_term += c;
+			linear_term.push_back(T{0});
+			split_from_source[{vector{i, j, k}, m ++}] -= c;
+		}
+	}
+	// t, equals to value (<0) if all arguments are equal to base, 0 otherwise
+	void add_restricted_term(vector<int> a, bool base, const T &value){
+		if(a.empty()) return;
+		assert(0 <= *min_element(a.begin(), a.end()) && *max_element(a.begin(), a.end()) < n);
+		assert(minimize ? value < 0 : value > 0);
+		sort(a.begin(), a.end());
+		for(auto i = 0; i < (int)a.size() - 1; ++ i) assert(a[i] != a[i + 1]);
+		if(base){
+			const_term += value;
+			merge_to_sink[{a, m ++}] -= value;
+		}
+		else{
+			const_term += value;
+			split_from_source[{a, m ++}] -= value;
+		}
+	}
+	pair<T, vector<int>> optimize(){
+		if(!minimize){
+			const_term *= -1;
+			for(auto u = 0; u < m; ++ u) linear_term[u] *= -1;
+			for(auto it = edge.begin(); it != edge.end(); ++ it) it->second *= -1;
+			for(auto it = merge_to_sink.begin(); it != merge_to_sink.end(); ++ it) it->second *= -1;
+			for(auto it = split_from_source.begin(); it != split_from_source.end(); ++ it) it->second *= -1;
+		}
+		flow_network<T> F(m + 2);
+		int source = m, sink = m + 1;
+		T opt = const_term;
+		for(auto u = 0; u < m; ++ u){
+			if(linear_term[u] > 0) F.orient(source, u, linear_term[u]);
+			else if(linear_term[u] < 0){
+				opt += linear_term[u];
+				F.orient(u, sink, -linear_term[u]);
+			}
+		}
+		for(auto [uv, w]: edge) if(w != T{0}){
+			auto [u, v] = uv;
+			F.orient(u, v, w);
+		}
+		for(auto [am, w]: merge_to_sink) if(w != T{0}){
+			auto [a, merge] = am;
+			for(auto u: a) F.orient(u, merge, w);
+			F.orient(merge, sink, w);
+		}
+		for(auto [au, w]: split_from_source) if(w != T{0}){
+			auto [a, split] = au;
+			F.orient(source, split, w);
+			for(auto u: a) F.orient(split, u, w);
+		}
+		auto [cut_weight, left, right] = dinic_maximum_flow(F).minimum_cut(source, sink);
+		opt += cut_weight;
+		vector<int> assignment(n);
+		for(auto u: right) if(u < n) assignment[u] = true;
+		if(!minimize){
+			opt *= -1;
+			const_term *= -1;
+			for(auto u = 0; u < m; ++ u) linear_term[u] *= -1;
+			for(auto it = edge.begin(); it != edge.end(); ++ it) it->second *= -1;
+			for(auto it = merge_to_sink.begin(); it != merge_to_sink.end(); ++ it) it->second *= -1;
+			for(auto it = split_from_source.begin(); it != split_from_source.end(); ++ it) it->second *= -1;
+		}
+		return {opt, assignment};
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>graph_representable_submodular_function_optimization</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

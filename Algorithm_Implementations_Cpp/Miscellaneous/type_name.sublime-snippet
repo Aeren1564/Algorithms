@@ -1,0 +1,13 @@
+<snippet>
+	<content><![CDATA[
+template<class T>
+string_view type_name(){
+	const auto s = string_view(__PRETTY_FUNCTION__);
+	return s.substr(39, s.size() - 89);
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>type_name</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

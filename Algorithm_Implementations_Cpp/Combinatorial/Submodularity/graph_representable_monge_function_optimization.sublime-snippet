@@ -1,0 +1,108 @@
+<snippet>
+	<content><![CDATA[
+// Source: https://noshi91.hatenablog.com/entry/2021/06/29/044225
+// Requires flow_network and dinic_maximum_flow
+template<class T>
+struct graph_representable_monge_function_optimization{
+	bool minimize;
+	int n, k;
+	vector<int> forced;
+	T const_term;
+	vector<T> linear_term;
+	map<array<int, 2>, T> edge;
+	// Optimize k + \sum_{i} f_i(x_i) + \sum_{i<j} g_{i,j}(x_i,x_j) for
+	// 1. variables x_0, ..., x_{n-1} which can have values 0, 1, ..., k-1, and
+	// 2. monge function g
+	graph_representable_monge_function_optimization(int n, int k, bool minimize = true){ init(n, k, minimize); }
+	void init(int n, int k, bool minimize = true){
+		assert(k >= 2);
+		this->n = n;
+		this->k = k;
+		this->minimize = minimize;
+		forced.assign(n, -1);
+		const_term = {};
+		linear_term.assign(k * n, T{});
+		edge.clear();
+	}
+	void force(int i, int x){
+		assert(0 <= i && i < n && 0 <= x && x < k);
+		assert(!~forced[i] || forced[i] == x);
+		forced[i] = x;
+	}
+	void add_const_term(const T &k){
+		const_term += k;
+	}
+	// f_i
+	void add_linear_term(int i, const vector<T> &f){
+		assert(0 <= i && i < n && (int)f.size() == k);
+		add_const_term(f[0]);
+		for(auto x = 0; x < k - 1; ++ x) linear_term[(k - 1) * i + x] += f[x + 1] - f[x];
+	}
+	// g_{i,j}, must be monge
+	void add_quadratic_term(int i, int j, const vector<vector<T>> &g){
+		assert(0 <= min(i, j) && max(i, j) < n && (int)g.size() == k && (int)g[0].size() == k);
+		assert(i != j);
+		for(auto x = 0; x < k - 1; ++ x) for(auto y = 0; y < k - 1; ++ y){
+			if(minimize) assert(g[x + 1][y] + g[x][y + 1] >= g[x][y] + g[x + 1][y + 1]);
+			else assert(g[x + 1][y] + g[x][y + 1] <= g[x][y] + g[x + 1][y + 1]);
+		}
+		add_const_term(g[0][0]);
+		vector<T> f(k);
+		for(auto x = 0; x < k; ++ x) f[x] = g[x][0] - g[0][0];
+		add_linear_term(i, f);
+		for(auto y = 0; y < k; ++ y) f[y] = g[0][y] - g[0][0];
+		add_linear_term(j, f);
+		for(auto x = 1; x < k; ++ x) for(auto y = 1; y < k; ++ y){
+			T value = g[x][y] - g[x][y - 1] - g[x - 1][y] + g[x - 1][y - 1];
+			linear_term[(k - 1) * j + y - 1] += value;
+			edge[{(k - 1) * i + x - 1, (k - 1) * j + y - 1}] -= value;
+		}
+	}
+	pair<T, vector<int>> optimize(){
+		if(!minimize){
+			const_term *= -1;
+			for(auto u = 0; u < n; ++ u) linear_term[u] *= -1;
+			for(auto it = edge.begin(); it != edge.end(); ++ it) it->second *= -1;
+		}
+		flow_network<T> F((k - 1) * n + 2);
+		int source = (k - 1) * n, sink = (k - 1) * n + 1;
+		T opt = const_term;
+		static const T inf = numeric_limits<T>::max() / 2;
+		for(auto u = 0; u < n; ++ u){
+			if(~forced[u]){
+				if(forced[u] > 0) F.orient(forced[u] - 1, sink, inf);
+				if(forced[u] < k) F.orient(source, forced[u], inf);
+			}
+			for(auto x = 0; x < k - 1; ++ x){
+				F.orient((k - 1) * u + x, (k - 1) * u + x + 1, inf);
+				T value = linear_term[(k - 1) * u + x];
+				if(value > 0) F.orient(source, (k - 1) * u + x, value);
+				else if(value < 0){
+					opt += value;
+					F.orient((k - 1) * u + x, sink, -value);
+				}
+			}
+		}
+		for(auto [uv, w]: edge) if(w != T{0}){
+			auto [u, v] = uv;
+			F.orient(u, v, w);
+		}
+		auto [cut_weight, left, right] = dinic_maximum_flow(F).minimum_cut(source, sink);
+		opt += cut_weight;
+		vector<int> assignment(n);
+		for(auto u: right) ++ assignment[u / (k - 1)];
+		if(!minimize){
+			opt *= -1;
+			const_term *= -1;
+			for(auto u = 0; u < n; ++ u) linear_term[u] *= -1;
+			for(auto it = edge.begin(); it != edge.end(); ++ it) it->second *= -1;
+		}
+		return {opt, assignment};
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>graph_representable_monge_function_optimization</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
