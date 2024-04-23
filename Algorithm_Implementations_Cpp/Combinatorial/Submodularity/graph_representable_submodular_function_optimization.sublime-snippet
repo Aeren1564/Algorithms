@@ -57,19 +57,19 @@ struct graph_representable_submodular_function_optimization{
 		auto eval = [&](int mask)->T{ return h[mask >> 2 & 1][mask >> 1 & 1][mask & 1]; };
 		for(auto mask = 0; mask < 8; ++ mask)
 			for(auto p = 0; p < 3; ++ p) if(~mask >> p & 1)
-				for(auto q = p + 1; q < n; ++ q) if(~mask >> q & 1)
+				for(auto q = p + 1; q < 3; ++ q) if(~mask >> q & 1)
 					if(minimize) assert(eval(mask | 1 << p) + eval(mask | 1 << q) >= eval(mask) + eval(mask | 1 << p | 1 << q));
 					else assert(eval(mask | 1 << p) + eval(mask | 1 << q) <= eval(mask) + eval(mask | 1 << p | 1 << q));
 		T c = 0;
-		for(auto mask = 0; mask < 8; ++ mask) c += (mask & 1 ? -1 : 1) * eval(mask);
-		if(c >= 0){
+		for(auto mask = 0; mask < 8; ++ mask) c += (__builtin_popcount(mask) & 1 ? -1 : 1) * eval(mask);
+		if(minimize && c >= 0 || !minimize && c <= 0){
 			add_const_term(eval(0));
 			add_linear_term(i, {0, eval(5) - eval(1)});
 			add_linear_term(j, {0, eval(6) - eval(4)});
 			add_linear_term(k, {0, eval(3) - eval(2)});
-			add_quadratic_term(i, j, {{{0, eval(2) + eval(4) - eval(0) - eval(6)}, {0, 0}}});
-			add_quadratic_term(j, k, {{{0, eval(1) + eval(2) - eval(0) - eval(3)}, {0, 0}}});
-			add_quadratic_term(k, i, {{{0, eval(1) + eval(4) - eval(0) - eval(5)}, {0, 0}}});
+			add_quadratic_term(i, j, {{{0, eval(2) + eval(4) - eval(0) - eval(6)}}});
+			add_quadratic_term(j, k, {{{0, eval(1) + eval(2) - eval(0) - eval(3)}}});
+			add_quadratic_term(k, i, {{{0, eval(1) + eval(4) - eval(0) - eval(5)}}});
 			const_term -= c;
 			linear_term.push_back(T{0});
 			merge_to_sink[{vector{i, j, k}, m ++}] += c;
@@ -79,9 +79,9 @@ struct graph_representable_submodular_function_optimization{
 			add_linear_term(i, {eval(2) - eval(6), 0});
 			add_linear_term(j, {eval(1) - eval(3), 0});
 			add_linear_term(k, {eval(4) - eval(5), 0});
-			add_quadratic_term(j, i, {{{0, eval(3) + eval(5) - eval(1) - eval(7)}, {0, 0}}});
-			add_quadratic_term(k, j, {{{0, eval(5) + eval(6) - eval(4) - eval(7)}, {0, 0}}});
-			add_quadratic_term(i, k, {{{0, eval(3) + eval(6) - eval(2) - eval(7)}, {0, 0}}});
+			add_quadratic_term(j, i, {{{0, eval(3) + eval(5) - eval(1) - eval(7)}}});
+			add_quadratic_term(k, j, {{{0, eval(5) + eval(6) - eval(4) - eval(7)}}});
+			add_quadratic_term(i, k, {{{0, eval(3) + eval(6) - eval(2) - eval(7)}}});
 			const_term += c;
 			linear_term.push_back(T{0});
 			split_from_source[{vector{i, j, k}, m ++}] -= c;
@@ -94,6 +94,7 @@ struct graph_representable_submodular_function_optimization{
 		assert(minimize ? value < 0 : value > 0);
 		sort(a.begin(), a.end());
 		for(auto i = 0; i < (int)a.size() - 1; ++ i) assert(a[i] != a[i + 1]);
+		linear_term.push_back(T{0});
 		if(base){
 			const_term += value;
 			merge_to_sink[{a, m ++}] -= value;
