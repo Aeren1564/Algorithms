@@ -23,6 +23,24 @@ array<int, 2> gen_range(int n, bool allow_empty_range = false){
 		return {l, r + 1};
 	}
 }
+template<class T>
+vector<T> sample_array(int n, T low, T high, bool distinct = false){
+	assert(low < high && (!distinct || high - low >= n));
+	set<T> used;
+	vector<T> array(n);
+	for(auto i = 0; i < n; ++ i){
+		T x = randll_t(low, high - 1)(rng);
+		if(distinct){
+			if(used.count(x)){
+				-- i;
+				continue;
+			}
+			used.insert(x);
+		}
+		array[i] = x;
+	}
+	return array;
+}
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
 	<tabTrigger>random</tabTrigger> -->
