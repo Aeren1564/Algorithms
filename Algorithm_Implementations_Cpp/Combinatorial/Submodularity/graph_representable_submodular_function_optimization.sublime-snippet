@@ -30,16 +30,19 @@ struct graph_representable_submodular_function_optimization{
 		assert(i != j);
 		edge[{j, i}] = minimize ? numeric_limits<T>::max() / 2 : numeric_limits<T>::min() / 2;
 	}
+	// Adds no new flow edges
 	void add_const_term(const T &k){
 		const_term += k;
 	}
-	// automatically submodular
+	// Automatically submodular
+	// Adds at most 1 new flow edges
 	void add_linear_term(int i, const array<T, 2> &f){
 		assert(0 <= i && i < n);
 		add_const_term(f[0]);
 		linear_term[i] += f[1] - f[0];
 	}
 	// g_{i,j}, must be submodular
+	// Add at most 2 new flow edges
 	void add_quadratic_term(int i, int j, const array<array<T, 2>, 2> &g){
 		assert(0 <= min(i, j) && max(i, j) < n);
 		assert(i != j);
@@ -51,6 +54,7 @@ struct graph_representable_submodular_function_optimization{
 		edge[{i, j}] += g[1][0] + g[0][1] - g[0][0] - g[1][1];
 	}
 	// h_{i,j,k}, must be submodular
+	// Add at most 13 new flow edges
 	void add_cubic_term(int i, int j, int k, const array<array<array<T, 2>, 2>, 2> &h){
 		assert(0 <= min({i, j, k}) && max({i, j, k}) < n);
 		assert(i != j && i != k && j != k);
@@ -88,6 +92,7 @@ struct graph_representable_submodular_function_optimization{
 		}
 	}
 	// t, equals to value (<0) if all arguments are equal to base, 0 otherwise
+	// Adds at most size(a)+1 new flow edges
 	void add_restricted_term(vector<int> a, bool base, const T &value){
 		if(a.empty()) return;
 		assert(0 <= *min_element(a.begin(), a.end()) && *max_element(a.begin(), a.end()) < n);
