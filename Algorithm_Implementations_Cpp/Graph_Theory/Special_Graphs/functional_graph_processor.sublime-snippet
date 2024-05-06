@@ -13,6 +13,7 @@ struct functional_graph_processor{
 	}
 	void init(int n){
 		this->n = n;
+		cycle.clear();
 		cycle_id.assign(n, -1);
 		cycle_pos.assign(n, -1);
 		cycle_prev.assign(n, -1);
@@ -31,6 +32,7 @@ struct functional_graph_processor{
 	int attempt;
 	vector<int> was, was2;
 	void build(const vector<int> &next){
+		cycle.clear();
 		fill(cycle_id.begin(), cycle_id.end(), -1);
 		fill(cycle_pos.begin(), cycle_pos.end(), -1);
 		fill(cycle_prev.begin(), cycle_prev.end(), -1);

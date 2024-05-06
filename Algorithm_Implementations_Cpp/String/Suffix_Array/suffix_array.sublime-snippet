@@ -1,6 +1,11 @@
 <snippet>
 	<content><![CDATA[
 struct suffix_array{
+#ifdef LOCAL
+	#define ASSERT(x) assert(x)
+#else
+	#define ASSERT(x) 42
+#endif
 	vector<int> sa_naive(const vector<int> &s){
 		int n = (int)s.size();
 		vector<int> sa(n);
@@ -149,24 +154,44 @@ struct suffix_array{
 			lcp[pos[i] - 1] = h;
 		}
 	}
-	// rmq must be built over lcp
-	// O(1)
-	template<class RangeMinQuery_t>
-	int longest_common_prefix(int i, int j, const RangeMinQuery_t &rmq) const{
-		assert(0 <= i && i <= n && 0 <= j && j <= n);
-		return i == j ? n - i : rmq.query(min(pos[i], pos[j]), max(pos[i], pos[j]));
+	vector<vector<int>> st;
+	// O(n * log(n))
+	void build_sparse_table(){
+		st.assign({lcp});
+		for(auto p = 1, i = 1; p << 1 <= n; p <<= 1, ++ i){
+			st.emplace_back(n - (p << 1) + 1);
+			for(auto j = 0; j < (int)st[i].size(); ++ j) st[i][j] = min(st[i - 1][j], st[i - 1][j + p]);
+		}
 	}
-	// rmq must be built over lcp
+	int _rmq(int l, int r) const{
+		ASSERT(0 <= l && l < r && r <= n && !st.empty());
+		int d = __lg(r - l);
+		return min(st[d][l], st[d][r - (1 << d)]);
+	}
+	// O(1)
+	int longest_common_prefix(int i, int j) const{
+		ASSERT(0 <= i && i <= n && 0 <= j && j <= n && !st.empty());
+		return i == j ? n - i : _rmq(min(pos[i], pos[j]), max(pos[i], pos[j]));
+	}
 	// Compares s[p, p + len) and s[q, q + len)
 	// O(1)
-	template<class RangeMinQuery_t>
-	bool compare(int p, int q, int len, const RangeMinQuery_t &rmq) const{
-		assert(0 <= min({p, q, len}) && p + len <= n && q + len <= n);
+	bool compare(int p, int q, int len) const{
+		ASSERT(0 <= min({p, q, len}) && p + len <= n && q + len <= n && !st.empty());
 		if(len == 0 || p == q) return false;
-		int common_len = longest_common_prefix(p, q, rmq);
+		int common_len = longest_common_prefix(p, q);
 		if(common_len >= len) return false;
-		return data[p] < data[q];
+		return pos[p] < pos[q];
 	}
+	// Compares s[p, p + plen) and s[q, q + qlen)
+	// O(1)
+	bool compare(int p, int plen, int q, int qlen) const{
+		ASSERT(0 <= min({p, plen, q, qlen}) && p + plen <= n && q + qlen <= n && !st.empty());
+		int common_len = min({longest_common_prefix(p, q), plen, qlen});
+		if(common_len >= qlen) return false;
+		if(common_len >= plen) return true;
+		return pos[p] < pos[q];
+	}
+#undef ASSERT
 };
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->

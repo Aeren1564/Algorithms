@@ -1,0 +1,125 @@
+<snippet>
+	<content><![CDATA[
+struct string_processor{
+	vector<int> pi, pi_rev;
+	vector<int> z, z_rev;
+	vector<vector<int>> aut;
+	// pi[i]: largest proper suffix ending at i that is also a prefix
+	// O(n)
+	template<class T>
+	void build_prefix_function(const vector<T> &s){
+		int n = (int)s.size();
+		pi.assign(n, 0);
+		for(auto i = 1; i < n; ++ i){
+			int len = pi[i - 1];
+			while(len && s[i] != s[len]) len = pi[len - 1];
+			if(s[i] == s[len]) pi[i] = len + 1;
+		}
+	}
+	// pi[i]: largest proper suffix ending at i that is also a prefix
+	// O(n)
+	void build_prefix_function(const string &s){
+		build_prefix_function(vector<int>(s.begin(), s.end()));
+	}
+	// pi_rev[i]: largest proper prefix starting at i that is also a suffix
+	// O(n)
+	template<class T>
+	void build_suffix_function(const vector<T> &s){
+		int n = (int)s.size();
+		pi_rev.assign(n, 0);
+		for(auto i = 1; i < n; ++ i){
+			int len = pi_rev[i - 1];
+			while(len && s[n - 1 - i] != s[n - 1 - len]) len = pi_rev[len - 1];
+			if(s[n - 1 - i] == s[n - 1 - len]) pi_rev[i] = len + 1;
+		}
+		reverse(pi_rev.begin(), pi_rev.end());
+	}
+	// pi_rev[i]: largest proper prefix starting at i that is also a suffix
+	// O(n)
+	void build_suffix_function(const string &s){
+		build_suffix_function(vector<int>(s.begin(), s.end()));
+	}
+	// z[i]: 0 if i = 0, otherwise largest prefix starting at i that is also a prefix
+	// O(n)
+	template<class T>
+	void build_z_function(const vector<T> &s){
+		int n = (int)s.size();
+		z.assign(n, 0);
+		for(auto i = 1, j = 0; i < n; ++ i){
+			if(i < j + z[j]) z[i] = min(j + z[j] - i, z[i - j]);
+			while(i + z[i] < n && s[z[i]] == s[i + z[i]]) ++ z[i];
+			if(i + z[i] > j + z[j]) j = i;
+		}
+	}
+	// z[i]: 0 if i = 0, otherwise largest prefix starting at i that is also a prefix
+	// O(n)
+	void build_z_function(const string &s){
+		build_z_function(vector<int>(s.begin(), s.end()));
+	}
+	// z_rev[i]: 0 if i = n-1, otherwise largest suffix ending at i that is also a suffix
+	// O(n)
+	template<class T>
+	void build_z_rev_function(const vector<T> &s){
+		int n = (int)s.size();
+		z_rev.assign(n, 0);
+		for(auto i = 1, j = 0; i < n; ++ i){
+			if(i < j + z_rev[j]) z_rev[i] = min(j + z_rev[j] - i, z_rev[i - j]);
+			while(i + z_rev[i] < n && s[n - 1 - z_rev[i]] == s[n - 1 - i + z_rev[i]]) ++ z_rev[i];
+			if(i + z_rev[i] > j + z_rev[j]) j = i;
+		}
+		reverse(z_rev.begin(), z_rev.end());
+	}
+	// z_rev[i]: 0 if i = n-1, otherwise largest suffix ending at i that is also a suffix
+	// O(n)
+	void build_z_rev_function(const string &s){
+		build_z_rev_function(vector<int>(s.begin(), s.end()));
+	}
+	// all alphabets must lie in range [0, sigma)
+	// aut[u][c]: next state when c is added at the end
+	// O(sigma * n)
+	void build_prefix_automaton(const vector<int> &s, int sigma){
+		assert(0 < sigma);
+		for(auto c: s) assert(0 <= c && c < sigma);
+		build_prefix_function(s);
+		int n = (int)s.size();
+		aut.assign(n + 1, vector<int>(sigma));
+		for(auto i = 0; i <= n; ++ i) for(auto c = 0; c < sigma; ++ sigma){
+			if(i > 0 && (i == n || c != s[i])) aut[i][c] = aut[pi[i - 1]][c];
+			else aut[i][c] = i + (i < n && c == s[i]);
+		}
+	}
+	vector<int> _s;
+	// Assumes s consists only of lowercase alphabets or only of uppercase alphabets
+	// Maps 'a'/'A' -> 0, ..., 'z'/'Z' -> 25
+	// aut[u][c]: next state when c is added at the end
+	// O(sigma * n)
+	void build_prefix_automaton(const string &s){
+		_s.resize((int)s.size());
+		for(auto &c: _s){
+			assert(isalpha(c));
+			c = tolower(c) - 'a';
+		}
+		build_prefix_automaton(_s, 26);
+	}
+};
+// O(n + m)
+template<class T>
+vector<int> find_all_matchings(const vector<T> &text, vector<T> pattern){
+	int n = (int)text.size(), m = (int)pattern.size();
+	pattern.insert(pattern.end(), text.begin(), text.end());
+	string_processor sp;
+	sp.build_z_function(pattern);
+	vector<int> pos;
+	for(auto i = m; i < n + m; ++ i) if(sp.z[i] >= m) pos.push_back(i - m);
+	return pos;
+}
+// O(n + m)
+vector<int> find_all_matchings(const string &text, const string &pattern){
+	return find_all_matchings(vector<int>(text.begin(), text.end()), vector<int>(pattern.begin(), pattern.end()));
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>string_processor</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

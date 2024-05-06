@@ -95,7 +95,7 @@ struct combinatorics{
 	// O(1)
 	T Catalan(int n, int k, int m = 0) const{
 		ASSERT(0 <= min({n, k, m}));
-		return k <= m ? C(n + k, n) : k <= n + m ? C(n + k, n) - C(n + k, k - m - 1) : T();
+		return k <= m ? C(n + k, k) : k <= n + m ? C(n + k, k) - C(n + k, k - m - 1) : T();
 	}
 #undef ASSERT
 };

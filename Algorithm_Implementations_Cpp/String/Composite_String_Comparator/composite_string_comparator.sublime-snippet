@@ -1,0 +1,143 @@
+<snippet>
+	<content><![CDATA[
+// Compare strings formed by concatenating prefixes of base strings
+template<class T>
+struct composite_string_comparator{
+#ifdef LOCAL
+	#define ASSERT(x) assert(x)
+#else
+	#define ASSERT(x) 42
+#endif
+	int n;
+	vector<int> size_prefix;
+	vector<T> s_all;
+	vector<vector<int>> z;
+	void _build(){
+		z.resize(n);
+		for(auto id = 0; id < n; ++ id){
+			int size = size_prefix[id + 1] - size_prefix[id];
+			s_all.insert(s_all.begin(), s_all.begin() + size_prefix[id], s_all.begin() + size_prefix[id + 1]);
+			z[id].assign(s_all.size(), 0);
+			for(auto i = 1, j = 0; i < (int)s_all.size(); ++ i){
+				if(i < j + z[id][j]) z[id][i] = min(j + z[id][j] - i, z[id][i - j]);
+				while(i + z[id][i] < (int)s_all.size() && s_all[z[id][i]] == s_all[i + z[id][i]]) ++ z[id][i];
+				if(i + z[id][i] > j + z[id][j]) j = i;
+			}
+			s_all.erase(s_all.begin(), s_all.begin() + size);
+			z[id].erase(z[id].begin(), z[id].begin() + size);
+			for(auto id2 = 0; id2 < n; ++ id2)
+				for(auto i = size_prefix[id2]; i < size_prefix[id2 + 1]; ++ i)
+					z[id][i] = min(z[id][i], min(size, size_prefix[id2 + 1] - size_prefix[id2]));
+		}
+	}
+	// O(n * tot_len)
+	void build(const vector<vector<T>> &s){
+		n = (int)s.size();
+		size_prefix.resize(n + 1);
+		s_all.clear();
+		for(auto i = 0; i < n; ++ i){
+			ASSERT(!s[i].empty());
+			size_prefix[i + 1] = size_prefix[i] + (int)s[i].size();
+			s_all.insert(s_all.end(), s[i].begin(), s[i].end());
+		}
+		_build();
+	}
+	// O(n * tot_len)
+	void build(const vector<string> &s){
+		n = (int)s.size();
+		size_prefix.resize(n + 1);
+		s_all.clear();
+		for(auto i = 0; i < n; ++ i){
+			ASSERT(!s[i].empty());
+			size_prefix[i + 1] = size_prefix[i] + (int)s[i].size();
+			s_all.insert(s_all.end(), s[i].begin(), s[i].end());
+		}
+		_build();
+	}
+	// sequence of {id, len}
+	// O(min(size(p), size(q)))
+	long long longest_common_prefix(const vector<array<int, 2>> &p, const vector<array<int, 2>> &q) const{
+		for(auto [id, len]: p) ASSERT(0 <= id && id < n && 0 < len && len <= size_prefix[id + 1] - size_prefix[id]);
+		for(auto [id, len]: q) ASSERT(0 <= id && id < n && 0 < len && len <= size_prefix[id + 1] - size_prefix[id]);
+		long long res = 0;
+		for(auto pi = 0, ppref = 0, qi = 0, qpref = 0; pi < (int)p.size() && qi < (int)q.size(); ){
+			ASSERT(ppref == 0 || qpref == 0);
+			const auto &[pid, plen] = p[pi];
+			const auto &[qid, qlen] = q[qi];
+			ASSERT(ppref < plen && qpref < qlen);
+			int len = ppref == 0 ? z[pid][size_prefix[qid] + qpref] : z[qid][size_prefix[pid] + ppref];
+			res += len;
+			if(len < min(plen - ppref, qlen - qpref)) break;
+			if(len >= plen - ppref){
+				++ pi;
+				ppref = 0;
+			}
+			else ppref += len;
+			if(len >= qlen - qpref){
+				++ qi;
+				qpref = 0;
+			}
+			else qpref += len;
+		}
+		return res;
+	}
+	// sequence of {id, len}
+	// O(min(size(p), size(q)))
+	bool prefix_of(const vector<array<int, 2>> &p, const vector<array<int, 2>> &q) const{
+		for(auto [id, len]: p) ASSERT(0 <= id && id < n && 0 < len && len <= size_prefix[id + 1] - size_prefix[id]);
+		for(auto [id, len]: q) ASSERT(0 <= id && id < n && 0 < len && len <= size_prefix[id + 1] - size_prefix[id]);
+		for(auto pi = 0, ppref = 0, qi = 0, qpref = 0; ; ){
+			ASSERT(ppref == 0 || qpref == 0);
+			const auto &[pid, plen] = p[pi];
+			const auto &[qid, qlen] = q[qi];
+			ASSERT(ppref < plen && qpref < qlen);
+			int len = ppref == 0 ? z[pid][size_prefix[qid] + qpref] : z[qid][size_prefix[pid] + ppref];
+			if(len < min(plen - ppref, qlen - qpref)) return false;
+			if(len >= plen - ppref){
+				++ pi;
+				ppref = 0;
+			}
+			else ppref += len;
+			if(len >= qlen - qpref){
+				++ qi;
+				qpref = 0;
+			}
+			else qpref += len;
+			if(pi == (int)p.size()) return true;
+			if(qi == (int)q.size()) return false;
+		}
+		ASSERT(false);
+	}
+	// O(min(size(p), size(q)))
+	bool compare(const vector<array<int, 2>> &p, const vector<array<int, 2>> &q) const{
+		for(auto [id, len]: p) ASSERT(0 <= id && id < n && 0 < len && len <= size_prefix[id + 1] - size_prefix[id]);
+		for(auto [id, len]: q) ASSERT(0 <= id && id < n && 0 < len && len <= size_prefix[id + 1] - size_prefix[id]);
+		for(auto pi = 0, ppref = 0, qi = 0, qpref = 0; pi < (int)p.size() && qi < (int)q.size(); ){
+			ASSERT(ppref == 0 || qpref == 0);
+			const auto &[pid, plen] = p[pi];
+			const auto &[qid, qlen] = q[qi];
+			ASSERT(ppref < plen && qpref < qlen);
+			int len = ppref == 0 ? z[pid][size_prefix[qid] + qpref] : z[qid][size_prefix[pid] + ppref];
+			if(len < min(plen - ppref, qlen - qpref)) return s_all[size_prefix[pid] + ppref] < s_all[size_prefix[qid] + qpref];
+			if(len >= plen - ppref){
+				++ pi;
+				ppref = 0;
+			}
+			else ppref += len;
+			if(len >= qlen - qpref){
+				++ qi;
+				qpref = 0;
+			}
+			if(qi == (int)q.size()) return false;
+			if(pi == (int)p.size()) return true;
+		}
+		ASSERT(false);
+	}
+#undef ASSERT
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>composite_string_comparator</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
