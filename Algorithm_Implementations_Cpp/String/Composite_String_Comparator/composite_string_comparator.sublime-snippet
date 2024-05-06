@@ -56,6 +56,12 @@ struct composite_string_comparator{
 		}
 		_build();
 	}
+	vector<T> view(const vector<array<int, 2>> &p) const{
+		for(auto [id, len]: p) ASSERT(0 <= id && id < n && 0 <= len && len <= size_prefix[id + 1] - size_prefix[id]);
+		vector<T> s;
+		for(auto [id, len]: p) s.insert(s.end(), s_all.begin() + size_prefix[id], s_all.begin() + size_prefix[id] + len);
+		return s;
+	}
 	// sequence of {id, len}
 	// O(min(size(p), size(q)))
 	long long longest_common_prefix(const vector<array<int, 2>> &p, const vector<array<int, 2>> &q) const{
@@ -73,6 +79,7 @@ struct composite_string_comparator{
 			int len = ppref == 0 ? z[pid][size_prefix[qid] + qpref] : z[qid][size_prefix[pid] + ppref];
 			res += len;
 			if(len < min(plen - ppref, qlen - qpref)) break;
+			len = min(plen - ppref, qlen - qpref);
 			if(len >= plen - ppref){
 				++ pi;
 				while(pi < (int)p.size() && p[pi][1] == 0) ++ pi;
@@ -105,6 +112,7 @@ struct composite_string_comparator{
 			ASSERT(ppref < plen && qpref < qlen);
 			int len = ppref == 0 ? z[pid][size_prefix[qid] + qpref] : z[qid][size_prefix[pid] + ppref];
 			if(len < min(plen - ppref, qlen - qpref)) return false;
+			len = min(plen - ppref, qlen - qpref);
 			if(len >= plen - ppref){
 				++ pi;
 				while(pi < (int)p.size() && p[pi][1] == 0) ++ pi;
@@ -136,7 +144,8 @@ struct composite_string_comparator{
 			const auto &[qid, qlen] = q[qi];
 			ASSERT(ppref < plen && qpref < qlen);
 			int len = ppref == 0 ? z[pid][size_prefix[qid] + qpref] : z[qid][size_prefix[pid] + ppref];
-			if(len < min(plen - ppref, qlen - qpref)) return s_all[size_prefix[pid] + ppref] < s_all[size_prefix[qid] + qpref];
+			if(len < min(plen - ppref, qlen - qpref)) return s_all[size_prefix[pid] + ppref + len] < s_all[size_prefix[qid] + qpref + len];
+			len = min(plen - ppref, qlen - qpref);
 			if(len >= plen - ppref){
 				++ pi;
 				while(pi < (int)p.size() && p[pi][1] == 0) ++ pi;
@@ -148,6 +157,7 @@ struct composite_string_comparator{
 				while(qi < (int)q.size() && q[qi][1] == 0) ++ qi;
 				qpref = 0;
 			}
+			else qpref += len;
 			if(qi == (int)q.size()) return false;
 			if(pi == (int)p.size()) return true;
 		}
