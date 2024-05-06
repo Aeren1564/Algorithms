@@ -36,7 +36,6 @@ struct composite_string_comparator{
 		size_prefix.resize(n + 1);
 		s_all.clear();
 		for(auto i = 0; i < n; ++ i){
-			ASSERT(!s[i].empty());
 			size_prefix[i + 1] = size_prefix[i] + (int)s[i].size();
 			s_all.insert(s_all.end(), s[i].begin(), s[i].end());
 		}
@@ -48,7 +47,6 @@ struct composite_string_comparator{
 		size_prefix.resize(n + 1);
 		s_all.clear();
 		for(auto i = 0; i < n; ++ i){
-			ASSERT(!s[i].empty());
 			size_prefix[i + 1] = size_prefix[i] + (int)s[i].size();
 			s_all.insert(s_all.end(), s[i].begin(), s[i].end());
 		}
@@ -57,10 +55,13 @@ struct composite_string_comparator{
 	// sequence of {id, len}
 	// O(min(size(p), size(q)))
 	long long longest_common_prefix(const vector<array<int, 2>> &p, const vector<array<int, 2>> &q) const{
-		for(auto [id, len]: p) ASSERT(0 <= id && id < n && 0 < len && len <= size_prefix[id + 1] - size_prefix[id]);
-		for(auto [id, len]: q) ASSERT(0 <= id && id < n && 0 < len && len <= size_prefix[id + 1] - size_prefix[id]);
+		for(auto [id, len]: p) ASSERT(0 <= id && id < n && 0 <= len && len <= size_prefix[id + 1] - size_prefix[id]);
+		for(auto [id, len]: q) ASSERT(0 <= id && id < n && 0 <= len && len <= size_prefix[id + 1] - size_prefix[id]);
 		long long res = 0;
-		for(auto pi = 0, ppref = 0, qi = 0, qpref = 0; pi < (int)p.size() && qi < (int)q.size(); ){
+		int pi = 0, ppref = 0, qi = 0, qpref = 0;
+		while(pi < (int)p.size() && p[pi][1] == 0) ++ pi;
+		while(qi < (int)q.size() && q[qi][1] == 0) ++ qi;
+		while(pi < (int)p.size() && qi < (int)q.size()){
 			ASSERT(ppref == 0 || qpref == 0);
 			const auto &[pid, plen] = p[pi];
 			const auto &[qid, qlen] = q[qi];
@@ -70,11 +71,13 @@ struct composite_string_comparator{
 			if(len < min(plen - ppref, qlen - qpref)) break;
 			if(len >= plen - ppref){
 				++ pi;
+				while(pi < (int)p.size() && p[pi][1] == 0) ++ pi;
 				ppref = 0;
 			}
 			else ppref += len;
 			if(len >= qlen - qpref){
 				++ qi;
+				while(qi < (int)q.size() && q[qi][1] == 0) ++ qi;
 				qpref = 0;
 			}
 			else qpref += len;
@@ -84,9 +87,12 @@ struct composite_string_comparator{
 	// sequence of {id, len}
 	// O(min(size(p), size(q)))
 	bool prefix_of(const vector<array<int, 2>> &p, const vector<array<int, 2>> &q) const{
-		for(auto [id, len]: p) ASSERT(0 <= id && id < n && 0 < len && len <= size_prefix[id + 1] - size_prefix[id]);
-		for(auto [id, len]: q) ASSERT(0 <= id && id < n && 0 < len && len <= size_prefix[id + 1] - size_prefix[id]);
-		for(auto pi = 0, ppref = 0, qi = 0, qpref = 0; ; ){
+		for(auto [id, len]: p) ASSERT(0 <= id && id < n && 0 <= len && len <= size_prefix[id + 1] - size_prefix[id]);
+		for(auto [id, len]: q) ASSERT(0 <= id && id < n && 0 <= len && len <= size_prefix[id + 1] - size_prefix[id]);
+		int pi = 0, ppref = 0, qi = 0, qpref = 0;
+		while(pi < (int)p.size() && p[pi][1] == 0) ++ pi;
+		while(qi < (int)q.size() && q[qi][1] == 0) ++ qi;
+		while(pi < (int)p.size() && qi < (int)q.size()){
 			ASSERT(ppref == 0 || qpref == 0);
 			const auto &[pid, plen] = p[pi];
 			const auto &[qid, qlen] = q[qi];
@@ -95,11 +101,13 @@ struct composite_string_comparator{
 			if(len < min(plen - ppref, qlen - qpref)) return false;
 			if(len >= plen - ppref){
 				++ pi;
+				while(pi < (int)p.size() && p[pi][1] == 0) ++ pi;
 				ppref = 0;
 			}
 			else ppref += len;
 			if(len >= qlen - qpref){
 				++ qi;
+				while(qi < (int)q.size() && q[qi][1] == 0) ++ qi;
 				qpref = 0;
 			}
 			else qpref += len;
@@ -110,9 +118,12 @@ struct composite_string_comparator{
 	}
 	// O(min(size(p), size(q)))
 	bool compare(const vector<array<int, 2>> &p, const vector<array<int, 2>> &q) const{
-		for(auto [id, len]: p) ASSERT(0 <= id && id < n && 0 < len && len <= size_prefix[id + 1] - size_prefix[id]);
-		for(auto [id, len]: q) ASSERT(0 <= id && id < n && 0 < len && len <= size_prefix[id + 1] - size_prefix[id]);
-		for(auto pi = 0, ppref = 0, qi = 0, qpref = 0; pi < (int)p.size() && qi < (int)q.size(); ){
+		for(auto [id, len]: p) ASSERT(0 <= id && id < n && 0 <= len && len <= size_prefix[id + 1] - size_prefix[id]);
+		for(auto [id, len]: q) ASSERT(0 <= id && id < n && 0 <= len && len <= size_prefix[id + 1] - size_prefix[id]);
+		int pi = 0, ppref = 0, qi = 0, qpref = 0;
+		while(pi < (int)p.size() && p[pi][1] == 0) ++ pi;
+		while(qi < (int)q.size() && q[qi][1] == 0) ++ qi;
+		while(pi < (int)p.size() && qi < (int)q.size()){
 			ASSERT(ppref == 0 || qpref == 0);
 			const auto &[pid, plen] = p[pi];
 			const auto &[qid, qlen] = q[qi];
@@ -121,11 +132,13 @@ struct composite_string_comparator{
 			if(len < min(plen - ppref, qlen - qpref)) return s_all[size_prefix[pid] + ppref] < s_all[size_prefix[qid] + qpref];
 			if(len >= plen - ppref){
 				++ pi;
+				while(pi < (int)p.size() && p[pi][1] == 0) ++ pi;
 				ppref = 0;
 			}
 			else ppref += len;
 			if(len >= qlen - qpref){
 				++ qi;
+				while(qi < (int)q.size() && q[qi][1] == 0) ++ qi;
 				qpref = 0;
 			}
 			if(qi == (int)q.size()) return false;
