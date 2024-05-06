@@ -63,7 +63,7 @@ struct composite_string_comparator{
 		return s;
 	}
 	// sequence of {id, len}
-	// O(min(size(p), size(q)))
+	// O(max(size(p), size(q)))
 	long long longest_common_prefix(const vector<array<int, 2>> &p, const vector<array<int, 2>> &q) const{
 		for(auto [id, len]: p) ASSERT(0 <= id && id < n && 0 <= len && len <= size_prefix[id + 1] - size_prefix[id]);
 		for(auto [id, len]: q) ASSERT(0 <= id && id < n && 0 <= len && len <= size_prefix[id + 1] - size_prefix[id]);
@@ -96,7 +96,7 @@ struct composite_string_comparator{
 		return res;
 	}
 	// sequence of {id, len}
-	// O(min(size(p), size(q)))
+	// O(max(size(p), size(q)))
 	bool prefix_of(const vector<array<int, 2>> &p, const vector<array<int, 2>> &q) const{
 		for(auto [id, len]: p) ASSERT(0 <= id && id < n && 0 <= len && len <= size_prefix[id + 1] - size_prefix[id]);
 		for(auto [id, len]: q) ASSERT(0 <= id && id < n && 0 <= len && len <= size_prefix[id + 1] - size_prefix[id]);
@@ -129,7 +129,7 @@ struct composite_string_comparator{
 			if(qi == (int)q.size()) return false;
 		}
 	}
-	// O(min(size(p), size(q)))
+	// O(max(size(p), size(q)))
 	bool compare(const vector<array<int, 2>> &p, const vector<array<int, 2>> &q) const{
 		for(auto [id, len]: p) ASSERT(0 <= id && id < n && 0 <= len && len <= size_prefix[id + 1] - size_prefix[id]);
 		for(auto [id, len]: q) ASSERT(0 <= id && id < n && 0 <= len && len <= size_prefix[id + 1] - size_prefix[id]);
