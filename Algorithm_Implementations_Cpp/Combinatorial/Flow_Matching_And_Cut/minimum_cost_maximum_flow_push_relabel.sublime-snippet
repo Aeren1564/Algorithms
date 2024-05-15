@@ -67,7 +67,10 @@ struct minimum_cost_maximum_flow_push_relabel{
 		assert(0 <= min(source, sink) && max(source, sink) < F.n && source != sink);
 		static constexpr int scale = 2;
 		F.clear_flow();
-		for(auto &e: F.edge) e.cost *= F.n;
+		for(auto &e: F.edge){
+			assert(!__builtin_mul_overflow_p(e.cost, F.n, C{0}));
+			e.cost *= F.n;
+		}
 		T flow = _maximum_flow(source, sink);
 		int n = F.n;
 		h.assign(n, 0);
