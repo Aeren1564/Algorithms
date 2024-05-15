@@ -6,10 +6,65 @@ struct minimum_cost_maximum_flow_spfa{
 	static constexpr T eps = (T) 1e-9;
 	flow_network_weighted<T, C> &F;
 	minimum_cost_maximum_flow_spfa(flow_network_weighted<T, C> &F): F(F), d(F.n), in_queue(F.n), pe(F.n), state(F.n){ }
-	// type 0: augment as long as a path exists
-	// type 1: augment as long as a negative cost path exists
 	vector<C> d;
-	vector<int> in_queue, q, pe;
+	vector<int> in_queue, q, pe, stack, state;
+	bool _try_cycle_cancelling(){
+		fill(d.begin(), d.end(), 0);
+		q.resize(F.n);
+		iota(q.begin(), q.end(), 0);
+		fill(in_queue.begin(), in_queue.end(), false);
+		fill(pe.begin(), pe.end(), -1);
+		auto detect_cycle = [&]()->bool{
+			stack.clear();
+			fill(state.begin(), state.end(), 0);
+			for(auto s = 0; s < F.n; ++ s){
+				if(state[s]) continue;
+				for(auto u = s; ; ){
+					if(state[u]){
+						if(state[u] == 1){
+							stack.erase(stack.begin(), find(stack.begin(), stack.end(), u));
+							assert(!stack.empty() && stack[0] == u);
+							T flow = numeric_limits<T>::max();
+							for(auto u: stack){
+								auto &e = F.edge[pe[u]];
+								flow = min(flow, e.capacity - e.flow);
+							}
+							for(auto u: stack) F.add_flow(pe[u], flow);
+							return true;
+						}
+						break;
+					}
+					stack.push_back(u);
+					state[u] = 1;
+					if(!~pe[u]) break;
+					u = F.edge[pe[u]].from;
+				}
+				for(auto u: stack) state[u] = 2;
+				stack.clear();
+			}
+			return false;
+		};
+		for(auto qbeg = 0; iter = 0; qbeg < (int)q.size(); ++ qbeg){
+			int u = q[qbeg];
+			in_queue[u] = false;
+			for(auto id: F.adj[u]){
+				auto &e = F.edge[id];
+				if(e.capacity - e.flow > eps && d[u] + e.cost < d[e.to]){
+					d[e.to] = d[u] + e.cost;
+					pe[e.to] = id;
+					if(++ iter == F.n){
+						iter = 0;
+						if(detect_cycle()) return true;
+					}
+					if(!in_queue[e.to]){
+						q.push_back(e.to);
+						in_queue[e.to] = true;
+					}
+				}
+			}
+		}
+		return detect_cycle();
+	}
 	template<bool type>
 	T _expath(int source, int sink, T threshold){
 		fill(d.begin(), d.end(), numeric_limits<C>::max());
@@ -52,75 +107,18 @@ struct minimum_cost_maximum_flow_spfa{
 		}
 		return 0;
 	}
-	vector<int> stack, state;
-	bool _try_cycle_cancelling(){
-		fill(d.begin(), d.end(), 0);
-		q.resize(F.n);
-		iota(q.begin(), q.end(), 0);
-		fill(in_queue.begin(), in_queue.end(), false);
-		fill(pe.begin(), pe.end(), -1);
-		int beg = 0, iter = 0;
-		auto detect_cycle = [&]()->bool{
-			stack.clear();
-			fill(state.begin(), state.end(), 0);
-			for(auto s = 0; s < F.n; ++ s){
-				if(state[s]) continue;
-				for(auto u = s; ; ){
-					if(state[u]){
-						if(state[u] == 1){
-							stack.erase(stack.begin(), find(stack.begin(), stack.end(), u));
-							assert(!stack.empty() && stack[0] == u);
-							T flow = numeric_limits<T>::max();
-							for(auto u: stack){
-								auto &e = F.edge[pe[u]];
-								flow = min(flow, e.capacity - e.flow);
-							}
-							for(auto u: stack) F.add_flow(pe[u], flow);
-							return true;
-						}
-						break;
-					}
-					stack.push_back(u);
-					state[u] = 1;
-					if(!~pe[u]) break;
-					u = F.edge[pe[u]].from;
-				}
-				for(auto u: stack) state[u] = 2;
-				stack.clear();
-			}
-			return false;
-		};
-		while(beg < (int)q.size()){
-			int u = q[beg ++];
-			in_queue[u] = false;
-			for(auto id: F.adj[u]){
-				auto &e = F.edge[id];
-				if(e.capacity - e.flow > eps && d[u] + e.cost < d[e.to]){
-					d[e.to] = d[u] + e.cost;
-					pe[e.to] = id;
-					if(++ iter == F.n){
-						iter = 0;
-						if(detect_cycle()) return true;
-					}
-					if(!in_queue[e.to]){
-						q.push_back(e.to);
-						in_queue[e.to] = true;
-					}
-				}
-			}
-		}
-		return detect_cycle();
-	}
 	// type 0: min cost max flow
 	// type 1: min cost flow
-	// O(Augmenting_Path_Count * SPFA), additional O(Cycle_Count * SPFA) if negative cycle exists
+	// O(Augmenting_Path_Count * SPFA)
+	//  additional O(Cycle_Count * SPFA) if negative cycle exists
 	template<bool type = false, bool negative_cycle_presence = false>
 	pair<T, C> solve(int source, int sink, T threshold = numeric_limits<T>::max()){
 		assert(0 <= min(source, sink) && max(source, sink) < F.n && source != sink && threshold >= 0);
+		C init_cost = F.cost;
 		if(negative_cycle_presence) while(_try_cycle_cancelling());
 		T flow = 0;
-		for(T delta; threshold > 0 && (delta = _expath<type>(source, sink, threshold)); flow += delta, threshold -= delta);
-		return {flow, F.cost};
+		for(T delta; threshold > 0 && (delta = _expath<type>(source, sink, threshold) > eps); flow += delta, threshold -= delta);
+		return {flow, F.cost - init_cost};
 	}
 };
 ]]></content>
