@@ -36,6 +36,10 @@ struct graph{
 		assert(n >= 1);
 		for(auto [u, v, w]: edge) undirected ? link(u, v, w) : orient(u, v, w);
 	}
+	int add_vertex(){
+		adj.emplace_back();
+		return n ++;
+	}
 	int operator()(int u, int id) const{
 		#ifdef LOCAL
 		assert(0 <= id && id < (int)edge.size());
