@@ -65,6 +65,7 @@ struct minimum_cost_maximum_flow_push_relabel{
 	// O(max_flow_computation * log(n * max_edge_cost)), usually about O(n^3 * log(n * max_edge_cost))
 	pair<T, C> solve(int source, int sink){
 		assert(0 <= min(source, sink) && max(source, sink) < F.n && source != sink);
+		C init_cost = F.cost;
 		static constexpr int scale = 2;
 		for(auto &e: F.edge){
 			assert(!__builtin_mul_overflow_p(e.cost, F.n, C{0}));
@@ -127,7 +128,7 @@ struct minimum_cost_maximum_flow_push_relabel{
 		}
 		for(auto &e: F.edge) e.cost /= n;
 		F.cost /= n;
-		return {flow, F.cost};
+		return {flow, F.cost - init_cost};
 	}
 };
 ]]></content>
