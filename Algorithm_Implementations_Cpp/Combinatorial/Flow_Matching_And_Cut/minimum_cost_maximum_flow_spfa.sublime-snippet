@@ -53,7 +53,7 @@ struct minimum_cost_maximum_flow_spfa{
 		return 0;
 	}
 	vector<int> stack, state;
-	bool try_cycle_cancelling(){
+	bool _try_cycle_cancelling(){
 		fill(d.begin(), d.end(), 0);
 		q.resize(F.n);
 		iota(q.begin(), q.end(), 0);
@@ -118,7 +118,7 @@ struct minimum_cost_maximum_flow_spfa{
 	pair<T, C> solve(int source, int sink, T threshold = numeric_limits<T>::max()){
 		assert(0 <= min(source, sink) && max(source, sink) < F.n && source != sink && threshold >= 0);
 		F.clear_flow();
-		if(negative_cycle_presence) while(try_cycle_cancelling());
+		if(negative_cycle_presence) while(_try_cycle_cancelling());
 		T flow = 0;
 		for(T delta; threshold > 0 && (delta = _expath<type>(source, sink, threshold)); flow += delta, threshold -= delta);
 		return {flow, F.cost};
