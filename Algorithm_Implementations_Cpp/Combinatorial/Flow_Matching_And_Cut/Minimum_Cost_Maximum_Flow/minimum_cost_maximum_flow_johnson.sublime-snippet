@@ -1,0 +1,181 @@
+<snippet>
+	<content><![CDATA[
+// Implementation of https://codeforces.com/blog/entry/95823
+// Requires flow_network_weighted
+template<class T, class C>
+struct minimum_cost_maximum_flow_johnson{
+#ifdef LOCAL
+	#define ASSERT(x) assert(x)
+#else
+	#define ASSERT(x) 42
+#endif
+	static constexpr T eps = (T) 1e-9;
+	flow_network_weighted<T, C> &F;
+	minimum_cost_maximum_flow_johnson(flow_network_weighted<T, C> &F): F(F), h(F.n), h_next(F.n){}
+	vector<C> h, h_next;
+	vector<int> in_queue, q, pe, stack, state, done;
+	priority_queue<pair<C, int>, vector<pair<C, int>>, greater<>> pq;
+	bool _try_cycle_cancelling(){
+		fill(h.begin(), h.end(), 0);
+		q.resize(F.n);
+		iota(q.begin(), q.end(), 0);
+		in_queue.assign(F.n, false);
+		pe.assign(F.n, -1);
+		auto detect_cycle = [&]()->bool{
+			stack.clear();
+			fill(state.begin(), state.end(), 0);
+			for(auto s = 0; s < F.n; ++ s){
+				if(state[s]) continue;
+				for(auto u = s; ; ){
+					if(state[u]){
+						if(state[u] == 1){
+							stack.erase(stack.begin(), find(stack.begin(), stack.end(), u));
+							assert(!stack.empty() && stack[0] == u);
+							T flow = numeric_limits<T>::max();
+							for(auto u: stack){
+								auto &e = F.edge[pe[u]];
+								flow = min(flow, e.capacity - e.flow);
+							}
+							for(auto u: stack) F.add_flow(pe[u], flow);
+							return true;
+						}
+						break;
+					}
+					stack.push_back(u);
+					state[u] = 1;
+					if(!~pe[u]) break;
+					u = F.edge[pe[u]].from;
+				}
+				for(auto u: stack) state[u] = 2;
+				stack.clear();
+			}
+			return false;
+		};
+		for(auto qbeg = 0, iter = 0; qbeg < (int)q.size(); ++ qbeg){
+			int u = q[qbeg];
+			in_queue[u] = false;
+			for(auto id: F.adj[u]){
+				auto &e = F.edge[id];
+				if(e.capacity - e.flow > eps && h[u] + e.cost < h[e.to]){
+					h[e.to] = h[u] + e.cost;
+					pe[e.to] = id;
+					if(++ iter == F.n){
+						iter = 0;
+						if(detect_cycle()) return true;
+					}
+					if(!in_queue[e.to]){
+						q.push_back(e.to);
+						in_queue[e.to] = true;
+					}
+				}
+			}
+		}
+		return detect_cycle();
+	}
+	void _initialize_potential_SPFA(){
+		fill(h.begin(), h.end(), 0);
+		q.resize(F.n);
+		iota(q.begin(), q.end(), 0);
+		in_queue.assign(F.n, false);
+		for(auto qbeg = 0, iter = 0; qbeg < (int)q.size(); ++ qbeg){
+			int u = q[qbeg];
+			in_queue[u] = false;
+			for(auto id: F.adj[u]){
+				auto &e = F.edge[id];
+				if(e.capacity - e.flow > h[u] + e.cost < h[e.to]){
+					h[e.to] = h[u] + e.cost;
+					assert(++ iter < F.n); // must be negative-cycle-free
+					if(!in_queue[e.to]){
+						q.push_back(e.to);
+						in_queue[e.to] = true;
+					}
+				}
+			}
+		}
+	}
+	template<bool type>
+	T _expath(int source, int sink, T threshold){
+		for(auto e: F.edge) if(e.capacity - e.flow > eps) ASSERT(e.cost + h[e.from] - h[e.to] >= 0);
+		static const C inf = numeric_limits<C>::max();
+		fill(h_next.begin(), h_next.end(), inf);
+		h_next[source] = 0;
+		pe.assign(F.n, -1);
+		if(2 * (int)F.edge.size() * log(F.n) <= 1LL * F.n * F.n){ // Dijkstra with heap
+			pq.push({0, source});
+			while(!pq.empty()){
+				auto [d, u] = pq.top();
+				pq.pop();
+				if(d != h_next[u]) continue;
+				for(auto id: F.adj[u]){
+					auto &e = F.edge[id];
+					if(e.capacity - e.flow > eps && h_next[e.to] > h_next[u] + e.cost + h[u] - h[e.to]){
+						pe[e.to] = id;
+						pq.push({h_next[e.to] = h_next[u] + e.cost + h[u] - h[e.to], e.to});
+					}
+				}
+			}
+		}
+		else{ // Quadratic
+			done.assign(F.n, false);
+			while(true){
+				int u = -1;
+				for(auto v = 0; v < F.n; ++ v) if(!done[v] && (!~u || h_next[u] > h_next[v])) u = v;
+				if(!~u) break;
+				done[u] = true;
+				for(auto id: F.adj[u]){
+					auto &e = F.edge[id];
+					if(e.capacity - e.flow > eps && h_next[e.to] > h_next[u] + e.cost + h[u] - h[e.to]){
+						pe[e.to] = id;
+						h_next[e.to] = h_next[u] + e.cost + h[u] - h[e.to];
+					}
+				}
+			}
+		}
+		if(!~pe[sink]) return 0;
+		T flow = threshold;
+		C cost = 0;
+		for(auto u = sink; u != source; ){
+			auto &e = F.edge[pe[u]];
+			flow = min(flow, e.capacity - e.flow);
+			cost += e.cost;
+			u = e.from;
+		}
+		if(type && cost > 0) return 0;
+		for(auto u = sink; u != source; ){
+			auto &e = F.edge[pe[u]];
+			F.add_flow(pe[u], flow);
+			u = e.from;
+		}
+		for(auto u = 0; u < F.n; ++ u){
+			if(h_next[u] == inf) h_next[u] = h[u];
+			else h_next[u] += h[u];
+		}
+		swap(h, h_next);
+		return flow;
+	}
+	// type 0: min cost max flow
+	// type 1: min cost flow
+	// O(Augmenting_Path_Count * min(n^2, n + m * log(n)))
+	//  additional O(Cycle_Cnt * SPFA) if negative cycle exists
+	//  additional O(SPFA) if an unsaturated edge with negative cost exists
+	template<bool type = false, bool negative_cycle_presence = false>
+	pair<T, C> solve(int source, int sink, T threshold = numeric_limits<T>::max()){
+		assert(0 <= min(source, sink) && max(source, sink) < F.n && source != sink && threshold >= 0);
+		C init_cost = F.cost;
+		if(negative_cycle_presence) while(_try_cycle_cancelling());
+		for(auto e: F.edge) if(e.flow < e.capacity && e.cost + h[e.from] - h[e.to] < 0){
+			_initialize_potential_SPFA();
+			break;
+		}
+		T flow = 0;
+		for(T delta; threshold > 0 && (delta = _expath<type>(source, sink, threshold)) > eps; flow += delta, threshold -= delta);
+		return {flow, F.cost - init_cost};
+	}
+#undef ASSERT
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>minimum_cost_maximum_flow_johnson</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
