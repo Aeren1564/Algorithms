@@ -3,8 +3,8 @@
 // Each node represents an endpos-equivalent class
 // Each class consists of some consecutive suffixes of the longest substring in it
 // The suffix corresponding to minlen - 1 can be obtained by following the suffix link and looking at the longest substring in it
-// Adjacency_Type: array<int, X> or map<Char_Type, int> where X is the size of the alphabet
-template<class Char_Type, class Adjacency_Type>
+// Adjacency_Type: array<int, X> or map<int, int> where X is the size of the alphabet
+template<class Adjacency_Type>
 struct suffix_automaton{
 	// Begin States
 	vector<int> max_len{0}; // Length of the longest string in the class.
@@ -22,10 +22,7 @@ struct suffix_automaton{
 		return (int)max_len.size() - 1;
 	}
 	int last = 0;
-	void extend(const vector<Char_Type> &s){
-		for(auto c: s) extend(c);
-	}
-	void extend(Char_Type c){
+	void extend(int c){
 		int cur = new_state(max_len[last] + 1, -1, max_len[last], false, {}), p = last;
 		while(~p && !next[p][c]) next[p][c] = cur, p = link[p];
 		if(!~p) link[cur] = 0;
@@ -42,17 +39,32 @@ struct suffix_automaton{
 		count.clear();
 		inv_link.clear();
 	}
+	void extend(char c){
+		extend(tolower(c) - 'a');
+	}
+	void extend(const vector<int> &s){
+		for(auto c: s) extend(c);
+	}
+	void extend(const string &s){
+		for(auto c: s) extend(c);
+	}
 	int next_state(int u, int c){
 		assert(0 <= u && u < (int)next.size());
 		while(u && !next[u][c]) u = link[u];
 		if(next[u][c]) u = next[u][c];
 		return u;
 	}
+	int next_state(int u, char c){
+		return next_state(u, tolower(c) - 'a');
+	}
 	pair<int, int> next_state(int u, int len, int c){
 		assert(0 <= u && u < (int)next.size());
 		while(u && !next[u][c]) u = link[u], len = max_len[u];
 		if(next[u][c]) u = next[u][c], ++ len;
 		return {u, len};
+	}
+	pair<int, int> next_state(int u, int len, char c){
+		return next_state(u, len, tolower(c) - 'a');
 	}
 	int size() const{ // # of states
 		return (int)max_len.size();
