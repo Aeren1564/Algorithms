@@ -7,6 +7,10 @@ struct flow_network{
 	struct E{
 		int from, to;
 		T capacity, flow;
+		bool saturated() const{
+			static constexpr T eps = 1e-9;
+			return capacity - flow <= eps;
+		}
 	};
 	vector<E> edge;
 	flow_network(int n): n(n), adj(n){ }
@@ -37,7 +41,8 @@ struct flow_network{
 	}
 	friend ostream &operator<<(ostream &out, const flow_network &F){
 		out << "\n";
-		for(auto &e: F.edge){
+		for(auto i = 0; i < (int)F.edge.size(); i += 2){
+			auto &e = F.edge[i];
 			out << "{" << e.from << " -> " << e.to << ", " << e.flow << "/" << e.capacity << "}\n";
 		}
 		return out;
