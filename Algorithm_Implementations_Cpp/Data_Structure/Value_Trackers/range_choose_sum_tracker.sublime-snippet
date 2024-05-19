@@ -30,7 +30,7 @@ struct range_choose_sum_tracker{
 	}
 	int m = 0, l = 0, r = 0;
 	vector<T> value;
-	// O(deg^2)
+	// O((deg + 1)^2)
 	void increase_m(){
 		assert(m < n);
 		if(l < r){
@@ -45,7 +45,7 @@ struct range_choose_sum_tracker{
 		}
 		++ m;
 	}
-	// O(deg^2)
+	// O((deg + 1)^2)
 	void decrease_m(){
 		assert(m >= 1);
 		if(l < r){
@@ -61,30 +61,30 @@ struct range_choose_sum_tracker{
 		}
 		-- m;
 	}
-	// O(deg)
+	// O(deg + 1)
 	void increase_l(){
 		assert(l < r);
 		if(0 <= l && l <= th) for(auto i = 0; i <= deg; ++ i) value[i] -= power[l][i] * base_power[l] * choose(m, l);
 		++ l;
 	}
-	// O(deg)
+	// O(deg + 1)
 	void decrease_l(){
 		-- l;
 		if(0 <= l && l <= th) for(auto i = 0; i <= deg; ++ i) value[i] += power[l][i] * base_power[l] * choose(m, l);
 	}
-	// O(deg)
+	// O(deg + 1)
 	void increase_r(){
 		if(0 <= r && r <= th) for(auto i = 0; i <= deg; ++ i) value[i] += power[r][i] * base_power[r] * choose(m, r);
 		++ r;
 	}
-	// O(deg)
+	// O(deg + 1)
 	void decrease_r(){
 		assert(l < r);
 		-- r;
 		if(0 <= r && r <= th) for(auto i = 0; i <= deg; ++ i) value[i] -= power[r][i] * base_power[r] * choose(m, r);
 	}
-	// Returns \sum_{i=ql}^qr i^j * base^i * Choose(qm,i) for all integer 0 <= j <= deg.
-	// O(deg^2 * abs(m - qm) + deg * (abs(l - ql) + abs(r - qr)))
+	// Returns \sum_{ql <= i < qr} i^j * base^i * Choose(qm,i) for all integer 0 <= j <= deg.
+	// O((deg + 1)^2 * abs(m - qm) + (deg + 1) * (abs(l - ql) + abs(r - qr)))
 	const vector<T> &operator()(int qm, int ql, int qr){
 		assert(0 <= qm && qm <= n);
 		assert(ql <= qr);
