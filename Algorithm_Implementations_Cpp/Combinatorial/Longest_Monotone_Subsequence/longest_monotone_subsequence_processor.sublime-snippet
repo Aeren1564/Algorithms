@@ -21,6 +21,18 @@ struct longest_monotone_subsequence_processor{
 	longest_monotone_subsequence_processor(const vector<T> &a, Compare cmp = less<>()){
 		insert(a);
 	}
+	longest_monotone_subsequence_processor &operator=(const longest_monotone_subsequence_processor &lms){
+		n = lms.n;
+		sequence = lms.sequence;
+		active = lms.active;
+		prev = lms.prev;
+		length = lms.length;
+		count = lms.count;
+		classes = lms.classes;
+		aux_it = lms.aux_it;
+		aux_sum = lms.aux_sum;
+		return *this;
+	}
 	void insert(const vector<T> &a){
 		for(auto x: a) insert(x);
 	}
