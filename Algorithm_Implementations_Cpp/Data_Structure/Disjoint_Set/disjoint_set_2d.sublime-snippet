@@ -1,0 +1,99 @@
+<snippet>
+	<content><![CDATA[
+template<bool Enable_small_to_large = true>
+struct disjoint_set_2d{
+#ifdef LOCAL
+	#define ASSERT(x) assert(x)
+#else
+	#define ASSERT(x) 42
+#endif
+	int n, m, _group_count;
+	vector<int> p;
+	vector<list<array<int, 2>>> group;
+	disjoint_set_2d(){ }
+	disjoint_set_2d(int n, int m): n(n), m(m), _group_count(n * m), p(n * m, -1), group(n * m){
+		ASSERT(n >= 0);
+		for(auto x = 0; x < n; ++ x) for(auto y = 0; y < m; ++ y) group[m * x + y] = {{x, y}};
+	}
+	int _root(int u){
+		ASSERT(0 <= u && u < n * m);
+		return p[u] < 0 ? u : p[u] = _root(p[u]);
+	}
+	array<int, 2> root(int ux, int uy){
+		ASSERT(0 <= min(ux, uy) && ux < n && uy < m);
+		int u = m * ux + uy;
+		u = p[u] < 0 ? u : p[u] = _root(p[u]);
+		return {u / m, u % m};
+	}
+	bool share(int ux, int uy, int vx, int vy){
+		ASSERT(0 <= min({ux, uy, vx, vy}) && ux < n && uy < m && vx < n && vy < m);
+		return _root(m * ux + uy) == _root(m * vx + vy);
+	}
+	int size(int ux, int uy){
+		ASSERT(0 <= min(ux, uy) && ux < n && uy < m);
+		return -p[_root(m * ux + uy)];
+	}
+	bool merge(int ux, int uy, int vx, int vy){
+		ASSERT(0 <= min({ux, uy, vx, vy}) && ux < n && uy < m && vx < n && vy < m);
+		int u = _root(m * ux + uy), v = _root(m * vx + vy);
+		if(u == v) return false;
+		-- _group_count;
+		if constexpr(Enable_small_to_large) if(p[u] > p[v]) swap(u, v);
+		p[u] += p[v], p[v] = u;
+		group[u].splice(group[u].end(), group[v]);
+		return true;
+	}
+	bool merge(int ux, int uy, int vx, int vy, auto act){
+		ASSERT(0 <= min({ux, uy, vx, vy}) && ux < n && uy < m && vx < n && vy < m);
+		int u = _root(m * ux + uy), v = _root(m * vx + vy);
+		if(u == v) return false;
+		-- _group_count;
+		bool swapped = false;
+		if constexpr(Enable_small_to_large) if(p[u] > p[v]) swap(u, v), swapped = true;
+		act(u, v, swapped);
+		p[u] += p[v], p[v] = u;
+		group[u].splice(group[u].end(), group[v]);
+		return true;
+	}
+	int group_count() const{
+		return _group_count;
+	}
+	const list<array<int, 2>> &group_of(int ux, int uy){
+		ASSERT(0 <= min(ux, uy) && ux < n && uy < m);
+		int u = m * ux + uy;
+		return group[_root(ux, uy)];
+	}
+	vector<vector<array<int, 2>>> group_up(){
+		vector<vector<array<int, 2>>> g(n * m);
+		for(auto x = 0; x < n; ++ x) for(auto y = 0; y < m; ++ y) g[_root(m * x + y)].push_back({x, y});
+		g.erase(remove_if(g.begin(), g.end(), [&](auto &s){ return s.empty(); }), g.end());
+		return g;
+	}
+	void clear(){
+		_group_count = n * m;
+		fill(p.begin(), p.end(), -1);
+		for(auto x = 0; x < n; ++ x) for(auto y = 0; y < m; ++ y) group[m * x + y] = {{x, y}};
+	}
+	friend ostream &operator<<(ostream &out, disjoint_set_2d dsu){
+		auto gs = dsu.group_up();
+		out << "{\n";
+		if(!gs.empty()) for(auto i = 0; i < (int)gs.size(); ++ i){
+			out << " {";
+			for(auto j = 0; j < (int)gs[i].size(); ++ j){
+				out << "{" << gs[i][j][0] << ", " << gs[i][j][1] << "}";
+				if(j + 1 < (int)gs[i].size()) out << ", ";
+			}
+			out << "}";
+			if(i + 1 < (int)gs.size()) out << ",";
+			out << "\n";
+		}
+		return out << "}";
+	}
+#undef ASSERT
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>disjoint_set_2d</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
