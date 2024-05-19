@@ -9,17 +9,17 @@ struct maximum_bipartite_matching_solver{
 	virtual int maximum_matching(){ return -1; };
 	tuple<int, vector<int>, vector<int>> minimum_vertex_cover(){
 		int size = maximum_matching();
-		vector<int> L, R, visL(n), visR(m), in_R(m);
+		vector<int> L, R, visL(n), visR(m);
 		auto dfs = [&](auto self, int u)->void{
 			visL[u] = true;
-			for(auto v: adj[u]) if(v != pu[u] && !visR[v]){
-				visR[v] = true, in_R[v] = true;
+			for(auto v: adj[u]) if(!visR[v]){
+				visR[v] = true;
 				if(~pv[v]) self(self, pv[v]);
 			}
 		};
 		for(auto u = 0; u < n; ++ u) if(!visL[u] && !~pu[u]) dfs(dfs, u);
 		for(auto u = 0; u < n; ++ u) if(!visL[u]) L.push_back(u);
-		for(auto v = 0; v < m; ++ v) if(in_R[v]) R.push_back(v);
+		for(auto v = 0; v < m; ++ v) if(visR[v]) R.push_back(v);
 		assert(size == (int)L.size() + (int)R.size()); // Kőnig's theorem.
 		return {(int)L.size() + (int)R.size(), L, R};
 	}
