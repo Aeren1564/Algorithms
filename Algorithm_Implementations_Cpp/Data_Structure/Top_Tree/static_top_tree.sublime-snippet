@@ -1,0 +1,249 @@
+<snippet>
+	<content><![CDATA[
+// Source: https://atcoder.jp/contests/abc351/submissions/52777033
+// Requires graph
+template<class Point_t, class Path_t, class F1, class F2, class F3, class F4, class F5>
+struct static_top_tree_base{
+#ifdef LOCAL
+	#define ASSERT(x) assert(x)
+#else
+	#define ASSERT(x) 42
+#endif
+	enum Type_t{ VERTEX, COMPRESS, RAKE, ADDEDGE, ADDVERTEX };
+	int _buffer;
+	int _new_vertex(int u, int v, int w, Type_t t){
+		if(!~u) u = _buffer ++;
+		pv[u] = -1, left[u] = v, right[u] = w, type[u] = t;
+		if(~v) pv[v] = u;
+		if(~w) pv[w] = u;
+		return u;
+	}
+	pair<int, int> _merge(vector<pair<int, int>> &a, Type_t t){
+		if((int)a.size() == 1) return a[0];
+		int u = 0;
+		for(auto x: a) u += x.second;
+		vector<pair<int, int>> b, c;
+		for(auto [i, s]: a) (u > s ? b : c).emplace_back(i, s), u -= s * 2;
+		auto [i, si] = _merge(b, t);
+		auto [j, sj] = _merge(c, t);
+		return {_new_vertex(-1, i, j, t), si + sj};
+	};
+	pair<int, int> _compress(int u){
+		vector<pair<int, int>> child{_add_vertex(u)};
+		while(!adj[u].empty()) child.push_back(_add_vertex(u = adj[u][0]));
+		return _merge(child, Type_t::COMPRESS);
+	}
+	pair<int, int> _rake(int u){
+		vector<pair<int, int>> child;
+		for(auto i = 1; i < (int)adj[u].size(); ++ i) child.push_back(_add_edge(adj[u][i]));
+		return child.empty() ? make_pair(-1, 0) : _merge(child, Type_t::RAKE);
+	}
+	pair<int, int> _add_edge(int u){
+		auto [v, vsize] = _compress(u);
+		return {_new_vertex(-1, v, -1, Type_t::ADDEDGE), vsize};
+	}
+	pair<int, int> _add_vertex(int u){
+		auto [v, vsize] = _rake(u);
+		return {_new_vertex(u, v, -1, !~v ? Type_t::VERTEX : Type_t::ADDVERTEX), vsize + 1};
+	}
+	void _refresh(int u){
+		switch(type[u]){
+		case Type_t::VERTEX:
+			ASSERT(!~left[u] && !~right[u]);
+			path_cluster[u] = create_path_cluster(u);
+			break;
+		case Type_t::COMPRESS:
+			ASSERT(~left[u] && ~right[u]);
+			path_cluster[u] = compress_path(path_cluster[left[u]], path_cluster[right[u]]);
+			break;
+		case Type_t::RAKE:
+			ASSERT(~left[u] && ~right[u]);
+			point_cluster[u] = rake(point_cluster[left[u]], point_cluster[right[u]]);
+			break;
+		case ADDEDGE:
+			ASSERT(~left[u] && !~right[u]);
+			point_cluster[u] = path_to_point(path_cluster[left[u]]);
+			break;
+		case ADDVERTEX:
+			ASSERT(~left[u] && !~right[u]);
+			path_cluster[u] = point_to_path(point_cluster[left[u]], u);
+			break;
+		default:
+			ASSERT(false);
+		}
+	}
+	template<class T>
+	void _build(const graph<T> &g, int u){
+		_buffer = g.n;
+		auto dfs = [&](auto self, int u)->int{
+			adj[u].clear();
+			was[u] = attempt;
+			int size = 1, opt = 0;
+			for(auto id: g.adj[u]){
+				if(g.ignore && g.ignore(id)) continue;
+				int v = g(u, id);
+				if(was[v] == attempt) continue;
+				adj[u].push_back(v);
+				int vsize = self(self, v);
+				size += vsize;
+				if(opt < vsize){
+					opt = vsize;
+					swap(adj[u].front(), adj[u].back());
+				}
+			}
+			return size;
+		};
+		dfs(dfs, u);
+		root.push_back(u);
+		top_tree_root.push_back(_compress(u).first);
+		auto initialize = [&](auto self, int u)->void{
+			if(~left[u]) self(self, left[u]);
+			if(~right[u]) self(self, right[u]);
+			_refresh(u);
+		};
+		initialize(initialize, top_tree_root.back());
+	}
+	int n;
+	vector<vector<int>> adj;
+	vector<int> root;
+	vector<int> top_tree_root;
+	vector<int> pv;
+	vector<int> left;
+	vector<int> right;
+	vector<Type_t> type;
+	vector<Path_t> path_cluster;
+	vector<Point_t> point_cluster;
+	/*
+		-> a
+	*/
+	// vertex -> Path_t
+	// create a singleton path cluster
+	F1 create_path_cluster;
+	/*
+		  a      e              a
+		 / \    / \            / \
+		b   c  f   g  ->      b   c
+		 \      \            / \
+		  d      h          e   d
+		                   / \
+		                  f   g
+		                   \
+		                    h
+	*/
+	// Path_t, Path_t -> Path_t
+	// merge two path clusters
+	F2 compress_path;
+	/*
+		O      b
+		|  ->  |
+		a      a
+	*/
+	// Point_t, vertex -> Path_t
+	// convert a point cluster into a path cluster by filling the auxiliary root
+	F3 point_to_path;
+	/*
+		O  O       O
+		|  |  ->  / \
+		a  b     a  b
+	*/
+	// Point_t, Point_t -> Point_t
+	// merge two point clusters
+	F4 rake;
+	/*
+		  a         O
+		 / \   ->   |
+		b   c       a
+		           / \
+		          b   c
+	*/
+	// Path_t -> Point_t
+	// convert a path cluster into a point cluster by adding an edge with auxiliary root
+	F5 path_to_point;
+	static_top_tree_base(F1 create_path_cluster, F2 compress_path, F3 point_to_path, F4 rake, F5 path_to_point): create_path_cluster(create_path_cluster), compress_path(compress_path), point_to_path(point_to_path), rake(rake), path_to_point(path_to_point){ }
+	int attempt;
+	vector<int> was;
+	void init(int n){
+		this->n = n;
+		adj.assign(n, {});
+		root.clear();
+		top_tree_root.clear();
+		pv.assign(4 * n, -1);
+		left.assign(4 * n, -1);
+		right.assign(4 * n, -1);
+		type.assign(4 * n, Type_t::VERTEX);
+		path_cluster.resize(4 * n);
+		point_cluster.resize(4 * n);
+		was.assign(n, -2);
+		attempt = -1;
+	}
+	// g must be a forest
+	template<class T>
+	void build(const graph<T> &g, const vector<int> &src){
+		ASSERT(g.n <= n);
+		root.clear(), top_tree_root.clear();
+		++ attempt;
+		for(auto u: src){
+			ASSERT(0 <= u && u < g.n);
+			if(was[u] != attempt) _build(g, u);
+		}
+	}
+	// g must be a forest
+	template<class T>
+	void build_all(const graph<T> &g){
+		ASSERT(g.n <= n);
+		root.clear(), top_tree_root.clear();
+		++ attempt;
+		for(auto u = 0; u < g.n; ++ u) if(was[u] != attempt) _build(g, u);
+	}
+	bool visited(int u){
+		ASSERT(0 <= u && u < n);
+		return was[u] == attempt;
+	}
+	// O(1)
+	Path_t query(int i = 0) const{
+		ASSERT(0 <= i && i < (int)top_tree_root.size());
+		return path_cluster[top_tree_root[i]];
+	}
+	// O(log(n))
+	Path_t refresh_and_query(int u){
+		ASSERT(0 <= u && u < n);
+		while(true){
+			_refresh(u);
+			if(!~pv[u]) return path_cluster[u];
+			u = pv[u];
+		}
+	}
+};
+template<class Point_t, class Path_t, class F1, class F2, class F3, class F4, class F5>
+auto make_static_top_tree(F1 create_path_cluster, F2 compress_path, F3 point_to_path, F4 rake, F5 path_to_point){
+	return static_top_tree_base<Point_t, Path_t, F1, F2, F3, F4, F5>(create_path_cluster, compress_path, point_to_path, rake, path_to_point);
+}
+
+/*
+using Point_t = modular;
+	using Path_t = array<modular, 2>; // const, linear
+	auto create_path_cluster = [&](int u)->Path_t{
+		return {value[u], 1};
+	};
+	auto compress_path = [&](const Path_t &f, const Path_t &g)->Path_t{
+		return {f[0] + g[0] * f[1], f[1] * g[1]};
+	};
+	auto point_to_path = [&](const Point_t &x, int u)->Path_t{
+		return {value[u], x};
+	};
+	auto rake = [&](const Point_t &x, const Point_t &y)->Point_t{
+		return x * y;
+	};
+	auto path_to_point = [&](const Path_t &f)->Point_t{
+		return f[0];
+	};
+	auto tt = make_static_top_tree<Point_t, Path_t>(create_path_cluster, compress_path, point_to_path, rake, path_to_point);
+	tt.init(n);
+	tt.build_all(g);
+*/
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>static_top_tree</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
