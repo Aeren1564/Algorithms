@@ -6,10 +6,14 @@ struct flow_network_weighted{
 		int from, to;
 		T capacity, flow;
 		C cost;
+		bool saturated() const{
+			static constexpr T eps = 1e-9;
+			return capacity - flow <= eps;
+		}
 	};
+	int n;
 	vector<vector<int>> adj;
 	vector<E> edge;
-	int n;
 	C cost = 0;
 	flow_network_weighted(int n): n(n), adj(n){ }
 	void clear_flow(){
@@ -38,7 +42,8 @@ struct flow_network_weighted{
 	}
 	friend ostream &operator<<(ostream &out, const flow_network_weighted &F){
 		out << "\n";
-		for(auto &e: F.edge){
+		for(auto i = 0; i < (int)F.edge.size(); i += 2){
+			auto &e = F.edge[i];
 			out << "{" << e.from << " -> " << e.to << ", " << e.cost << ", " << e.flow << "/" << e.capacity << "}\n";
 		}
 		return out;
