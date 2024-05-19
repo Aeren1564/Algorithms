@@ -1,23 +1,37 @@
 <snippet>
 	<content><![CDATA[
-// g must be a DAG.
-// Requires graph, maximum_bipartite_matching_solver, and hopcroft_karp_algorithm
-template<class T>
-vector<int> maximum_antichain(const graph<T> &g){
+// g must be a DAG
+// Requires graph, flow_network, and dinic_maximum_flow
+template<class T, class U = int>
+vector<int> maximum_antichain(const graph<T> &g, vector<U> vertex_weight = {}){
 	int n = g.n;
-	hopcroft_karp_algorithm hk(n, n);
+	if(vertex_weight.empty()) vertex_weight.assign(n, 1);
+	assert(*min_element(vertex_weight.begin(), vertex_weight.end()) >= 0);
+	flow_network<U> F(2 * n + 2);
+	vector<int> idL(n), idR(n);
+	for(auto u = 0; u < n; ++ u){
+		idL[u] = F.orient(n << 1, u, vertex_weight[u]);
+		idR[u] = F.orient(n + u, n << 1 | 1, vertex_weight[u]);
+	}
 	for(auto id = 0; id < (int)g.edge.size(); ++ id){
 		if(g.ignore && g.ignore(id)) continue;
-		auto &e = g.edge[id];
-		hk.insert(e.from, e.to);
+		F.orient(g.edge[id].from, n + g.edge[id].to, numeric_limits<U>::max());
 	}
-	auto [size_vc, vcL, vcR] = hk.minimum_vertex_cover();
+	dinic_maximum_flow(F).maximum_flow(n << 1, n << 1 | 1);
+	vector<int> vis(n << 1);
+	auto dfs = [&](auto self, int u)->void{
+		vis[u] = true;
+		for(auto id: F.adj[u]){
+			int v = F.edge[id].to;
+			if(v >= n << 1 || vis[v]) continue;
+			if(u < n){ if(F.edge[idL[u]].saturated() && F.edge[idR[v - n]].saturated() && F.edge[idL[u]].flow == F.edge[id].flow && F.edge[id].flow == F.edge[idR[v - n]].flow) continue; }
+			else if(F.edge[id].flow == 0) continue;
+			self(self, v);
+		}
+	};
+	for(auto u = 0; u < n; ++ u) if(!vis[u] && !F.edge[idL[u]].saturated()) dfs(dfs, u);
 	vector<int> antichain;
-	for(auto u = 0, i = 0, j = 0; u < n; ++ u){
-		while(i < (int)vcL.size() && vcL[i] < u) ++ i;
-		while(j < (int)vcR.size() && vcR[j] < u) ++ j;
-		if((i == (int)vcL.size() || u < vcL[i]) && (j == (int)vcR.size() || u < vcR[j])) antichain.push_back(u);
-	}
+	for(auto u = 0; u < n; ++ u) if(vis[u] && !vis[n + u]) antichain.push_back(u);
 	return antichain;
 }
 ]]></content>
