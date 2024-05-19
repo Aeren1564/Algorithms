@@ -2,11 +2,17 @@
 	<content><![CDATA[
 template<bool Enable_small_to_large = true>
 struct disjoint_set{
+#ifdef LOCAL
+	#define ASSERT(x) assert(x)
+#else
+	#define ASSERT(x) 42
+#endif
 	int n, _group_count;
 	vector<int> p;
 	vector<list<int>> group;
 	disjoint_set(){ }
-	disjoint_set(int n): n(n), _group_count(n), p(n, -1), group(n){ assert(n >= 0);
+	disjoint_set(int n): n(n), _group_count(n), p(n, -1), group(n){
+		ASSERT(n >= 0);
 		for(auto i = 0; i < n; ++ i) group[i] = {i};
 	}
 	int make_set(){
@@ -16,15 +22,19 @@ struct disjoint_set{
 		return n ++;
 	}
 	int root(int u){
+		ASSERT(0 <= u && u < n);
 		return p[u] < 0 ? u : p[u] = root(p[u]);
 	}
-	bool share(int a, int b){
-		return root(a) == root(b);
+	bool share(int u, int v){
+		ASSERT(0 <= min(u, v) && max(u, v) < n);
+		return root(u) == root(v);
 	}
 	int size(int u){
+		ASSERT(0 <= u && u < n);
 		return -p[root(u)];
 	}
 	bool merge(int u, int v){
+		ASSERT(0 <= min(u, v) && max(u, v) < n);
 		u = root(u), v = root(v);
 		if(u == v) return false;
 		-- _group_count;
@@ -34,6 +44,7 @@ struct disjoint_set{
 		return true;
 	}
 	bool merge(int u, int v, auto act){
+		ASSERT(0 <= min(u, v) && max(u, v) < n);
 		u = root(u), v = root(v);
 		if(u == v) return false;
 		-- _group_count;
@@ -48,6 +59,7 @@ struct disjoint_set{
 		return _group_count;
 	}
 	const list<int> &group_of(int u){
+		ASSERT(0 <= u && u < n);
 		return group[root(u)];
 	}
 	vector<vector<int>> group_up(){
@@ -75,6 +87,7 @@ struct disjoint_set{
 		}
 		return out << "}";
 	}
+#undef ASSERT
 };
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
