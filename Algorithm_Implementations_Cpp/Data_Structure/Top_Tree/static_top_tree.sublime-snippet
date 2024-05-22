@@ -74,7 +74,6 @@ struct static_top_tree_base{
 	}
 	template<class T>
 	void _build(const graph<T> &g, int u){
-		_buffer = g.n;
 		auto dfs = [&](auto self, int u)->int{
 			adj[u].clear();
 			was[u] = attempt;
@@ -102,6 +101,53 @@ struct static_top_tree_base{
 			_refresh(u);
 		};
 		initialize(initialize, top_tree_root.back());
+	}
+	friend ostream &operator<<(ostream &out, const static_top_tree_base &stt){
+		out << "\n";
+		for(auto i = 0; i < (int)stt.top_tree_root.size(); ++ i){
+			out << "Tree #" << i << "\n";
+			deque<int> dq{stt.top_tree_root[i]};
+			while(!dq.empty()){
+				int u = dq.front();
+				dq.pop_front();
+				out << " Node " << u << " -> ";
+				if(~stt.left[u]){
+					out << stt.left[u] << " ";
+					dq.push_back(stt.left[u]);
+				}
+				else out << "x ";
+				if(~stt.right[u]){
+					out << stt.right[u] << ", ";
+					dq.push_back(stt.right[u]);
+				}
+				else out << "x, ";
+				switch(stt.type[u]){
+				case Type_t::VERTEX:
+					ASSERT(!~stt.left[u] && !~stt.right[u]);
+					out << "type VERTEX   , path  cluster: " << stt.path_cluster[u] << "\n";
+					break;
+				case Type_t::COMPRESS:
+					ASSERT(~stt.left[u] && ~stt.right[u]);
+					out << "type COMPRESS , path  cluster: " << stt.path_cluster[u] << "\n";
+					break;
+				case Type_t::RAKE:
+					ASSERT(~stt.left[u] && ~stt.right[u]);
+					out << "type RAKE     , point cluster: " << stt.point_cluster[u] << "\n";
+					break;
+				case ADDEDGE:
+					ASSERT(~stt.left[u] && !~stt.right[u]);
+					out << "type ADDEDGE  , point cluster: " << stt.point_cluster[u] << "\n";
+					break;
+				case ADDVERTEX:
+					ASSERT(~stt.left[u] && !~stt.right[u]);
+					out << "type ADDVERTEX, path  cluster: " << stt.path_cluster[u] << "\n";
+					break;
+				default:
+					ASSERT(false);
+				}
+			}
+		}
+		return out;
 	}
 	int n;
 	vector<vector<int>> adj;
@@ -182,6 +228,7 @@ struct static_top_tree_base{
 		ASSERT(g.n <= n);
 		root.clear(), top_tree_root.clear();
 		++ attempt;
+		_buffer = g.n;
 		for(auto u: src){
 			ASSERT(0 <= u && u < g.n);
 			if(was[u] != attempt) _build(g, u);
@@ -193,6 +240,7 @@ struct static_top_tree_base{
 		ASSERT(g.n <= n);
 		root.clear(), top_tree_root.clear();
 		++ attempt;
+		_buffer = g.n;
 		for(auto u = 0; u < g.n; ++ u) if(was[u] != attempt) _build(g, u);
 	}
 	bool visited(int u){
@@ -220,7 +268,7 @@ auto make_static_top_tree(F1 create_path_cluster, F2 compress_path, F3 point_to_
 }
 
 /*
-using Point_t = modular;
+	using Point_t = modular;
 	using Path_t = array<modular, 2>; // const, linear
 	auto create_path_cluster = [&](int u)->Path_t{
 		return {value[u], 1};
@@ -237,9 +285,9 @@ using Point_t = modular;
 	auto path_to_point = [&](const Path_t &f)->Point_t{
 		return f[0];
 	};
-	auto tt = make_static_top_tree<Point_t, Path_t>(create_path_cluster, compress_path, point_to_path, rake, path_to_point);
-	tt.init(n);
-	tt.build_all(g);
+	auto stt = make_static_top_tree<Point_t, Path_t>(create_path_cluster, compress_path, point_to_path, rake, path_to_point);
+	stt.init(n);
+	stt.build_all(g);
 */
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
