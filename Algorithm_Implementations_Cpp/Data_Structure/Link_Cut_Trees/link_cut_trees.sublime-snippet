@@ -36,7 +36,7 @@ struct link_cut_trees_base{
 		aux_lazy[u] = UU(f, aux_lazy[u]);
 		ifQ aux_data[u] = UT(f, aux_data[u]);
 	}
-	void _apply_virtual(int u, const U &f){
+	void _apply_subtr(int u, const U &f){
 		static_assert(HAS_SUBTREE_UPDATE);
 		data[u] = UT(f, data[u]);
 		aux_to_virtual_lazy[u] = UU(f, aux_to_virtual_lazy[u]);
@@ -57,8 +57,8 @@ struct link_cut_trees_base{
 		}
 		ifSU{
 			if(aux_to_virtual_lazy[u] != U_id){
-				if(~_left[u]) _apply_virtual(_left[u], aux_to_virtual_lazy[u]);
-				if(~_right[u]) _apply_virtual(_right[u], aux_to_virtual_lazy[u]);
+				if(~_left[u]) _apply_subtr(_left[u], aux_to_virtual_lazy[u]);
+				if(~_right[u]) _apply_subtr(_right[u], aux_to_virtual_lazy[u]);
 				aux_to_virtual_lazy[u] = U_id;
 			}
 		}
@@ -88,10 +88,10 @@ struct link_cut_trees_base{
 		static_assert(HAS_SUBTREE_QUERY || HAS_SUBTREE_UPDATE);
 		if constexpr(sign == 0){
 			ifSQ virtual_data[u] = TT(virtual_data[u], virtual_data[v]);
-			ifSU _apply_virtual(v, Uinv(virtual_lazy[u]));
+			ifSU _apply_subtr(v, Uinv(virtual_lazy[u]));
 		}
 		else{
-			ifSQ _apply_virtual(v, virtual_lazy[u]);
+			ifSQ _apply_subtr(v, virtual_lazy[u]);
 			ifSU virtual_data[u] = TT(virtual_data[u], Tinv(virtual_data[v]));
 		}
 	}
@@ -144,28 +144,50 @@ struct link_cut_trees_base{
 		ASSERT(!~_right[u]);
 	}
 	void _cut_from_parent(int u){
+		ASSERT(~u);
 		_access(u);
+		ASSERT(~_pv[u]);
 		_left[u] = _pv[_left[u]] = -1;
 		_refresh(u);
 	}
+	bool is_root(int u){
+		return !~_pv[u];
+	}
+	int root_of(int u){
+		ASSERT(~u);
+		for(_access(u); ~_left[u]; _push(u)) u = _left[u];
+		return _access(u), u;
+	}
 	// Make u the root of its LCT component
 	void reroot(int u){
+		ASSERT(~u);
 		_access(u), _apply_reverse(u), _access(u);
 		ASSERT(!~_left[u] && !~_right[u]);
 	}
+	int parent(int u){
+		ASSERT(~u);
+		_access(u);
+		return _pv[u];
+	}
 	int depth(int u){
+		ASSERT(~u);
 		_access(u);
 		return _internal_size(_left[u]);
 	}
 	bool connected(int u, int v){
+		ASSERT(~u && ~v);
 		return ~lca(u, v);
 	}
-	int root_of(int u){
-		for(_access(u); ~_left[u]; _push(u)) u = _left[u];
-		return _access(u), u;
+	bool adjacent(int u, int v){
+		ASSERT(~u && ~v);
+		if(u == v) return false;
+		int w = lca(u, v);
+		if(!~w || u != w && v != w) return false;
+		return u != w ? w == parent(u) : w == parent(v);
 	}
 	// Returns the k-th ancestor on the path to root
 	int ancestor(int u, int k){
+		ASSERT(~u);
 		k = depth(u) - k;
 		ASSERT(k >= 0);
 		for(; ~u; _push(u)){
@@ -176,7 +198,10 @@ struct link_cut_trees_base{
 		}
 		ASSERT(false);
 	}
+	// If u and v are in the same component, find the lca
+	// Otherwise, return -1
 	int lca(int u, int v){
+		ASSERT(~u && ~v);
 		if(u == v) return u;
 		_access(u), _access(v);
 		if(!~_pv[u]) return -1;
@@ -185,16 +210,49 @@ struct link_cut_trees_base{
 	}
 	// Make u the parent of v
 	void link(int u, int v){
-		ASSERT(!connected(u, v));
+		ASSERT(~u && ~v && !connected(u, v));
 		reroot(v), _access(u), _set_link(v, u, 0), _refresh(v);
 	}
 	// Assumes u and v are adjacent in tree
 	void cut(int u, int v){
+		ASSERT(adjacent(u, v));
 		_cut_from_parent(depth(u) > depth(v) ? u : v);
 	}
 	// Reverse the u-v path
 	void reverse(int u, int v){
+		ASSERT(~u && ~v);
 		reroot(u), _access(v), _apply_reverse(v);
+	}
+	void update_path(int u, int v, const U &f){
+		ASSERT(connected(u, v));
+		reroot(v), _access(u);
+		_apply_aux(u, f);
+	}
+	void update_subtree(int u, const U &f){
+		ASSERT(~u);
+		int v = -1;
+		if(!is_root(u)){
+			v = parent(u);
+			_cut_from_parent(u);
+		}
+		_apply_subtr(u, f);
+		if(~v) link(u, v);
+	}
+	T query_path(int u, int v){
+		ASSERT(connected(u, v));
+		reroot(v), _access(u);
+		return aux_data[u];
+	}
+	T query_subtree(int u){
+		ASSERT(~u);
+		int v = -1;
+		if(!is_root(u)){
+			v = parent(u);
+			_cut_from_parent(u);
+		}
+		T res = TT(aux_data[u], virtual_data[u]);
+		if(~v) link(u, v);
+		return res;
 	}
 #undef ASSERT
 #undef ifQ
