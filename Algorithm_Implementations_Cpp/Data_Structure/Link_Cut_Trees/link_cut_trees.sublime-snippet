@@ -1,0 +1,212 @@
+<snippet>
+	<content><![CDATA[
+template<bool HAS_QUERY, bool HAS_UPDATE, bool HAS_FLIP, bool HAS_SUBTREE_QUERY, bool HAS_SUBTREE_UPDATE, bool IS_COMMUTATIVE, class T, class U, class F1, class F2, class F3, class F4, class F5, class F6>
+struct link_cut_trees_base{
+#ifdef LOCAL
+	#define ASSERT(x) assert(x)
+#else
+	#define ASSERT(x) 42
+#endif
+#define ifQ if constexpr(HAS_QUERY)
+#define ifU if constexpr(HAS_UPDATE)
+#define ifF if constexpr(HAS_FLIP)
+#define ifSQ if constexpr(HAS_SUBTREE_QUERY)
+#define ifSU if constexpr(HAS_SUBTREE_UPDATE)
+#define ifNC if constexpr(!IS_COMMUTATIVE)
+	static_assert(!HAS_SUBTREE_QUERY || HAS_UPDATE && (!HAS_QUERY || IS_COMMUTATIVE));
+	vector<int> _size, _rev, _pv, _left, _right;
+	vector<T> data;
+	vector<T> aux_data; // aggregation of data in the subtree in the auxiliary splay trees, aggregates in fixed order
+	vector<T> virtual_data; // aggregation of data in the subtree (not necessarily in the current auxiliary splay tree) excluding those in aux_data, aggregates in arbitrary order
+	vector<U> aux_lazy; // update splay subtree
+	vector<U> aux_to_virtual_lazy; // update splay subtree along with their virtual subtrees
+	vector<U> virtual_lazy; // update virtual subtrees
+	F1 TT; // monoid operation (always adjacent), must be invertible if HAS_SUBTREE_QUERY
+	T T_id; // monoid identity
+	F2 Tinv; // group inverse
+	F3 UU; // monoid operation (superset, subset), must be invertible if HAS_SUBTREE_UPDATE
+	U U_id; // monoid identity
+	F4 Uinv; // group inverse
+	F5 UT; // action of U on T (superset, subset)
+	F6 FlipT; // flip the operation order
+	link_cut_trees_base(F1 TT, T T_id, F2 Tinv, F3 UU, U U_id, F4 Uinv, F5 UT, F6 FlipT): TT(TT), T_id(T_id), Tinv(Tinv), UU(UU), U_id(U_id), Uinv(Uinv), UT(UT), FlipT(FlipT){ }
+	void _apply_aux(int u, const U &f){
+		static_assert(HAS_UPDATE);
+		data[u] = UT(f, data[u]);
+		aux_lazy[u] = UU(f, aux_lazy[u]);
+		ifQ aux_data[u] = UT(f, aux_data[u]);
+	}
+	void _apply_virtual(int u, const U &f){
+		static_assert(HAS_SUBTREE_UPDATE);
+		data[u] = UT(f, data[u]);
+		aux_to_virtual_lazy[u] = UU(f, aux_to_virtual_lazy[u]);
+		virtual_lazy[u] = UU(f, virtual_lazy[u]);
+		ifQ aux_data[u] = UT(f, aux_data[u]);
+		ifSQ virtual_data[u] = UT(f, virtual_data[u]);
+	}
+	void _apply_reverse(int u){
+		_rev[u] ^= 1;
+		ifNC aux_data[u] = flipT(aux_data[u]);
+		swap(_left[u], _right[u]);
+	}
+	void _push(int u){
+		ifU if(aux_lazy[u] != U_id){
+			if(~_left[u]) _apply_aux(_left[u], aux_lazy[u]);
+			if(~_right[u]) _apply_aux(_right[u], aux_lazy[u]);
+			aux_lazy[u] = U_id;
+		}
+		ifSU{
+			if(aux_to_virtual_lazy[u] != U_id){
+				if(~_left[u]) _apply_virtual(_left[u], aux_to_virtual_lazy[u]);
+				if(~_right[u]) _apply_virtual(_right[u], aux_to_virtual_lazy[u]);
+				aux_to_virtual_lazy[u] = U_id;
+			}
+		}
+		if(_rev[u]){
+			if(~_left[u]) _apply_reverse(_left[u]);
+			if(~_right[u]) _apply_reverse(_right[u]);
+			_rev[u] = false;
+		}
+	}
+	void _refresh(int u){
+		ifU ASSERT(aux_lazy[u] == U_id);
+		ifSU ASSERT(aux_to_virtual_lazy[u] == U_id);
+		_size[u] = 1 + _internal_size(_left[u]) + _internal_size(_right[u]);
+		ifQ aux_data[u] = data[u];
+		ifSQ virtual_data[u] = T_id;
+		if(auto v = _left[u]; ~v){
+			ifQ aux_data[u] = TT(aux_data[v], aux_data[u]);
+			ifSQ virtual_data[u] = TT(virtual_data[v], virtual_data[u]); // this messes up operation order
+		}
+		if(auto w = _right[u]; ~w){
+			ifQ aux_data[u] = TT(aux_data[u], aux_data[w]);
+			ifSQ virtual_data[u] = TT(virtual_data[w], virtual_data[u]); // this messes up operation order
+		}
+	}
+	template<bool sign>
+	void _refresh_virtual(int u, int v){
+		static_assert(HAS_SUBTREE_QUERY || HAS_SUBTREE_UPDATE);
+		if constexpr(sign == 0){
+			ifSQ virtual_data[u] = TT(virtual_data[u], virtual_data[v]);
+			ifSU _apply_virtual(v, Uinv(virtual_lazy[u]));
+		}
+		else{
+			ifSQ _apply_virtual(v, virtual_lazy[u]);
+			ifSU virtual_data[u] = TT(virtual_data[u], Tinv(virtual_data[v]));
+		}
+	}
+	int _dir(int u){
+		if(!~_pv[u]) return -2; // root of LCT component
+		if(_left[_pv[u]] == u) return 0; // left child
+		if(_right[_pv[u]] == u) return 1; // right child
+		return -1; // root of current splay tree
+	}
+	bool _is_root(int u){
+		return _dir(u) < 0;
+	}
+	void _set_link(int u, int v, int d){
+		if(~v) _pv[v] = u;
+		if(d >= 0) (d == 0 ? _left : _right)[u] = v;
+	}
+	// Assumes p and p->p propagated
+	void _rotate(int u){
+		ASSERT(!_is_root(u));
+		int x = _dir(u), g = _pv[u];
+		_set_link(_pv[g], u, _dir(g));
+		_set_link(g, x == 1 ? _left[u] : _right[u], x);
+		_set_link(u, g, x ^ 1);
+		_refresh(g);
+	}
+	// Bring the node to the top
+	void _splay(int u){
+		for(; !_is_root(u) && !_is_root(_pv[u]); _rotate(u)){
+			_push(_pv[_pv[u]]), _push(_pv[u]), _push(u);
+			_dir(u) == _dir(_pv[u]) ? _rotate(_pv[u]) : _rotate(u);
+		}
+		if(!_is_root(u)) _push(_pv[u]), _push(u), _rotate(u);
+		_push(u), _refresh(u);
+	}
+	int _internal_size(int u){
+		return ~u ? _size[u] : 0;
+	}
+	// Put u on the preferred path then splay it (right subtree is empty)
+	void _access(int u){
+		for(auto v = u, p = -1; ~v; v = _pv[p = v]){
+			_splay(v);
+			if constexpr(HAS_SUBTREE_QUERY || HAS_SUBTREE_UPDATE){
+				if(~p) _refresh_virtual<1>(u, p);
+				if(~_right[v]) _refresh_virtual<0>(u, _right[v]);
+			}
+			_right[v] = p;
+			_refresh(v);
+		}
+		_splay(u);
+		ASSERT(!~_right[u]);
+	}
+	void _cut_from_parent(int u){
+		_access(u);
+		_left[u] = _pv[_left[u]] = -1;
+		_refresh(u);
+	}
+	// Make u the root of its LCT component
+	void reroot(int u){
+		_access(u), _apply_reverse(u), _access(u);
+		ASSERT(!~_left[u] && !~_right[u]);
+	}
+	int depth(int u){
+		_access(u);
+		return _internal_size(_left[u]);
+	}
+	bool connected(int u, int v){
+		return ~lca(u, v);
+	}
+	int root_of(int u){
+		for(_access(u); ~_left[u]; _push(u)) u = _left[u];
+		return _access(u), u;
+	}
+	// Returns the k-th ancestor on the path to root
+	int ancestor(int u, int k){
+		k = depth(u) - k;
+		ASSERT(k >= 0);
+		for(; ~u; _push(u)){
+			int _size = _internal_size(_left[u]);
+			if(_size == k) return _access(u), u;
+			if(_size < k) k -= _size + 1, u = _right[u];
+			else u = _left[u];
+		}
+		ASSERT(false);
+	}
+	int lca(int u, int v){
+		if(u == v) return u;
+		_access(u), _access(v);
+		if(!~_pv[u]) return -1;
+		_splay(u);
+		return ~_pv[u] ? _pv[u] : u;
+	}
+	// Make u the parent of v
+	void link(int u, int v){
+		ASSERT(!connected(u, v));
+		reroot(v), _access(u), _set_link(v, u, 0), _refresh(v);
+	}
+	// Assumes u and v are adjacent in tree
+	void cut(int u, int v){
+		_cut_from_parent(depth(u) > depth(v) ? u : v);
+	}
+	// Reverse the u-v path
+	void reverse(int u, int v){
+		reroot(u), _access(v), _apply_reverse(v);
+	}
+#undef ASSERT
+#undef ifQ
+#undef ifU
+#undef ifF
+#undef ifSQ
+#undef ifSU
+#undef ifNC
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>link_cut_trees</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
