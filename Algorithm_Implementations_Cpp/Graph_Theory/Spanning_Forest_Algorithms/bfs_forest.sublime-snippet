@@ -4,7 +4,6 @@
 template<class T>
 struct bfs_forest{
 	int n;
-	T base_dist;
 	vector<T> dist;
 	vector<int> pv;
 	vector<int> pe;
@@ -15,7 +14,12 @@ struct bfs_forest{
 	vector<int> root;
 	vector<int> depth;
 	vector<int> was;
-	bfs_forest(T base_dist = 0): base_dist(base_dist){ }
+	bfs_forest(){ }
+	bfs_forest(int n){ init(n); }
+	template<class U>
+	bfs_forest(const graph<U> &g){ init(g.n); bfs_all(g); }
+	template<class U>
+	bfs_forest(const graph<U> &g, const vector<int> &src){ init(g.n); bfs(g, src); }
 	void init(int n){
 		this->n = n;
 		pv.assign(n, -1);
@@ -26,15 +30,15 @@ struct bfs_forest{
 		root_of.assign(n, -1);
 		root.clear();
 		depth.assign(n, -1);
-		dist.assign(n, base_dist);
+		dist.resize(n);
 		was.assign(n, -2);
 		attempt = -1;
 	}
 	int attempt;
 	vector<int> q;
 	// O(# of nodes reachable from src)
-	template<class F = plus<>>
-	void _bfs(const graph<T> &g, const vector<int> &src, F UT = plus<>()){
+	template<class U, class F>
+	void _bfs(const graph<U> &g, const vector<int> &src, F UT, T base_dist){
 		q = src;
 		for(auto u: src){
 			assert(was[u] != attempt);
@@ -72,21 +76,21 @@ struct bfs_forest{
 		q.clear();
 	}
 	// O(# of nodes reachable from src)
-	template<class F = plus<>>
-	void bfs(const graph<T> &g, const vector<int> &src, F UT = plus<>()){
+	template<class U, class F = plus<>>
+	void bfs(const graph<U> &g, const vector<int> &src, F UT = plus<>(), T base_dist = T{}){
 		assert(g.n <= n);
 		root.clear(), order.clear();
 		for(auto u: src) assert(0 <= u && u < g.n);
 		++ attempt;
-		_bfs(g, src, UT);
+		_bfs(g, src, UT, base_dist);
 	}
 	// O(n + m)
 	template<class U, class F = plus<>>
-	void bfs_all(const graph<U> &g, F UT = plus<>()){
+	void bfs_all(const graph<U> &g, F UT = plus<>(), T base_dist = T{}){
 		assert(g.n <= n);
 		root.clear(), order.clear();
 		++ attempt;
-		for(auto u = 0; u < g.n; ++ u) if(was[u] != attempt) _bfs(g, {u}, UT);
+		for(auto u = 0; u < g.n; ++ u) if(was[u] != attempt) _bfs(g, {u}, UT, base_dist);
 	}
 	// Check if u is visited during the last bfs-like call.
 	bool visited(int u) const{

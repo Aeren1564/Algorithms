@@ -16,7 +16,7 @@ struct treap_base{
 	U U_id; // monoid identity
 	F3 UT; // action of U on T (superset, subset)
 	F4 FlipT;
-	treap_base(F1 TT, T T_id, F2 UU, U U_id, F3 UT, F4 FlipT = plus<>()): TT(TT), T_id(T_id), UU(UU), U_id(U_id), UT(UT), FlipT(FlipT){ }
+	treap_base(F1 TT, T T_id, F2 UU, U U_id, F3 UT, F4 FlipT): TT(TT), T_id(T_id), UU(UU), U_id(U_id), UT(UT), FlipT(FlipT){ }
 	void push(int u){
 		ifU if(lazy[u] != U_id){
 			if(auto v = left[u]; ~v){

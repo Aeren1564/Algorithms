@@ -321,7 +321,11 @@ struct matrix_fixed_base{
 		assert(n >= 0 && m >= 0);
 		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) data[i][j] = i == j ? init_diagonal : init_off_diagonal;
 	}
-	matrix_fixed_base(int n, int m, const array<array<T, M>, N> &a): n(n), m(m), data(a){ }
+	matrix_fixed_base(int n, int m, const array<array<T, M>, N> &a): n(n), m(m), data(a){ assert(n <= N && m <= M); }
+	matrix_fixed_base(int n, int m, const array<T, N * M> &a): n(n), m(m){
+		assert(n <= N && m <= M);
+		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) data[i][j] = a[m * i + j];
+	}
 	static matrix_fixed_base additive_identity(int n, int m){
 		return matrix_fixed_base(n, m, T{0}, T{0});
 	}

@@ -2,10 +2,10 @@
 	<content><![CDATA[
 // returns an euler walk starting at s given that there are edge_cnt edges reachable from s
 // Returns the edge list
-// O(|V|+|E|)
+// O(n + m)
 template<class T>
 optional<vector<int>> euler_walk(const graph<T> &g, int s, int edge_cnt){
-	if(!edge_cnt) return {{}};
+	if(!edge_cnt) return {vector<int>{}};
 	int n = g.n, m = (int)g.edge.size();
 	vector<int> deg(n), its(n), used(m), res_e;
 	vector<array<int, 2>> st = {{s, -1}};

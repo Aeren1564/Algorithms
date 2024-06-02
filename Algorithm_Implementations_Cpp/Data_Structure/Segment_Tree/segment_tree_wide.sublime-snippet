@@ -41,19 +41,15 @@ struct segment_tree_wide_base{
 	T T_id; // group identity
 	I T_inv; // group inverse
 	segment_tree_wide_base(F TT, T T_id, I T_inv): TT(TT), T_id(T_id), T_inv(T_inv){ }
-	[[gnu::target("avx2,bmi2,popcnt,lzcnt")]]
 	void _prefetch(int h, int i) const{
 		__builtin_prefetch(data + offset[h] + round(i));
 	}
-	[[gnu::target("avx2,bmi2,popcnt,lzcnt")]]
 	void build(int n){
 		build(vector<T>(n, T_id));
 	}
-	[[gnu::target("avx2,bmi2,popcnt,lzcnt")]]
 	void build(int n, T x){
 		build(vector<T>(n, x));
 	}
-	[[gnu::target("avx2,bmi2,popcnt,lzcnt")]]
 	template<class U>
 	void build(const vector<U> &a){
 		n = (int)a.size();
@@ -69,12 +65,10 @@ struct segment_tree_wide_base{
 			}
 		}
 	}
-	[[gnu::target("avx2,bmi2,popcnt,lzcnt")]]
 	T query(int p) const{
 		assert(0 <= p && p < n);
 		return TT(T_inv(data[p]), (p + 1) % branching ? data[p + 1] : data[offset[H - 1] + (p + 1 >> branching_bits)]);
 	}
-	[[gnu::target("avx2,bmi2,popcnt,lzcnt")]]
 	T prefix(int r) const{
 		assert(0 <= r && r <= n);
 		if(!r) return T_id;
@@ -85,7 +79,6 @@ struct segment_tree_wide_base{
 		}
 		return res;
 	}
-	[[gnu::target("avx2,bmi2,popcnt,lzcnt")]]
 	T query(int l, int r) const{
 		assert(0 <= l && l <= r && r <= n);
 		if(l == r) return T_id;
@@ -99,7 +92,6 @@ struct segment_tree_wide_base{
 		}
 		return res;
 	}
-	[[gnu::target("avx2,bmi2,popcnt,lzcnt")]]
 	void update(int p, T _x){
 		assert(0 <= p && p < n);
 		Twide x = Twide{} + _x;
@@ -110,7 +102,6 @@ struct segment_tree_wide_base{
 			for(auto i = 0; i < reg_count; ++ i) a[i] = TT(a[i], x & suffix_mask[i]);
 		}
 	}
-	[[gnu::target("avx2,bmi2,popcnt,lzcnt")]]
 	void set(int p, T x){
 		update(p, TT(T_inv(query(p)), x));
 	}
@@ -124,7 +115,6 @@ struct segment_tree_wide_base{
 	}
 };
 
-// WARNING: DO NOT PASS IN ANYTHING FROM std::functional
 template<int SIZE, class T, class F, class I>
 auto make_segment_tree_wide(F TT, T T_id, I T_inv){
 	return segment_tree_wide_base<SIZE, T, F, I>(TT, T_id, T_inv);

@@ -1,0 +1,78 @@
+<snippet>
+	<content><![CDATA[
+// Requires modular and number_theoric_transform
+struct matching_with_wildcards_randomized{
+	#ifdef LOCAL
+	mt19937 rng = mt19937{1564};
+	#else
+	mt19937 rng = mt19937{chrono::high_resolution_clock::now().time_since_epoch().count()};
+	#endif
+	using modular0 = modular_fixed_base<unsigned int, 998244353>;
+	using modular1 = modular_fixed_base<unsigned int, 897581057>;
+	vector<modular0> p0, q0, r0, s0, mapping0;
+	vector<modular1> p1, q1, r1, s1, mapping1;
+	vector<int> matched;
+	template<class modular>
+	void _run(const vector<int> &text, const vector<int> &pattern, vector<modular> &mapping, vector<modular> &p, vector<modular> &q, vector<modular> &r, vector<modular> &s){
+		using ntt = number_theoric_transform_wrapper<modular>;
+		int n = (int)text.size(), m = (int)pattern.size();
+		p.resize(n), q.resize(m);
+		for(auto i = 0; i < n; ++ i) p[i] = !!text[i];
+		for(auto j = 0; j < m; ++ j) q[j] = !!pattern[j];
+		r = ntt::cross_correlation(p, q);
+		for(auto i = 0; i < n; ++ i){
+			if(text[i]) while(!mapping[text[i]]) mapping[text[i]] = rng();
+			p[i] = mapping[text[i]];
+		}
+		for(auto j = 0; j < m; ++ j){
+			if(pattern[j]) while(!mapping[pattern[j]]) mapping[pattern[j]] = rng();
+			q[j] = pattern[j] ? 1 / mapping[pattern[j]] : modular{};
+		}
+		s = ntt::cross_correlation(p, q);
+		for(auto i = 0; i <= n - m; ++ i) if(r[i] != s[i]) matched[i] = false;
+	}
+	// Returns the list of all positions in [0, n - m + 1) of text in pattern
+	// 0 represents wildcard, where it can match with any character
+	// O((n + m) * log(n + m))
+	const vector<int> &match(const vector<int> &text, const vector<int> &pattern, int sigma){
+		assert((int)text.size() >= (int)pattern.size());
+		for(auto c: text) assert(0 <= c && c < sigma);
+		for(auto c: pattern) assert(0 <= c && c < sigma);
+		int n = (int)text.size(), m = (int)pattern.size();
+		mapping0.assign(sigma, 0), mapping1.assign(sigma, 0);
+		matched.assign(n - m + 1, true);
+		if(n == 0 || m == 0) return matched;
+		_run<modular0>(text, pattern, mapping0, p0, q0, r0, s0);
+		_run<modular1>(text, pattern, mapping1, p1, q1, r1, s1);
+		return matched;
+	}
+	int cnt = 1;
+	vector<int> index, text, pattern;
+	// Returns the list of all positions in [0, n) of text in pattern, where the text is assumed to have infinite trailing wildcards
+	// O((n + m) * log(n + m))
+	const vector<int> &match(const string &_text, const string &_pattern, char wildcard = '?'){
+		assert((int)text.size() >= (int)pattern.size());
+		index.resize(300);
+		int n = (int)_text.size(), m = (int)_pattern.size();
+		text.resize(n), pattern.resize(m);
+		for(auto i = 0; i < n; ++ i){
+			char c = _text[i];
+			if(c == wildcard) index[c] = 0;
+			else if(!index[c]) index[c] = cnt ++;
+			text[i] = index[c];
+		}
+		for(auto i = 0; i < m; ++ i){
+			char c = _pattern[i];
+			if(c == wildcard) index[c] = 0;
+			else if(!index[c]) index[c] = cnt ++;
+			pattern[i] = index[c];
+		}
+		return match(text, pattern, cnt);
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>matching_with_wildcards_randomized</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

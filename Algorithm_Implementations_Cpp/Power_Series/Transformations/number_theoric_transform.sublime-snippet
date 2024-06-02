@@ -69,7 +69,7 @@ struct number_theoric_transform_wrapper{
 	// O((n + m) * log(n + m))
 	static vector<T> convolute(const vector<T> &p, const vector<T> &q){
 		if(min(p.size(), q.size()) < 55) return convolute_naive(p, q);
-		int m = (int)p.size() + (int)q.size() - 1, n = 1 << __lg(m) + 1;
+		int m = (int)p.size() + (int)q.size() - 1, n = 1 << __lg(m) + (__builtin_popcount(m) != 1);
 		buffer1.assign(n, 0);
 		copy(p.begin(), p.end(), buffer1.begin());
 		transform(buffer1);
@@ -79,6 +79,28 @@ struct number_theoric_transform_wrapper{
 		for(auto i = 0; i < n; ++ i) buffer1[i] *= buffer2[i];
 		transform(buffer1, true);
 		return vector<T>(buffer1.begin(), buffer1.begin() + m);
+	}
+	// O(n * m)
+	static vector<T> cross_correlation_naive(const vector<T> &p, const vector<T> &q){
+		assert((int)p.size() >= (int)q.size());
+		vector<T> res((int)p.size() - (int)q.size() + 1);
+		for(auto i = 0; i <= (int)p.size() - (int)q.size(); ++ i) for(auto j = 0; j < (int)q.size(); ++ j) res[i] += p[i + j] * q[j];
+		return res;
+	}
+	// O(m * log(m))
+	static vector<T> cross_correlation(const vector<T> &p, const vector<T> &q){
+		assert((int)p.size() >= (int)q.size());
+		if((int)q.size() < 55) return cross_correlation_naive(p, q);
+		int m = (int)p.size(), n = 1 << __lg(m) + (__builtin_popcount(m) != 1);
+		buffer1.assign(n, 0);
+		copy(p.begin(), p.end(), buffer1.begin());
+		transform(buffer1);
+		buffer2.assign(n, 0);
+		copy(q.rbegin(), q.rend(), buffer2.begin());
+		transform(buffer2);
+		for(auto i = 0; i < n; ++ i) buffer1[i] *= buffer2[i];
+		transform(buffer1, true);
+		return vector<T>(buffer1.begin() + (int)q.size() - 1, buffer1.begin() + (int)p.size());
 	}
 	// O((n + m) * log(n + m))
 	static vector<T> square(const vector<T> &p){
@@ -93,9 +115,9 @@ struct number_theoric_transform_wrapper{
 	}
 	// O((n + m) * log(n + m))
 	static vector<T> arbitrarily_convolute(const vector<T> &p, const vector<T> &q){
-		using modular0 = modular_fixed_base<unsigned int, 1045430273>;
-		using modular1 = modular_fixed_base<unsigned int, 1051721729>;
-		using modular2 = modular_fixed_base<unsigned int, 1053818881>;
+		using modular0 = modular_fixed_base<unsigned int, 880803841>;
+		using modular1 = modular_fixed_base<unsigned int, 897581057>;
+		using modular2 = modular_fixed_base<unsigned int, 998244353>;
 		using ntt0 = number_theoric_transform_wrapper<modular0>;
 		using ntt1 = number_theoric_transform_wrapper<modular1>;
 		using ntt2 = number_theoric_transform_wrapper<modular2>;

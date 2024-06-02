@@ -319,7 +319,14 @@ struct matrix{
 		data.assign(n, vector<T>(m, T{0}));
 		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) data[i][j] = i == j ? init_diagonal : init_off_diagonal;
 	}
-	matrix(int n, int m, const vector<vector<T>> &a): n(n), m(m), data(a){ }
+	matrix(int n, int m, const vector<vector<T>> &a): n(n), m(m), data(a){
+		assert((int)a.size() == n);
+		for(auto b: a) assert((int)b.size() == m);
+	}
+	matrix(int n, int m, const vector<T> &a): n(n), m(m), data(n, vector<T>(m)){
+		assert((int)a.size() == n * m);
+		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) data[i][j] = a[m * i + j];
+	}
 	static matrix additive_identity(int n, int m){
 		return matrix(n, m, T{0}, T{0});
 	}

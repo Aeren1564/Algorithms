@@ -1,0 +1,87 @@
+<snippet>
+	<content><![CDATA[
+// Requires modular and number_theoric_transform
+struct matching_with_wildcards{
+	using modular0 = modular_fixed_base<unsigned int, 998244353>;
+	using modular1 = modular_fixed_base<unsigned int, 897581057>;
+	using modular2 = modular_fixed_base<unsigned int, 880803841>;
+	using modular3 = modular_fixed_base<unsigned int, 754974721>;
+	using modular4 = modular_fixed_base<unsigned int, 645922817>;
+	vector<int> matched;
+	vector<modular0> p0, q0, r0, temp0;
+	vector<modular1> p1, q1, r1, temp1;
+	vector<modular2> p2, q2, r2, temp2;
+	vector<modular3> p3, q3, r3, temp3;
+	vector<modular4> p4, q4, r4, temp4;
+	template<class modular>
+	void _run_fft(const vector<int> &text, const vector<int> &pattern, vector<modular> &p, vector<modular> &q, vector<modular> &r, vector<modular> &temp){
+		using ntt = number_theoric_transform_wrapper<modular>;
+		int n = (int)text.size(), m = (int)pattern.size();
+		p.resize(n), q.resize(m), r.assign(n - m + 1, modular{});
+		for(auto e = 1; e <= 3; ++ e){
+			for(auto i = 0; i < n; ++ i){
+				p[i] = 1;
+				for(auto j = 0; j < e; ++ j) p[i] *= text[i];
+			}
+			for(auto i = 0; i < m; ++ i){
+				q[i] = 1;
+				for(auto j = 0; j < 4 - e; ++ j) q[i] *= pattern[i];
+			}
+			temp = ntt::cross_correlation(p, q);
+			for(auto k = 0; k <= n - m; ++ k) r[k] += (e == 2 ? -2 : 1) * temp[k];
+		}
+		for(auto i = 0; i <= n - m; ++ i) if(r[i]) matched[i] = false;
+	}
+	// Returns the list of all positions in [0, n - m + 1) of text in pattern
+	// 0 represents wildcard, where it can match with any character
+	// O((n + m) * log(n + m))
+	const vector<int> &match(const vector<int> &text, const vector<int> &pattern, int sigma){
+		assert((int)text.size() >= (int)pattern.size());
+		for(auto c: text) assert(0 <= c && c < sigma);
+		for(auto c: pattern) assert(0 <= c && c < sigma);
+		int n = (int)text.size(), m = (int)pattern.size();
+		matched.assign(n - m + 1, true);
+		if(n == 0 || m == 0) return matched;
+		const long double req = 1.0L * m * sigma * sigma * sigma * sigma;
+		_run_fft<modular0>(text, pattern, p0, q0, r0, temp0);
+		if(req < 0.99999L * modular0::mod()) return matched;
+		_run_fft<modular1>(text, pattern, p1, q1, r1, temp1);
+		if(req < 0.99999L * modular0::mod() * modular1::mod()) return matched;
+		_run_fft<modular2>(text, pattern, p2, q2, r2, temp2);
+		if(req < 0.99999L * modular0::mod() * modular1::mod() * modular2::mod()) return matched;
+		_run_fft<modular3>(text, pattern, p3, q3, r3, temp3);
+		if(req < 0.99999L * modular0::mod() * modular1::mod() * modular2::mod() * modular3::mod()) return matched;
+		_run_fft<modular4>(text, pattern, p4, q4, r4, temp4);
+		assert(req < 0.99999L * modular0::mod() * modular1::mod() * modular2::mod() * modular3::mod() * modular4::mod());
+		return matched;
+	}
+	int cnt = 1;
+	vector<int> index, text, pattern;
+	// Returns the list of all positions in [0, n) of text in pattern, where the text is assumed to have infinite trailing wildcards
+	// O((n + m) * log(n + m))
+	const vector<int> &match(const string &_text, const string &_pattern, char wildcard = '?'){
+		assert((int)text.size() >= (int)pattern.size());
+		index.resize(300);
+		int n = (int)_text.size(), m = (int)_pattern.size();
+		text.resize(n), pattern.resize(m);
+		for(auto i = 0; i < n; ++ i){
+			char c = _text[i];
+			if(c == wildcard) index[c] = 0;
+			else if(!index[c]) index[c] = cnt ++;
+			text[i] = index[c];
+		}
+		for(auto i = 0; i < m; ++ i){
+			char c = _pattern[i];
+			if(c == wildcard) index[c] = 0;
+			else if(!index[c]) index[c] = cnt ++;
+			pattern[i] = index[c];
+		}
+		return match(text, pattern, cnt);
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>matching_with_wildcards</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

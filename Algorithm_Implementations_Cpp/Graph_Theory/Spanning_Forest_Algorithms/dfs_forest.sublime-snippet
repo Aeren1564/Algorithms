@@ -4,7 +4,6 @@
 template<class T>
 struct dfs_forest{
 	int n;
-	T base_dist;
 	vector<T> dist;
 	vector<int> pv;
 	vector<int> pe;
@@ -21,7 +20,12 @@ struct dfs_forest{
 	// extra_edge[u]: adjacent edges of u which is not part of the spanning forest found during the last dfs-like run.
 	vector<vector<int>> extra_edge;
 	vector<int> was;
-	dfs_forest(T base_dist = 0): base_dist(base_dist){ }
+	dfs_forest(){ }
+	dfs_forest(int n){ init(n); }
+	template<class U>
+	dfs_forest(const graph<U> &g){ init(g.n); dfs_all(g); }
+	template<class U>
+	dfs_forest(const graph<U> &g, const vector<int> &src){ init(g.n); dfs(g, src); }
 	void init(int n){
 		this->n = n;
 		pv.assign(n, -1);
@@ -36,15 +40,15 @@ struct dfs_forest{
 		min_depth.assign(n, -1);
 		min_depth_origin.assign(n, -1);
 		min_depth_spanning_edge.assign(n, -1);
-		dist.assign(n, base_dist);
+		dist.resize(n);
 		extra_edge.assign(n, {});
 		was.assign(n, -2);
 		attempt = -1;
 	}
 	int attempt;
 	// O(# of nodes reachable from u)
-	template<class U, class F = plus<>>
-	void _dfs(const graph<U> &g, int u, F UT = plus<>()){
+	template<class U, class F>
+	void _dfs(const graph<U> &g, int u, F UT, T base_dist){
 		depth[u] = 0;
 		dist[u] = base_dist;
 		root_of[u] = u;
@@ -58,6 +62,7 @@ struct dfs_forest{
 			min_depth[u] = depth[u];
 			min_depth_origin[u] = u;
 			min_depth_spanning_edge[u] = -1;
+			extra_edge[u].clear();
 			for(auto id: g.adj[u]){
 				if(id == pe[u] || g.ignore && g.ignore(id)) continue;
 				int v = g(u, id);
@@ -66,7 +71,7 @@ struct dfs_forest{
 						min_depth[u] = depth[v];
 						min_depth_spanning_edge[u] = id;
 					}
-					if(pe[u] != id) extra_edge[u].push_back(id);
+					if(pe[v] != id) extra_edge[u].push_back(id);
 					continue;
 				}
 				depth[v] = depth[u] + 1;
@@ -88,22 +93,22 @@ struct dfs_forest{
 	}
 	// O(# of nodes reachable from src)
 	template<class U, class F = plus<>>
-	void dfs(const graph<U> &g, const vector<int> &src, F UT = plus<>()){
+	void dfs(const graph<U> &g, const vector<int> &src, F UT = plus<>(), T base_dist = T{}){
 		assert(g.n <= n);
 		root.clear(), order.clear();
 		++ attempt;
 		for(auto u: src){
 			assert(0 <= u && u < g.n);
-			if(was[u] != attempt) _dfs(g, u, UT);
+			if(was[u] != attempt) _dfs(g, u, UT, base_dist);
 		}
 	}
 	// O(n + m)
 	template<class U, class F = plus<>>
-	void dfs_all(const graph<U> &g, F UT = plus<>()){
+	void dfs_all(const graph<U> &g, F UT = plus<>(), T base_dist = T{}){
 		assert(g.n <= n);
 		root.clear(), order.clear();
 		++ attempt;
-		for(auto u = 0; u < g.n; ++ u) if(was[u] != attempt) _dfs(g, u, UT);
+		for(auto u = 0; u < g.n; ++ u) if(was[u] != attempt) _dfs(g, u, UT, base_dist);
 	}
 	// Check if u is visited during the last dfs-like call.
 	bool visited(int u) const{

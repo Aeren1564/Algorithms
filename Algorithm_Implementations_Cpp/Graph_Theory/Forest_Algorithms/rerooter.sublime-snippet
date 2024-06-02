@@ -1,8 +1,8 @@
 <snippet>
 	<content><![CDATA[
 // Requires graph
-template<class T, class F>
-struct rerooter{
+template<class T, class F, class FV, class FE>
+struct rerooter_base{
 	int n, attempt;
 	// Given a tree T rooted at r, let f(T) be the value at dp[r] after the following process
 	// For each vertex u in reversed dfs order, set dp[u] = T_id
@@ -12,6 +12,7 @@ struct rerooter{
 	// dp_compl[u] for u != root holds f(T) where T is the complement subtree of the subtree rooted at u, where its root is the parent vertex of u
 	vector<T> dp_subtr;
 	vector<T> dp_compl;
+	vector<T> dp;
 	vector<T> pref;
 	vector<int> pv;
 	vector<int> pe;
@@ -22,11 +23,14 @@ struct rerooter{
 	vector<int> was;
 	F TT; // commutative monoid operation
 	T T_id; // commutative monoid identity
-	rerooter(F TT, T T_id): TT(TT), T_id(T_id){ }
+	FV apply_vertex;
+	FE apply_edge;
+	rerooter_base(F TT, T T_id, FV apply_vertex, FE apply_edge): TT(TT), T_id(T_id), apply_vertex(apply_vertex), apply_edge(apply_edge){ }
 	void init(int n){
 		this->n = n;
 		dp_subtr.assign(n, T_id);
 		dp_compl.assign(n, T_id);
+		dp.assign(n, T_id);
 		pv.assign(n, -1);
 		pe.assign(n, -1);
 		order.clear();
@@ -37,7 +41,8 @@ struct rerooter{
 		attempt = -1;
 	}
 	// O(n) apply_vertex() and apply_edge() calls where n is the number of nodes in the component of u
-	void _dfs(const graph<auto> &g, int u, auto apply_vertex, auto apply_edge){
+	template<class U>
+	void _dfs(const graph<U> &g, int u){
 		pv[u] = pe[u] = -1;
 		root_of[u] = u;
 		root.push_back(u);
@@ -79,26 +84,25 @@ struct rerooter{
 			}
 		}
 	}
-	void dfs(const graph<auto> &g, const vector<int> &src, auto apply_vertex, auto apply_edge){
+	template<class U>
+	void dfs(const graph<U> &g, const vector<int> &src){
 		assert(g.n <= n);
 		++ attempt;
+		root.clear(), order.clear();
 		for(auto u: src){
 			assert(0 <= u && u < g.n);
-			if(was[u] != attempt) _dfs(g, u, apply_vertex, apply_edge);
+			if(was[u] != attempt) _dfs(g, u);
 		}
-	}
-	void dfs(const graph<auto> &g, const vector<int> &src, auto apply_vertex){
-		dfs(g, src, apply_vertex, [&](int id, const T &x){ return x; });
+		for(auto u: order) dp[u] = root_of[u] == u ? dp_subtr[u] : TT(apply_edge(pe[u], dp_subtr[u]), dp_compl[u]);
 	}
 	// O(n + m)
-	void dfs_all(const graph<auto> &g, auto apply_vertex, auto apply_edge){
+	template<class U>
+	void dfs_all(const graph<U> &g){
 		assert(g.n <= n);
 		++ attempt;
-		for(auto u = 0; u < g.n; ++ u) if(was[u] != attempt) _dfs(g, u, apply_vertex, apply_edge);
-	}
-	// O(n + m)
-	void dfs_all(const graph<auto> &g, auto apply_vertex){
-		dfs_all(g, apply_vertex, [&](int id, const T &x){ return x; });
+		root.clear(), order.clear();
+		for(auto u = 0; u < g.n; ++ u) if(was[u] != attempt) _dfs(g, u);
+		for(auto u: order) dp[u] = root_of[u] == u ? dp_subtr[u] : TT(apply_edge(pe[u], dp_subtr[u]), dp_compl[u]);
 	}
 	// Check if u is visited during the last dfs-like call.
 	bool visited(int u) const{
@@ -106,6 +110,48 @@ struct rerooter{
 		return was[u] == attempt;
 	}
 };
+
+template<class T, class F>
+auto make_rerooter(F TT, T T_id){
+	auto apply_vertex = [](int, const T &x){ return x; };
+	auto apply_edge = [](int, const T &x){ return x; };
+	return rerooter_base(TT, T_id, apply_vertex, apply_edge);
+}
+template<class T, class F, class FV>
+auto make_V_rerooter(F TT, T T_id, FV apply_vertex){
+	auto apply_edge = [](int, const T &x){ return x; };
+	return rerooter_base(TT, T_id, apply_vertex, apply_edge);
+}
+template<class T, class F, class FE>
+auto make_E_rerooter(F TT, T T_id, FE apply_edge){
+	auto apply_vertex = [](int, const T &x){ return x; };
+	return rerooter_base(TT, T_id, apply_vertex, apply_edge);
+}
+template<class T, class F, class FV, class FE>
+auto make_VE_rerooter(F TT, T T_id, FV apply_vertex, FE apply_edge){
+	return rerooter_base(TT, T_id, apply_vertex, apply_edge);
+}
+
+template<class T, class F>
+auto make_rerooter(F TT, T T_id){
+	auto apply_vertex = [](int, const T &x){ return x; };
+	auto apply_edge = [](int, const T &x){ return x; };
+	return rerooter_base(TT, T_id, apply_vertex, apply_edge);
+}
+template<class T, class F, class FV>
+auto make_V_rerooter(F TT, T T_id, FV apply_vertex){
+	auto apply_edge = [](int, const T &x){ return x; };
+	return rerooter_base(TT, T_id, apply_vertex, apply_edge);
+}
+template<class T, class F, class FE>
+auto make_E_rerooter(F TT, T T_id, FE apply_edge){
+	auto apply_vertex = [](int, const T &x){ return x; };
+	return rerooter_base(TT, T_id, apply_vertex, apply_edge);
+}
+template<class T, class F, class FV, class FE>
+auto make_VE_rerooter(F TT, T T_id, FV apply_vertex, FE apply_edge){
+	return rerooter_base(TT, T_id, apply_vertex, apply_edge);
+}
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
 	<tabTrigger>rerooter</tabTrigger> -->

@@ -1,0 +1,100 @@
+<snippet>
+	<content><![CDATA[
+struct topological_sorter{
+	int n;
+	vector<int> order;
+	vector<int> indeg;
+	vector<int> q;
+	vector<int> was;
+	int attempt;
+	void init(int n){
+		assert(n >= 1);
+		this->n = n;
+		order.clear();
+		indeg.assign(n, 0);
+		q.resize(n);
+		was.assign(n, -1);
+		attempt = -2;
+	}
+	template<class T>
+	optional<vector<int>> run(const graph<T> &g, const vector<int> &subset){
+		assert(g.n <= n);
+		order.clear();
+		q.clear();
+		for(auto u: subset){
+			assert(0 <= u && u < g.n && was[u] != attempt);
+			indeg[u] = 0;
+			was[u] = attempt;
+		}
+		for(auto u: subset){
+			for(auto id: g.adj[u]){
+				if(g.ignore && g.ignore(id)) continue;
+				int v = g(u, id);
+				if(was[v] != attempt) continue;
+				++ indeg[v];
+			}
+		}
+		int qend = 0;
+		for(auto u: subset) if(indeg[u] == 0) q[qend ++] = u;
+		for(auto qbeg = 0; qbeg < qend; ++ qbeg){
+			int u = q[qbeg];
+			order.push_back(u);
+			for(auto id: g.adj[u]){
+				if(g.ignore && g.ignore(id)) continue;
+				int v = g(u, id);
+				if(was[v] != attempt) continue;
+				if(-- indeg[v] == 0) q[qend ++] = v;
+			}
+		}
+		return (int)order.size() == (int)subset.size() ? order : optional<vector<int>>{};
+	}
+	template<class T>
+	optional<vector<int>> run_all(const graph<T> &g){
+		vector<int> subset(g.n);
+		iota(subset.begin(), subset.end(), 0);
+		return run(g, subset);
+	}
+	template<class T, class Compare = less<>>
+	optional<vector<int>> run_lexicographically(const graph<T> &g, const vector<int> &subset, Compare cmp){
+		assert(g.n <= n);
+		order.clear();
+		for(auto u: subset){
+			assert(0 <= u && u < g.n && was[u] != attempt);
+			indeg[u] = 0;
+			was[u] = attempt;
+		}
+		for(auto u: subset){
+			for(auto id: g.adj[u]){
+				if(g.ignore && g.ignore(id)) continue;
+				int v = g(u, id);
+				if(was[v] == attempt) ++ indeg[v];
+			}
+		}
+		auto pq_cmp = [&](int u, int v)->bool{ return cmp(v, u); };
+		priority_queue<int, vector<int>, decltype(pq_cmp)> pq{pq_cmp};
+		for(auto u: subset) if(indeg[u] == 0) pq.push(u);
+		while(!pq.empty()){
+			int u = pq.top(); pq.pop();
+			order.push_back(u);
+			for(auto id: g.adj[u]){
+				if(g.ignore && g.ignore(id)) continue;
+				int v = g(u, id);
+				if(was[v] == attempt && -- indeg[v] == 0) pq.push(v);
+			}
+		}
+		return (int)order.size() == (int)subset.size() ? order : optional<vector<int>>{};
+	}
+	template<class T, class Compare = less<>>
+	optional<vector<int>> run_all_lexicographically(const graph<T> &g, Compare cmp = less<>()){
+		assert(g.n <= n);
+		vector<int> subset(g.n);
+		iota(subset.begin(), subset.end(), 0);
+		return run_lexicographically(g, subset, cmp);
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>topological_sorter</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
