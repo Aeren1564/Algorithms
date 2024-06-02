@@ -14,6 +14,7 @@ struct link_cut_trees_base{
 #define ifSU if constexpr(HAS_SUBTREE_UPDATE)
 #define ifNC if constexpr(!IS_COMMUTATIVE)
 	static_assert(!HAS_SUBTREE_QUERY || HAS_UPDATE && (!HAS_QUERY || IS_COMMUTATIVE));
+	int n;
 	vector<int> _size, _rev, _pv, _left, _right;
 	vector<T> data;
 	vector<T> aux_data; // aggregation of data in the subtree in the auxiliary splay trees, aggregates in fixed order
@@ -151,6 +152,7 @@ struct link_cut_trees_base{
 		_refresh(u);
 	}
 	bool is_root(int u){
+		ASSERT(~u);
 		return !~_pv[u];
 	}
 	int root_of(int u){
@@ -224,11 +226,13 @@ struct link_cut_trees_base{
 		reroot(u), _access(v), _apply_reverse(v);
 	}
 	void update_path(int u, int v, const U &f){
+		static_assert(HAS_UPDATE);
 		ASSERT(connected(u, v));
 		reroot(v), _access(u);
 		_apply_aux(u, f);
 	}
 	void update_subtree(int u, const U &f){
+		static_assert(HAS_SUBTREE_UPDATE);
 		ASSERT(~u);
 		int v = -1;
 		if(!is_root(u)){
@@ -239,11 +243,13 @@ struct link_cut_trees_base{
 		if(~v) link(u, v);
 	}
 	T query_path(int u, int v){
+		static_assert(HAS_QUERY);
 		ASSERT(connected(u, v));
 		reroot(v), _access(u);
 		return aux_data[u];
 	}
 	T query_subtree(int u){
+		static_assert(HAS_SUBTREE_QUERY);
 		ASSERT(~u);
 		int v = -1;
 		if(!is_root(u)){
@@ -253,6 +259,27 @@ struct link_cut_trees_base{
 		T res = TT(aux_data[u], virtual_data[u]);
 		if(~v) link(u, v);
 		return res;
+	}
+	void build(int n){
+		build(vector<T>(n, T_id));
+	}
+	void build(int n, T init){
+		build(vector<T>(n, init));
+	}
+	template<class V>
+	void build(const vector<V> &a){
+		n = (int)a.size();
+		_size.assign(n, 1);
+		_rev.assign(n, false);
+		_pv.assign(n, -1);
+		_left.assign(n, -1);
+		_right.assign(n, -1);
+		data = a;
+		ifQ aux_data = a;
+		ifSQ virtual_data.assign(n, T_id);
+		ifU aux_lazy.assign(n, U_id);
+		ifSU aux_to_virtual_lazy.assign(n, U_id);
+		ifSU virtual_lazy.assign(n, U_id);
 	}
 #undef ASSERT
 #undef ifQ
