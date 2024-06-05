@@ -1,21 +1,23 @@
 <snippet>
 	<content><![CDATA[
-template<bool HAS_QUERY, bool HAS_UPDATE, bool HAS_FLIP, bool HAS_SUBTREE_QUERY, bool HAS_SUBTREE_UPDATE, bool IS_COMMUTATIVE, class T, class U, class F1, class F2, class F3, class F4, class F5, class F6>
+template<bool HAS_PATH_QUERY, bool HAS_PATH_UPDATE, bool HAS_SUBTREE_QUERY, bool HAS_SUBTREE_UPDATE, bool IS_COMMUTATIVE, class T, class U, class F1, class F2, class F3, class F4, class F5, class F6>
 struct link_cut_trees_base{
 #ifdef LOCAL
 	#define ASSERT(x) assert(x)
 #else
 	#define ASSERT(x) 42
 #endif
-#define ifQ if constexpr(HAS_QUERY)
-#define ifU if constexpr(HAS_UPDATE)
-#define ifF if constexpr(HAS_FLIP)
+#define ifPQ if constexpr(HAS_PATH_QUERY)
+#define ifPU if constexpr(HAS_PATH_UPDATE)
 #define ifSQ if constexpr(HAS_SUBTREE_QUERY)
 #define ifSU if constexpr(HAS_SUBTREE_UPDATE)
 #define ifNC if constexpr(!IS_COMMUTATIVE)
-	static_assert(!HAS_SUBTREE_QUERY || HAS_UPDATE && (!HAS_QUERY || IS_COMMUTATIVE));
+#define ifPQSQ if constexpr(HAS_PATH_QUERY || HAS_SUBTREE_QUERY)
+#define ifPUSU if constexpr(HAS_PATH_UPDATE || HAS_SUBTREE_UPDATE)
+	// For subtree query or subtree update, T and U have to be commutative and invertible
+	static_assert(!(!IS_COMMUTATIVE && (HAS_SUBTREE_QUERY || HAS_SUBTREE_UPDATE)));
 	int n;
-	vector<int> _size, _rev, _pv, _left, _right;
+	vector<int> size, lazy_flip, pv, left, right;
 	vector<T> data;
 	vector<T> aux_data; // aggregation of data in the subtree in the auxiliary splay trees, aggregates in fixed order
 	vector<T> virtual_data; // aggregation of data in the subtree (not necessarily in the current auxiliary splay tree) excluding those in aux_data, aggregates in arbitrary order
@@ -32,61 +34,67 @@ struct link_cut_trees_base{
 	F6 FlipT; // flip the operation order
 	link_cut_trees_base(F1 TT, T T_id, F2 Tinv, F3 UU, U U_id, F4 Uinv, F5 UT, F6 FlipT): TT(TT), T_id(T_id), Tinv(Tinv), UU(UU), U_id(U_id), Uinv(Uinv), UT(UT), FlipT(FlipT){ }
 	void _apply_aux(int u, const U &f){
-		static_assert(HAS_UPDATE);
+		static_assert(HAS_PATH_UPDATE);
+		ASSERT(0 <= u && u < n);
 		data[u] = UT(f, data[u]);
 		aux_lazy[u] = UU(f, aux_lazy[u]);
-		ifQ aux_data[u] = UT(f, aux_data[u]);
+		ifPQ aux_data[u] = UT(f, aux_data[u]);
 	}
 	void _apply_subtr(int u, const U &f){
 		static_assert(HAS_SUBTREE_UPDATE);
+		ASSERT(0 <= u && u < n);
 		data[u] = UT(f, data[u]);
 		aux_to_virtual_lazy[u] = UU(f, aux_to_virtual_lazy[u]);
 		virtual_lazy[u] = UU(f, virtual_lazy[u]);
-		ifQ aux_data[u] = UT(f, aux_data[u]);
+		ifPQ aux_data[u] = UT(f, aux_data[u]);
 		ifSQ virtual_data[u] = UT(f, virtual_data[u]);
 	}
-	void _apply_reverse(int u){
-		_rev[u] ^= 1;
-		ifNC aux_data[u] = flipT(aux_data[u]);
-		swap(_left[u], _right[u]);
+	void _apply_flip(int u){
+		ASSERT(0 <= u && u < n);
+		lazy_flip[u] ^= 1;
+		ifNC aux_data[u] = FlipT(aux_data[u]);
+		swap(left[u], right[u]);
 	}
 	void _push(int u){
-		ifU if(aux_lazy[u] != U_id){
-			if(~_left[u]) _apply_aux(_left[u], aux_lazy[u]);
-			if(~_right[u]) _apply_aux(_right[u], aux_lazy[u]);
+		ASSERT(0 <= u && u < n);
+		ifPU if(aux_lazy[u] != U_id){
+			if(~left[u]) _apply_aux(left[u], aux_lazy[u]);
+			if(~right[u]) _apply_aux(right[u], aux_lazy[u]);
 			aux_lazy[u] = U_id;
 		}
 		ifSU{
 			if(aux_to_virtual_lazy[u] != U_id){
-				if(~_left[u]) _apply_subtr(_left[u], aux_to_virtual_lazy[u]);
-				if(~_right[u]) _apply_subtr(_right[u], aux_to_virtual_lazy[u]);
+				if(~left[u]) _apply_subtr(left[u], aux_to_virtual_lazy[u]);
+				if(~right[u]) _apply_subtr(right[u], aux_to_virtual_lazy[u]);
 				aux_to_virtual_lazy[u] = U_id;
 			}
 		}
-		if(_rev[u]){
-			if(~_left[u]) _apply_reverse(_left[u]);
-			if(~_right[u]) _apply_reverse(_right[u]);
-			_rev[u] = false;
+		if(lazy_flip[u]){
+			if(~left[u]) _apply_flip(left[u]);
+			if(~right[u]) _apply_flip(right[u]);
+			lazy_flip[u] = false;
 		}
 	}
 	void _refresh(int u){
-		ifU ASSERT(aux_lazy[u] == U_id);
+		ASSERT(0 <= u && u < n);
+		ifPU ASSERT(aux_lazy[u] == U_id);
 		ifSU ASSERT(aux_to_virtual_lazy[u] == U_id);
-		_size[u] = 1 + _internal_size(_left[u]) + _internal_size(_right[u]);
-		ifQ aux_data[u] = data[u];
+		size[u] = 1 + _internalsize(left[u]) + _internalsize(right[u]);
+		ifPQ aux_data[u] = data[u];
 		ifSQ virtual_data[u] = T_id;
-		if(auto v = _left[u]; ~v){
-			ifQ aux_data[u] = TT(aux_data[v], aux_data[u]);
+		if(auto v = left[u]; ~v){
+			ifPQ aux_data[u] = TT(aux_data[v], aux_data[u]);
 			ifSQ virtual_data[u] = TT(virtual_data[v], virtual_data[u]); // this messes up operation order
 		}
-		if(auto w = _right[u]; ~w){
-			ifQ aux_data[u] = TT(aux_data[u], aux_data[w]);
+		if(auto w = right[u]; ~w){
+			ifPQ aux_data[u] = TT(aux_data[u], aux_data[w]);
 			ifSQ virtual_data[u] = TT(virtual_data[w], virtual_data[u]); // this messes up operation order
 		}
 	}
 	template<bool sign>
 	void _refresh_virtual(int u, int v){
 		static_assert(HAS_SUBTREE_QUERY || HAS_SUBTREE_UPDATE);
+		ASSERT(0 <= min(u, v) && max(u, v) < n);
 		if constexpr(sign == 0){
 			ifSQ virtual_data[u] = TT(virtual_data[u], virtual_data[v]);
 			ifSU _apply_subtr(v, Uinv(virtual_lazy[u]));
@@ -97,122 +105,167 @@ struct link_cut_trees_base{
 		}
 	}
 	int _dir(int u){
-		if(!~_pv[u]) return -2; // root of LCT component
-		if(_left[_pv[u]] == u) return 0; // left child
-		if(_right[_pv[u]] == u) return 1; // right child
+		ASSERT(0 <= u && u < n);
+		if(!~pv[u]) return -2; // root of LCT component
+		if(left[pv[u]] == u) return 0; // left child
+		if(right[pv[u]] == u) return 1; // right child
 		return -1; // root of current splay tree
 	}
-	bool _is_root(int u){
+	bool _is_auxiliary_root(int u){
+		ASSERT(0 <= u && u < n);
 		return _dir(u) < 0;
 	}
 	void _set_link(int u, int v, int d){
-		if(~v) _pv[v] = u;
-		if(d >= 0) (d == 0 ? _left : _right)[u] = v;
+		ASSERT(0 <= min(u, v) && max(u, v) < n);
+		if(~v) pv[v] = u;
+		if(d >= 0) (d == 0 ? left : right)[u] = v;
 	}
 	// Assumes p and p->p propagated
 	void _rotate(int u){
-		ASSERT(!_is_root(u));
-		int x = _dir(u), g = _pv[u];
-		_set_link(_pv[g], u, _dir(g));
-		_set_link(g, x == 1 ? _left[u] : _right[u], x);
+		ASSERT(0 <= u && u < n && !_is_auxiliary_root(u));
+		int x = _dir(u), g = pv[u];
+		_set_link(pv[g], u, _dir(g));
+		_set_link(g, x == 1 ? left[u] : right[u], x);
 		_set_link(u, g, x ^ 1);
 		_refresh(g);
 	}
 	// Bring the node to the top
 	void _splay(int u){
-		for(; !_is_root(u) && !_is_root(_pv[u]); _rotate(u)){
-			_push(_pv[_pv[u]]), _push(_pv[u]), _push(u);
-			_dir(u) == _dir(_pv[u]) ? _rotate(_pv[u]) : _rotate(u);
+		ASSERT(0 <= u && u < n);
+		for(; !_is_auxiliary_root(u) && !_is_auxiliary_root(pv[u]); _rotate(u)){
+			_push(pv[pv[u]]), _push(pv[u]), _push(u);
+			_dir(u) == _dir(pv[u]) ? _rotate(pv[u]) : _rotate(u);
 		}
-		if(!_is_root(u)) _push(_pv[u]), _push(u), _rotate(u);
+		if(!_is_auxiliary_root(u)) _push(pv[u]), _push(u), _rotate(u);
 		_push(u), _refresh(u);
 	}
-	int _internal_size(int u){
-		return ~u ? _size[u] : 0;
+	int _internalsize(int u){
+		ASSERT(-1 <= u && u < n);
+		return ~u ? size[u] : 0;
 	}
 	// Put u on the preferred path then splay it (right subtree is empty)
 	void _access(int u){
-		for(auto v = u, p = -1; ~v; v = _pv[p = v]){
+		ASSERT(0 <= u && u < n);
+		for(auto v = u, p = -1; ~v; v = pv[p = v]){
 			_splay(v);
 			if constexpr(HAS_SUBTREE_QUERY || HAS_SUBTREE_UPDATE){
 				if(~p) _refresh_virtual<1>(u, p);
-				if(~_right[v]) _refresh_virtual<0>(u, _right[v]);
+				if(~right[v]) _refresh_virtual<0>(u, right[v]);
 			}
-			_right[v] = p;
+			right[v] = p;
 			_refresh(v);
 		}
 		_splay(u);
-		ASSERT(!~_right[u]);
+		ASSERT(!~right[u]);
 	}
 	void _cut_from_parent(int u){
-		ASSERT(~u);
+		ASSERT(0 <= u && u < n);
 		_access(u);
-		ASSERT(~_pv[u]);
-		_left[u] = _pv[_left[u]] = -1;
+		ASSERT(~pv[u]);
+		left[u] = pv[left[u]] = -1;
 		_refresh(u);
 	}
-	bool is_root(int u){
-		ASSERT(~u);
-		return !~_pv[u];
+	void build(int n){
+		ASSERT(0 <= n);
+		build(vector<T>(n, T_id));
+	}
+	void build(int n, T init){
+		ASSERT(0 <= n);
+		build(vector<T>(n, init));
+	}
+	template<class V>
+	void build(const vector<V> &a){
+		n = (int)a.size();
+		size.assign(n, 1);
+		lazy_flip.assign(n, false);
+		pv.assign(n, -1);
+		left.assign(n, -1);
+		right.assign(n, -1);
+		data = a;
+		ifPQ aux_data = a;
+		ifSQ virtual_data.assign(n, T_id);
+		ifPU aux_lazy.assign(n, U_id);
+		ifSU aux_to_virtual_lazy.assign(n, U_id);
+		ifSU virtual_lazy.assign(n, U_id);
+	}
+	int new_node(const T &x){
+		size.push_back(1);
+		lazy_flip.push_back(false);
+		pv.push_back(-1);
+		left.push_back(-1);
+		right.push_back(-1);
+		data.push_back(x);
+		ifPQ aux_data.push_back(x);
+		ifSQ virtual_data.push_back(T_id);
+		ifPU aux_lazy.push_back(U_id);
+		ifSU aux_to_virtual_lazy.push_back(U_id);
+		ifSU virtual_lazy.push_back(U_id);
+		return n ++;
+	}
+	// Make u the root of its connected component
+	void reroot(int u){
+		ASSERT(0 <= u && u < n);
+		_access(u), _apply_flip(u), _access(u);
+		ASSERT(!~left[u] && !~right[u]);
 	}
 	int root_of(int u){
-		ASSERT(~u);
-		for(_access(u); ~_left[u]; _push(u)) u = _left[u];
+		ASSERT(0 <= u && u < n);
+		for(_access(u); ~left[u]; _push(u)) u = left[u];
 		return _access(u), u;
 	}
-	// Make u the root of its LCT component
-	void reroot(int u){
-		ASSERT(~u);
-		_access(u), _apply_reverse(u), _access(u);
-		ASSERT(!~_left[u] && !~_right[u]);
-	}
-	int parent(int u){
-		ASSERT(~u);
+	// If u is a non-root vertex in its component, return its parent
+	// Otherwise, return -1
+	int parent_or_is_root(int u){
+		ASSERT(0 <= u && u < n);
 		_access(u);
-		return _pv[u];
-	}
-	int depth(int u){
-		ASSERT(~u);
-		_access(u);
-		return _internal_size(_left[u]);
-	}
-	bool connected(int u, int v){
-		ASSERT(~u && ~v);
-		return ~lca(u, v);
-	}
-	bool adjacent(int u, int v){
-		ASSERT(~u && ~v);
-		if(u == v) return false;
-		int w = lca(u, v);
-		if(!~w || u != w && v != w) return false;
-		return u != w ? w == parent(u) : w == parent(v);
-	}
-	// Returns the k-th ancestor on the path to root
-	int ancestor(int u, int k){
-		ASSERT(~u);
-		k = depth(u) - k;
-		ASSERT(k >= 0);
-		for(; ~u; _push(u)){
-			int _size = _internal_size(_left[u]);
-			if(_size == k) return _access(u), u;
-			if(_size < k) k -= _size + 1, u = _right[u];
-			else u = _left[u];
-		}
-		ASSERT(false);
+		if(!~left[u]) return -1;
+		for(_push(u = left[u]); ~right[u]; _push(u)) u = right[u];
+		return _access(u), u;
 	}
 	// If u and v are in the same component, find the lca
 	// Otherwise, return -1
-	int lca(int u, int v){
-		ASSERT(~u && ~v);
+	int lca_or_disconnected(int u, int v){
+		ASSERT(0 <= min(u, v) && max(u, v) < n);
 		if(u == v) return u;
 		_access(u), _access(v);
-		if(!~_pv[u]) return -1;
+		if(!~pv[u]) return -1;
 		_splay(u);
-		return ~_pv[u] ? _pv[u] : u;
+		return ~pv[u] ? pv[u] : u;
+	}
+	bool adjacent(int u, int v){
+		ASSERT(0 <= min(u, v) && max(u, v) < n);
+		if(u == v) return false;
+		int w = lca_or_disconnected(u, v);
+		if(!~w || u != w && v != w) return false;
+		return u != w ? w == parent_or_is_root(u) : w == parent_or_is_root(v);
+	}
+	int depth(int u){
+		ASSERT(0 <= u && u < n);
+		_access(u);
+		return _internalsize(left[u]);
+	}
+	bool connected(int u, int v){
+		ASSERT(0 <= min(u, v) && max(u, v) < n);
+		if(u == v) return true;
+		_access(u), _access(v);
+		return !~pv[u];
+	}
+	// Returns the k-th ancestor on the path to root
+	int ancestor(int u, int k){
+		ASSERT(0 <= u && u < n && 0 <= k);
+		k = depth(u) - k;
+		ASSERT(k >= 0);
+		for(; ; _push(u)){
+			int size = _internalsize(left[u]);
+			if(size == k) return _access(u), u;
+			if(size < k) k -= size + 1, u = right[u];
+			else u = left[u];
+		}
+		ASSERT(false);
 	}
 	// Make u the parent of v
 	void link(int u, int v){
-		ASSERT(~u && ~v && !connected(u, v));
+		ASSERT(0 <= min(u, v) && max(u, v) < n && !connected(u, v));
 		reroot(v), _access(u), _set_link(v, u, 0), _refresh(v);
 	}
 	// Assumes u and v are adjacent in tree
@@ -220,75 +273,176 @@ struct link_cut_trees_base{
 		ASSERT(adjacent(u, v));
 		_cut_from_parent(depth(u) > depth(v) ? u : v);
 	}
-	// Reverse the u-v path
-	void reverse(int u, int v){
-		ASSERT(~u && ~v);
-		reroot(u), _access(v), _apply_reverse(v);
-	}
-	void update_path(int u, int v, const U &f){
-		static_assert(HAS_UPDATE);
-		ASSERT(connected(u, v));
-		reroot(v), _access(u);
-		_apply_aux(u, f);
-	}
-	void update_subtree(int u, const U &f){
-		static_assert(HAS_SUBTREE_UPDATE);
-		ASSERT(~u);
-		int v = -1;
-		if(!is_root(u)){
-			v = parent(u);
-			_cut_from_parent(u);
-		}
-		_apply_subtr(u, f);
-		if(~v) link(u, v);
+	T query(int u){
+		ASSERT(0 <= u && u < n);
+		ifPUSU _access(u);
+		return data[u];
 	}
 	T query_path(int u, int v){
-		static_assert(HAS_QUERY);
-		ASSERT(connected(u, v));
-		reroot(v), _access(u);
-		return aux_data[u];
+		static_assert(HAS_PATH_QUERY);
+		ASSERT(0 <= min(u, v) && max(u, v) < n && connected(u, v));
+		reroot(u), _access(v);
+		return aux_data[v];
 	}
 	T query_subtree(int u){
 		static_assert(HAS_SUBTREE_QUERY);
-		ASSERT(~u);
-		int v = -1;
-		if(!is_root(u)){
-			v = parent(u);
-			_cut_from_parent(u);
-		}
+		ASSERT(0 <= u && u < n);
+		int v = parent_or_is_root(u);
+		if(~v) _cut_from_parent(u);
 		T res = TT(aux_data[u], virtual_data[u]);
 		if(~v) link(u, v);
 		return res;
 	}
-	void build(int n){
-		build(vector<T>(n, T_id));
+	void update(int u, const U &f){
+		static_assert(HAS_PATH_UPDATE || HAS_SUBTREE_UPDATE);
+		ASSERT(0 <= u && u < n);
+		_access(u);
+		data[u] = UT(f, data[u]);
+		_refresh(u);
 	}
-	void build(int n, T init){
-		build(vector<T>(n, init));
+	void update_path(int u, int v, const U &f){
+		static_assert(HAS_PATH_UPDATE);
+		ASSERT(0 <= min(u, v) && max(u, v) < n && connected(u, v));
+		reroot(u), _access(v), _apply_aux(v, f);
 	}
-	template<class V>
-	void build(const vector<V> &a){
-		n = (int)a.size();
-		_size.assign(n, 1);
-		_rev.assign(n, false);
-		_pv.assign(n, -1);
-		_left.assign(n, -1);
-		_right.assign(n, -1);
-		data = a;
-		ifQ aux_data = a;
-		ifSQ virtual_data.assign(n, T_id);
-		ifU aux_lazy.assign(n, U_id);
-		ifSU aux_to_virtual_lazy.assign(n, U_id);
-		ifSU virtual_lazy.assign(n, U_id);
+	void update_subtree(int u, const U &f){
+		static_assert(HAS_SUBTREE_UPDATE);
+		ASSERT(0 <= u && u < n);
+		int v = parent_or_is_root(u);
+		if(~v) _cut_from_parent(u);
+		_apply_subtr(u, f);
+		if(~v) link(u, v);
+	}
+	void flip(int u, int v){
+		ASSERT(0 <= min(u, v) && max(u, v) < n);
+		reroot(u), _access(v), _apply_flip(v);
+	}
+	int max_suff(int u, int v, auto pred){
+		ASSERT(0 <= min(u, v) && max(u, v) < n);
+		reroot(v), _access(u);
+
 	}
 #undef ASSERT
-#undef ifQ
-#undef ifU
-#undef ifF
+#undef ifPQ
+#undef ifPU
 #undef ifSQ
 #undef ifSU
 #undef ifNC
+#undef ifPQSQ
+#undef ifPUSU
 };
+
+template<class T>
+auto make_LCT(){
+	using U = int;
+	auto TT = [&](const T &, const T &){ return T{}; };
+	using F1 = decltype(TT);
+	T T_id = {};
+	auto Tinv = [&](const T &){ return T{}; };
+	using F2 = decltype(Tinv);
+	auto UU = [&](const U &, const U &){ return U{}; };
+	using F3 = decltype(UU);
+	U U_id = {};
+	auto Uinv = [&](const U &){ return U{}; };
+	using F4 = decltype(Uinv);
+	auto UT = [&](const U &, const T &){ return T{}; };
+	using F5 = decltype(UT);
+	auto FlipT = [&](const T &){ return T{}; };
+	using F6 = decltype(FlipT);
+	return link_cut_trees_base<true, false, false, false, true, T, U, F1, F2, F3, F4, F5, F6>(TT, T_id, Tinv, UU, U_id, Uinv, UT, FlipT);
+}
+// Supports
+// - path query
+template<class T, class F1, class F6>
+auto make_PQ_LCT(F1 TT, T T_id, F6 FlipT){
+	using U = int;
+	auto Tinv = [&](const T &){ return T{}; };
+	using F2 = decltype(Tinv);
+	auto UU = [&](const U &, const U &){ return U{}; };
+	using F3 = decltype(UU);
+	U U_id = {};
+	auto Uinv = [&](const U &){ return U{}; };
+	using F4 = decltype(Uinv);
+	auto UT = [&](const U &, const T &){ return T{}; };
+	using F5 = decltype(UT);
+	return link_cut_trees_base<true, false, false, false, false, T, U, F1, F2, F3, F4, F5, F6>(TT, T_id, Tinv, UU, U_id, Uinv, UT, FlipT);
+}
+// Supports
+// - path query (commutative)
+template<class T, class F1>
+auto make_cPQ_LCT(F1 TT, T T_id){
+	using U = int;
+	auto Tinv = [&](const T &){ return T{}; };
+	using F2 = decltype(Tinv);
+	auto UU = [&](const U &, const U &){ return U{}; };
+	using F3 = decltype(UU);
+	U U_id = {};
+	auto Uinv = [&](const U &){ return U{}; };
+	using F4 = decltype(Uinv);
+	auto UT = [&](const U &, const T &){ return T{}; };
+	using F5 = decltype(UT);
+	auto FlipT = [&](const T &){ return T{}; };
+	using F6 = decltype(FlipT);
+	return link_cut_trees_base<true, false, false, false, true, T, U, F1, F2, F3, F4, F5, F6>(TT, T_id, Tinv, UU, U_id, Uinv, UT, FlipT);
+}
+// Supports
+// - subtree query (commutative & invertible)
+template<class T, class F1, class F2>
+auto make_SQ_LCT(F1 TT, T T_id, F2 Tinv){
+	using U = int;
+	auto UU = [&](const U &, const U &){ return U{}; };
+	using F3 = decltype(UU);
+	U U_id = {};
+	auto Uinv = [&](const U &){ return U{}; };
+	using F4 = decltype(Uinv);
+	auto UT = [&](const U &, const T &){ return T{}; };
+	using F5 = decltype(UT);
+	auto FlipT = [&](const T &){ return T{}; };
+	using F6 = decltype(FlipT);
+	return link_cut_trees_base<false, false, true, false, true, T, U, F1, F2, F3, F4, F5, F6>(TT, T_id, Tinv, UU, U_id, Uinv, UT, FlipT);
+}
+// Supports
+// - path query
+// - path update
+template<class T, class U, class F1, class F3, class F5, class F6>
+auto make_PQPU_LCT(F1 TT, T T_id, F3 UU, U U_id, F5 UT, F6 FlipT){
+	auto Tinv = [&](const T &){ return T{}; };
+	using F2 = decltype(Tinv);
+	auto Uinv = [&](const U &){ return U{}; };
+	using F4 = decltype(Uinv);
+	return link_cut_trees_base<true, true, false, false, false, T, U, F1, F2, F3, F4, F5, F6>(TT, T_id, Tinv, UU, U_id, Uinv, UT, FlipT);
+}
+// Supports
+// - path query (commutative)
+// - path update
+template<class T, class U, class F1, class F3, class F5>
+auto make_cPQPU_LCT(F1 TT, T T_id, F3 UU, U U_id, F5 UT){
+	auto Tinv = [&](const T &){ return T{}; };
+	using F2 = decltype(Tinv);
+	auto Uinv = [&](const U &){ return U{}; };
+	using F4 = decltype(Uinv);
+	auto FlipT = [&](const T &){ return T{}; };
+	using F6 = decltype(FlipT);
+	return link_cut_trees_base<true, true, false, false, true, T, U, F1, F2, F3, F4, F5, F6>(TT, T_id, Tinv, UU, U_id, Uinv, UT, FlipT);
+}
+// Supports
+// - subtree query (commutative & invertible)
+// - subtree update (commutative & invertible)
+template<class T, class U, class F1, class F2, class F3, class F4, class F5>
+auto make_SQSU_LCT(F1 TT, T T_id, F2 Tinv, F3 UU, U U_id, F4 Uinv, F5 UT){
+	auto FlipT = [&](const T &){ return T{}; };
+	using F6 = decltype(FlipT);
+	return link_cut_trees_base<false, false, true, true, true, T, U, F1, F2, F3, F4, F5, F6>(TT, T_id, Tinv, UU, U_id, Uinv, UT, FlipT);
+}
+// Supports
+// - path query + subtree query (commutative & invertible)
+// - path update + subtree update (commutative & invertible)
+template<class T, class U, class F1, class F2, class F3, class F4, class F5>
+auto make_PQPUSQSU_LCT(F1 TT, T T_id, F2 Tinv, F3 UU, U U_id, F4 Uinv, F5 UT){
+	auto FlipT = [&](const T &){ return T{}; };
+	using F6 = decltype(FlipT);
+	return link_cut_trees_base<true, true, true, true, true, T, U, F1, F2, F3, F4, F5, F6>(TT, T_id, Tinv, UU, U_id, Uinv, UT, FlipT);
+}
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
 	<tabTrigger>link_cut_trees</tabTrigger> -->
