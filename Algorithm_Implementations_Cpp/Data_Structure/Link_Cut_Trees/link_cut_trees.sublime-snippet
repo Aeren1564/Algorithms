@@ -284,9 +284,10 @@ struct link_cut_trees_base{
 		reroot(u), _access(v);
 		return aux_data[v];
 	}
-	T query_subtree(int u){
+	T query_subtree(int root, int u){
 		static_assert(HAS_SUBTREE_QUERY);
-		ASSERT(0 <= u && u < n);
+		ASSERT(0 <= min(root, u) && max(root, u) < n);
+		reroot(root);
 		int v = parent_or_is_root(u);
 		if(~v) _cut_from_parent(u);
 		T res = TT(aux_data[u], virtual_data[u]);
@@ -305,9 +306,10 @@ struct link_cut_trees_base{
 		ASSERT(0 <= min(u, v) && max(u, v) < n && connected(u, v));
 		reroot(u), _access(v), _apply_aux(v, f);
 	}
-	void update_subtree(int u, const U &f){
+	void update_subtree(int root, int u, const U &f){
 		static_assert(HAS_SUBTREE_UPDATE);
-		ASSERT(0 <= u && u < n);
+		ASSERT(0 <= min(root, u) && max(root, u) < n);
+		reroot(root);
 		int v = parent_or_is_root(u);
 		if(~v) _cut_from_parent(u);
 		_apply_subtr(u, f);
