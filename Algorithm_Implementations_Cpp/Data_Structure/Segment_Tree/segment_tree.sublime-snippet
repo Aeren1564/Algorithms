@@ -269,7 +269,7 @@ struct segment_tree_base{
 	// pred(sum[l, qr)) is F, F, ..., F, T, T, ..., T
 	// Returns min l with T
 	// O(log(n))
-	int min_suff(int qr, auto pred){
+	int max_suff(int qr, auto pred){
 		static_assert(HAS_QUERY);
 		assert(0 <= qr && qr <= n && pred(T_id));
 		if(qr == 0) return 0;
