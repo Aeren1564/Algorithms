@@ -1,0 +1,27 @@
+<snippet>
+	<content><![CDATA[
+import socket
+class netcat:
+	def __init__(self, hostname: str, port: int):
+		self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		self._socket.connect((hostname, port))
+	def send(self, content: bytearray):
+		print("[netcat - sending]")
+		print(content)
+		print()
+		self._socket.sendall(content)
+	def receive(self, buffer_size: int = 1024) -> bytearray:
+		res = self._socket.recv(buffer_size)
+		print("[netcat - received]")
+		print(res)
+		print()
+		return res
+	def interact(self, content: bytearray, buffer_size: int = 1204) -> bytearray:
+		self.send(content)
+		return self.receive(buffer_size)
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>netcat</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.python</scope> -->
+</snippet>
