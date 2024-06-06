@@ -181,8 +181,8 @@ struct link_cut_trees_base{
 		pv.assign(n, -1);
 		left.assign(n, -1);
 		right.assign(n, -1);
-		data = a;
-		ifPQ aux_data = a;
+		data = vector<T>(a.begin(), a.end());
+		ifPQ aux_data = vector<T>(a.begin(), a.end());
 		ifSQ virtual_data.assign(n, T_id);
 		ifPU aux_lazy.assign(n, U_id);
 		ifSU aux_to_virtual_lazy.assign(n, U_id);
@@ -251,7 +251,7 @@ struct link_cut_trees_base{
 		return !~pv[u];
 	}
 	// Returns the k-th ancestor on the path to root
-	int ancestor(int u, int k){
+	int find_ancestor_by_order(int u, int k){
 		ASSERT(0 <= u && u < n && 0 <= k);
 		k = depth(u) - k;
 		ASSERT(k >= 0);
@@ -262,6 +262,12 @@ struct link_cut_trees_base{
 			else u = left[u];
 		}
 		ASSERT(false);
+	}
+	// Returns the k-th vertex on the u-v path
+	int find_vertex_by_order(int u, int v, int k){
+		ASSERT(0 <= min(u, v) && max(u, v) < n && 0 <= k);
+		reroot(v);
+		return find_ancestor_by_order(u, k);
 	}
 	// Make u the parent of v
 	void link(int u, int v){
@@ -278,15 +284,19 @@ struct link_cut_trees_base{
 		ifPUSU _access(u);
 		return data[u];
 	}
+	template<bool KEEP_STRUCTURE = false>
 	T query_path(int u, int v){
 		static_assert(HAS_PATH_QUERY);
 		ASSERT(0 <= min(u, v) && max(u, v) < n && connected(u, v));
+		int init_root = -1;
+		if constexpr(KEEP_STRUCTURE) init_root = root_of(u);
 		reroot(u), _access(v);
+		if constexpr(KEEP_STRUCTURE) reroot(init_root);
 		return aux_data[v];
 	}
 	T query_subtree(int root, int u){
 		static_assert(HAS_SUBTREE_QUERY);
-		ASSERT(0 <= min(root, u) && max(root, u) < n);
+		ASSERT(0 <= min(root, u) && max(root, u) < n && connected(root, u));
 		reroot(root);
 		int v = parent_or_is_root(u);
 		if(~v) _cut_from_parent(u);
@@ -301,28 +311,46 @@ struct link_cut_trees_base{
 		data[u] = UT(f, data[u]);
 		_refresh(u);
 	}
+	template<bool KEEP_STRUCTURE = false>
 	void update_path(int u, int v, const U &f){
 		static_assert(HAS_PATH_UPDATE);
 		ASSERT(0 <= min(u, v) && max(u, v) < n && connected(u, v));
+		int init_root = -1;
+		if constexpr(KEEP_STRUCTURE) init_root = root_of(u);
 		reroot(u), _access(v), _apply_aux(v, f);
+		if constexpr(KEEP_STRUCTURE) reroot(init_root);
 	}
 	void update_subtree(int root, int u, const U &f){
 		static_assert(HAS_SUBTREE_UPDATE);
-		ASSERT(0 <= min(root, u) && max(root, u) < n);
+		ASSERT(0 <= min(root, u) && max(root, u) < n && connected(root, u));
 		reroot(root);
 		int v = parent_or_is_root(u);
 		if(~v) _cut_from_parent(u);
 		_apply_subtr(u, f);
 		if(~v) link(u, v);
 	}
+	template<bool KEEP_STRUCTURE = false>
 	void flip(int u, int v){
-		ASSERT(0 <= min(u, v) && max(u, v) < n);
+		ASSERT(0 <= min(u, v) && max(u, v) < n && connected(u, v));
+		int init_root = -1;
+		if constexpr(KEEP_STRUCTURE) init_root = root_of(u);
 		reroot(u), _access(v), _apply_flip(v);
+		if constexpr(KEEP_STRUCTURE) reroot(init_root);
+	}
+	int partition_point(int u, int v, auto pred){
+		ASSERT(0 <= min(u, v) && max(u, v) < n && connected(u, v));
+		// TODO FINISH THIS
+	}
+	int max_pref(int u, int v, auto pred){
+		static_assert(HAS_PATH_QUERY);
+		ASSERT(0 <= min(u, v) && max(u, v) < n && connected(u, v));
+		// TODO FINISH THIS
 	}
 	int max_suff(int u, int v, auto pred){
-		ASSERT(0 <= min(u, v) && max(u, v) < n);
+		static_assert(HAS_PATH_QUERY);
+		ASSERT(0 <= min(u, v) && max(u, v) < n && connected(u, v));
 		reroot(v), _access(u);
-
+		// TODO FINISH THIS
 	}
 #undef ASSERT
 #undef ifPQ
@@ -333,6 +361,8 @@ struct link_cut_trees_base{
 #undef ifPQSQ
 #undef ifPUSU
 };
+
+// TODO TEST
 
 template<class T>
 auto make_LCT(){
