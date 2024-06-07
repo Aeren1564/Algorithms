@@ -1,0 +1,89 @@
+<snippet>
+	<content><![CDATA[
+from qiskit import QuantumCircuit, QuantumRegister
+from qiskit.circuit.library import XGate, ZGate, HGate, RYGate
+from math import sqrt, acos, pi
+
+def append_control_gate(qc: QuantumCircuit, gate, target_qubits, ctrl_state: int, controlled_qubits)->QuantumCircuit:
+	for target_qubit in target_qubits:
+		if len(controlled_qubits) == 0:
+				qc.append(gate, [target_qubit])
+		else:
+			qc.append(gate.control(len(controlled_qubits), ctrl_state = ctrl_state), controlled_qubits + [target_qubit])
+	return qc
+
+def solve(n: int, L: int)->QuantumCircuit:
+	qc = QuantumCircuit(n)
+	if L == (1 << n):
+		for i in range(n):
+			qc.h(i)
+		return qc
+	mask = (1 << n) - 1
+	ctrl_state = 0
+	controlled_qubits = []
+	for bit in range(n - 1, -1, -1):
+		if L >> bit & 1:
+			left, right = 1 << bit, L - (1 << bit)
+			theta = acos(sqrt(left) / sqrt(left + right)) * 2
+			append_control_gate(qc, RYGate(theta), [bit], ctrl_state, controlled_qubits)
+			append_control_gate(qc, HGate(), range(bit - 1, -1, -1), ctrl_state, controlled_qubits + [bit])
+			L ^= 1 << bit
+			ctrl_state |= 1 << len(controlled_qubits)
+		controlled_qubits += [bit]
+	return qc
+
+def _check(n: int, L: int, qc: QuantumCircuit)->bool:
+	eps = 1e-12
+	mat = _qc_to_matrix(qc)
+	for i in range(1, L):
+		if abs(mat[0][0] - mat[i][0]) > 1e-9:
+			return False
+	return abs(1 - sum(abs(mat[i][0]) * abs(mat[i][0]) for i in range(L))) <= 1e-3
+
+def _qc_to_matrix(qc: QuantumCircuit):
+	import qiskit.quantum_info as qi
+	import numpy as np
+	np.set_printoptions(linewidth=np.inf)
+	return np.array(qi.Operator(qc))
+
+def _simulate(qc: QuantumCircuit):
+	from qiskit import Aer, execute
+	simulator = Aer.get_backend("statevector_simulator")
+	statevector = execute(qc, simulator).result().get_statevector(qc)
+	print(statevector)
+
+def _print_circuit_info(qc: QuantumCircuit):
+	mat = _qc_to_matrix(qc)
+	print(qc.draw("text"))
+	print(mat)
+	print("depth = ", qc.depth())
+	#_simulate(qc)
+
+def keep_running():
+	import sys
+	input = sys.stdin.readline
+	while True:
+		n, L = map(int,input().split())
+		qc = solve(n, L)
+		_print_circuit_info(qc)
+
+def stress_test():
+	for n in range(1, 11):
+		for L in range(1, 1 << n | 1):
+			qc = solve(n, L)
+			if not _check(n, L, qc):
+				print(f"WA, n = {n}, L = {L}")
+				_print_circuit_info(qc)
+				exit(0)
+			print(f"AC, n = {n}, L = {L}")
+	print("AC")
+
+#keep_running()
+stress_test()
+
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>qiskit_initialize</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.python</scope> -->
+</snippet>
