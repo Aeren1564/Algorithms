@@ -1,0 +1,23 @@
+<snippet>
+	<content><![CDATA[
+# Stream Ciphers: ChaCha20
+# Block Ciphers: AES
+import Crypto.Cipher as Cipher
+# pad
+import Crypto.Util.Padding as Padding
+import Crypto.Util.number as Number
+import math
+import os
+import zlib
+import string
+
+# in ascii order
+flag_char_pool = string.digits + string.ascii_uppercase + '_' + string.ascii_lowercase
+
+$0
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>initialize</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.python</scope> -->
+</snippet>
