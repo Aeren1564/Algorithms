@@ -1,0 +1,57 @@
+<snippet>
+	<content><![CDATA[
+def mat_vec_modmul(n : int, m : int, a, b, mod : int):
+	c = [0] * n
+	for i in range(n):
+		for j in range(m):
+			c[i] += a[i][j] * b[j]
+	return [x % mod for x in c]
+
+def vec_mat_modmul(n : int, m : int, a, b, mod : int):
+	c = [0] * m
+	for i in range(n):
+		for j in range(m):
+			c[j] += a[i] * b[i][j]
+	return [x % mod for x in c]
+
+def mat_modmul(n : int, m : int, l : int, a, b, mod : int):
+	c = [[0] * l for _ in range(n)]
+	for i in range(n):
+		for j in range(m):
+			for k in range(l):
+				c[i][k] += a[i][j] * b[j][k]
+	return [[x % mod for x in d] for d in c]
+
+def mat_modinv(n : int, a, mod : int):
+	b = [[0] * (2 * n) for _ in range(n)]
+	for i in range(n):
+		for j in range(n):
+			b[i][j] = a[i][j]
+		b[i][n + i] = 1
+	for pivot in range(n):
+		for i in range(pivot + 1, n):
+			while b[i][pivot] != 0:
+				q = b[pivot][pivot] // b[i][pivot]
+				for j in range(pivot, 2 * n):
+					b[pivot][j] = (b[pivot][j] - q * b[i][j]) % mod
+				b[pivot], b[i] = b[i], b[pivot]
+		if b[pivot][pivot] == 0:
+			return None
+	for pivot in range(n):
+		if b[pivot][pivot] != 1:
+			inv = pow(b[pivot][pivot], -1, mod)
+			if inv is None:
+				return None
+			for j in range(pivot, 2 * n):
+				b[pivot][j] *= inv
+		for i in range(pivot):
+			if b[i][pivot] != 0:
+				for j in range(2 * n - 1, pivot - 1, -1):
+					b[i][j] -= b[i][pivot] * b[pivot][j]
+	return [[x % mod for x in c[n : 2 * n]] for c in b]
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>matrix_modular</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.python</scope> -->
+</snippet>
