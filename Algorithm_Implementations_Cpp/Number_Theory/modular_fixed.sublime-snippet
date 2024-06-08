@@ -15,7 +15,13 @@ struct modular_fixed_base{
 		vector<modular_fixed_base> res(SZ + 1, 1);
 		for(auto i = 1; i <= SZ; ++ i) res[i] = res[i - 1] * base;
 		return res;
-	}	
+	}
+	template<class T>
+	static vector<modular_fixed_base> precalc_geometric_sum(T base, int SZ){
+		vector<modular_fixed_base> res(SZ + 1);
+		for(auto i = 1; i <= SZ; ++ i) res[i] = res[i - 1] * base + base;
+		return res;
+	}
 	static vector<modular_fixed_base> _INV;
 	static void precalc_inverse(int SZ){
 		if(_INV.empty()) _INV.assign(2, 1);
@@ -95,6 +101,25 @@ struct modular_fixed_base{
 	modular_fixed_base power(T e) const{
 		return modular_fixed_base(*this).inplace_power(e);
 	}
+	// c + c * x + ... + c * x^{e-1}
+	template<class T, typename enable_if<IS_INTEGRAL(T)>::type* = nullptr>
+	modular_fixed_base &inplace_geometric_sum(T e, modular_fixed_base c = 1){
+		if(e == 0) return *this = {};
+		if(data == 0) return *this = {};
+		if(data == 1) return *this = c * e;
+		if(e == 1) return *this = c;
+		if(data == mod() - 1) return *this = c * abs(e % 2);
+		modular_fixed_base res = 0;
+		if(e < 0) return *this = geometric_sum(-e + 1, -*this) - 1;
+		if(e == 1) return *this = c * *this;
+		for(; e; c *= 1 + *this, *this *= *this, e >>= 1) if(e & 1) res += c, c *= *this;
+		return *this = res;
+	}
+	// c + c * x + ... + c * x^{e-1}
+	template<class T, typename enable_if<IS_INTEGRAL(T)>::type* = nullptr>
+	modular_fixed_base geometric_sum(T e, modular_fixed_base c = 1) const{
+		return modular_fixed_base(*this).inplace_geometric_sum(e, c);
+	}
 	modular_fixed_base &operator/=(const modular_fixed_base &otr){
 		make_signed_t<data_t> a = otr.data, m = _mod, u = 0, v = 1;
 		if(a < _INV.size()) return *this *= _INV[a];
@@ -162,6 +187,7 @@ const unsigned int mod = (119 << 23) + 1; // 998244353
 // const unsigned int mod = 1e9 + 9; // 1000000009
 // const unsigned long long mod = (unsigned long long)1e18 + 9;
 using modular = modular_fixed_base<decay_t<decltype(mod)>, mod>;
+modular operator""_m(const char *x){ return stoll(x); }
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
 	<tabTrigger>modular_fixed</tabTrigger> -->
