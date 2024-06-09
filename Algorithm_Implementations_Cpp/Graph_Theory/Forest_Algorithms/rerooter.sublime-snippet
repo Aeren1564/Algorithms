@@ -5,7 +5,7 @@ template<class T, class F, class FV, class FE>
 struct rerooter_base{
 	int n, attempt;
 	// Given a tree T rooted at r, let f(T) be the value at dp[r] after the following process
-	// For each vertex u in reversed dfs order, set dp[u] = init
+	// For each vertex u in reversed dfs order, set dp[u] = T_init
 	// For each child v of u with edge id, set dp[u] = rake(dp[u], apply_edge(id, f[v]))
 	// Finally, set dp[u] = apply_vertex(u, dp[u])
 	// dp_subtr[u] holds f(T) where T is the subtree rooted at u
@@ -27,7 +27,7 @@ struct rerooter_base{
 	F rake; // merge two subtrees with no root (point cluster)
 	FV apply_vertex; // point cluster -> path cluster
 	FE apply_edge; // path cluster -> point cluster
-	rerooter_base(T init, F rake, FV apply_vertex, FE apply_edge): T_init(T_init), rake(rake), apply_vertex(apply_vertex), apply_edge(apply_edge){ }
+	rerooter_base(T T_init, F rake, FV apply_vertex, FE apply_edge): T_init(T_init), rake(rake), apply_vertex(apply_vertex), apply_edge(apply_edge){ }
 	void init(int n){
 		this->n = n;
 		dp_subtr_no_root.assign(n, T_init);
