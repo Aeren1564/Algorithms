@@ -1,0 +1,17 @@
+<snippet>
+	<content><![CDATA[
+def partition_point(low : int, high : int, pred):
+	assert low < high
+	while high - low >= 2:
+		mid = (low + high) / 2
+		if pred(mid):
+			low = mid
+		else:
+			high = mid
+	return high
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>partition_point</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.python</scope> -->
+</snippet>
