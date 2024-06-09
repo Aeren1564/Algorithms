@@ -5,12 +5,14 @@ template<class T, class F, class FV, class FE>
 struct rerooter_base{
 	int n, attempt;
 	// Given a tree T rooted at r, let f(T) be the value at dp[r] after the following process
-	// For each vertex u in reversed dfs order, set dp[u] = T_id
-	// For each child v of u with edge id, set dp[u] = TT(dp[u], apply_edge(id, f[v]))
+	// For each vertex u in reversed dfs order, set dp[u] = init
+	// For each child v of u with edge id, set dp[u] = rake(dp[u], apply_edge(id, f[v]))
 	// Finally, set dp[u] = apply_vertex(u, dp[u])
 	// dp_subtr[u] holds f(T) where T is the subtree rooted at u
 	// dp_compl[u] for u != root holds f(T) where T is the complement subtree of the subtree rooted at u, where its root is the parent vertex of u
+	vector<T> dp_subtr_no_root;
 	vector<T> dp_subtr;
+	vector<T> dp_compl_no_root;
 	vector<T> dp_compl;
 	vector<T> dp;
 	vector<T> pref;
@@ -21,16 +23,18 @@ struct rerooter_base{
 	vector<int> root_of;
 	vector<int> root;
 	vector<int> was;
-	F TT; // commutative monoid operation
-	T T_id; // commutative monoid identity
-	FV apply_vertex;
-	FE apply_edge;
-	rerooter_base(F TT, T T_id, FV apply_vertex, FE apply_edge): TT(TT), T_id(T_id), apply_vertex(apply_vertex), apply_edge(apply_edge){ }
+	T T_init;
+	F rake; // merge two subtrees with no root (point cluster)
+	FV apply_vertex; // point cluster -> path cluster
+	FE apply_edge; // path cluster -> point cluster
+	rerooter_base(T init, F rake, FV apply_vertex, FE apply_edge): T_init(T_init), rake(rake), apply_vertex(apply_vertex), apply_edge(apply_edge){ }
 	void init(int n){
 		this->n = n;
-		dp_subtr.assign(n, T_id);
-		dp_compl.assign(n, T_id);
-		dp.assign(n, T_id);
+		dp_subtr_no_root.assign(n, T_init);
+		dp_subtr.assign(n, T_init);
+		dp_compl_no_root.assign(n, T_init);
+		dp_compl.assign(n, T_init);
+		dp.assign(n, T_init);
 		pv.assign(n, -1);
 		pe.assign(n, -1);
 		order.clear();
@@ -43,6 +47,7 @@ struct rerooter_base{
 	// O(n) apply_vertex() and apply_edge() calls where n is the number of nodes in the component of u
 	template<class U>
 	void _dfs(const graph<U> &g, int u){
+		int init_size = (int)order.size();
 		pv[u] = pe[u] = -1;
 		root_of[u] = u;
 		root.push_back(u);
@@ -50,7 +55,7 @@ struct rerooter_base{
 			was[u] = attempt;
 			order.push_back(u);
 			size[u] = 1;
-			dp_subtr[u] = T_id;
+			dp_subtr_no_root[u] = T_init;
 			for(auto id: g.adj[u]){
 				if(id == pe[u] || g.ignore && g.ignore(id)) continue;
 				int v = g(u, id);
@@ -58,13 +63,15 @@ struct rerooter_base{
 				root_of[v] = root_of[u];
 				self(self, v);
 				size[u] += size[v];
-				dp_subtr[u] = TT(dp_subtr[u], apply_edge(id, dp_subtr[v]));
+				dp_subtr_no_root[u] = rake(dp_subtr_no_root[u], apply_edge(id, dp_subtr[v]));
 			}
-			dp_subtr[u] = apply_vertex(u, dp_subtr[u]);
+			dp_subtr[u] = apply_vertex(u, dp_subtr_no_root[u]);
 		};
 		recurse(recurse, u);
-		for(auto u: order){
-			pref.assign(g.degree(u) + 1, T_id);
+		dp[u] = dp_subtr[u];
+		for(auto t = init_size; t < (int)order.size(); ++ t){
+			int u = order[t];
+			pref.assign(g.degree(u) + 1, T_init);
 			for(auto i = 0; i < g.degree(u); ++ i){
 				int id = g.adj[u][i];
 				if(id == pe[u] || g.ignore && g.ignore(id)){
@@ -72,15 +79,17 @@ struct rerooter_base{
 					continue;
 				}
 				int v = g(u, id);
-				pref[i + 1] = TT(pref[i], apply_edge(id, dp_subtr[v]));
+				pref[i + 1] = rake(pref[i], apply_edge(id, dp_subtr[v]));
 			}
-			T suff = T_id;
+			T suff = T_init;
 			for(auto i = g.degree(u) - 1; i >= 0; -- i){
 				int id = g.adj[u][i];
 				if(id == pe[u] || g.ignore && g.ignore(id)) continue;
 				int v = g(u, id);
-				dp_compl[v] = apply_vertex(u, TT(~pe[u] ? apply_edge(pe[u], dp_compl[u]) : T_id, TT(pref[i], suff)));
-				suff = TT(suff, apply_edge(id, dp_subtr[v]));
+				dp_compl_no_root[v] = ~pe[u] ? rake(apply_edge(pe[u], dp_compl[u]), rake(pref[i], suff)) : rake(pref[i], suff);
+				dp_compl[v] = apply_vertex(u, dp_compl_no_root[v]);
+				dp[v] = apply_vertex(v, rake(dp_subtr_no_root[v], apply_edge(id, dp_compl[v])));
+				suff = rake(suff, apply_edge(id, dp_subtr[v]));
 			}
 		}
 	}
@@ -93,7 +102,6 @@ struct rerooter_base{
 			assert(0 <= u && u < g.n);
 			if(was[u] != attempt) _dfs(g, u);
 		}
-		for(auto u: order) dp[u] = root_of[u] == u ? dp_subtr[u] : TT(apply_edge(pe[u], dp_subtr[u]), dp_compl[u]);
 	}
 	// O(n + m)
 	template<class U>
@@ -102,7 +110,6 @@ struct rerooter_base{
 		++ attempt;
 		root.clear(), order.clear();
 		for(auto u = 0; u < g.n; ++ u) if(was[u] != attempt) _dfs(g, u);
-		for(auto u: order) dp[u] = root_of[u] == u ? dp_subtr[u] : TT(apply_edge(pe[u], dp_subtr[u]), dp_compl[u]);
 	}
 	// Check if u is visited during the last dfs-like call.
 	bool visited(int u) const{
@@ -112,45 +119,24 @@ struct rerooter_base{
 };
 
 template<class T, class F>
-auto make_rerooter(F TT, T T_id){
+auto make_rerooter(T T_init, F rake){
 	auto apply_vertex = [](int, const T &x){ return x; };
 	auto apply_edge = [](int, const T &x){ return x; };
-	return rerooter_base(TT, T_id, apply_vertex, apply_edge);
+	return rerooter_base(T_init, rake, apply_vertex, apply_edge);
 }
 template<class T, class F, class FV>
-auto make_V_rerooter(F TT, T T_id, FV apply_vertex){
+auto make_V_rerooter(T T_init, F rake, FV apply_vertex){
 	auto apply_edge = [](int, const T &x){ return x; };
-	return rerooter_base(TT, T_id, apply_vertex, apply_edge);
+	return rerooter_base(T_init, rake, apply_vertex, apply_edge);
 }
 template<class T, class F, class FE>
-auto make_E_rerooter(F TT, T T_id, FE apply_edge){
+auto make_E_rerooter(T T_init, F rake, FE apply_edge){
 	auto apply_vertex = [](int, const T &x){ return x; };
-	return rerooter_base(TT, T_id, apply_vertex, apply_edge);
+	return rerooter_base(T_init, rake, apply_vertex, apply_edge);
 }
 template<class T, class F, class FV, class FE>
-auto make_VE_rerooter(F TT, T T_id, FV apply_vertex, FE apply_edge){
-	return rerooter_base(TT, T_id, apply_vertex, apply_edge);
-}
-
-template<class T, class F>
-auto make_rerooter(F TT, T T_id){
-	auto apply_vertex = [](int, const T &x){ return x; };
-	auto apply_edge = [](int, const T &x){ return x; };
-	return rerooter_base(TT, T_id, apply_vertex, apply_edge);
-}
-template<class T, class F, class FV>
-auto make_V_rerooter(F TT, T T_id, FV apply_vertex){
-	auto apply_edge = [](int, const T &x){ return x; };
-	return rerooter_base(TT, T_id, apply_vertex, apply_edge);
-}
-template<class T, class F, class FE>
-auto make_E_rerooter(F TT, T T_id, FE apply_edge){
-	auto apply_vertex = [](int, const T &x){ return x; };
-	return rerooter_base(TT, T_id, apply_vertex, apply_edge);
-}
-template<class T, class F, class FV, class FE>
-auto make_VE_rerooter(F TT, T T_id, FV apply_vertex, FE apply_edge){
-	return rerooter_base(TT, T_id, apply_vertex, apply_edge);
+auto make_VE_rerooter(T T_init, F rake, FV apply_vertex, FE apply_edge){
+	return rerooter_base(T_init, rake, apply_vertex, apply_edge);
 }
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
