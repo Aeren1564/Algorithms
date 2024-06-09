@@ -1,0 +1,63 @@
+<snippet>
+	<content><![CDATA[
+// graph must be randomly generated with enough density
+// Requires graph
+template<size_t SZ, class T>
+vector<int> hamiltonian_path_of_random_graph(auto &&rng, const graph<T> &g){
+	int n = g.n;
+	assert(n <= SZ);
+	vector<bitset<SZ>> adjm(n);
+	vector<int> label(n), recover(n);
+	iota(label.begin(), label.end(), 0);
+	shuffle(label.begin(), label.end(), rng);
+	for(auto u = 0; u < n; ++ u) recover[label[u]] = u;
+	for(auto u = 0; u < n; ++ u) for(auto id: g.adj[u]){
+		if(g.ignore && g.ignore(id)) continue;
+		int v = g(u, id);
+		adjm[label[u]].set(label[v]), adjm[label[v]].set(label[u]);
+	}
+	vector<int> path{int(rng() % n)};
+	bitset<SZ> rem;
+	for(auto u = 0; u < n; ++ u) rem.set(u);
+	rem.reset(path.back());
+	while(rem.any()){
+		auto common = adjm[path.back()] & rem;
+		if(auto s = common._Find_first(); s < n){
+			int t = common._Find_next(rng() % n);
+			if(t < n) s = t;
+			path.push_back(s);
+			rem.reset(s);
+		}
+		else{
+			int u, i;
+			while(true){
+				if(u = adjm[path.back()]._Find_next(rng() % n); u < n && u != path.end()[-2]){
+					int i = find(path.begin(), path.end(), u) - path.begin();
+					bool done = false;
+					for(auto j = i + 1; j < (int)path.size(); ++ j){
+						if(adjm[path[i - 1]][path[j]]){
+							rotate(path.begin() + i, path.begin() + j, path.end());
+							done = true;
+							break;
+						}
+					}
+					if(done) break;
+				}
+				for(auto i = 1; i < (int)path.size(); ++ i){
+					if(adjm[path[0]][path[i]] && adjm[path[i - 1]][path.back()]){
+						reverse(path.begin() + i, path.end());
+						break;
+					}
+				}
+			}
+		}
+	}
+	for(auto &u: path) u = recover[u];
+	return path;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>hamiltonian_path_of_random_graph</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
