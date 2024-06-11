@@ -1,46 +1,57 @@
 <snippet>
 	<content><![CDATA[
 struct grid_bfs_forest{
+#ifdef LOCAL
+	#define ASSERT(x) assert(x)
+#else
+	#define ASSERT(x) 42
+#endif
 	int n, nr;
 	vector<int> ncs;
-	vector<vector<int>> index;
-	vector<array<int, 2>> locate;
 	vector<array<int, 2>> dr = {{1, 0}, {0, 1}, {-1, 0}, {0, -1}};
-	vector<int> pv;
-	vector<int> order;
-	vector<int> pos;
-	vector<int> root_of;
+	vector<vector<int>> index;
 	vector<int> root;
-	vector<int> depth;
-	vector<int> was;
+	vector<int> order;
+	// variables starting with _ accepts one dimensional indices
+	vector<array<int, 2>> _locate;
+	vector<int> _pv;
+	vector<int> _pos;
+	vector<int> _root_of;
+	vector<int> _depth;
+	vector<int> _was;
+	grid_bfs_forest(){ }
+	grid_bfs_forest(int nr, int nc){ init(nr, nc); }
+	template<class Container, class F = equal_to<>>
+	grid_bfs_forest(const vector<Container> &grid, F propagate = equal_to<>()){ init((int)grid.size(), (int)grid[0].size()); bfs_all(grid, propagate); }
 	void init(int nr, int nc){
-		assert(0 <= nr && 0 <= nc);
+		ASSERT(1 <= nr && 1 <= nc);
 		init(nr, vector(nr, nc));
 	}
 	void init(int nr, const vector<int> &ncs){
-		assert(nr == (int)ncs.size());
+		ASSERT(1 <= nr && nr == (int)ncs.size());
 		this->n = accumulate(ncs.begin(), ncs.end(), 0);
 		this->nr = nr;
 		this->ncs = ncs;
-		locate.clear();
+		_locate.clear();
 		index.assign(nr, {});
 		for(auto x = 0; x < nr; ++ x){
 			int nc = ncs[x];
-			assert(0 <= nc);
+			ASSERT(0 <= nc);
 			index[x].assign(nc, -1);
 			for(auto y = 0; y < nc; ++ y){
-				index[x][y] = (int)locate.size();
-				locate.push_back({x, y});
+				index[x][y] = (int)_locate.size();
+				_locate.push_back({x, y});
 			}
 		}
-		pv.assign(n, -1);
+		_pv.assign(n, -1);
 		order.clear();
-		pos.assign(n, -1);
-		root_of.assign(n, -1);
+		_pos.assign(n, -1);
+		_root_of.assign(n, -1);
 		root.clear();
-		depth.assign(n, -1);
-		was.assign(n, -2);
+		_depth.assign(n, -1);
+		_was.assign(n, -2);
 		attempt = -1;
+		_group_of.resize(n);
 	}
 	void init_dr(const vector<array<int, 2>> &dr){
 		this->dr = dr;
@@ -54,69 +65,95 @@ struct grid_bfs_forest{
 	int attempt;
 	vector<int> q;
 	// O((# of cells reachable from src) * size(dr))
-	template<class Container>
-	void _bfs(const vector<Container> &grid, const vector<int> &src){
+	template<class Container, class F>
+	void _bfs(const vector<Container> &grid, const vector<int> &src, F propagate){
 		q = src;
 		for(auto u: src){
-			assert(was[u] != attempt);
-			was[u] = attempt;
-			depth[u] = 0;
-			root_of[u] = u;
+			ASSERT(_was[u] != attempt);
+			_was[u] = attempt;
+			_depth[u] = 0;
+			_root_of[u] = u;
 			root.push_back(u);
-			pv[u] = -1;
+			_pv[u] = -1;
 		}
 		for(auto it = 0; it < (int)q.size(); ++ it){
 			int u = q[it];
-			auto [x, y] = locate[u];
-			pos[u] = (int)order.size();
+			auto [x, y] = _locate[u];
+			_pos[u] = (int)order.size();
 			order.push_back(u);
 			for(auto [dx, dy]: dr){
 				int xn = x + dx, yn = y + dy;
-				if(!(0 <= xn && xn < (int)grid.size() && 0 <= yn && yn < (int)grid[x].size()) || grid[x][y] != grid[xn][yn]) continue;
+				if(!(0 <= xn && xn < (int)grid.size() && 0 <= yn && yn < (int)grid[x].size()) || !propagate(grid[x][y], grid[xn][yn])) continue;
 				int v = index[xn][yn];
-				if(was[v] == attempt) continue;
-				was[v] = attempt;
-				depth[v] = depth[u] + 1;
-				pv[v] = u;
-				root_of[v] = root_of[u];
+				if(_was[v] == attempt) continue;
+				_was[v] = attempt;
+				_depth[v] = _depth[u] + 1;
+				_pv[v] = u;
+				_root_of[v] = _root_of[u];
 				q.push_back(v);
 			}
 		}
 		q.clear();
 	}
 	// O((# of cells reachable from src) * size(dr))
-	template<class Container>
-	void bfs(const vector<Container> &grid, const vector<array<int, 2>> &src){
-		assert((int)grid.size() <= nr);
-		for(auto x = 0; x < nr; ++ x) assert((int)grid[x].size() <= ncs[x]);
+	template<class Container, class F = equal_to<>>
+	void bfs(const vector<Container> &grid, const vector<array<int, 2>> &src, F propagate = equal_to<>()){
+		ASSERT((int)grid.size() <= nr);
+		for(auto x = 0; x < nr; ++ x) ASSERT((int)grid[x].size() <= ncs[x]);
 		root.clear(), order.clear();
 		++ attempt;
 		vector<int> src_index((int)src.size());
 		for(auto i = 0; i < (int)src.size(); ++ i){
 			auto [x, y] = src[i];
-			assert(0 <= x && x < (int)grid.size());
-			assert(0 <= y && y < (int)grid[x].size());
+			ASSERT(0 <= x && x < (int)grid.size());
+			ASSERT(0 <= y && y < (int)grid[x].size());
 			src_index[i] = index[x][y];
 		}
-		_bfs(grid, src_index);
+		_bfs(grid, src_index, propagate);
 	}
 	// O(nr * nc * size(dr))
-	template<class Container>
-	void bfs_all(const vector<Container> &grid){
-		assert((int)grid.size() <= nr);
-		for(auto x = 0; x < nr; ++ x) assert((int)grid[x].size() <= ncs[x]);
+	template<class Container, class F = equal_to<>>
+	void bfs_all(const vector<Container> &grid, F propagate = equal_to<>()){
+		ASSERT((int)grid.size() <= nr);
+		for(auto x = 0; x < nr; ++ x) ASSERT((int)grid[x].size() <= ncs[x]);
 		root.clear(), order.clear();
 		++ attempt;
-		for(auto x = 0; x < (int)grid.size(); ++ x) for(auto y = 0; y < (int)grid[x].size(); ++ y) if(was[index[x][y]] != attempt) _bfs(grid, {index[x][y]});
+		for(auto x = 0; x < (int)grid.size(); ++ x) for(auto y = 0; y < (int)grid[x].size(); ++ y) if(_was[index[x][y]] != attempt) _bfs(grid, {index[x][y]}, propagate);
 	}
 	// Check if (x, y) is visited during the last bfs-like call.
 	bool visited(int x, int y) const{
-		return was[index[x][y]] == attempt;
+		ASSERT(0 <= min(x, y) && x < (int)index.size() && y < (int)index[x].size());
+		return _was[index[x][y]] == attempt;
 	}
-	// Check if u is visited during the last bfs-like call.
-	bool visited(int u) const{
-		return was[u] == attempt;
+	int pv(int x, int y) const{
+		ASSERT(0 <= min(x, y) && x < (int)index.size() && y < (int)index[x].size() && visited(x, y));
+		return _pv[index[x][y]];
 	}
+	int pos(int x, int y) const{
+		ASSERT(0 <= min(x, y) && x < (int)index.size() && y < (int)index[x].size() && visited(x, y));
+		return _pos[index[x][y]];
+	}
+	array<int, 2> root_of(int x, int y) const{
+		ASSERT(0 <= min(x, y) && x < (int)index.size() && y < (int)index[x].size() && visited(x, y));
+		return _locate[_root_of[index[x][y]]];
+	}
+	int depth(int x, int y) const{
+		ASSERT(0 <= min(x, y) && x < (int)index.size() && y < (int)index[x].size() && visited(x, y));
+		return _depth[index[x][y]];
+	}
+	vector<vector<array<int, 2>>> _group_of;
+	// Return all groups where the first element is the root
+	vector<vector<array<int, 2>>> group_up(){
+		for(auto u: order) if(_root_of[u] == u) _group_of[u].push_back(_locate[u]);
+		for(auto u: order) if(_root_of[u] != u) _group_of[_root_of[u]].push_back(_locate[u]);
+		vector<vector<array<int, 2>>> group;
+		for(auto u: order) if(_root_of[u] == u){
+			group.push_back(_group_of[u]);
+			_group_of[u].clear();
+		}
+		return group;
+	}
+#undef ASSERT
 };
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
