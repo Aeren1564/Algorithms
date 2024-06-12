@@ -1,0 +1,56 @@
+<snippet>
+	<content><![CDATA[
+// Requires graph
+struct euler_walk{
+	int n, m;
+	optional<vector<int>> walk;
+	vector<int> iter;
+	vector<int> wasv;
+	vector<int> wase;
+	int attempt;
+	euler_walk(){}
+	euler_walk(int n, int m){ init(n, m); }
+	template<class T>
+	euler_walk(const graph<T> &g, int u){ init(g.n, (int)g.edge.size()); run(g, u); }
+	void init(int n, int m){
+		this->n = n;
+		this->m = m;
+		iter.assign(n, 0);
+		walk = {};
+		wasv.assign(n, -2);
+		wase.assign(m, -2);
+		attempt = -1;
+	}
+	template<class T>
+	void run(const graph<T> &g, int u){
+		assert(g.n <= n && (int)g.edge.size() <= m);
+		assert(0 <= u && u < n);
+		++ attempt;
+		vector<int> w;
+		auto recurse = [&](auto self, int u)->void{
+			if(wasv[u] != attempt) wasv[u] = attempt, iter[u] = 0;
+			while(true){
+				while(iter[u] < g.degree(u) && (g.ignore && g.ignore(g.adj[u][iter[u]]) || wase[g.adj[u][iter[u]]] == attempt)) ++ iter[u];
+				if(iter[u] == g.degree(u)) break;
+				int id = g.adj[u][iter[u] ++];
+				wase[id] = attempt;
+				self(self, g(u, id));
+				w.push_back(id);
+			}
+		};
+		recurse(recurse, u);
+		reverse(w.begin(), w.end());
+		int v = u;
+		for(auto id: w){
+			if(g.edge[id].from != v && g.edge[id].to != v) walk = {};
+			v = g(v, id);
+		}
+		walk = {w};
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>euler_walk</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
