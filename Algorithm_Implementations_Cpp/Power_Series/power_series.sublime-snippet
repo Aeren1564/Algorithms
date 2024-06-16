@@ -1,0 +1,582 @@
+<snippet>
+	<content><![CDATA[
+// Specialized for FFT
+template<class T, class FFT>
+struct power_series_base: vector<T>{
+#define IS_INTEGRAL(T) (is_integral_v<T> || is_same_v<T, __int128_t> || is_same_v<T, __uint128_t>)
+#define self (*this)
+	power_series_base &_inplace_transform(bool invert = false){
+		FFT::transform(self, invert);
+		return *this;
+	}
+	power_series_base _transform(bool invert = false) const{
+		return power_series_base(*this)._inplace_transform(invert);
+	}
+	template<class ...Args>
+	power_series_base(Args... args): vector<T>(args...){}
+	power_series_base(initializer_list<T> init): vector<T>(init){}
+	operator bool() const{
+		return find_if(self.begin(), self.end(), [&](const T &x){ return x != T{0}; }) != self.end();
+	}
+	// Returns \sum_{i=0}^{n-1} a_i/i! * X^i
+	static power_series_base EGF(vector<T> a){
+		int n = (int)a.size();
+		T fact = 1;
+		for(auto x = 2; x < n; ++ x) fact *= x;
+		fact = 1 / fact;
+		for(auto i = n - 1; i >= 0; -- i) a[i] *= fact, fact *= i;
+		return power_series_base(a);
+	}
+	// Returns exp(coef * X).take(n) = \sum_{i=0}^{n-1} coef^i/i! * X^i
+	static power_series_base EGF(int n, T coef = 1){
+		vector<T> a(n, 1);
+		for(auto i = 1; i < n; ++ i) a[i] = a[i - 1] * coef;
+		return EGF(a);
+	}
+	vector<T> EGF_to_seq() const{
+		int n = (int)self.size();
+		vector<T> seq(n);
+		T fact = 1;
+		for(auto i = 0; i < n; ++ i){
+			seq[i] = self[i] * fact;
+			fact *= i + 1;
+		}
+		return seq;
+	}
+	static vector<T> _inv;
+	static void _precalc_inverse(int obj){
+		while((int)_inv.size() < obj){
+			T x{(int)_inv.size()};
+			assert(x);
+			_inv.push_back(1 / x);
+		}
+	}
+	power_series_base &inplace_reduce(){
+		while(!self.empty() && !self.back()) self.pop_back();
+		return *this;
+	}
+	power_series_base reduce() const{
+		return power_series_base(*this).inplace_reduce();
+	}
+	friend ostream &operator<<(ostream &out, const power_series_base &p){
+		if(p.empty()) return out << "{}";
+		else{
+			out << "{";
+			for(auto i = 0; i < (int)p.size(); ++ i){
+				out << p[i];
+				i + 1 < (int)p.size() ? out << ", " : out << "}";
+			}
+			return out;
+		}
+	}
+	power_series_base &inplace_take(int n){
+		self.erase(self.begin() + min((int)self.size(), n), self.end());
+		self.resize(n, T{0});
+		return *this;
+	}
+	power_series_base take(int n) const{
+		auto res = vector<T>(self.begin(), self.begin() + min((int)self.size(), n));
+		res.resize(n, T{0});
+		return res;
+	}
+	power_series_base &inplace_drop(int n){
+		self.erase(self.begin(), self.begin() + min((int)self.size(), n));
+		return *this;
+	}
+	power_series_base drop(int n) const{
+		return vector<T>(self.begin() + min((int)self.size(), n), self.end());
+	}
+	power_series_base &inplace_slice(int l, int r){
+		assert(0 <= l && l <= r);
+		self.erase(self.begin(), self.begin() + min((int)self.size(), l));
+		self.resize(r - l, T{0});
+		return *this;
+	}
+	power_series_base slice(int l, int r) const{
+		auto res = vector<T>(self.begin() + min((int)self.size(), l), self.begin() + min((int)self.size(), r));
+		res.resize(r - l, T{0});
+		return res;
+	}
+	power_series_base &inplace_reverse(int n){
+		self.resize(max(n, (int)self.size()), T{0});
+		std::reverse(self.begin(), self.begin() + n);
+		return *this;
+	}
+	power_series_base reverse(int n) const{
+		return power_series_base(*this).inplace_reverse(n);
+	}
+	power_series_base &inplace_shift(int n, T x = T{0}){
+		self.insert(self.begin(), n, x);
+		return *this;
+	}
+	power_series_base shift(int n, T x = T{0}) const{
+		return power_series_base(*this).inplace_shift(n, x);
+	}
+	T evaluate(T x) const{
+		T res = {};
+		for(auto i = (int)self.size() - 1; i >= 0; -- i) res = res * x + self[i];
+		return res;
+	}
+	// Takes mod x^n-1
+	power_series_base &inplace_circularize(int n){
+		assert(n >= 1);
+		for(auto i = n; i < (int)self.size(); ++ i) self[i % n] += self[i];
+		self.resize(n, T{0});
+		return *this;
+	}
+	// Takes mod x^n-1
+	power_series_base circularize(int n) const{
+		return power_series_base(*this).inplace_circularize(n);
+	}
+	power_series_base &operator*=(const power_series_base &p){
+		int n = (int)self.size();
+		self.resize(max(0, n + (int)p.size() - 1));
+		FFT::convolute(n, self.data(), (int)p.size(), p.data());
+		return *this = FFT::res;
+	}
+	power_series_base operator*(const power_series_base &p) const{
+		return power_series_base(*this) *= p;
+	}
+	template<class U>
+	power_series_base &operator*=(U x){
+		for(auto &c: self) c *= x;
+		return *this;
+	}
+	template<class U>
+	power_series_base operator*(U x) const{
+		return power_series_base(*this) *= x;
+	}
+	template<class U>
+	friend power_series_base operator*(U x, power_series_base p){
+		for(auto &c: p) c = x * c;
+		return p;
+	}
+	// Compute p^e mod x^n - 1.
+	template<class U, typename enable_if<IS_INTEGRAL(U)>::type* = nullptr>
+	power_series_base &inplace_power_circular(U e, int n){
+		assert(n >= 1);
+		power_series_base p = *this;
+		self.assign(n, 0);
+		self[0] = 1;
+		for(; e; e >>= 1){
+			if(e & 1) (*this *= p).inplace_circularize(n);
+			(p *= p).inplace_circularize(n);
+		}
+		return *this;
+	}
+	template<class U, typename enable_if<IS_INTEGRAL(U)>::type* = nullptr>
+	power_series_base power_circular(U e, int len) const{
+		return power_series_base(*this).inplace_power_circular(e, len);
+	}
+	power_series_base &operator+=(const power_series_base &p){
+		self.resize(max(self.size(), p.size()), T{0});
+		for(auto i = 0; i < (int)p.size(); ++ i) self[i] += p[i];
+		return *this;
+	}
+	power_series_base operator+(const power_series_base &p) const{
+		return power_series_base(*this) += p;
+	}
+	template<class U>
+	power_series_base &operator+=(const U &x){
+		if(self.empty()) self.emplace_back();
+		self[0] += x;
+		return *this;
+	}
+	template<class U>
+	power_series_base operator+(const U &x) const{
+		return power_series_base(*this) += x;
+	}
+	template<class U>
+	friend power_series_base operator+(const U &x, const power_series_base &p){
+		return p + x;
+	}
+	power_series_base &operator-=(const power_series_base &p){
+		self.resize(max(self.size(), p.size()), T{0});
+		for(auto i = 0; i < (int)p.size(); ++ i) self[i] -= p[i];
+		return *this;
+	}
+	power_series_base operator-(const power_series_base &p) const{
+		return power_series_base(*this) -= p;
+	}
+	template<class U>
+	power_series_base &operator-=(const U &x){
+		if(self.empty()) self.emplace_back();
+		self[0] -= x;
+		return *this;
+	}
+	template<class U>
+	power_series_base operator-(const U &x) const{
+		return power_series_base(*this) -= x;
+	}
+	template<class U>
+	friend power_series_base operator-(const U &x, const power_series_base &p){
+		return -p + x;
+	}
+	power_series_base operator-() const{
+		power_series_base res = *this;
+		for(auto i = 0; i < self.size(); ++ i) res[i] = T{0} - res[i];
+		return res;
+	}
+	power_series_base &operator++(){
+		if(self.empty()) self.push_back(1);
+		else ++ self[0];
+		return *this;
+	}
+	power_series_base &operator--(){
+		if(self.empty()) self.push_back(-1);
+		else -- self[0];
+		return *this;
+	}
+	power_series_base operator++(int){
+		power_series_base result(*this);
+		if(self.empty()) self.push_back(1);
+		else ++ self[0];
+		return result;
+	}
+	power_series_base operator--(int){
+		power_series_base result(*this);
+		if(self.empty()) self.push_back(-1);
+		else -- self[0];
+		return result;
+	}
+	power_series_base &inplace_clear_range(int l, int r){
+		assert(0 <= l && l <= r);
+		for(auto i = l; i < min(r, (int)self.size()); ++ i) self[i] = T{0};
+		return *this;
+	}
+	power_series_base clear_range(int l, int r) const{
+		return power_series_base(*this).inplace_clear_range(l, r);
+	}
+	power_series_base &inplace_dot_product(const power_series_base &p){
+		for(auto i = 0; i < min(self.size(), p.size()); ++ i) self[i] *= p[i];
+		return *this;
+	}
+	power_series_base dot_product(const power_series_base &p) const{
+		return power_series_base(*this).inplace_power_series_product(p);
+	}
+	power_series_base &_inverse_doubled_up(power_series_base &f, const power_series_base &freq) const{
+		assert((f.size() & -f.size()) == f.size());
+		int s = f.size();
+		power_series_base buffer = take(s << 1);
+		buffer._inplace_transform();
+		buffer.inplace_dot_product(freq);
+		buffer._inplace_transform(true);
+		buffer.inplace_clear_range(0, s);
+		buffer._inplace_transform();
+		buffer.inplace_dot_product(freq);
+		buffer._inplace_transform(true);
+		f.resize(s << 1, T{0});
+		return f -= buffer.inplace_clear_range(0, s);
+	}
+	power_series_base &_inverse_doubled_up(power_series_base &f) const{
+		assert((f.size() & -f.size()) == f.size());
+		return _inverse_doubled_up(f, f.take(f.size() << 1)._transform());
+	}
+	// Returns the first n terms of the inverse series
+	// O(n * log(n))
+	power_series_base inverse(int n) const{
+		assert(!self.empty() && self[0] != T{0});
+		auto inv = 1 / self[0];
+		power_series_base res{inv};
+		for(auto s = 1; s < n; s <<= 1) _inverse_doubled_up(res);
+		res.resize(n, T{0});
+		return res;
+	}
+	// Returns the first n terms of the inverse series
+	// O(n * log(n))
+	power_series_base &inplace_inverse(int n){
+		return *this = this->inverse(n);
+	}
+	// O(n * log(n))
+	power_series_base &inplace_power_series_division(power_series_base p, int n){
+		int i = 0;
+		while(i < min(self.size(), p.size()) && !self[i] && !p[i]) ++ i;
+		self.erase(self.begin(), self.begin() + i);
+		p.erase(p.begin(), p.begin() + i);
+		(*this *= p.inverse(n)).resize(n, T{0});
+		return *this;
+	}
+	// O(n * log(n))
+	power_series_base power_series_division(const power_series_base &p, int n){
+		return power_series_base(*this).inplace_power_series_division(p, n);
+	}
+	// Euclidean division
+	// O(min(n * log(n), # of non-zero indices))
+	power_series_base &operator/=(const power_series_base &p){
+		int n = (int)p.size();
+		while(n && p[n - 1] == T{0}) -- n;
+		assert(n >= 1);
+		inplace_reduce();
+		if(self.size() < n){
+			self.clear();
+			return *this;
+		}
+		if(n - count(p.begin(), p.begin() + n, T{0}) <= 100){
+			T inv = 1 / p[n - 1];
+			static vector<int> indices;
+			for(auto i = 0; i < n - 1; ++ i) if(p[i]) indices.push_back(i);
+			power_series_base res((int)self.size() - n + 1);
+			for(auto i = (int)self.size() - 1; i >= n - 1; -- i) if(self[i]){
+				T x = self[i] * inv;
+				res[i - n + 1] = x;
+				for(auto j: indices) self[i - (n - 1 - j)] -= x * p[j];
+			}
+			indices.clear();
+			return *this = res;
+		}
+		power_series_base b;
+		n = self.size() - p.size() + 1;
+		b.assign(n, {});
+		copy(p.rbegin(), p.rbegin() + min(p.size(), b.size()), b.begin());
+		std::reverse(self.begin(), self.end());
+		self = FFT::convolute(self, b.inverse(n));
+		self.erase(self.begin() + n, self.end());
+		std::reverse(self.begin(), self.end());
+		return *this;
+	}
+	power_series_base operator/(const power_series_base &p) const{
+		return power_series_base(*this) /= p;
+	}
+	template<class U>
+	power_series_base &operator/=(U x){
+		assert(x);
+		T inv_x = T(1) / x;
+		for(auto &c: self) c *= inv_x;
+		return *this;
+	}
+	template<class U>
+	power_series_base operator/(U x) const{
+		return power_series_base(*this) /= x;
+	}
+	pair<power_series_base, power_series_base> divrem(const power_series_base &p) const{
+		auto q = *this / p, r = *this - q * p;
+		while(!r.empty() && r.back() == 0) r.pop_back();
+		return {q, r};
+	}
+	power_series_base &operator%=(const power_series_base &p){
+		int n = (int)p.size();
+		while(n && p[n - 1] == T{0}) -- n;
+		assert(n >= 1);
+		inplace_reduce();
+		if(self.size() < n) return *this;
+		if(n - count(p.begin(), p.begin() + n, 0) <= 100){
+			T inv = 1 / p[n - 1];
+			static vector<int> indices;
+			for(auto i = 0; i < n - 1; ++ i) if(p[i]) indices.push_back(i);
+			for(auto i = (int)self.size() - 1; i >= n - 1; -- i) if(self[i]){
+				T x = self[i] * inv;
+				self[i] = 0;
+				for(auto j: indices) self[i - (n - 1 - j)] -= x * p[j];
+			}
+			indices.clear();
+			return inplace_reduce();
+		}
+		return *this = this->divrem(p).second;
+	}
+	power_series_base operator%(const power_series_base &p) const{
+		return power_series_base(*this) %= p;
+	}
+	power_series_base &inplace_derivative(){
+		if(!self.empty()){
+			for(auto i = 0; i < self.size(); ++ i) self[i] *= i;
+			self.erase(self.begin());
+		}
+		return *this;
+	}
+	// p'
+	power_series_base derivative() const{
+		return power_series_base(*this).inplace_derivative();
+	}
+	power_series_base &inplace_derivative_shift(){
+		for(auto i = 0; i < self.size(); ++ i) self[i] *= i;
+		return *this;
+	}
+	// xP'
+	power_series_base derivative_shift() const{
+		return power_series_base(*this).inplace_derivative_shift();
+	}
+	power_series_base &inplace_antiderivative(){
+		_precalc_inverse((int)self.size() + 1);
+		self.push_back(0);
+		for(auto i = (int)self.size() - 1; i >= 1; -- i) self[i] = self[i - 1] * _inv[i];
+		self[0] = 0;
+		return *this;
+	}
+	// Integral(P)
+	power_series_base antiderivative() const{
+		return power_series_base(*this).inplace_antiderivative();
+	}
+	power_series_base &inplace_shifted_antiderivative(){
+		_precalc_inverse((int)self.size());
+		if(!self.empty()) self[0] = 0;
+		for(auto i = 1; i < self.size(); ++ i) self[i] *= _inv[i];
+		return *this;
+	}
+	// Integral(P/x)
+	power_series_base shifted_antiderivative() const{
+		return power_series_base(*this).inplace_shifted_antiderivative();
+	}
+	// O(n * log(n))
+	power_series_base &inplace_log(int n){
+		assert(!self.empty() && self[0] == 1);
+		if(!n){
+			self.clear();
+			return *this;
+		}
+		(*this = derivative() * inverse(n)).resize(n - 1, T{0});
+		inplace_antiderivative();
+		return *this;
+	}
+	// O(n * log(n))
+	power_series_base log(int n) const{
+		return power_series_base(*this).inplace_log(n);
+	}
+	// O(n * log(n))
+	power_series_base exp(int n) const{
+		assert(self.empty() || self[0] == 0);
+		power_series_base f{1}, g{1};
+		for(auto s = 1; s < n; s <<= 1){
+			power_series_base f2 = f.take(s << 1)._inplace_transform();
+			power_series_base g2 = g.take(s << 1)._inplace_transform();
+			power_series_base dt = take(s).inplace_derivative_shift();
+			power_series_base w = dt;
+			w._inplace_transform();
+			for(auto i = 0; i < s; ++ i) w[i] *= f2[i << 1];
+			w._inplace_transform(true);
+			w -= f.derivative_shift();
+			w.resize(s << 1, T{0});
+			w._inplace_transform();
+			w.inplace_dot_product(g2);
+			w._inplace_transform(true);
+			w.resize(s, T{0});
+			w.insert(w.begin(), s, 0);
+			w -= dt;
+			power_series_base z = take(s << 1);
+			z += w.inplace_shifted_antiderivative();
+			z._inplace_transform();
+			z.inplace_dot_product(f2);
+			z._inplace_transform(true);
+			f.resize(s << 1, T{0});
+			f += z.inplace_clear_range(0, s);
+			if(s << 1 < n) f._inverse_doubled_up(g, g2);
+		}
+		f.resize(n, T{0});
+		return f;
+	}
+	// O(n * log(n))
+	power_series_base &inplace_exp(int n){
+		return *this = this->exp(n);
+	}
+	// O(n * log(n))
+	template<class U, typename enable_if<IS_INTEGRAL(U)>::type* = nullptr>
+	power_series_base &inplace_power(U e, int n){
+		assert(n >= 0);
+		self.resize(n, T{0});
+		if(n == 0) return *this;
+		if(e == 0){
+			fill(self.begin(), self.end(), T{0});
+			self[0] = T{1};
+			return *this;
+		}
+		if(e < 0) return inplace_inverse(n).inplace_power(-e, n);
+		if(all_of(self.begin(), self.end(), [&](auto x){ return x == T{0}; })) return *this;
+		int pivot = find_if(self.begin(), self.end(), [&](auto x){ return x; }) - self.begin();
+		if(pivot && e >= (n + pivot - 1) / pivot){
+			fill(self.begin(), self.end(), T{0});
+			return *this;
+		}
+		self.erase(self.begin(), self.begin() + pivot);
+		n -= pivot * e;
+		T pivot_c = T{1}, base = self[0];
+		for(auto x = e; x; x >>= 1, base *= base) if(x & 1) pivot_c *= base;
+		((*this /= self[0]).inplace_log(n) *= e).inplace_exp(n);
+		self.insert(self.begin(), pivot * e, T{0});
+		return *this *= pivot_c;
+	}
+	// O(n * log(n))
+	template<class U, typename enable_if<IS_INTEGRAL(U)>::type* = nullptr>
+	power_series_base power(U e, int n) const{
+		return power_series_base(*this).inplace_power(e, n);
+	}
+	// O(n * log(n) * log(e))
+	template<class U, typename enable_if<IS_INTEGRAL(U)>::type* = nullptr>
+	power_series_base &inplace_power_mod(U e, power_series_base mod){
+		mod.inplace_reduce();
+		assert(mod);
+		if((int)mod.size() == 1){
+			self.clear();
+			return *this;
+		}
+		if(e == 0){
+			self = {T{1}};
+			return *this;
+		}
+		if(e < 0) return inplace_inverse((int)mod.size()).inplace_power_mod(-e, mod);
+		if(!*this) return *this;
+		power_series_base res{1};
+		for(; e; e >>= 1, *this = *this * *this % mod) if(e & 1) res = res * *this % mod;
+		return *this = res;
+	}
+	// O(n * log(n) * log(e))
+	template<class U, typename enable_if<IS_INTEGRAL(U)>::type* = nullptr>
+	power_series_base power_mod(U e, const power_series_base &mod) const{
+		return power_series_base(*this).inplace_power_mod(e, mod);
+	}
+	// Suppose there are self[i] distinct objects with weight i.
+	// Returns a power series where i-th coefficient represents # of ways to select a set of objects with sum of weight i.
+	// O(n * log(n))
+	power_series_base &inplace_set(int n){
+		assert(!self.empty() && self[0] == T{0});
+		_precalc_inverse(n);
+		self.resize(n);
+		for(auto i = n - 1; i >= 1; -- i) for(auto j = 2 * i; j < n; j += i) self[j] += self[i];
+		for(auto i = 1; i < n; ++ i) (self[i] *= _inv[i]) *= (i & 1 ? 1 : -1);
+		return inplace_exp(n);
+	}
+	power_series_base set(int n) const{
+		return power_series_base(*this).inplace_set(n);
+	}
+	// Suppose there are self[i] distinct objects with weight i.
+	// Returns a power series where i-th coefficient represents # of ways to select a multiset of objects with sum of weight i.
+	// O(n * log(n))
+	power_series_base &inplace_multiset(int n){
+		assert(!self.empty() && self[0] == T{0});
+		_precalc_inverse(n);
+		self.resize(n);
+		for(auto i = n - 1; i >= 1; -- i) for(auto j = 2 * i; j < n; j += i) self[j] += self[i] * _inv[j / i];
+		return inplace_exp(n);
+	}
+	power_series_base multiset(int n) const{
+		return power_series_base(*this).inplace_multiset(n);
+	}
+	static power_series_base multiply_all(const vector<power_series_base> &a){
+		if(a.empty()) return {1};
+		auto solve = [&](auto recurse, int l, int r)->power_series_base{
+			if(r - l == 1) return a[l];
+			int m = l + (r - l >> 1);
+			return recurse(recurse, l, m) * recurse(recurse, m, r);
+		};
+		return solve(solve, 0, (int)a.size());
+	}
+	friend power_series_base gcd(power_series_base p, power_series_base q){
+		p.inplace_reduce(), q.inplace_reduce();
+		while(q) p = exchange(q, (p % q).reduce());
+		return p;
+	}
+	friend power_series_base lcm(power_series_base p, power_series_base q){
+		return p / gcd(p, q) * q;
+	}
+#undef IS_INTEGRAL
+#undef self
+};
+template<class T, class FFT>
+vector<T> power_series_base<T, FFT>::_inv{T{1}};
+
+// Requires modular and number_theoric_transform
+using power_series = power_series_base<modular, ntt>;
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>power_series</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
