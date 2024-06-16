@@ -18,7 +18,8 @@ struct number_theoric_transform_wrapper{
 	// n must be a power of two
 	// p must have next n memories allocated
 	// O(n * log(n))
-	static void transform(int n, T *p, bool invert = false){
+	template<class T_ptr>
+	static void transform(int n, T_ptr p, bool invert = false){
 		assert(n && __builtin_popcount(n) == 1 && (T::mod() - 1) % n == 0);
 		for(auto i = 1, j = 0; i < n; ++ i){
 			int bit = n >> 1;
@@ -37,14 +38,12 @@ struct number_theoric_transform_wrapper{
 			for(auto i = 0; i < n; ++ i) p[i] *= inv_n;
 		}
 	}
-	static void transform(vector<T> &p, bool invert = false){
-		transform((int)p.size(), p.data(), invert);
-	}
 	// Double the length of the ntt array
 	// n must be a power of two
 	// p must have next 2n memories allocated
 	// O(n * log(n))
-	static void double_up(int n, T *p){
+	template<class T_ptr>
+	static void double_up(int n, T_ptr p){
 		assert(n && __builtin_popcount(n) == 1 && (T().mod() - 1) % (n << 1) == 0);
 		buffer1.resize(n << 1);
 		for(auto i = 0; i < n; ++ i) buffer1[i << 1] = p[i];
@@ -55,63 +54,99 @@ struct number_theoric_transform_wrapper{
 		for(auto i = 0; i < n; ++ i) buffer1[i << 1 | 1] = p[i];
 		copy(buffer1.begin(), buffer1.begin() + 2 * n, p);
 	}
+	static vector<T> res;
+	// O(n * m)
+	template<class T_ptr_l, class T_ptr_r>
+	static void _convolute_naive(int n, const T_ptr_l p, int m, const T_ptr_r q){
+		res.assign(max(0, n + m - 1), T{0});
+		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) res[i + j] += p[i] * q[j];
+	}
+	// O((n + m) * log(n + m))
+	template<class T_ptr_l, class T_ptr_r>
+	static void convolute(int n, const T_ptr_l p, int m, const T_ptr_r q){
+		if(min(n, m) < 55){
+			_convolute_naive(n, p, m, q);
+			return;
+		}
+		int len = n + m - 1, clen = 1 << __lg(len) + (__builtin_popcount(len) != 1);
+		buffer1.assign(clen, 0);
+		copy(p, p + n, buffer1.begin());
+		transform(buffer1);
+		buffer2.assign(clen, 0);
+		copy(q, q + m, buffer2.begin());
+		transform(buffer2);
+		for(auto i = 0; i < clen; ++ i) buffer1[i] *= buffer2[i];
+		transform(buffer1, true);
+		res.resize(len);
+		copy(buffer1.begin(), buffer1.begin() + len, res.begin());
+	}
+	// O(n * m)
+	template<class T_ptr_l, class T_ptr_r>
+	static void _cross_correlation_naive(int n, const T_ptr_l p, int m, const T_ptr_r q){
+		assert(n >= m);
+		res.assign(n - m + 1, T{0});
+		for(auto i = 0; i <= n - m; ++ i) for(auto j = 0; j < m; ++ j) res[i] += p[i + j] * q[j];
+	}
+	// O(m * log(m))
+	template<class T_ptr_l, class T_ptr_r>
+	static void cross_correlation(int n, const T_ptr_l p, int m, const T_ptr_r q){
+		assert(n >= m);
+		if(m < 55){
+			_cross_correlation_naive(n, p, m, q);
+			return;
+		}
+		int len = n, clen = 1 << __lg(len) + (__builtin_popcount(len) != 1);
+		buffer1.assign(clen, 0);
+		copy(p, p + n, buffer1.begin());
+		transform(buffer1);
+		buffer2.assign(clen, 0);
+		copy(q, q + m, buffer2.begin());
+		reverse(buffer2.begin(), buffer2.begin() + m);
+		transform(buffer2);
+		for(auto i = 0; i < clen; ++ i) buffer1[i] *= buffer2[i];
+		transform(buffer1, true);
+		res.resize(n - m + 1);
+		copy(buffer1.begin() + m - 1, buffer1.begin() + n, res.begin());
+	}
+	// O((n + m) * log(n + m))
+	template<class T_ptr>
+	static void square(int n, const T_ptr p){
+		if(n < 40){
+			convolute_naive(n, p, n, p);
+			return;
+		}
+		int len = 2 * n - 1, clen = 1 << __lg(len) + 1;
+		buffer1.assign(clen, 0);
+		copy(p, p + n, buffer1.begin());
+		transform(buffer1);
+		for(auto i = 0; i < clen; ++ i) buffer1[i] *= buffer1[i];
+		transform(buffer1, true);
+		res.resize(len);
+		copy(buffer1.begin(), buffer1.begin() + len, res.begin());
+	}
+	static void transform(vector<T> &p, bool invert = false){
+		transform((int)p.size(), p.data(), invert);
+	}
 	static void double_up(vector<T> &p){
 		int n = (int)p.size();
 		p.resize(n << 1);
 		double_up(n, p.data());
 	}
-	// O(n * m)
-	static vector<T> convolute_naive(const vector<T> &p, const vector<T> &q){
-		vector<T> res(max((int)p.size() + (int)q.size() - 1, 0));
-		for(auto i = 0; i < (int)p.size(); ++ i) for(auto j = 0; j < (int)q.size(); ++ j) res[i + j] += p[i] * q[j];
-		return res;
-	}
 	// O((n + m) * log(n + m))
 	static vector<T> convolute(const vector<T> &p, const vector<T> &q){
-		if(min(p.size(), q.size()) < 55) return convolute_naive(p, q);
-		int m = (int)p.size() + (int)q.size() - 1, n = 1 << __lg(m) + (__builtin_popcount(m) != 1);
-		buffer1.assign(n, 0);
-		copy(p.begin(), p.end(), buffer1.begin());
-		transform(buffer1);
-		buffer2.assign(n, 0);
-		copy(q.begin(), q.end(), buffer2.begin());
-		transform(buffer2);
-		for(auto i = 0; i < n; ++ i) buffer1[i] *= buffer2[i];
-		transform(buffer1, true);
-		return vector<T>(buffer1.begin(), buffer1.begin() + m);
-	}
-	// O(n * m)
-	static vector<T> cross_correlation_naive(const vector<T> &p, const vector<T> &q){
-		assert((int)p.size() >= (int)q.size());
-		vector<T> res((int)p.size() - (int)q.size() + 1);
-		for(auto i = 0; i <= (int)p.size() - (int)q.size(); ++ i) for(auto j = 0; j < (int)q.size(); ++ j) res[i] += p[i + j] * q[j];
+		convolute((int)p.size(), p.data(), (int)q.size(), q.data());
 		return res;
 	}
 	// O(m * log(m))
 	static vector<T> cross_correlation(const vector<T> &p, const vector<T> &q){
 		assert((int)p.size() >= (int)q.size());
-		if((int)q.size() < 55) return cross_correlation_naive(p, q);
-		int m = (int)p.size(), n = 1 << __lg(m) + (__builtin_popcount(m) != 1);
-		buffer1.assign(n, 0);
-		copy(p.begin(), p.end(), buffer1.begin());
-		transform(buffer1);
-		buffer2.assign(n, 0);
-		copy(q.rbegin(), q.rend(), buffer2.begin());
-		transform(buffer2);
-		for(auto i = 0; i < n; ++ i) buffer1[i] *= buffer2[i];
-		transform(buffer1, true);
-		return vector<T>(buffer1.begin() + (int)q.size() - 1, buffer1.begin() + (int)p.size());
+		cross_correlation((int)p.size(), p.data(), (int)q.size(), q.data());
+		return res;
 	}
 	// O((n + m) * log(n + m))
 	static vector<T> square(const vector<T> &p){
-		if((int)p.size() < 40) return convolute_naive(p, p);
-		int m = 2 * (int)p.size() - 1, n = 1 << __lg(m) + 1;
-		buffer1.assign(n, 0);
-		copy(p.begin(), p.end(), buffer1.begin());
-		transform(buffer1);
-		for(auto i = 0; i < n; ++ i) buffer1[i] *= buffer1[i];
-		transform(buffer1, true);
-		return vector<T>(buffer1.begin(), buffer1.begin() + m);
+		square((int)p.size(), p.data(), (int)p.size(), p.data());
+		return res;
 	}
 	// O((n + m) * log(n + m))
 	static vector<T> arbitrarily_convolute(const vector<T> &p, const vector<T> &q){
@@ -154,6 +189,7 @@ struct number_theoric_transform_wrapper{
 template<class T> vector<T> number_theoric_transform_wrapper<T>::root;
 template<class T> vector<T> number_theoric_transform_wrapper<T>::buffer1;
 template<class T> vector<T> number_theoric_transform_wrapper<T>::buffer2;
+template<class T> vector<T> number_theoric_transform_wrapper<T>::res;
 
 using ntt = number_theoric_transform_wrapper<modular>;
 ]]></content>
