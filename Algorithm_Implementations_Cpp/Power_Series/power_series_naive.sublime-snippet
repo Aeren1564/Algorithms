@@ -1,0 +1,550 @@
+<snippet>
+	<content><![CDATA[
+template<class T, class multiplication_functor>
+struct power_series_naive_base: vector<T>{
+#define IS_INTEGRAL(T) (is_integral_v<T> || is_same_v<T, __int128_t> || is_same_v<T, __uint128_t>)
+#define data (*this)
+	template<class ...Args>
+	power_series_naive_base(Args... args): vector<T>(args...){}
+	power_series_naive_base(initializer_list<T> init): vector<T>(init){}
+	operator bool() const{
+		return find_if(data.begin(), data.end(), [&](const T &x){ return x != T{0}; }) != data.end();
+	}
+	// Returns \sum_{i=0}^{n-1} a_i/i! * X^i
+	static power_series_naive_base EGF(vector<T> a){
+		int n = (int)a.size();
+		T fact = 1;
+		for(auto x = 2; x < n; ++ x) fact *= x;
+		fact = 1 / fact;
+		for(auto i = n - 1; i >= 0; -- i) a[i] *= fact, fact *= i;
+		return power_series_naive_base(a);
+	}
+	// Returns exp(coef * X).take(n) = \sum_{i=0}^{n-1} coef^i/i! * X^i
+	static power_series_naive_base EGF(int n, T coef = 1){
+		vector<T> a(n, 1);
+		for(auto i = 1; i < n; ++ i) a[i] = a[i - 1] * coef;
+		return EGF(a);
+	}
+	static vector<T> _inv;
+	static void _precalc_inverse(int obj){
+		while((int)_inv.size() < obj){
+			T x{(int)_inv.size()};
+			assert(x);
+			_inv.push_back(1 / x);
+		}
+	}
+	vector<T> EGF_to_seq() const{
+		int n = (int)data.size();
+		vector<T> seq(n);
+		T fact = 1;
+		for(auto i = 0; i < n; ++ i){
+			seq[i] = data[i] * fact;
+			fact *= i + 1;
+		}
+		return seq;
+	}
+	power_series_naive_base &inplace_reduce(){
+		while(!data.empty() && !data.back()) data.pop_back();
+		return *this;
+	}
+	power_series_naive_base reduce() const{
+		return power_series_naive_base(*this).inplace_reduce();
+	}
+	friend ostream &operator<<(ostream &out, const power_series_naive_base &p){
+		if(p.empty()){
+			return out << "{}";
+		}
+		else{
+			out << "{";
+			for(auto i = 0; i < (int)p.size(); ++ i){
+				out << p[i];
+				i + 1 < (int)p.size() ? out << ", " : out << "}";
+			}
+			return out;
+		}
+	}
+	power_series_naive_base &inplace_take(int n){
+		data.erase(data.begin() + min((int)data.size(), n), data.end());
+		data.resize(n, T{0});
+		return *this;
+	}
+	power_series_naive_base take(int n) const{
+		auto res = vector<T>(data.begin(), data.begin() + min((int)data.size(), n));
+		res.resize(n, T{0});
+		return res;
+	}
+	power_series_naive_base &inplace_drop(int n){
+		data.erase(data.begin(), data.begin() + min((int)data.size(), n));
+		return *this;
+	}
+	power_series_naive_base drop(int n) const{
+		return vector<T>(data.begin() + min((int)data.size(), n), data.end());
+	}
+	power_series_naive_base &inplace_slice(int l, int r){
+		assert(0 <= l && l <= r);
+		data.erase(data.begin(), data.begin() + min((int)data.size(), l));
+		data.resize(r - l, T{0});
+		return *this;
+	}
+	power_series_naive_base slice(int l, int r) const{
+		auto res = vector<T>(data.begin() + min((int)data.size(), l), data.begin() + min((int)data.size(), r));
+		res.resize(r - l, T{0});
+		return res;
+	}
+	power_series_naive_base &inplace_reverse(int n){
+		data.resize(max(n, (int)data.size()), T{0});
+		std::reverse(data.begin(), data.begin() + n);
+		return *this;
+	}
+	power_series_naive_base reverse(int n) const{
+		return power_series_naive_base(*this).inplace_reverse(n);
+	}
+	power_series_naive_base &inplace_shift(int n, T x = T{0}){
+		data.insert(data.begin(), n, x);
+		return *this;
+	}
+	power_series_naive_base shift(int n, T x = T{0}) const{
+		return power_series_naive_base(*this).inplace_shift(n, x);
+	}
+	T evaluate(T x) const{
+		T res = {};
+		for(auto i = (int)data.size() - 1; i >= 0; -- i) res = res * x + data[i];
+		return res;
+	}
+	// Takes mod x^n-1
+	power_series_naive_base &inplace_circularize(int n){
+		assert(n >= 1);
+		for(auto i = n; i < (int)data.size(); ++ i) data[i % n] += data[i];
+		data.resize(n, T{0});
+		return *this;
+	}
+	// Takes mod x^n-1
+	power_series_naive_base circularize(int n) const{
+		return power_series_naive_base(*this).inplace_circularize(n);
+	}
+	power_series_naive_base operator*(const power_series_naive_base &p) const{
+		return multiplication_functor::multiply(data, p);
+	}
+	power_series_naive_base &operator*=(const power_series_naive_base &p){
+		return *this = *this * p;
+	}
+	template<class U>
+	power_series_naive_base &operator*=(U x){
+		for(auto &c: data) c *= x;
+		return *this;
+	}
+	template<class U>
+	power_series_naive_base operator*(U x) const{
+		return power_series_naive_base(*this) *= x;
+	}
+	template<class U>
+	friend power_series_naive_base operator*(U x, power_series_naive_base p){
+		for(auto &c: p) c = x * c;
+		return p;
+	}
+	// Compute p^e mod x^n - 1.
+	template<class U, typename enable_if<IS_INTEGRAL(U)>::type* = nullptr>
+	power_series_naive_base &inplace_power_circular(U e, int n){
+		assert(n >= 1);
+		power_series_naive_base p = *this;
+		data.assign(n, 0);
+		data[0] = 1;
+		for(; e; e >>= 1){
+			if(e & 1) (*this *= p).inplace_circularize(n);
+			(p *= p).inplace_circularize(n);
+		}
+		return *this;
+	}
+	template<class U, typename enable_if<IS_INTEGRAL(U)>::type* = nullptr>
+	power_series_naive_base power_circular(U e, int len) const{
+		return power_series_naive_base(*this).inplace_power_circular(e, len);
+	}
+	power_series_naive_base &operator+=(const power_series_naive_base &p){
+		data.resize(max(data.size(), p.size()), T{0});
+		for(auto i = 0; i < (int)p.size(); ++ i) data[i] += p[i];
+		return *this;
+	}
+	power_series_naive_base operator+(const power_series_naive_base &p) const{
+		return power_series_naive_base(*this) += p;
+	}
+	template<class U>
+	power_series_naive_base &operator+=(const U &x){
+		if(data.empty()) data.emplace_back();
+		data[0] += x;
+		return *this;
+	}
+	template<class U>
+	power_series_naive_base operator+(const U &x) const{
+		return power_series_naive_base(*this) += x;
+	}
+	template<class U>
+	friend power_series_naive_base operator+(const U &x, const power_series_naive_base &p){
+		return p + x;
+	}
+	power_series_naive_base &operator-=(const power_series_naive_base &p){
+		data.resize(max(data.size(), p.size()), T{0});
+		for(auto i = 0; i < (int)p.size(); ++ i) data[i] -= p[i];
+		return *this;
+	}
+	power_series_naive_base operator-(const power_series_naive_base &p) const{
+		return power_series_naive_base(*this) -= p;
+	}
+	template<class U>
+	power_series_naive_base &operator-=(const U &x){
+		if(data.empty()) data.emplace_back();
+		data[0] -= x;
+		return *this;
+	}
+	template<class U>
+	power_series_naive_base operator-(const U &x) const{
+		return power_series_naive_base(*this) -= x;
+	}
+	template<class U>
+	friend power_series_naive_base operator-(const U &x, const power_series_naive_base &p){
+		return -p + x;
+	}
+	power_series_naive_base operator-() const{
+		power_series_naive_base res = *this;
+		for(auto i = 0; i < data.size(); ++ i) res[i] = T{} - res[i];
+		return res;
+	}
+	power_series_naive_base &operator++(){
+		if(data.empty()) data.push_back(1);
+		else ++ data[0];
+		return *this;
+	}
+	power_series_naive_base &operator--(){
+		if(data.empty()) data.push_back(-1);
+		else -- data[0];
+		return *this;
+	}
+	power_series_naive_base operator++(int){
+		power_series_naive_base result(*this);
+		if(data.empty()) data.push_back(1);
+		else ++ data[0];
+		return result;
+	}
+	power_series_naive_base operator--(int){
+		power_series_naive_base result(*this);
+		if(data.empty()) data.push_back(-1);
+		else -- data[0];
+		return result;
+	}
+	power_series_naive_base &inplace_clear_range(int l, int r){
+		assert(0 <= l && l <= r);
+		for(auto i = l; i < min(r, (int)data.size()); ++ i) data[i] = T{0};
+		return *this;
+	}
+	power_series_naive_base clear_range(int l, int r) const{
+		return power_series_naive_base(*this).inplace_clear_range(l, r);
+	}
+	power_series_naive_base &inplace_dot_product(const power_series_naive_base &p){
+		for(auto i = 0; i < min(data.size(), p.size()); ++ i) data[i] *= p[i];
+		return *this;
+	}
+	power_series_naive_base dot_product(const power_series_naive_base &p) const{
+		return power_series_naive_base(*this).inplace_power_series_product(p);
+	}
+	power_series_naive_base inverse(int n) const{
+		assert(!data.empty() && data[0]);
+		auto inv = 1 / data[0];
+		power_series_naive_base res{inv};
+		for(auto s = 1; s < n; s <<= 1) (res *= (2 - res * take(s << 1))).inplace_take(s << 1);
+		return res.inplace_take(n);
+	}
+	power_series_naive_base &inplace_inverse(int n){
+		return *this = this->inverse(n);
+	}
+	power_series_naive_base &inplace_power_series_division(power_series_naive_base p, int n){
+		int i = 0;
+		while(i < min(data.size(), p.size()) && !data[i] && !p[i]) ++ i;
+		data.erase(data.begin(), data.begin() + i);
+		p.erase(p.begin(), p.begin() + i);
+		(*this *= p.inverse(n)).resize(n, T{0});
+		return *this;
+	}
+	power_series_naive_base power_series_division(const power_series_naive_base &p, int n){
+		return power_series_naive_base(*this).inplace_power_series_division(p, n);
+	}
+	// Euclidean division
+	// O(min(n * log(n), # of non-zero indices))
+	power_series_naive_base &operator/=(const power_series_naive_base &p){
+		int n = (int)p.size();
+		while(n && p[n - 1] == T{0}) -- n;
+		assert(n >= 1);
+		inplace_reduce();
+		if(data.size() < n){
+			data.clear();
+			return *this;
+		}
+		if(n - count(p.begin(), p.begin() + n, T{0}) <= 100){
+			T inv = 1 / p[n - 1];
+			static vector<int> indices;
+			for(auto i = 0; i < n - 1; ++ i) if(p[i]) indices.push_back(i);
+			power_series_naive_base res((int)data.size() - n + 1);
+			for(auto i = (int)data.size() - 1; i >= n - 1; -- i) if(data[i]){
+				T x = data[i] * inv;
+				res[i - n + 1] = x;
+				for(auto j: indices) data[i - (n - 1 - j)] -= x * p[j];
+			}
+			indices.clear();
+			return *this = res;
+		}
+		power_series_naive_base b;
+		n = data.size() - p.size() + 1;
+		b.assign(n, {});
+		copy(p.rbegin(), p.rbegin() + min(p.size(), b.size()), b.begin());
+		std::reverse(data.begin(), data.end());
+		data *= b.inverse(n);
+		data.erase(data.begin() + n, data.end());
+		std::reverse(data.begin(), data.end());
+		return *this;
+	}
+	power_series_naive_base operator/(const power_series_naive_base &p) const{
+		return power_series_naive_base(*this) /= p;
+	}
+	template<class U>
+	power_series_naive_base &operator/=(U x){
+		assert(x);
+		T inv_x = T(1) / x;
+		for(auto &c: data) c *= inv_x;
+		return *this;
+	}
+	template<class U>
+	power_series_naive_base operator/(U x) const{
+		return power_series_naive_base(*this) /= x;
+	}
+	pair<power_series_naive_base, power_series_naive_base> divrem(const power_series_naive_base &p) const{
+		auto q = *this / p, r = *this - q * p;
+		while(!r.empty() && r.back() == 0) r.pop_back();
+		return {q, r};
+	}
+	power_series_naive_base &operator%=(const power_series_naive_base &p){
+		int n = (int)p.size();
+		while(n && p[n - 1] == T{0}) -- n;
+		assert(n >= 1);
+		inplace_reduce();
+		if(data.size() < n) return *this;
+		if(n - count(p.begin(), p.begin() + n, 0) <= 100){
+			T inv = 1 / p[n - 1];
+			static vector<int> indices;
+			for(auto i = 0; i < n - 1; ++ i) if(p[i]) indices.push_back(i);
+			for(auto i = (int)data.size() - 1; i >= n - 1; -- i) if(data[i]){
+				T x = data[i] * inv;
+				data[i] = 0;
+				for(auto j: indices) data[i - (n - 1 - j)] -= x * p[j];
+			}
+			indices.clear();
+			return inplace_reduce();
+		}
+		return *this = this->divrem(p).second;
+	}
+	power_series_naive_base operator%(const power_series_naive_base &p) const{
+		return power_series_naive_base(*this) %= p;
+	}
+	power_series_naive_base &inplace_derivative(){
+		if(!data.empty()){
+			for(auto i = 0; i < data.size(); ++ i) data[i] *= i;
+			data.erase(data.begin());
+		}
+		return *this;
+	}
+	// p'
+	power_series_naive_base derivative() const{
+		return power_series_naive_base(*this).inplace_derivative();
+	}
+	power_series_naive_base &inplace_derivative_shift(){
+		for(auto i = 0; i < data.size(); ++ i) data[i] *= i;
+		return *this;
+	}
+	// xP'
+	power_series_naive_base derivative_shift() const{
+		return power_series_naive_base(*this).inplace_derivative_shift();
+	}
+	power_series_naive_base &inplace_antiderivative(){
+		_precalc_inverse((int)data.size() + 1);
+		data.push_back(0);
+		for(auto i = (int)data.size() - 1; i >= 1; -- i) data[i] = data[i - 1] * _inv[i];
+		data[0] = 0;
+		return *this;
+	}
+	// Integral(P)
+	power_series_naive_base antiderivative() const{
+		return power_series_naive_base(*this).inplace_antiderivative();
+	}
+	power_series_naive_base &inplace_shifted_antiderivative(){
+		_precalc_inverse((int)data.size());
+		if(!data.empty()) data[0] = 0;
+		for(auto i = 1; i < data.size(); ++ i) data[i] *= _inv[i];
+		return *this;
+	}
+	// Integral(P/x)
+	power_series_naive_base shifted_antiderivative() const{
+		return power_series_naive_base(*this).inplace_shifted_antiderivative();
+	}
+	power_series_naive_base &inplace_log(int n){
+		assert(!data.empty() && data[0] == 1);
+		if(!n){
+			data.clear();
+			return *this;
+		}
+		(*this = derivative() * inverse(n)).resize(n - 1, T{0});
+		inplace_antiderivative();
+		return *this;
+	}
+	power_series_naive_base log(int n) const{
+		return power_series_naive_base(*this).inplace_log(n);
+	}
+	power_series_naive_base exp(int n) const{
+		assert(data.empty() || data[0] == T{0});
+		power_series_naive_base f{1}, g;
+		for(auto s = 1; s < n; s <<= 1){
+			g = f.log(s << 1).drop(s) - drop(s).take(s);
+			(f -= (f * g).take(s).shift(s)).inplace_take(s << 1);
+		}
+		return f.take(n);
+	}
+	power_series_naive_base &inplace_exp(int n){
+		return *this = this->exp(n);
+	}
+	template<class U, typename enable_if<IS_INTEGRAL(U)>::type* = nullptr>
+	power_series_naive_base &inplace_power(U e, int n){
+		assert(n >= 0);
+		data.resize(n, T{0});
+		if(n == 0) return *this;
+		if(e == 0){
+			fill(data.begin(), data.end(), T{0});
+			data[0] = T{1};
+			return *this;
+		}
+		if(e < 0) return inplace_inverse(n).inplace_power(-e, n);
+		if(all_of(data.begin(), data.end(), [&](auto x){ return x == T{0}; })) return *this;
+		int pivot = find_if(data.begin(), data.end(), [&](auto x){ return x; }) - data.begin();
+		if(pivot && e >= (n + pivot - 1) / pivot){
+			fill(data.begin(), data.end(), T{0});
+			return *this;
+		}
+		data.erase(data.begin(), data.begin() + pivot);
+		n -= pivot * e;
+		for(auto i = 1; i <= n; ++ i) if(!T{i}){
+			power_series_naive_base res{1};
+			for(; e; e >>= 1, (*this *= *this).inplace_take(n)) if(e & 1) (res *= *this).inplace_take(n);
+			*this = res;
+			data.insert(data.begin(), pivot * e, T{0});
+			return *this;
+		}
+		T pivot_c = T{1}, base = data[0];
+		for(auto x = e; x; x >>= 1, base *= base) if(x & 1) pivot_c *= base;
+		((*this /= data[0]).inplace_log(n) *= e).inplace_exp(n);
+		data.insert(data.begin(), pivot * e, T{0});
+		return *this *= pivot_c;
+	}
+	template<class U, typename enable_if<IS_INTEGRAL(U)>::type* = nullptr>
+	power_series_naive_base power(U e, int n) const{
+		return power_series_naive_base(*this).inplace_power(e, n);
+	}
+	// O(n * log(n) * log(e))
+	template<class U, typename enable_if<IS_INTEGRAL(U)>::type* = nullptr>
+	power_series_naive_base &inplace_power_mod(U e, power_series_naive_base mod){
+		mod.inplace_reduce();
+		assert(mod);
+		if((int)mod.size() == 1){
+			data.clear();
+			return *this;
+		}
+		if(e == 0){
+			data = {T{1}};
+			return *this;
+		}
+		if(e < 0) return inplace_inverse((int)mod.size()).inplace_power_mod(-e, mod);
+		if(!*this) return *this;
+		power_series_naive_base res{1};
+		for(; e; e >>= 1, *this = *this * *this % mod) if(e & 1) res = res * *this % mod;
+		return *this = res;
+	}
+	// O(n * log(n) * log(e))
+	template<class U, typename enable_if<IS_INTEGRAL(U)>::type* = nullptr>
+	power_series_naive_base power_mod(U e, const power_series_naive_base &mod) const{
+		return power_series_naive_base(*this).inplace_power_mod(e, mod);
+	}
+	// Suppose there are data[i] distinct objects with weight i.
+	// Returns a power series where i-th coefficient represents # of ways to select a set of objects with sum of weight i.
+	// O(n * log(n))
+	power_series_naive_base &inplace_set(int n){
+		assert(!data.empty() && data[0] == T{0});
+		_precalc_inverse(n);
+		data.resize(n);
+		for(auto i = n - 1; i >= 1; -- i) for(auto j = 2 * i; j < n; j += i) data[j] += data[i];
+		for(auto i = 1; i < n; ++ i) (data[i] *= _inv[i]) *= (i & 1 ? 1 : -1);
+		return inplace_exp(n);
+	}
+	power_series_naive_base set(int n) const{
+		return power_series_naive_base(*this).inplace_set(n);
+	}
+	// Suppose there are data[i] distinct objects with weight i.
+	// Returns a power series where i-th coefficient represents # of ways to select a multiset of objects with sum of weight i.
+	// O(n * log(n))
+	power_series_naive_base &inplace_multiset(int n){
+		assert(!data.empty() && data[0] == T{0});
+		_precalc_inverse(n);
+		data.resize(n);
+		for(auto i = n - 1; i >= 1; -- i) for(auto j = 2 * i; j < n; j += i) data[j] += data[i] * _inv[j / i];
+		return inplace_exp(n);
+	}
+	power_series_naive_base multiset(int n) const{
+		return power_series_naive_base(*this).inplace_multiset(n);
+	}
+	static power_series_naive_base multiply_all(const vector<power_series_naive_base> &a){
+		if(a.empty()) return {1};
+		auto solve = [&](auto self, int l, int r)->power_series_naive_base{
+			if(r - l == 1) return a[l];
+			int m = l + (r - l >> 1);
+			return self(self, l, m) * self(self, m, r);
+		};
+		return solve(solve, 0, (int)a.size());
+	}
+	friend power_series_naive_base gcd(power_series_naive_base p, power_series_naive_base q){
+		p.inplace_reduce(), q.inplace_reduce();
+		while(q) p = exchange(q, (p % q).reduce());
+		return p;
+	}
+	friend power_series_naive_base lcm(power_series_naive_base p, power_series_naive_base q){
+		return p / gcd(p, q) * q;
+	}
+#undef IS_INTEGRAL
+#undef data
+};
+template<class T, class multiplication_functor>
+vector<T> power_series_naive_base<T, multiplication_functor>::_inv{T{1}};
+
+template<class T>
+struct _quadratic{
+	static vector<T> multiply(const vector<T> &a, const vector<T> &b){
+		if(a.empty() || b.empty()) return {};
+		vector<T> q((int)a.size() + (int)b.size() - 1);
+		for(auto i = 0; i < (int)a.size(); ++ i) for(auto j = 0; j < (int)b.size(); ++ j) q[i + j] += a[i] * b[j];
+		return q;
+	}
+};
+template<class T, class FFT>
+struct _with_fft{
+	static vector<T> multiply_naively(const vector<T> &a, const vector<T> &b){
+		vector<T> q((int)a.size() + (int)b.size() - 1);
+		for(auto i = 0; i < (int)a.size(); ++ i) for(auto j = 0; j < (int)b.size(); ++ j) q[i + j] += a[i] * b[j];
+		return q;
+	}
+	static vector<T> multiply(const vector<T> &a, const vector<T> &b){
+		if(a.empty() || b.empty()) return {};
+		if(min(a.size(), b.size()) <= 60) return multiply_naively(a, b);
+		return FFT::arbitrarily_convolute(a, b);
+	}
+};
+
+template<class T> using power_series = power_series_naive_base<T, _quadratic<T>>;
+// using power_series = power_series_naive_base<modular, _with_fft<modular, ntt>>;
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>power_series_naive</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
