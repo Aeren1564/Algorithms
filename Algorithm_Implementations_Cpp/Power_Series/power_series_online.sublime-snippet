@@ -1,0 +1,162 @@
+<snippet>
+	<content><![CDATA[
+// WARNING: work on progress, might have errors
+// Requires modular and number_theoric_transform
+template<class T, class FFT>
+struct power_series_online_wrapper{
+#ifdef LOCAL
+	#define ASSERT(x) assert(x)
+#else
+	#define ASSERT(x) 42
+#endif
+	enum type_t{LEAF, LEAF_CONST, LEAF_CIRCULAR, SHIFT, SUM, DIFFERENCE, PRODUCT};
+	vector<type_t> type;
+	vector<int> arg0, arg1, variate_flag, n;
+	vector<vector<T>> data;
+	int make_series(const vector<T> &p = {}){
+		int u = (int)type.size();
+		type.push_back(type_t::LEAF);
+		arg0.push_back(-1);
+		arg1.push_back(-1);
+		variate_flag.push_back(true);
+		n.push_back((int)p.size());
+		data.push_back(p);
+		return u;
+	}
+	int make_const_series(const vector<T> &p = {}){
+		int u = (int)type.size();
+		type.push_back(type_t::LEAF_CONST);
+		arg0.push_back(-1);
+		arg1.push_back(-1);
+		variate_flag.push_back(false);
+		n.push_back(numeric_limits<int>::max());
+		data.push_back(p);
+		return u;
+	}
+	int make_circular_series(const vector<T> &p){
+		ASSERT(!p.empty());
+		int u = (int)type.size();
+		type.push_back(type_t::LEAF_CIRCULAR);
+		arg0.push_back(-1);
+		arg1.push_back(-1);
+		variate_flag.push_back(false);
+		n.push_back(numeric_limits<int>::max());
+		data.push_back(p);
+		return u;
+	}
+	int shift(int u, int dist){
+		ASSERT(0 <= u && u < (int)type.size() && 0 <= dist);
+		if(dist == 0) return u;
+		int v = (int)type.size();
+		type.push_back(type_t::SHIFT);
+		arg0.push_back(u);
+		arg1.push_back(dist);
+		variate_flag.push_back(variate_flag[u]);
+		n.push_back(0);
+		data.emplace_back();
+		return v;
+	}
+	int add(int u, int v){
+		ASSERT(0 <= min(u, v) && max(u, v) < (int)type.size());
+		int w = (int)type.size();
+		type.push_back(type_t::SUM);
+		arg0.push_back(u);
+		arg1.push_back(v);
+		variate_flag.push_back(variate_flag[u] | variate_flag[v]);
+		n.push_back(0);
+		data.emplace_back();
+		return w;
+	}
+	int subtract(int u, int v){
+		ASSERT(0 <= min(u, v) && max(u, v) < (int)type.size());
+		int w = (int)type.size();
+		type.push_back(type_t::DIFFERENCE);
+		arg0.push_back(u);
+		arg1.push_back(v);
+		variate_flag.push_back(variate_flag[u] | variate_flag[v]);
+		n.push_back(0);
+		data.emplace_back();
+		return w;
+	}
+	int multiply(int u, int v){
+		ASSERT(0 <= min(u, v) && max(u, v) < (int)type.size());
+		int w = (int)type.size();
+		type.push_back(type_t::PRODUCT);
+		arg0.push_back(u);
+		arg1.push_back(v);
+		variate_flag.push_back(variate_flag[u] | variate_flag[v]);
+		n.push_back(0);
+		data.emplace_back();
+		return w;
+	}
+	int push_back(int u, T x){
+		ASSERT(0 <= u && u < (int)type.size() && type[u] == type_t::LEAF);
+		data[u].push_back(x);
+		return n[u] ++;
+	}
+	vector<T> lhs_buffer, rhs_buffer;
+	// Assume no circular dependency
+	// Amortized O(log(i)^2) per incrementation for PRODUCT
+	T _eval(int u, int i){
+		ASSERT(0 <= u && u < (int)type.size() && 0 <= i);
+		switch(type[u]){
+		case type_t::LEAF:
+			ASSERT(i < n[u]);
+			return data[u][i];
+		case type_t::LEAF_CONST:
+			return i < (int)data[u].size() ? data[u][i] : T{0};
+		case type_t::LEAF_CIRCULAR:
+			return data[u][i % (int)data[u].size()];
+		case type_t::SHIFT:
+			return i < arg1[u] ? T{0} : _eval(arg0[u], i - arg1[u]);
+		case type_t::SUM:
+			while(n[u] <= i) data[u].push_back(_eval(arg0[u], n[u]) + _eval(arg1[u], n[u]));
+			return data[u][i];
+		case type_t::DIFFERENCE:
+			while(n[u] <= i) data[u].push_back(_eval(arg0[u], n[u]) + _eval(arg1[u], n[u]));
+			return data[u][i];
+		case type_t::PRODUCT:
+			{
+				int v = arg0[u], w = arg1[u];
+				if(variate_flag[v]){
+					swap(v, w);
+				}
+				if(variate_flag[v]){
+					// TODO Implement this
+					assert(false);
+				}
+				else{
+					while(n[u] <= i){
+						int p = n[u] ++;
+						if((int)data[u].size() <= p) data[u].resize(p + 1);
+						data[u][p] += _eval(v, 0) * _eval(w, p);
+						for(auto len = 1; (p & len - 1) == len - 1; len <<= 1){
+							lhs_buffer.resize(len), rhs_buffer.resize(len);
+							for(auto j = len; j < len << 1; ++ j) lhs_buffer[j - len] = _eval(v, j);
+							for(auto j = 0; j < len; ++ j) rhs_buffer[j] = _eval(w, p + 1 - len + j);
+							FFT::convolute(len, lhs_buffer.begin(), len, rhs_buffer.begin());
+							if((int)data[u].size() <= p + (int)FFT::res.size()) data[u].resize(p + FFT::res.size() + 1);
+							for(auto j = 0; j < (int)FFT::res.size(); ++ j) data[u][p + 1 + j] += FFT::res[j];
+						}
+					}
+				}
+				return data[u][i];
+			}
+		default:
+			assert(false);
+		}
+	}
+	T eval(int u, int i){
+		ASSERT(0 <= u && u < (int)type.size() && 0 <= i);
+		return _eval(u, i);
+	}
+#undef ASSERT
+};
+
+using power_series_online = power_series_online_wrapper<modular, number_theoric_transform_wrapper<modular>>;
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>power_series_online</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
