@@ -45,7 +45,7 @@ struct power_series_base: vector<T>{
 	}
 	static vector<T> _inv;
 	static void _precalc_inverse(int obj){
-		while((int)_inv.size() < obj){
+		while((int)_inv.size() <= obj){
 			T x{(int)_inv.size()};
 			assert(x);
 			_inv.push_back(1 / x);
@@ -549,7 +549,7 @@ struct power_series_base: vector<T>{
 	power_series_base multiset(int n) const{
 		return power_series_base(*this).inplace_multiset(n);
 	}
-	static power_series_base multiply_all(const vector<power_series_base> &a){
+	friend power_series_base multiply_all(const vector<power_series_base> &a){
 		if(a.empty()) return {1};
 		auto solve = [&](auto recurse, int l, int r)->power_series_base{
 			if(r - l == 1) return a[l];
