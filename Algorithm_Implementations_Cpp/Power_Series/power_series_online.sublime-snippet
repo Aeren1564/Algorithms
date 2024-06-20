@@ -1,6 +1,5 @@
 <snippet>
 	<content><![CDATA[
-// WARNING: work on progress, might have errors
 // Requires modular and number_theoric_transform
 template<class T, class FFT>
 struct power_series_online_wrapper{
@@ -9,96 +8,123 @@ struct power_series_online_wrapper{
 #else
 	#define ASSERT(x) 42
 #endif
-	enum type_t{LEAF, LEAF_CONST, LEAF_CIRCULAR, SHIFT, SUM, DIFFERENCE, PRODUCT};
+	static constexpr int inf = numeric_limits<int>::max();
+	enum type_t{DEAD, LEAF, LEAF_CONST, LEAF_CIRCULAR, SHIFT, SUM, DIFFERENCE, PRODUCT};
 	vector<type_t> type;
-	vector<int> arg0, arg1, variate_flag, n;
-	vector<vector<T>> data;
+	vector<int> arg0;
+	vector<int> arg1;
+	vector<int> variate_flag; // true iff one of its leaves are variate
+	vector<int> n; // current size
+	vector<int> threshold; // for i >= threshold, the i-th coefficient is always zero
+	vector<vector<T>> data, mul_buffer;
+	vector<int> dead_nodes;
+	int _new_series(){
+		int u;
+		if(!dead_nodes.empty()){
+			u = dead_nodes.back();
+			dead_nodes.pop_back();
+			arg0[u] = -1;
+			arg1[u] = -1;
+			variate_flag[u] = false;
+			n[u] = 0;
+			threshold[u] = inf;
+			data[u].clear();
+			mul_buffer[u].clear();
+		}
+		else{
+			u = (int)type.size();
+			type.push_back(type_t::LEAF);
+			arg0.push_back(-1);
+			arg1.push_back(-1);
+			variate_flag.push_back(false);
+			n.push_back(0);
+			threshold.push_back(inf);
+			data.emplace_back();
+			mul_buffer.emplace_back();
+		}
+		return u;
+	}
+	void erase(int u){
+		ASSERT(0 <= u && u < (int)type.size() && type[u] != type_t::DEAD);
+		type[u] = type_t::DEAD;
+		dead_nodes.push_back(u);
+	}
 	int make_series(const vector<T> &p = {}){
-		int u = (int)type.size();
-		type.push_back(type_t::LEAF);
-		arg0.push_back(-1);
-		arg1.push_back(-1);
-		variate_flag.push_back(true);
-		n.push_back((int)p.size());
-		data.push_back(p);
+		int u = _new_series();
+		type[u] = type_t::LEAF;
+		variate_flag[u] = true;
+		n[u] = (int)p.size();
+		data[u] = p;
 		return u;
 	}
 	int make_const_series(const vector<T> &p = {}){
-		int u = (int)type.size();
-		type.push_back(type_t::LEAF_CONST);
-		arg0.push_back(-1);
-		arg1.push_back(-1);
-		variate_flag.push_back(false);
-		n.push_back(numeric_limits<int>::max());
-		data.push_back(p);
+		int u = _new_series();
+		type[u] = type_t::LEAF_CONST;
+		n[u] = inf;
+		threshold[u] = (int)p.size();
+		data[u] = p;
 		return u;
 	}
 	int make_circular_series(const vector<T> &p){
 		ASSERT(!p.empty());
-		int u = (int)type.size();
-		type.push_back(type_t::LEAF_CIRCULAR);
-		arg0.push_back(-1);
-		arg1.push_back(-1);
-		variate_flag.push_back(false);
-		n.push_back(numeric_limits<int>::max());
-		data.push_back(p);
+		int u = _new_series();
+		type[u] = type_t::LEAF_CIRCULAR;
+		n[u] = inf;
+		data[u] = p;
 		return u;
 	}
-	int shift(int u, int dist){
-		ASSERT(0 <= u && u < (int)type.size() && 0 <= dist);
-		if(dist == 0) return u;
-		int v = (int)type.size();
-		type.push_back(type_t::SHIFT);
-		arg0.push_back(u);
-		arg1.push_back(dist);
-		variate_flag.push_back(variate_flag[u]);
-		n.push_back(0);
-		data.emplace_back();
-		return v;
+	int shift(int v, int dist){
+		ASSERT(0 <= v && v < (int)type.size() && type[v] != type_t::DEAD);
+		if(dist == 0) return v;
+		int u = _new_series();
+		type[u] = type_t::SHIFT;
+		arg0[u] = v;
+		arg1[u] = dist;
+		variate_flag[u] = variate_flag[v];
+		threshold[u] = threshold[v] == inf ? inf : max(0, threshold[v] + dist);
+		return u;
 	}
-	int add(int u, int v){
-		ASSERT(0 <= min(u, v) && max(u, v) < (int)type.size());
-		int w = (int)type.size();
-		type.push_back(type_t::SUM);
-		arg0.push_back(u);
-		arg1.push_back(v);
-		variate_flag.push_back(variate_flag[u] | variate_flag[v]);
-		n.push_back(0);
-		data.emplace_back();
-		return w;
+	int add(int v, int w){
+		ASSERT(0 <= min(v, w) && max(v, w) < (int)type.size() && type[v] != type_t::DEAD && type[w] != type_t::DEAD);
+		int u = _new_series();
+		type[u] = type_t::SUM;
+		arg0[u] = v;
+		arg1[u] = w;
+		variate_flag[u] = variate_flag[v] | variate_flag[w];
+		threshold[u] = max(threshold[v], threshold[w]);
+		return u;
 	}
-	int subtract(int u, int v){
-		ASSERT(0 <= min(u, v) && max(u, v) < (int)type.size());
-		int w = (int)type.size();
-		type.push_back(type_t::DIFFERENCE);
-		arg0.push_back(u);
-		arg1.push_back(v);
-		variate_flag.push_back(variate_flag[u] | variate_flag[v]);
-		n.push_back(0);
-		data.emplace_back();
-		return w;
+	int subtract(int v, int w){
+		ASSERT(0 <= min(v, w) && max(v, w) < (int)type.size() && type[v] != type_t::DEAD && type[w] != type_t::DEAD);
+		int u = _new_series();
+		type[u] = type_t::DIFFERENCE;
+		arg0[u] = v;
+		arg1[u] = w;
+		variate_flag[u] = variate_flag[v] | variate_flag[w];
+		threshold[u] = max(threshold[v], threshold[w]);
+		return u;
 	}
-	int multiply(int u, int v){
-		ASSERT(0 <= min(u, v) && max(u, v) < (int)type.size());
-		int w = (int)type.size();
-		type.push_back(type_t::PRODUCT);
-		arg0.push_back(u);
-		arg1.push_back(v);
-		variate_flag.push_back(variate_flag[u] | variate_flag[v]);
-		n.push_back(0);
-		data.emplace_back();
-		return w;
+	int multiply(int v, int w){
+		ASSERT(0 <= min(v, w) && max(v, w) < (int)type.size()) && type[v] != type_t::DEAD && type[w] != type_t::DEAD;
+		int u = _new_series();
+		type[u] = type_t::PRODUCT;
+		arg0[u] = v;
+		arg1[u] = w;
+		variate_flag[u] = variate_flag[v] | variate_flag[w];
+		threshold[u] = threshold[v] == inf || threshold[w] == inf ? inf : threshold[v] + threshold[w];
+		return u;
 	}
 	int push_back(int u, T x){
 		ASSERT(0 <= u && u < (int)type.size() && type[u] == type_t::LEAF);
 		data[u].push_back(x);
 		return n[u] ++;
 	}
-	vector<T> lhs_buffer, rhs_buffer;
+	vector<T> buffer;
 	// Assume no circular dependency
 	// Amortized O(log(i)^2) per incrementation for PRODUCT
 	T _eval(int u, int i){
-		ASSERT(0 <= u && u < (int)type.size() && 0 <= i);
+		ASSERT(0 <= u && u < (int)type.size() && 0 <= i && type[u] != type_t::DEAD);
+		if(i >= threshold[u]) return T{0};
 		switch(type[u]){
 		case type_t::LEAF:
 			ASSERT(i < n[u]);
@@ -110,11 +136,9 @@ struct power_series_online_wrapper{
 		case type_t::SHIFT:
 			return i < arg1[u] ? T{0} : _eval(arg0[u], i - arg1[u]);
 		case type_t::SUM:
-			while(n[u] <= i) data[u].push_back(_eval(arg0[u], n[u]) + _eval(arg1[u], n[u]));
-			return data[u][i];
+			return _eval(arg0[u], i) + _eval(arg1[u], i);
 		case type_t::DIFFERENCE:
-			while(n[u] <= i) data[u].push_back(_eval(arg0[u], n[u]) + _eval(arg1[u], n[u]));
-			return data[u][i];
+			return _eval(arg0[u], i) - _eval(arg1[u], i);
 		case type_t::PRODUCT:
 			{
 				int v = arg0[u], w = arg1[u];
@@ -122,21 +146,36 @@ struct power_series_online_wrapper{
 					swap(v, w);
 				}
 				if(variate_flag[v]){
-					// TODO Implement this
 					assert(false);
 				}
 				else{
+					if(mul_buffer[u].empty()) mul_buffer[u].resize(2, T{0});
 					while(n[u] <= i){
 						int p = n[u] ++;
 						if((int)data[u].size() <= p) data[u].resize(p + 1);
 						data[u][p] += _eval(v, 0) * _eval(w, p);
-						for(auto len = 1; (p & len - 1) == len - 1; len <<= 1){
-							lhs_buffer.resize(len), rhs_buffer.resize(len);
-							for(auto j = len; j < len << 1; ++ j) lhs_buffer[j - len] = _eval(v, j);
-							for(auto j = 0; j < len; ++ j) rhs_buffer[j] = _eval(w, p + 1 - len + j);
-							FFT::convolute(len, lhs_buffer.begin(), len, rhs_buffer.begin());
-							if((int)data[u].size() <= p + (int)FFT::res.size()) data[u].resize(p + FFT::res.size() + 1);
-							for(auto j = 0; j < (int)FFT::res.size(); ++ j) data[u][p + 1 + j] += FFT::res[j];
+						for(auto len = 1; (p & len - 1) == len - 1 && len < threshold[v]; len <<= 1){
+							if(len <= 4){
+								if((int)data[u].size() <= p + 2 * len) data[u].resize(p + 2 * len + 1);
+								for(auto l = len; l < min(len << 1, threshold[v]); ++ l) for(auto r = p + 1 - len; r <= p; ++ r) data[u][l + r] += _eval(v, l) * _eval(w, r);
+								continue;
+							}
+							while((int)mul_buffer[u].size() <= len << 1){
+								int s = (int)mul_buffer[u].size();
+								mul_buffer[u].resize(s << 1, T{0});
+								if(s > 8){
+									for(auto j = s; j < s / 2 * 3; ++ j) mul_buffer[u][j] = _eval(v, j - s / 2);
+									FFT::transform(s, mul_buffer[u].data() + s);
+								}
+							}
+							buffer.resize(len << 1);
+							for(auto j = 0; j < len; ++ j) buffer[j] = _eval(w, p + 1 - len + j);
+							fill(buffer.begin() + len, buffer.begin() + 2 * len, T{0});
+							FFT::transform(len << 1, buffer.data());
+							for(auto j = 0; j < len << 1; ++ j) buffer[j] *= mul_buffer[u][2 * len + j];
+							FFT::transform(len << 1, buffer.data(), true);
+							if((int)data[u].size() <= p + 2 * len) data[u].resize(p + 2 * len + 1);
+							for(auto j = 0; j < len << 1; ++ j) data[u][p + 1 + j] += buffer[j];
 						}
 					}
 				}
@@ -147,7 +186,7 @@ struct power_series_online_wrapper{
 		}
 	}
 	T eval(int u, int i){
-		ASSERT(0 <= u && u < (int)type.size() && 0 <= i);
+		ASSERT(0 <= u && u < (int)type.size() && 0 <= i && type[u] != type_t::DEAD);
 		return _eval(u, i);
 	}
 #undef ASSERT
