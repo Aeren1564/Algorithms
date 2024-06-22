@@ -1,7 +1,10 @@
 <snippet>
 	<content><![CDATA[
 struct compressed_tree: graph<int>{
-	int root; // arborescence rooted at root
+	compressed_tree(int n): graph<int>(n), was(n, -2), in_subset(n){ }
+	int attempt = -1;
+	vector<int> was;
+	vector<int> in_subset;
 	vector<int> order; // dfs-order of compressed tree
 	// Build the smallest tree containing all nodes in the subset
 	// O(size(subset) * log(n))
@@ -18,7 +21,17 @@ struct compressed_tree: graph<int>{
 		order.erase(unique(order.begin(), order.end()), order.end());
 		for(auto i = 1, size = (int)order.size(); i < size; ++ i) order.push_back(ls.lca(order[i - 1], order[i]));
 		sort(order.begin(), order.end(), cmp), order.erase(unique(order.begin(), order.end()), order.end());
-		for(auto i = 1; i < (int)order.size(); ++ i) orient(ls.lca(order[i - 1], order[i]), order[i], 1);
+		for(auto i = 1; i < (int)order.size(); ++ i){
+			int lca = ls.lca(order[i - 1], order[i]);
+			orient(lca, order[i], ls.steps(lca, order[i], lca));
+		}
+		++ attempt;
+		for(auto u: order) was[u] = attempt, in_subset[u] = false;
+		for(auto u: subset) in_subset[u] = true;
+	}
+	bool visited(int u){
+		assert(0 <= u && u < n);
+		return was[u] == attempt;
 	}
 };
 ]]></content>
