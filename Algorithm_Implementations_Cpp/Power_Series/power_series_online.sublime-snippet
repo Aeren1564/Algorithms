@@ -17,66 +17,85 @@ struct power_series_online_wrapper{
 	vector<int> n; // current size
 	vector<int> threshold; // for i >= threshold, the i-th coefficient is always zero
 	vector<vector<T>> data, mul_buffer;
+	vector<int> mul_aux_lhs;
+	vector<int> mul_aux_rhs;
+	vector<int> mul_aux_res;
 	vector<int> dead_nodes;
-	int _new_series(){
-		int u;
-		if(!dead_nodes.empty()){
-			u = dead_nodes.back();
-			dead_nodes.pop_back();
-			arg0[u] = -1;
-			arg1[u] = -1;
-			variate_flag[u] = false;
-			n[u] = 0;
-			threshold[u] = inf;
-			data[u].clear();
-			mul_buffer[u].clear();
+	int _new_series(int u = -1){
+		ASSERT(-1 <= u && u < (int)type.size());
+		if(~u){
+			ASSERT(type[u] == type_t::DEAD);
 		}
 		else{
-			u = (int)type.size();
-			type.push_back(type_t::LEAF);
-			arg0.push_back(-1);
-			arg1.push_back(-1);
-			variate_flag.push_back(false);
-			n.push_back(0);
-			threshold.push_back(inf);
-			data.emplace_back();
-			mul_buffer.emplace_back();
+			while(!dead_nodes.empty() && type[dead_nodes.back()] != type_t::DEAD) dead_nodes.pop_back();
+			if(!dead_nodes.empty()){
+				u = dead_nodes.back();
+				dead_nodes.pop_back();
+			}
+			else{
+				u = (int)type.size();
+				type.push_back(type_t::LEAF);
+				arg0.push_back(-1);
+				arg1.push_back(-1);
+				variate_flag.push_back(false);
+				n.push_back(0);
+				threshold.push_back(inf);
+				data.emplace_back();
+				mul_buffer.emplace_back();
+				mul_aux_lhs.push_back(-1);
+				mul_aux_rhs.push_back(-1);
+				mul_aux_res.push_back(-1);
+			}
 		}
+		arg0[u] = -1;
+		arg1[u] = -1;
+		variate_flag[u] = false;
+		n[u] = 0;
+		threshold[u] = inf;
+		data[u].clear();
+		mul_buffer[u].clear();
+		mul_aux_lhs[u] = -1;
+		mul_aux_rhs[u] = -1;
+		mul_aux_res[u] = -1;
 		return u;
 	}
 	void erase(int u){
 		ASSERT(0 <= u && u < (int)type.size() && type[u] != type_t::DEAD);
 		type[u] = type_t::DEAD;
 		dead_nodes.push_back(u);
+		if(~arg0[u]) erase(arg0[u]);
+		if(~arg1[u]) erase(arg1[u]);
 	}
-	int make_series(const vector<T> &p = {}){
-		int u = _new_series();
+	int make_series(int u = -1){
+		ASSERT(-1 <= u && u < (int)type.size());
+		u = _new_series(u);
 		type[u] = type_t::LEAF;
 		variate_flag[u] = true;
-		n[u] = (int)p.size();
-		data[u] = p;
+		n[u] = 0;
+		data[u].clear();
 		return u;
 	}
-	int make_const_series(const vector<T> &p = {}){
-		int u = _new_series();
+	int make_const_series(const vector<T> &p, int u = -1){
+		ASSERT(-1 <= u && u < (int)type.size());
+		u = _new_series(u);
 		type[u] = type_t::LEAF_CONST;
 		n[u] = inf;
 		threshold[u] = (int)p.size();
 		data[u] = p;
 		return u;
 	}
-	int make_circular_series(const vector<T> &p){
-		ASSERT(!p.empty());
-		int u = _new_series();
+	int make_circular_series(const vector<T> &p, int u = -1){
+		ASSERT(-1 <= u && u < (int)type.size() && !p.empty());
+		u = _new_series(u);
 		type[u] = type_t::LEAF_CIRCULAR;
 		n[u] = inf;
 		data[u] = p;
 		return u;
 	}
-	int shift(int v, int dist){
+	int shift(int v, int dist, int u = -1){
+		ASSERT(-1 <= u && u < (int)type.size());
 		ASSERT(0 <= v && v < (int)type.size() && type[v] != type_t::DEAD);
-		if(dist == 0) return v;
-		int u = _new_series();
+		u = _new_series(u);
 		type[u] = type_t::SHIFT;
 		arg0[u] = v;
 		arg1[u] = dist;
@@ -84,9 +103,10 @@ struct power_series_online_wrapper{
 		threshold[u] = threshold[v] == inf ? inf : max(0, threshold[v] + dist);
 		return u;
 	}
-	int add(int v, int w){
+	int add(int v, int w, int u = -1){
+		ASSERT(-1 <= u && u < (int)type.size());
 		ASSERT(0 <= min(v, w) && max(v, w) < (int)type.size() && type[v] != type_t::DEAD && type[w] != type_t::DEAD);
-		int u = _new_series();
+		u = _new_series(u);
 		type[u] = type_t::SUM;
 		arg0[u] = v;
 		arg1[u] = w;
@@ -94,9 +114,10 @@ struct power_series_online_wrapper{
 		threshold[u] = max(threshold[v], threshold[w]);
 		return u;
 	}
-	int subtract(int v, int w){
+	int subtract(int v, int w, int u = -1){
+		ASSERT(-1 <= u && u < (int)type.size());
 		ASSERT(0 <= min(v, w) && max(v, w) < (int)type.size() && type[v] != type_t::DEAD && type[w] != type_t::DEAD);
-		int u = _new_series();
+		u = _new_series(u);
 		type[u] = type_t::DIFFERENCE;
 		arg0[u] = v;
 		arg1[u] = w;
@@ -104,9 +125,10 @@ struct power_series_online_wrapper{
 		threshold[u] = max(threshold[v], threshold[w]);
 		return u;
 	}
-	int multiply(int v, int w){
-		ASSERT(0 <= min(v, w) && max(v, w) < (int)type.size()) && type[v] != type_t::DEAD && type[w] != type_t::DEAD;
-		int u = _new_series();
+	int multiply(int v, int w, int u = -1){
+		ASSERT(-1 <= u && u < (int)type.size());
+		ASSERT(0 <= min(v, w) && max(v, w) < (int)type.size() && type[v] != type_t::DEAD && type[w] != type_t::DEAD);
+		u = _new_series(u);
 		type[u] = type_t::PRODUCT;
 		arg0[u] = v;
 		arg1[u] = w;
@@ -142,17 +164,59 @@ struct power_series_online_wrapper{
 		case type_t::PRODUCT:
 			{
 				int v = arg0[u], w = arg1[u];
-				if(variate_flag[v]){
+				if(variate_flag[v] && !variate_flag[w]){
 					swap(v, w);
 				}
 				if(variate_flag[v]){
-					assert(false);
-				}
-				else{
 					if(mul_buffer[u].empty()) mul_buffer[u].resize(2, T{0});
 					while(n[u] <= i){
 						int p = n[u] ++;
-						if((int)data[u].size() <= p) data[u].resize(p + 1);
+						if((int)data[u].size() <= p) data[u].resize(p + 1, T{0});
+						data[u][p] += _eval(v, 0) * _eval(w, p);
+						if(p == 0){
+							mul_aux_lhs[u] = make_series();
+							mul_aux_rhs[u] = make_const_series({_eval(w, 0)});
+							mul_aux_res[u] = multiply(mul_aux_lhs[u], mul_aux_rhs[u]);
+						}
+						else{
+							push_back(mul_aux_lhs[u], _eval(v, p));
+							data[u][p] += _eval(mul_aux_res[u], p - (1 << __lg(p)));
+						}
+						for(auto len = 1; (p & len - 1) == len - 1 && 2 * len <= p + 1; len <<= 1){
+							if(2 * len == p + 1){
+								assert(len << 1 == (int)mul_buffer[u].size());
+								mul_buffer[u].resize(len << 2, T{0});
+								for(auto j = 2 * len; j < 3 * len; ++ j) mul_buffer[u][j] = _eval(v, j - len);
+								FFT::transform(len << 1, mul_buffer[u].data() + 2 * len);
+							}
+							buffer.assign(len << 1, T{0});
+							for(auto j = 0; j < len; ++ j) buffer[j] = _eval(w, p + 1 - len + j);
+							FFT::transform(len << 1, buffer.data());
+							for(auto j = 0; j < len << 1; ++ j) buffer[j] *= mul_buffer[u][2 * len + j];
+							FFT::transform(len << 1, buffer.data(), true);
+							if((int)data[u].size() <= p + 2 * len) data[u].resize(p + 2 * len + 1);
+							for(auto j = 0; j < len << 1; ++ j) data[u][p + 1 + j] += buffer[j];
+							if(2 * len == p + 1){
+								if((int)data[u].size() < 3 * len) data[u].resize(3 * len, T{0});
+								for(auto q = 2 * len; q < 3 * len; ++ q){
+									push_back(mul_aux_lhs[u], T{0});
+									data[u][q] += _eval(mul_aux_res[u], q - len);
+								}
+								erase(mul_aux_res[u]);
+								mul_aux_lhs[u] = make_series(mul_aux_lhs[u]);
+								buffer.resize(len << 1);
+								for(auto q = 0; q < len << 1; ++ q) buffer[q] = _eval(w, q);
+								mul_aux_rhs[u] = make_const_series(buffer, mul_aux_rhs[u]);
+								mul_aux_res[u] = multiply(mul_aux_lhs[u], mul_aux_rhs[u]);
+							}
+						}
+					}
+				}
+				else{
+					if(mul_buffer[u].empty()) mul_buffer[u].resize(16, T{0});
+					while(n[u] <= i){
+						int p = n[u] ++;
+						if((int)data[u].size() <= p) data[u].resize(p + 1, T{0});
 						data[u][p] += _eval(v, 0) * _eval(w, p);
 						for(auto len = 1; (p & len - 1) == len - 1 && len < threshold[v]; len <<= 1){
 							if(len <= 4){
@@ -160,17 +224,14 @@ struct power_series_online_wrapper{
 								for(auto l = len; l < min(len << 1, threshold[v]); ++ l) for(auto r = p + 1 - len; r <= p; ++ r) data[u][l + r] += _eval(v, l) * _eval(w, r);
 								continue;
 							}
-							while((int)mul_buffer[u].size() <= len << 1){
+							if((int)mul_buffer[u].size() <= len << 1){
 								int s = (int)mul_buffer[u].size();
 								mul_buffer[u].resize(s << 1, T{0});
-								if(s > 8){
-									for(auto j = s; j < s / 2 * 3; ++ j) mul_buffer[u][j] = _eval(v, j - s / 2);
-									FFT::transform(s, mul_buffer[u].data() + s);
-								}
+								for(auto j = s; j < s / 2 * 3; ++ j) mul_buffer[u][j] = _eval(v, j - s / 2);
+								FFT::transform(s, mul_buffer[u].data() + s);
 							}
-							buffer.resize(len << 1);
+							buffer.assign(len << 1, T{0});
 							for(auto j = 0; j < len; ++ j) buffer[j] = _eval(w, p + 1 - len + j);
-							fill(buffer.begin() + len, buffer.begin() + 2 * len, T{0});
 							FFT::transform(len << 1, buffer.data());
 							for(auto j = 0; j < len << 1; ++ j) buffer[j] *= mul_buffer[u][2 * len + j];
 							FFT::transform(len << 1, buffer.data(), true);
@@ -188,6 +249,12 @@ struct power_series_online_wrapper{
 	T eval(int u, int i){
 		ASSERT(0 <= u && u < (int)type.size() && 0 <= i && type[u] != type_t::DEAD);
 		return _eval(u, i);
+	}
+	vector<T> to_vector(int u, int len){
+		ASSERT(0 <= u && u < (int)type.size() && 0 <= len && type[u] != type_t::DEAD);
+		vector<T> res(len);
+		for(auto i = 0; i < len; ++ i) res[i] = eval(u, i);
+		return res;
 	}
 #undef ASSERT
 };
