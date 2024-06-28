@@ -9,6 +9,14 @@ using namespace std;
 #if __cplusplus >= 202002L
 using namespace numbers;
 #endif
+#ifdef LOCAL
+	#include "Debug.h"
+#else
+	#define debug_endl() 42
+	#define debug(...) 42
+	#define debug2(...) 42
+	#define debugbin(...) 42
+#endif
 
 
 

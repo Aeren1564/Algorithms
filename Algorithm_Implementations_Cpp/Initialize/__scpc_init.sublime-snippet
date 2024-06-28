@@ -7,6 +7,14 @@
 // #include <x86intrin.h>
 using namespace std;
 using namespace numbers;
+#ifdef LOCAL
+	#include "Debug.h"
+#else
+	#define debug_endl() 42
+	#define debug(...) 42
+	#define debug2(...) 42
+	#define debugbin(...) 42
+#endif
 
 
 
