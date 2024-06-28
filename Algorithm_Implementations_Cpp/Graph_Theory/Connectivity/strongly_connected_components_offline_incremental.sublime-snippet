@@ -1,0 +1,30 @@
+<snippet>
+	<content><![CDATA[
+// TODO: Finish
+template<class T>
+struct strongly_connected_components_offline_incremental{
+	vector<array<int, 2>> edge;
+	vector<vector<array<int, 2>>> link_at;
+	strongly_connected_components_offline_incremental(){ }
+	strongly_connected_components_offline_incremental(int n){ init(n); }
+	void init(int n){
+		assert(n >= 1);
+		edge.clear();
+		link_at.clear();
+	}
+	int orient(int u, int v){
+		assert(0 <= min(u, v) && max(u, v) < n);
+		edge.push_back({u, v});
+	}
+	void run(auto join, auto cut, auto answer){
+		int m = (int)edge.size();
+		
+	}
+	
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>strongly_connected_components_offline_incremental</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
