@@ -1,27 +1,97 @@
 <snippet>
 	<content><![CDATA[
-// TODO: Finish
-template<class T>
-struct strongly_connected_components_offline_incremental{
-	vector<array<int, 2>> edge;
-	vector<vector<array<int, 2>>> link_at;
-	strongly_connected_components_offline_incremental(){ }
-	strongly_connected_components_offline_incremental(int n){ init(n); }
-	void init(int n){
-		assert(n >= 1);
-		edge.clear();
-		link_at.clear();
-	}
-	int orient(int u, int v){
+// Source: https://codeforces.com/contest/1989/submission/267979517
+// Returns a list of lists of pairs where res[t]: list of (u, v) where u and v first belongs to the same scc after insertion of t-th edge
+// O((n + m) * log(m))
+vector<vector<array<int, 2>>> strongly_connected_components_offline_incremental(int n, const auto &_edge){
+	assert(n >= 1);
+	vector<array<int, 3>> edge((int)_edge.size());
+	for(auto i = 0; i < (int)edge.size(); ++ i){
+		auto [u, v] = _edge[i];
 		assert(0 <= min(u, v) && max(u, v) < n);
-		edge.push_back({u, v});
+		edge[i] = {u, v, i};
 	}
-	void run(auto join, auto cut, auto answer){
-		int m = (int)edge.size();
-		
-	}
-	
-};
+	vector<int> vis(n), cur, e_data((int)edge.size()), e_begin(n), e_end(n), pos(n), comp_id(n), stack;
+	cur.reserve(n), stack.reserve(n);
+	auto scc = [&](auto beg, auto end){
+		for(auto u: cur) vis[u] = false;
+		cur.clear();
+		for(auto it = beg; it != end; ++ it){
+			auto [u, v, _] = *it;
+			for(auto w: {u, v}) if(!vis[w]){
+				vis[w] = true;
+				cur.push_back(w);
+			}
+		}
+		int acc = 0, iter = 0;
+		for(auto u: cur) e_begin[u] = 0;
+		for(auto it = beg; it != end; ++ it) ++ e_begin[(*it)[0]];
+		for(auto u: cur) e_end[u] = acc, acc += exchange(e_begin[u], acc);
+		for(auto it = beg; it != end; ++ it) e_data[e_end[(*it)[0]] ++] = (*it)[1];
+		for(auto u: cur) pos[u] = -1;
+		auto dfs = [&](auto self, int u)->int{
+			int low = pos[u] = iter ++;
+			stack.emplace_back(u);
+			for(auto i = e_begin[u]; i < e_end[u]; ++ i){
+				int v = e_data[i];
+				low = min(low, ~pos[v] ? pos[v] : self(self, v));
+			}
+			if(low == pos[u]){
+				while(true){
+					int v = stack.back();
+					stack.pop_back();
+					pos[v] = n;
+					comp_id[v] = u;
+					if(v == u) break;
+				}
+			}
+			return low;
+		};
+		for(auto u: cur) if(!~pos[u]) dfs(dfs, u);
+	};
+	vector<array<int, 3>> temp;
+	vector<vector<array<int, 2>>> res((int)edge.size());
+	temp.reserve((int)edge.size());
+	scc(edge.begin(), edge.end());
+	auto it = edge.begin();
+	for(auto e: edge) if(comp_id[e[0]] == comp_id[e[1]]) *it ++ = e;
+	vector<int> p(n, -1);
+	auto root = [&](auto self, int u)->int{ return p[u] < 0 ? u : p[u] = self(self, p[u]); };
+	auto merge = [&](int u, int v)->void{
+		u = root(root, u), v = root(root, v);
+		if(p[u] > p[v]) swap(u, v);
+		p[u] += p[v], p[v] = u;
+	};
+	auto dfs = [&](auto self, int l, int r, auto beg, auto end)->void{
+		if(r - l <= 1){
+			for(auto it = beg; it != end; ++ it){
+				auto [u, v, i] = *it;
+				if(root(root, u) != root(root, v)) merge(u, v), res[l].push_back({u, v});
+			}
+			return;
+		}
+		int m = l + r >> 1;
+		auto it_m = partition_point(beg, end, [&](auto e){ return e[2] < m; });
+		scc(beg, it_m);
+		temp.clear();
+		auto it1 = beg, it2 = end;
+		for(auto it = beg; it != it_m; ++ it){
+			auto e = *it;
+			if(comp_id[e[0]] == comp_id[e[1]]) *it1 ++ = e;
+			else temp.push_back({comp_id[e[0]], comp_id[e[1]], e[2]});
+		}
+		for(auto it = end; it != it_m; -- it){
+			auto e = *prev(it);
+			if(vis[e[0]]) e[0] = comp_id[e[0]];
+			if(vis[e[1]]) e[1] = comp_id[e[1]];
+			if(e[0] != e[1]) *-- it2 = e;
+		}
+		for(auto i = (int)temp.size() - 1; i >= 0; -- i) *-- it2 = temp[i];
+		self(self, l, m, beg, it1), self(self, m, r, it2, end);
+	};
+	dfs(dfs, 0, (int)edge.size(), edge.begin(), it);
+	return res;
+}
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
 	<tabTrigger>strongly_connected_components_offline_incremental</tabTrigger> -->
