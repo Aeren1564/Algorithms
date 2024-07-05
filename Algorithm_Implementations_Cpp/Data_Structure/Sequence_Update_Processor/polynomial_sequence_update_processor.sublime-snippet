@@ -2,27 +2,38 @@
 	<content><![CDATA[
 template<class T>
 struct polynomial_sequence_update_processor{
-	int n, d;
+#ifdef LOCAL
+	#define ASSERT(x) assert(x)
+#else
+	#define ASSERT(x) 42
+#endif
+	bool reversed;
+	int n, d, ptr;
 	vector<T> data, res;
 	vector<vector<T>> choose;
 	// d: length of the polynomial
 	// O(n + d^2)
-	polynomial_sequence_update_processor(int n, int d): n(n), d(d), data(n + d), choose(d, vector<T>(d, 1)), deltal(n + d), deltar(n + d){
-		assert(n >= 0 && d >= 0);
-		for(auto n = 2; n < d; ++ n) for(auto k = 1; k < n; ++ k) choose[n][k] = choose[n - 1][k - 1] + choose[n - 1][k];
+	polynomial_sequence_update_processor(int n, int d, bool reversed = false): reversed(reversed), n(n), d(d), ptr(0), data(n + d), choose(d + 1, vector<T>(d + 1, 1)), deltal(n + d), deltar(n + d){
+		ASSERT(n >= 0 && d >= 0);
+		for(auto n = 2; n <= d; ++ n) for(auto k = 1; k < n; ++ k) choose[n][k] = choose[n - 1][k - 1] + choose[n - 1][k];
 	}
 	// O(n)
 	void clear(){
+		ptr = 0;
 		fill(data.begin(), data.end(), 0);
 	}
 	vector<T> c, c_next, deltal, deltar;
-	// Add c[0]+c[1](base+x-l)+...+c[d-1](base+x-l)^{d-1} for each x \in [l,r)
+	// Add coef[0]+coef[1](base+x-l)+...+coef[d-1](base+x-l)^{d-1} for each x \in [l,r)
 	// Polynomial_Type must be either vector or array
 	// O(d^3)
 	template<class Polynomial_Type>
-	void update(int l, int r, T base, const Polynomial_Type &coef){
-		assert(0 <= l && l <= r && r <= n);
-		assert((int)coef.size() <= d);
+	void update(int l, int r, T base, Polynomial_Type coef){
+		if(reversed){
+			tie(l, r) = pair{n - r, n - l};
+			base = l - r + 1 - base;
+			for(auto i = 1; i < (int)coef.size(); i += 2) coef[i] = -coef[i];
+		}
+		ASSERT(ptr <= l && l <= r && r <= n && (int)coef.size() <= d);
 		if(l == r) return;
 		c.assign(d, 0);
 		c_next.assign(d, 0);
@@ -46,13 +57,43 @@ struct polynomial_sequence_update_processor{
 		for(auto i = l; i < l + d; ++ i) data[i] += deltal[i];
 		for(auto i = r; i < r + d; ++ i) data[i] += deltar[i];
 	}
-	// O(d * n)
-	const vector<T> &snapshot(){
-		res.resize(n);
-		copy(data.begin(), data.end() - d, res.begin());
-		for(auto rep = 0; rep < d; ++ rep) for(auto i = 1; i < n; ++ i) res[i] += res[i - 1];
+	// Add coef[0](base+r-1-x)^{d-1}+coef[1](base+r-1-x)^{d-2}+...+coef[d-1] for each x \in [l,r)
+	// Polynomial_Type must be either vector or array
+	// O(d^3)
+	template<class Polynomial_Type>
+	void update_reverse(int l, int r, T base, Polynomial_Type coef){
+		base = l - r + 1 - base;
+		for(auto i = 1; i < (int)coef.size(); i += 2) coef[i] = -coef[i];
+		update(l, r, base, coef);
+	}
+	// Add x to position p
+	// p must be equal or greater than the largest index which query() has been called over
+	// O(d)
+	void update(int p, T x){
+		if(reversed) p = n - 1 - p;
+		ASSERT(ptr <= p && p < n);
+		for(auto i = 0; i <= d; ++ i) data[p + i] += x * choose[d][i] * (~i & 1 ? 1 : -1);
+	}
+	// O(max(1, p - ptr) * d + d^2)
+	T query(int p){
+		if(reversed) p = n - 1 - p;
+		ASSERT(0 <= p && p < n);
+		for(; ptr < p; ++ ptr) for(auto i = 0; i < d; ++ i) if(ptr >= i) data[ptr + 1 - i] += data[ptr - i];
+		int head = min(ptr - d + 1, p);
+		T res = 0;
+		for(auto i = max(0, head); i <= p; ++ i) res += choose[p - head][i - head] * data[i];
 		return res;
 	}
+	// O(d * n)
+	const vector<T> &snapshot(){
+		res.resize(n + d - 1);
+		copy(data.begin(), data.end() - 1, res.begin());
+		for(auto i = ptr; i < n + d - 2; ++ i) for(auto j = 0; j < d; ++ j) if(i >= j) res[i + 1 - j] += res[i - j];
+		res.resize(n);
+		if(reversed) reverse(res.begin(), res.end());
+		return res;
+	}
+#undef ASSERT
 };
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
