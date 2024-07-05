@@ -1,6 +1,6 @@
 <snippet>
 	<content><![CDATA[
-// g must be a DAG
+// g must be a DAG of a poset
 // Requires graph, flow_network, and dinic_maximum_flow
 template<class T, class U = int>
 vector<int> maximum_antichain(const graph<T> &g, vector<U> vertex_weight = {}){
