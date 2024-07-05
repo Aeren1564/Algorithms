@@ -2,31 +2,75 @@
 	<content><![CDATA[
 template<class T>
 struct arithmetic_sequence_update_processor{
-	int n;
+#ifdef LOCAL
+	#define ASSERT(x) assert(x)
+#else
+	#define ASSERT(x) 42
+#endif
+	bool reversed;
+	int n, ptr;
 	vector<T> data, res;
-	arithmetic_sequence_update_processor(int n): n(n), data(n + 2){ }
+	arithmetic_sequence_update_processor(int n, bool reversed = false): reversed(reversed), n(n), ptr(0), data(n + 2, T{}){
+		ASSERT(n >= 0);
+	}
 	// O(n)
 	void clear(){
-		fill(data.begin(), data.end(), 0);
+		ptr = 0;
+		fill(data.begin(), data.end(), T{});
 	}
 	// Add start, start + step, start + step * 2, ... on [l, r)
+	// l must be equal or greater than the largest index which query() has been called over if reverse = false
+	// Otherwise, r must be equal or less than the smallest index which query() has been called over plus one
 	// O(1)
-	void update(int l, int r, T start, T step){
-		assert(0 <= l && l <= r && r <= n);
+	void update(int l, int r, T start, T step = T{}){
+		if(reversed) tie(l, r, start, step) = tuple{n - r, n - l, start + (r - l - 1) * step, -step};
+		ASSERT(ptr <= l && l <= r && r <= n);
 		if(l == r) return;
 		data[l] += start;
 		data[l + 1] -= start - step;
 		data[r] -= start + (r - l) * step;
 		data[r + 1] += start + (r - l - 1) * step;
 	}
+	// Add rev_start + (r - l - 1) * rev_step, rev_start + (r - l - 2) * rev_step, ... on [l, r)
+	// l must be equal or greater than the largest index which query() has been called over if reverse = false
+	// Otherwise, r must be equal or less than the smallest index which query() has been called over plus one
+	// O(1)
+	void update_reverse(int l, int r, T rev_start, T rev_step = T{}){
+		update(l, r, rev_start + (r - l - 1) * rev_step, -rev_step);
+	}
+	// Add x to position p
+	// p must be equal or greater than the largest index which query() has been called over
+	// O(1)
+	void update(int p, T x){
+		if(reversed) p = n - 1 - p;
+		ASSERT(ptr <= p && p < n);
+		data[p] += x;
+		data[p + 1] -= 2 * x;
+		data[p + 2] += x;
+	}
+	// O(max(1, p - ptr))
+	T query(int p){
+		if(reversed) p = n - 1 - p;
+		ASSERT(0 <= p && p < n);
+		for(; ptr < p; ++ ptr){
+			data[ptr + 1] += data[ptr];
+			if(ptr >= 1) data[ptr] += data[ptr - 1];
+		}
+		return p == ptr ? data[p] + (p >= 1 ? data[p - 1] : T{}) : data[p];
+	}
 	// O(n)
 	const vector<T> &snapshot(){
-		res.resize(n);
-		copy(data.begin(), data.end() - 2, res.begin());
-		for(auto i = 1; i < n; ++ i) res[i] += res[i - 1];
-		for(auto i = 1; i < n; ++ i) res[i] += res[i - 1];
+		res.resize(n + 1);
+		copy(data.begin(), data.end() - 1, res.begin());
+		for(auto i = ptr; i < n; ++ i){
+			res[i + 1] += res[i];
+			if(1 <= i) res[i] += res[i - 1];
+		}
+		res.pop_back();
+		if(reversed) reverse(res.begin(), res.end());
 		return res;
 	}
+#undef ASSERT
 };
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
