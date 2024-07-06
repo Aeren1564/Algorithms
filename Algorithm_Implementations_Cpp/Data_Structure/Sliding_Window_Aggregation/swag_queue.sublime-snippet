@@ -1,0 +1,72 @@
+<snippet>
+	<content><![CDATA[
+// Source: https://github.com/hitonanode/cplib-cpp/blob/master/data_structure/sliding_window_aggregation.hpp
+// Sliding-Window Aggregation based queue
+template<class T, class F>
+struct swag_queue{
+#ifdef LOCAL
+	#define ASSERT(x) assert(x)
+#else
+	#define ASSERT(x) 42
+#endif
+	vector<array<T, 2>> fstack, bstack;
+	F TT;
+	T T_id;
+	swag_queue(F TT, T T_id): TT(TT), T_id(T_id){ }
+	// O(1)
+	bool empty() const{ return fstack.empty() && bstack.empty(); }
+	// O(1)
+	int size() const{ return fstack.size() + bstack.size(); }
+	// O(1)
+	T evaluate() const{
+		if(empty()) return T_id;
+		else if(fstack.empty()) return bstack.back()[1];
+		else if(bstack.empty()) return fstack.back()[1];
+		else return TT(fstack.back()[1], bstack.back()[1]);
+	}
+	// O(1)
+	void push(const T &x){
+		bstack.emplace_back(x, bstack.empty() ? x : TT(bstack.back()[1], x));
+	}
+	// Amortized O(1)
+	T top(){
+		ASSERT(!empty());
+		if(fstack.empty()){
+			fstack.emplace_back(bstack.back()[0], bstack.back()[0]);
+			bstack.pop_back();
+			while(!bstack.empty()){
+				T x = bstack.back()[0];
+				fstack.emplace_back(x, TT(x, fstack.back()[1]));
+				bstack.pop_back();
+			}
+		}
+		return fstack.back()[0];
+	}
+	// Amortized O(1)
+	T pop(){
+		ASSERT(!empty());
+		if(fstack.empty()){
+			fstack.emplace_back(bstack.back()[0], bstack.back()[0]);
+			bstack.pop_back();
+			while(!bstack.empty()){
+				T x = bstack.back()[0];
+				fstack.emplace_back(x, TT(x, fstack.back()[1]));
+				bstack.pop_back();
+			}
+		}
+		T x = fstack.back()[0];
+		fstack.pop_back();
+		return x;
+	}
+	T operator[](int i) const{
+		ASSERT(0 <= i && i < size());
+		return i < (int)fstack.size() ? fstack[(int)fstack.size() - 1 - i][0] : bstack[i - (int)fstack.size()][0];
+	}
+#undef ASSERT
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>swag_queue</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
