@@ -2,16 +2,20 @@
 	<content><![CDATA[
 // For a commutative data structure supporting update, 
 // support deletion of the earliest update online.
-template<class I, class S, class R>
+template<class I, class S, class R, class C = function<void()>>
 struct data_structure_queue_like_deletion_enabler_online{
-	int n; // Elements should lie in range [0, n).
-	I insert; // insert(i): insert the i-th update.
-	S state; // state(): return the state of the DS as an integer.
-	R reverse_to; // reverse_to(s): reverse the state of the DS to s.
+	int n; // Elements should lie in range [0, n)
+	I insert; // insert(i): insert the i-th update
+	S state; // state(): return the state of the DS as an integer
+	R reverse_to; // reverse_to(s): reverse the state of the DS to s
+	C clear_ds; // clear_ds(): clear the underlying DS
 	int zero_cnt = 0;
 	vector<pair<bool, int>> stack;
 	vector<int> log;
-	data_structure_queue_like_deletion_enabler_online(int n, I insert, S state, R reverse_to): n(n), insert(insert), state(state), reverse_to(reverse_to), log({state()}){
+	data_structure_queue_like_deletion_enabler_online(int n, I insert, S state, R reverse_to): n(n), insert(insert), state(state), reverse_to(reverse_to), clear_ds([](){  }), log({state()}){
+		assert(n >= 0);
+	}
+	data_structure_queue_like_deletion_enabler_online(int n, I insert, S state, R reverse_to, C clear_ds): n(n), insert(insert), state(state), reverse_to(reverse_to), clear_ds(clear_ds), log({state()}){
 		assert(n >= 0);
 	}
 	void clear(){
@@ -19,6 +23,7 @@ struct data_structure_queue_like_deletion_enabler_online{
 		stack.clear();
 		log.resize(1);
 		reverse_to(log.back());
+		clear_ds();
 	}
 	array<vector<pair<bool, int>>, 2> cur;
 	// O(log(qn)) insert() and state() calls, and O(1) reverse_to() calls.
