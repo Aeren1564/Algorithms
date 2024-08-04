@@ -30,6 +30,7 @@ struct chinese_remainder_theorem_linear{
 		if(m0 < 0) m0 += b / s;
 		return {s, m0};
 	}
+	chinese_remainder_theorem_linear(){ }
 	// O(n * log(MAXVAL))
 	template<class U>
 	chinese_remainder_theorem_linear(const vector<U> &mod){ init(mod); }
