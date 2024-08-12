@@ -141,7 +141,7 @@ struct matrix_Z2_base{
 	// O(n * m * up_to / w)
 	// Returns {REF matrix, determinant, rank}
 	tuple<matrix_Z2_base, bool, int> REF(int up_to = -1) const{
-		return matrix(*this).inplace_REF(up_to);
+		return matrix_Z2_base(*this).inplace_REF(up_to);
 	}
 	optional<matrix_Z2_base> inverse() const{
 		assert(n == m);
