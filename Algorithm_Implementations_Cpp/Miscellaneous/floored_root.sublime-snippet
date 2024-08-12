@@ -14,7 +14,7 @@ struct floored_root{
 		}
 	}
 	unsigned long long sqrt(unsigned long long n) const{
-		unsigned long long x = sqrt(n);
+		unsigned long long x = std::sqrt(n);
 		return x * x > n ? x - 1 : x;
 	}
 	unsigned long long cbrt(unsigned long long n) const{
