@@ -76,10 +76,11 @@ struct binary_lifting{
 	}
 	// For an ancestor p of u, pred(p) is T, ..., T, F, ..., F in decreasing order of depth. Returns the highest p with T
 	// O(log n)
-	int find_highest(int u, auto pred) const{
+	pair<int, int> find_highest(int u, auto pred) const{
 		assert(pred(u));
-		for(auto d = h - 1; d >= 0; -- d) if(pred(lift[u][d])) u = lift[u][d];
-		return u;
+		int dist = 0;
+		for(auto d = h - 1; d >= 0; -- d) if(pred(lift[u][d])) u = lift[u][d], dist |= 1 << d;
+		return {u, dist};
 	}
 };
 ]]></content>

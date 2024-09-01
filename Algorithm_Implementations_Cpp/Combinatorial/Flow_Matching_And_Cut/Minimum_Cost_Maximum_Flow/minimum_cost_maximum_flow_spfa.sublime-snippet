@@ -44,7 +44,7 @@ struct minimum_cost_maximum_flow_spfa{
 			}
 			return false;
 		};
-		for(auto qbeg = 0; iter = 0; qbeg < (int)q.size(); ++ qbeg){
+		for(auto qbeg = 0, iter = 0; qbeg < (int)q.size(); ++ qbeg){
 			int u = q[qbeg];
 			in_queue[u] = false;
 			for(auto id: F.adj[u]){
