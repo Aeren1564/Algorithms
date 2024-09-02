@@ -17,6 +17,18 @@ struct treap_base{
 	F3 UT; // action of U on T (superset, subset)
 	F4 FlipT;
 	treap_base(F1 TT, T T_id, F2 UU, U U_id, F3 UT, F4 FlipT): TT(TT), T_id(T_id), UU(UU), U_id(U_id), UT(UT), FlipT(FlipT){ }
+	void reserve(int n){
+		assert(n >= 0);
+		priority.reserve(n);
+		pv.reserve(n);
+		left.reserve(n);
+		right.reserve(n);
+		internal_size.reserve(n);
+		ifF lazy_flip.reserve(n);
+		data.reserve(n);
+		ifQ subtr_data.reserve(n);
+		ifU lazy.reserve(n);
+	}
 	void push(int u){
 		ifU if(lazy[u] != U_id){
 			if(auto v = left[u]; ~v){
@@ -478,6 +490,33 @@ struct treap_base{
 			return new_node(a[m], self(self, l, m), self(self, m + 1, r));
 		};
 		return recurse(recurse, 0, (int)a.size());
+	}
+	const T &front(int root){
+		assert(~root);
+		push(root);
+		while(~left[root]) root = left[root];
+		return data[root];
+	}
+	const T &back(int root){
+		assert(~root);
+		push(root);
+		while(~right[root]) root = right[root], push(root);
+		return data[root];
+	}
+	const T &find_by_order(int root, int p){
+		assert(0 <= p && p < size(root));
+		while(p){
+			push(root);
+			if(p < size(left[root])){
+				root = left[root];
+				continue;
+			}
+			p -= size(left[root]);
+			if(p == 0) break;
+			-- p;
+			root = right[root];
+		}
+		return data[root];
 	}
 	// Data must be sorted by <
 	// O(log(n))
