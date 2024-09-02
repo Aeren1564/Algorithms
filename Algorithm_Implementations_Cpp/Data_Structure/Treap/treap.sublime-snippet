@@ -102,7 +102,9 @@ struct treap_base{
 			u = (int)data.size();
 			pv.push_back(-1);
 			left.push_back(v);
+			if(~v) pv[v] = u;
 			right.push_back(w);
+			if(~w) pv[w] = u;
 			priority.push_back(rng());
 			internal_size.push_back(1);
 			data.push_back(x);
@@ -115,7 +117,9 @@ struct treap_base{
 			dead_node.pop_back();
 			pv[u] = -1;
 			left[u] = v;
+			if(~v) pv[v] = u;
 			right[u] = w;
+			if(~w) pv[w] = u;
 			priority[u] = rng();
 			internal_size[u] = 1;
 			data[u] = x;
