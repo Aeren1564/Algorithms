@@ -90,6 +90,10 @@ struct matrix_fixed_base{
 	matrix_fixed_base operator*(T c) const{
 		return matrix_fixed_base(*this) *= c;
 	}
+	friend matrix_fixed_base operator*(T c, matrix_fixed_base a){
+		for(auto i = 0; i < a.n; ++ i) for(auto j = 0; j < a.m; ++ j) a[i][j] = c * a[i][j];
+		return a;
+	}
 	template<class U, typename enable_if<is_integral<U>::value>::type* = nullptr>
 	matrix_fixed_base &inplace_power(U e){
 		assert(n == m && e >= 0);
@@ -112,11 +116,15 @@ struct matrix_fixed_base{
 		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) res[j][i] = data[i][j];
 		return res;
 	}
-	array<T, N> operator*(const array<T, M> &v) const{
+	vector<T> operator*(const vector<T> &v) const{
 		assert(m == (int)v.size());
-		array<T, N> res;
-		res.fill(T{0});
+		vector<T> res(n, T{0});
 		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) res[i] += data[i][j] * v[j];
+		return res;
+	}
+	friend vector<T> operator*(const vector<T> &v, const matrix_fixed_base &a){
+		vector<T> res(a.m, T{0});
+		for(auto i = 0; i < a.n; ++ i) for(auto j = 0; j < a.m; ++ j) res[j] += v[i] * a[i][j];
 		return res;
 	}
 	// Assumes T is either a floating, integral, or a modular type.
@@ -210,6 +218,81 @@ struct matrix_fixed_base{
 		return matrix_fixed_base(*this).inplace_REF_field(up_to);
 	}
 	// Assumes T is a field.
+	// O(up_to) divisions with O(n * m * up_to) additions, subtractions, and multiplications.
+	// Returns {REF matrix_fixed_base, determinant, rank}
+	tuple<matrix_fixed_base &, T, int> inplace_RREF_field(int up_to = -1){
+		if(n == 0) return {*this, T{1}, 0};
+		auto [mat, det, rank] = inplace_REF_field(up_to);
+		for(auto i = rank - 1; i >= 0; -- i){
+			int pivot = find_if(mat[i].begin(), mat[i].end(), [&](const T &x){ return x != T{0}; }) - mat[i].begin();
+			T inv = T{1} / mat[i][pivot];
+			for(auto t = 0; t < i; ++ t){
+				T coef = mat[t][pivot] * inv;
+				for(auto j = 0; j < m; ++ j) mat[t][j] -= coef * mat[i][j];
+			}
+		}
+		return {mat, det, rank};
+	}
+	// Assumes T is a field.
+	// O(up_to) divisions with O(n * m * up_to) additions, subtractions, and multiplications.
+	// Returns {REF matrix_fixed_base, determinant, rank}
+	tuple<matrix_fixed_base, T, int> RREF_field(int up_to = -1) const{
+		return matrix_fixed_base(*this).inplace_RREF_field(up_to);
+	}
+	// Assumes T is either a floating, integral, or a modular type.
+	// If T is a floating type, O(n) divisions with O(n^3) additions, subtractions, and multiplications.
+	// Otherwise, O(n^2 * log(size)) divisions with O(n^3) additions, subtractions, and multiplications.
+	T determinant() const{
+		assert(n == m);
+		return get<1>(REF());
+	}
+	// Assumes T is a field.
+	// O(n) divisions with O(n^3) additions, subtractions, and multiplications.
+	T determinant_field() const{
+		assert(n == m);
+		return get<1>(REF_field());
+	}
+	// Assumes T is either a floating, integral, or a modular type.
+	// If T is a floating type, O(n) divisions with O(n^3) additions, subtractions, and multiplications.
+	// Otherwise, O(n^2 * log(size)) divisions with O(n^3) additions, subtractions, and multiplications.
+	int rank() const{
+		return get<2>(REF());
+	}
+	// Assumes T is a field.
+	// O(n) divisions with O(n^3) additions, subtractions, and multiplications.
+	int rank_field() const{
+		return get<2>(REF_field());
+	}
+	// Regarding the matrix as a system of linear equations by separating first m-1 columns,
+	// find a solution of the system along with the basis for the nullspace
+	// Assumes T is a field
+	// O(n * m^2)
+	optional<pair<vector<T>, vector<vector<T>>>> solve_right() const{
+		assert(m >= 1);
+		auto [rref, _, rank] = RREF_field(m - 1);
+		for(auto i = rank; i < n; ++ i) if(rref[i][m - 1] != T{0}) return {};
+		vector<T> res(m - 1);
+		vector<int> pivot(rank), appear_as_pivot(m - 1);
+		for(auto i = rank - 1; i >= 0; -- i){
+			pivot[i] = find_if(rref[i].begin(), rref[i].end(), [&](const T &x){ return x != T{0}; }) - rref[i].begin();
+			assert(pivot[i] < m - 1);
+			appear_as_pivot[pivot[i]] = true;
+			res[pivot[i]] = rref[i][m - 1] / rref[i][pivot[i]];
+		}
+		vector<vector<T>> basis;
+		for(auto j = 0; j < m - 1; ++ j){
+			if(appear_as_pivot[j]) continue;
+			vector<T> b(m - 1);
+			b[j] = T{1};
+			for(auto i = 0; i < rank; ++ i){
+				if(rref[i][j] == T{0}) continue;
+				b[pivot[i]] = -rref[i][j] / rref[i][pivot[i]];
+			}
+			basis.push_back(b);
+		}
+		return pair{res, basis};
+	}
+	// Assumes T is a field.
 	// O(n) divisions with O(n^3) additions, subtractions, and multiplications.
 	optional<matrix_fixed_base> inverse() const{
 		assert(n == m);
@@ -250,49 +333,6 @@ struct matrix_fixed_base{
 		}
 		return res;
 	}
-	// Assumes T is either a floating, integral, or a modular type.
-	// If T is a floating type, O(n) divisions with O(n^3) additions, subtractions, and multiplications.
-	// Otherwise, O(n^2 * log(size)) divisions with O(n^3) additions, subtractions, and multiplications.
-	T determinant() const{
-		assert(n == m);
-		return get<1>(REF());
-	}
-	// Assumes T is a field.
-	// O(n) divisions with O(n^3) additions, subtractions, and multiplications.
-	T determinant_field() const{
-		assert(n == m);
-		return get<1>(REF_field());
-	}
-	// Assumes T is either a floating, integral, or a modular type.
-	// If T is a floating type, O(n) divisions with O(n^3) additions, subtractions, and multiplications.
-	// Otherwise, O(n^2 * log(size)) divisions with O(n^3) additions, subtractions, and multiplications.
-	int rank() const{
-		return get<2>(REF());
-	}
-	// Assumes T is a field.
-	// O(n) divisions with O(n^3) additions, subtractions, and multiplications.
-	int rank_field() const{
-		return get<2>(REF_field());
-	}
-	// Regarding the matrix_fixed_base as a system of linear equations by separating first m-1 columns, find a solution of the linear equation.
-	// Assumes T is a field
-	// O(n * m^2)
-	optional<array<T, M - 1>> find_a_solution() const{
-		assert(m >= 1);
-		auto [ref, _, rank] = REF_field(m - 1);
-		for(auto i = rank; i < n; ++ i) if(ref[i][m - 1] != T{0}) return {};
-		array<T, M - 1> res;
-		res.fill(T{0});
-		for(auto i = rank - 1; i >= 0; -- i){
-			int pivot = 0;
-			while(pivot < m - 1 && ref[i][pivot] == T{0}) ++ pivot;
-			assert(pivot < m - 1);
-			res[pivot] = ref[i][m - 1];
-			for(auto j = pivot + 1; j < m - 1; ++ j) res[pivot] -= ref[i][j] * res[j];
-			res[pivot] /= ref[i][pivot];
-		}
-		return res;
-	}
 	// O(n * 2^n)
 	T permanent() const{
 		assert(n <= 30 && n == m);
@@ -318,12 +358,12 @@ struct matrix_fixed_base{
 		return out;
 	}
 	matrix_fixed_base(int n, int m, T init_diagonal = T{0}, T init_off_diagonal = T{0}): n(n), m(m){
-		assert(n >= 0 && m >= 0);
+		assert(0 <= n && n <= N && 0 <= m && m <= M);
 		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) data[i][j] = i == j ? init_diagonal : init_off_diagonal;
 	}
-	matrix_fixed_base(int n, int m, const array<array<T, M>, N> &a): n(n), m(m), data(a){ assert(n <= N && m <= M); }
+	matrix_fixed_base(int n, int m, const array<array<T, M>, N> &a): n(n), m(m), data(a){ assert(0 <= n && n <= N && 0 <= m && m <= M); }
 	matrix_fixed_base(int n, int m, const array<T, N * M> &a): n(n), m(m){
-		assert(n <= N && m <= M);
+		assert(0 <= n && n <= N && 0 <= m && m <= M);
 		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) data[i][j] = a[m * i + j];
 	}
 	static matrix_fixed_base additive_identity(int n, int m){
@@ -333,19 +373,6 @@ struct matrix_fixed_base{
 		return matrix_fixed_base(n, m, T{1}, T{0});
 	}
 };
-template<class T, size_t N, size_t M>
-matrix_fixed_base<T, N, M> operator*(T c, matrix_fixed_base<T, N, M> a){
-	for(auto i = 0; i < a.n; ++ i) for(auto j = 0; j < a.m; ++ j) a[i][j] = c * a[i][j];
-	return a;
-}
-// Multiply a row vector v on the left
-template<class T, size_t N, size_t M>
-array<T, M> operator*(const array<T, N> &v, const matrix_fixed_base<T, N, M> &a){
-	array<T, M> res;
-	res.fill(T{0});
-	for(auto i = 0; i < a.n; ++ i) for(auto j = 0; j < a.m; ++ j) res[j] += v[i] * a[i][j];
-	return res;
-}
 
 template<class T>
 using matrix = matrix_fixed_base<T, 20, 20>;
