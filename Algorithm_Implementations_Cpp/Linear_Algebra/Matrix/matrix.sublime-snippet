@@ -83,12 +83,16 @@ struct matrix{
 	matrix operator*(const matrix &a) const{
 		return matrix(*this) *= a;
 	}
-	matrix &operator*=(T c){
+	matrix &operator*=(const T &c){
 		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) data[i][j] *= c;
 		return *this;
 	}
-	matrix operator*(T c) const{
+	matrix operator*(const T &c) const{
 		return matrix(*this) *= c;
+	}
+	friend matrix operator*(const T &c, matrix a){
+		for(auto i = 0; i < a.n; ++ i) for(auto j = 0; j < a.m; ++ j) a[i][j] = c * a[i][j];
+		return a;
 	}
 	template<class U, typename enable_if<is_integral<U>::value>::type* = nullptr>
 	matrix &inplace_power(U e){
@@ -116,6 +120,12 @@ struct matrix{
 		assert(m == (int)v.size());
 		vector<T> res(n, T{0});
 		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) res[i] += data[i][j] * v[j];
+		return res;
+	}
+	friend vector<T> operator*(const vector<T> &v, const matrix<T> &a){
+		assert(a.n == (int)size(v));
+		vector<T> res(a.m, T{0});
+		for(auto i = 0; i < a.n; ++ i) for(auto j = 0; j < a.m; ++ j) res[j] += v[i] * a[i][j];
 		return res;
 	}
 	// Assumes T is either a floating, integral, or a modular type.
@@ -192,7 +202,7 @@ struct matrix{
 				det *= -1;
 			}
 			det *= data[rank][j];
-			T inv = 1 / data[rank][j];
+			T inv = T{1} / data[rank][j];
 			for(auto i = rank + 1; i < n; ++ i) if(data[i][j] != T{0}){
 				T coef = data[i][j] * inv;
 				for(auto k = j; k < m; ++ k) data[i][k] -= coef * data[rank][k];
@@ -207,6 +217,82 @@ struct matrix{
 	// Returns {REF matrix, determinant, rank}
 	tuple<matrix, T, int> REF_field(int up_to = -1) const{
 		return matrix(*this).inplace_REF_field(up_to);
+	}
+	// Assumes T is a field.
+	// O(up_to) divisions with O(n * m * up_to) additions, subtractions, and multiplications.
+	// Returns {RREF matrix, determinant, rank}
+	tuple<matrix &, T, int> inplace_RREF_field(int up_to = -1){
+		if(n == 0) return {*this, T{1}, 0};
+		auto [mat, det, rank] = inplace_REF_field(up_to);
+		for(auto i = rank - 1; i >= 0; -- i){
+			int pivot = find_if(mat[i].begin(), mat[i].end(), [&](const T &x){ return x != T{0}; }) - mat[i].begin();
+			T inv = T{1} / mat[i][pivot];
+			for(auto t = 0; t < i; ++ t){
+				T coef = mat[t][pivot] * inv;
+				for(auto j = 0; j < m; ++ j) mat[t][j] -= coef * mat[i][j];
+			}
+		}
+		return {mat, det, rank};
+	}
+	// Assumes T is a field.
+	// O(up_to) divisions with O(n * m * up_to) additions, subtractions, and multiplications.
+	// Returns {RREF matrix, determinant, rank}
+	tuple<matrix, T, int> RREF_field(int up_to = -1) const{
+		return matrix(*this).inplace_RREF_field(up_to);
+	}
+	// Assumes T is either a floating, integral, or a modular type.
+	// If T is a floating type, O(n) divisions with O(n^3) additions, subtractions, and multiplications.
+	// Otherwise, O(n^2 * log(size)) divisions with O(n^3) additions, subtractions, and multiplications.
+	T determinant() const{
+		assert(n == m);
+		return get<1>(REF());
+	}
+	// Assumes T is a field.
+	// O(n) divisions with O(n^3) additions, subtractions, and multiplications.
+	T determinant_field() const{
+		assert(n == m);
+		return get<1>(REF_field());
+	}
+	// Assumes T is either a floating, integral, or a modular type.
+	// If T is a floating type, O(n) divisions with O(n^3) additions, subtractions, and multiplications.
+	// Otherwise, O(n^2 * log(size)) divisions with O(n^3) additions, subtractions, and multiplications.
+	int rank() const{
+		return get<2>(REF());
+	}
+	// Assumes T is a field.
+	// O(n) divisions with O(n^3) additions, subtractions, and multiplications.
+	int rank_field() const{
+		return get<2>(REF_field());
+	}
+	// Assumes T is a field.
+	// Regarding the matrix as a system of linear equations by separating first m-1 columns,
+	// find a solution of the system along with the basis for the nullspace
+	// Assumes T is a field
+	// O(n * m^2)
+	optional<pair<vector<T>, vector<vector<T>>>> solve_right() const{
+		assert(m >= 1);
+		auto [rref, _, rank] = RREF_field(m - 1);
+		for(auto i = rank; i < n; ++ i) if(rref[i][m - 1] != T{0}) return {};
+		vector<T> res(m - 1);
+		vector<int> pivot(rank), appear_as_pivot(m - 1);
+		for(auto i = rank - 1; i >= 0; -- i){
+			pivot[i] = find_if(rref[i].begin(), rref[i].end(), [&](const T &x){ return x != T{0}; }) - rref[i].begin();
+			assert(pivot[i] < m - 1);
+			appear_as_pivot[pivot[i]] = true;
+			res[pivot[i]] = rref[i][m - 1] / rref[i][pivot[i]];
+		}
+		vector<vector<T>> basis;
+		for(auto j = 0; j < m - 1; ++ j){
+			if(appear_as_pivot[j]) continue;
+			vector<T> b(m - 1);
+			b[j] = T{1};
+			for(auto i = 0; i < rank; ++ i){
+				if(rref[i][j] == T{0}) continue;
+				b[pivot[i]] = -rref[i][j] / rref[i][pivot[i]];
+			}
+			basis.push_back(b);
+		}
+		return pair{res, basis};
 	}
 	// Assumes T is a field.
 	// O(n) divisions with O(n^3) additions, subtractions, and multiplications.
@@ -246,48 +332,6 @@ struct matrix{
 					for(auto k = 0; k < n; ++ k) a[i][k] -= d * a[rank][k], res[i][k] -= d * res[rank][k];
 				}
 			}
-		}
-		return res;
-	}
-	// Assumes T is either a floating, integral, or a modular type.
-	// If T is a floating type, O(n) divisions with O(n^3) additions, subtractions, and multiplications.
-	// Otherwise, O(n^2 * log(size)) divisions with O(n^3) additions, subtractions, and multiplications.
-	T determinant() const{
-		assert(n == m);
-		return get<1>(REF());
-	}
-	// Assumes T is a field.
-	// O(n) divisions with O(n^3) additions, subtractions, and multiplications.
-	T determinant_field() const{
-		assert(n == m);
-		return get<1>(REF_field());
-	}
-	// Assumes T is either a floating, integral, or a modular type.
-	// If T is a floating type, O(n) divisions with O(n^3) additions, subtractions, and multiplications.
-	// Otherwise, O(n^2 * log(size)) divisions with O(n^3) additions, subtractions, and multiplications.
-	int rank() const{
-		return get<2>(REF());
-	}
-	// Assumes T is a field.
-	// O(n) divisions with O(n^3) additions, subtractions, and multiplications.
-	int rank_field() const{
-		return get<2>(REF_field());
-	}
-	// Regarding the matrix as a system of linear equations by separating first m-1 columns, find a solution of the linear equation.
-	// Assumes T is a field
-	// O(n * m^2)
-	optional<vector<T>> find_a_solution() const{
-		assert(m >= 1);
-		auto [ref, _, rank] = REF_field(m - 1);
-		for(auto i = rank; i < n; ++ i) if(ref[i][m - 1] != T{0}) return {};
-		vector<T> res(m - 1);
-		for(auto i = rank - 1; i >= 0; -- i){
-			int pivot = 0;
-			while(pivot < m - 1 && ref[i][pivot] == T{0}) ++ pivot;
-			assert(pivot < m - 1);
-			res[pivot] = ref[i][m - 1];
-			for(auto j = pivot + 1; j < m - 1; ++ j) res[pivot] -= ref[i][j] * res[j];
-			res[pivot] /= ref[i][pivot];
 		}
 		return res;
 	}
@@ -334,19 +378,6 @@ struct matrix{
 		return matrix(n, m, T{1}, T{0});
 	}
 };
-template<class T>
-matrix<T> operator*(T c, matrix<T> a){
-	for(auto i = 0; i < a.n; ++ i) for(auto j = 0; j < a.m; ++ j) a[i][j] = c * a[i][j];
-	return a;
-}
-// Multiply a row vector v on the left
-template<class T>
-vector<T> operator*(const vector<T> &v, const matrix<T> &a){
-	assert(a.n == (int)size(v));
-	vector<T> res(a.m, T{0});
-	for(auto i = 0; i < a.n; ++ i) for(auto j = 0; j < a.m; ++ j) res[j] += v[i] * a[i][j];
-	return res;
-}
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
 	<tabTrigger>matrix</tabTrigger> -->
