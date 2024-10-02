@@ -1,5 +1,6 @@
 <snippet>
 	<content><![CDATA[
+// Requires graph
 struct compressed_tree: graph<int>{
 	compressed_tree(int n): graph<int>(n), was(n, -2), in_subset(n){ }
 	int attempt = -1;
