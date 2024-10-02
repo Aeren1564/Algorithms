@@ -6,6 +6,13 @@ struct graph{
 	struct Edge_t{
 		int from, to;
 		T cost;
+		Edge_t &inplace_flip(){
+			swap(from, to);
+			return *this;
+		}
+		Edge_t flip() const{
+			return (*this).inplace_flip();
+		}
 	};
 	int n;
 	vector<Edge_t> edge;
