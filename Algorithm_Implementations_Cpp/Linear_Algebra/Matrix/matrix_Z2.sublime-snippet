@@ -86,6 +86,10 @@ struct matrix_Z2_base{
 	matrix_Z2_base operator*(bool c) const{
 		return matrix_Z2_base(*this) *= c;
 	}
+	friend matrix_Z2_base<SZ> operator*(bool c, matrix_Z2_base<SZ> M){
+		if(!c) for(auto &v: M) v.reset();
+		return M;
+	}
 	template<class T, typename enable_if<is_integral<T>::value>::type* = nullptr>
 	matrix_Z2_base &inplace_power(T e){
 		assert(n == m);
@@ -112,6 +116,12 @@ struct matrix_Z2_base{
 	vector<int> operator*(const bitset<SZ> &v) const{
 		vector<int> res(n);
 		for(auto i = 0; i < n; ++ i) res[i] = (data[i] & v).count() & 1;
+		return res;
+	}
+	friend bitset<SZ> operator*(const vector<int> &v, const matrix_Z2_base<SZ> &a){
+		assert(a.n == (int)v.size());
+		bitset<SZ> res{};
+		for(auto i = 0; i < a.n; ++ i) if(v[i]) res ^= a[i];
 		return res;
 	}
 	// O(n * m * up_to / w)
@@ -143,22 +153,21 @@ struct matrix_Z2_base{
 	tuple<matrix_Z2_base, bool, int> REF(int up_to = -1) const{
 		return matrix_Z2_base(*this).inplace_REF(up_to);
 	}
-	optional<matrix_Z2_base> inverse() const{
-		assert(n == m);
-		vector<bitset<SZ>> a(data), res(n);
-		for(auto i = 0; i < n; ++ i) res[i].set(i);
-		for(auto j = 0; j < n; ++ j){
-			int pivot = -1;
-			for(auto i = j; i < n; ++ i) if(a[i][j]){
-				pivot = i;
-				break;
-			}
-			if(!~pivot) return {};
-			swap(a[j], a[pivot]), swap(res[j], res[pivot]);
-			for(auto i = 0; i < n; ++ i) if(i != j && a[i][j]) a[i] ^= a[j], res[i] ^= res[j];
+	// O(n * m * up_to / w)
+	// Returns {RREF matrix, determinant, rank}
+	tuple<matrix_Z2_base &, bool, int> inplace_RREF(int up_to = -1){
+		if(n == 0) return {*this, true, 0};
+		auto [mat, det, rank] = inplace_REF(up_to);
+		for(auto i = rank - 1; i >= 0; -- i){
+			int pivot = mat[i]._Find_first();
+			for(auto t = 0; t < i; ++ t) if(mat[t][pivot]) mat[t] ^= mat[i];
 		}
-		swap(*this, res);
-		return true;
+		return {mat, det, rank};
+	}
+	// O(n * m * up_to / w)
+	// Returns {RREF matrix, determinant, rank}
+	tuple<matrix_Z2_base, bool, int> RREF(int up_to = -1) const{
+		return matrix_Z2_base(*this).inplace_RREF(up_to);
 	}
 	bool determinant() const{
 		assert(n == m);
@@ -176,19 +185,47 @@ struct matrix_Z2_base{
 	int rank() const{
 		return get<2>(REF());
 	}
-	// Regarding the matrix as a system of linear equations by separating first m-1 columns, find a solution of the linear equation.
+	// Regarding the matrix as a system of linear equations by separating first m-1 columns,
+	// find a solution of the system along with the basis for the nullspace
 	// O(n * m^2 / w)
-	optional<bitset<SZ>> find_a_solution() const{
+	optional<pair<bitset<SZ>, vector<bitset<SZ>>>> solve_right() const{
 		assert(m >= 1);
-		auto [ref, _, rank] = REF(m - 1);
-		for(auto i = rank; i < n; ++ i) if(ref[i][m - 1]) return {};
-		bitset<SZ> res;
+		auto [rref, _, rank] = RREF(m - 1);
+		for(auto i = rank; i < n; ++ i) if(rref[i][m - 1]) return {};
+		bitset<SZ> res{};
+		vector<int> pivot(rank), appear_as_pivot(m - 1);
 		for(auto i = rank - 1; i >= 0; -- i){
-			int pivot = ref[i]._Find_first();
-			assert(pivot < m - 1);
-			res[pivot] = ref[i][m - 1] ^ (ref[i] & res).count() & 1;
+			pivot[i] = rref[i]._Find_first();
+			assert(pivot[i] < m - 1);
+			appear_as_pivot[pivot[i]] = true;
+			res[pivot[i]] = rref[i][m - 1];
 		}
-		return res;
+		vector<bitset<SZ>> basis;
+		for(auto j = 0; j < m - 1; ++ j){
+			if(appear_as_pivot[j]) continue;
+			bitset<SZ> b{};
+			b.set(j);
+			for(auto i = 0; i < rank; ++ i) if(rref[i][j]) b.set(pivot[i]);
+			basis.push_back(b);
+		}
+		return pair{res, basis};
+	}
+	optional<matrix_Z2_base> inverse() const{
+		assert(n == m);
+		vector<bitset<SZ>> a(data), res(n);
+		for(auto i = 0; i < n; ++ i) res[i].set(i);
+		for(auto j = 0; j < n; ++ j){
+			int pivot = -1;
+			for(auto i = j; i < n; ++ i) if(a[i][j]){
+				pivot = i;
+				break;
+			}
+			if(!~pivot) return {};
+			swap(a[j], a[pivot]), swap(res[j], res[pivot]);
+			for(auto i = 0; i < n; ++ i) if(i != j && a[i][j]) a[i] ^= a[j], res[i] ^= res[j];
+		}
+		swap(*this, res);
+		return true;
 	}
 	template<class output_stream>
 	friend output_stream &operator<<(output_stream &out, const matrix_Z2_base &a){
@@ -200,26 +237,13 @@ struct matrix_Z2_base{
 		return out;
 	}
 	matrix_Z2_base(int n, int m, bool init_diagonal = false, bool init_off_diagonal = false): n(n), m(m), data(n){
-		assert(m <= SZ);
+		assert(0 <= n && 0 <= m && m <= SZ);
 		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) data[i][j] = i == j ? init_diagonal : init_off_diagonal;
 	}
-	matrix_Z2_base(int n, int m, const vector<bitset<SZ>> &a): n(n), m(m), data(a){ }
+	matrix_Z2_base(int n, int m, const vector<bitset<SZ>> &a): n(n), m(m), data(a){ assert(0 <= n && 0 <= m && m <= SZ); }
 };
-template<size_t SZ>
-matrix_Z2_base<SZ> operator*(bool c, matrix_Z2_base<SZ> M){
-	if(!c) for(auto &v: M) v.reset();
-	return M;
-}
-// Multiply a row vector v on the left
-template<size_t SZ>
-bitset<SZ> operator*(const vector<int> &v, const matrix_Z2_base<SZ> &a){
-	assert(a.n == (int)v.size());
-	bitset<SZ> res;
-	for(auto i = 0; i < a.n; ++ i) if(v[i]) res ^= a[i];
-	return res;
-}
 
-using matrix_Z2 = matrix_Z2_base<1000>;
+using matrix = matrix_Z2_base<1 << 10>;
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
 	<tabTrigger>matrix_Z2</tabTrigger> -->
