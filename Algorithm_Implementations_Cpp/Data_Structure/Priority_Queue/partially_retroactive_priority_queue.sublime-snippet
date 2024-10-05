@@ -1,0 +1,197 @@
+<snippet>
+	<content><![CDATA[
+// Source: https://atcoder.jp/contests/abc363/submissions/55828766
+template<class T, class Compare = less<>>
+class partially_retroactive_priority_queue{
+public:
+	struct return_type{
+		vector<T> insert, erase;
+		void clear(){
+			insert.clear(), erase.clear();
+		}
+		friend ostream &operator<<(ostream &out, const return_type &ret){
+			out << "insert: ";
+			for(auto x: ret.insert) out << x << " ";
+			out << ", erase: ";
+			for(auto x: ret.erase) out << x << " ";
+			return out;
+		}
+	};
+private:
+	int n, m;
+	Compare comp;
+	struct node{
+		int ssum, smin;
+		T qmax, dmin;
+	};
+	vector<node> tree;
+	const T &min_op(const T &x, const T &y){ return comp(x, y) ? x : y; }
+	const T &max_op(const T &x, const T &y){ return comp(x, y) ? y : x; }
+	void update_s(int i){
+		while(i /= 2){
+			tree[i].ssum = tree[i << 1].ssum + tree[i << 1 | 1].ssum;
+			tree[i].smin = min(tree[i << 1].smin, tree[i << 1].ssum + tree[i << 1 | 1].smin);
+		}
+	}
+	void update_q(int i){
+		while(i /= 2) tree[i].qmax = max_op(tree[i << 1].qmax, tree[i << 1 | 1].qmax);
+	}
+	void update_d(int i){
+		while(i /= 2) tree[i].dmin = min_op(tree[i << 1].dmin, tree[i << 1 | 1].dmin);
+	}
+	void incremental_update(const int i, return_type& ret){
+		tree[i].ssum += 1;
+		update_s(i);
+		int s = tree[1].ssum - 1, k = 1;
+		while(k < m){
+			k <<= 1;
+			if(tree[k].ssum + tree[k | 1].smin == s){
+				s -= tree[k].ssum;
+				k |= 1;
+			}
+		}
+		if(k == m) return;
+		int c = 0, r = m << 1;
+		for(; k < r; k >>= 1, r >>= 1) if(k & 1){
+			if(comp(tree[k].dmin, tree[c].dmin)) c = k;
+			k ++;
+		}
+		assert(c != 0); // If this assertion fails, there's a bug in this library.
+		while(c < m){
+			c <<= 1;
+			if(comp(tree[c | 1].dmin, tree[c].dmin)) c |= 1;
+		}
+		ret.insert.push_back(tree[c].dmin);
+		tree[c].ssum = 0;
+		tree[c].qmax = tree[c].dmin;
+		tree[c].dmin = tree[0].dmin;
+		update_s(c);
+		update_q(c);
+		update_d(c);
+	}
+	void decremental_update(const int i, return_type& ret){
+		tree[i].ssum -= 1;
+		update_s(i);
+		int s = tree[1].ssum, k = 1;
+		while(k < m){
+			k <<= 1;
+			if(s != tree[k].smin){
+				s -= tree[k].ssum;
+				k |= 1;
+			}
+		}
+		int c = 0;
+		for(; k; k >>= 1) if(k & 1) if(comp(tree[c].qmax, tree[-- k].qmax)) c = k;
+		if(c == 0) return;
+		while(c < m){
+			c <<= 1;
+			if(comp(tree[c].qmax, tree[c | 1].qmax)) c |= 1;
+		}
+		ret.erase.push_back(tree[c].qmax);
+		tree[c].ssum = 1;
+		tree[c].dmin = tree[c].qmax;
+		tree[c].qmax = tree[0].qmax;
+		update_s(c);
+		update_q(c);
+		update_d(c);
+	}
+	return_type ret;
+	void init_op(int t, return_type &ret){
+		if(tree[t].ssum == -1) incremental_update(t, ret);
+		else if(comp(tree[0].qmax, tree[t].qmax)){
+			ret.erase.push_back(tree[t].qmax);
+			tree[t].qmax = tree[0].qmax;
+			update_q(t);
+		}
+		else if(comp(tree[t].dmin, tree[0].dmin)){
+			tree[t].dmin = tree[0].dmin;
+			update_d(t);
+			decremental_update(t, ret);
+		}
+	}
+public:
+	partially_retroactive_priority_queue(int n, Compare comp = less<>(), T minf = numeric_limits<T>::min(), T inf = numeric_limits<T>::max()): n(n), comp(comp), tree(){
+		assert(n >= 0);
+		assert(comp(minf, inf) && !comp(minf, minf) && !comp(inf, inf));
+		m = 1;
+		while(m < n + 2) m <<= 1;
+		tree.resize(2 * m, node{0, 0, minf, inf});
+		tree[0].qmax = minf;
+		tree[0].dmin = inf;
+	}
+	// Set the operation at time t as "push x"
+	const return_type &set_push(int t, const T &x){
+		assert(0 <= t && t < n);
+		t += 1 + m;
+		ret.clear();
+		init_op(t, ret);
+		assert(comp(tree[0].qmax, x) && comp(x, tree[0].dmin));
+		tree[t].dmin = x;
+		update_d(t);
+		incremental_update(t, ret);
+		return ret;
+	}
+	// Set the operation at time t as "pop"
+	const return_type &set_pop(int t){
+		assert(0 <= t && t < n);
+		ret.clear();
+		t += 1 + m;
+		init_op(t, ret);
+		decremental_update(t, ret);
+		return ret;
+	}
+	// Set the operation at time t as "no-op"
+	const return_type &set_no_op(int t){
+		assert(0 <= t && t < n);
+		ret.clear();
+		t += 1 + m;
+		init_op(t, ret);
+		return ret;
+	}
+	friend ostream &operator<<(ostream &out, const partially_retroactive_priority_queue &pq){
+		multiset<T, Compare> set{pq.comp};
+		out << "\n";
+		for(auto t = 0; t <= pq.n; ++ t){
+			out << "op[" << t - 1 << "]: ";
+			const auto &v = pq.tree[t + (int)pq.tree.size() / 2];
+			if(v.ssum == -1){
+				out << "pop, ";
+				if(!set.empty()) set.erase(prev(set.end()));
+			}
+			else if(pq.comp(pq.tree[0].qmax, v.qmax)){
+				out << "push " << v.qmax << ", ";
+				set.insert(v.qmax);
+			}
+			else if(pq.comp(v.dmin, pq.tree[0].dmin)){
+				out << "push " << v.dmin << ", ";
+				set.insert(v.dmin);
+			}
+			else out << "no_op, ";
+			out << "{{";
+			bool first = true;
+			for(const T &x: set){
+				if(!exchange(first, false)) out << ",";
+				out << " " << x;
+			}
+			out << " }}\n";
+		}
+		return out;
+	}
+};
+
+// Pop smallest
+template<class T>
+auto make_prpq_min(int n){
+	return partially_retroactive_priority_queue(n, greater<>(), numeric_limits<T>::max(), numeric_limits<T>::min());
+}
+// Pop largest
+template<class T>
+auto make_prpq_max(int n){
+	return partially_retroactive_priority_queue(n, less<>(), numeric_limits<T>::min(), numeric_limits<T>::max());
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>partially_retroactive_priority_queue</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
