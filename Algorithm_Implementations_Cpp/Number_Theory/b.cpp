@@ -1,5 +1,21 @@
-<snippet>
-	<content><![CDATA[
+// #include <bits/allocator.h> // Temp fix for gcc13 global pragma
+// #pragma GCC target("avx2,bmi2,popcnt,lzcnt")
+// #pragma GCC optimize("O3,unroll-loops")
+#include <bits/stdc++.h>
+// #include <x86intrin.h>
+using namespace std;
+#if __cplusplus >= 202002L
+using namespace numbers;
+#endif
+#ifdef LOCAL
+	#include "Debug.h"
+#else
+	#define debug_endl() 42
+	#define debug(...) 42
+	#define debug2(...) 42
+	#define debugbin(...) 42
+#endif
+
 template<class data_t, data_t _mod>
 struct modular_fixed_base{
 #define IS_INTEGRAL(T) (is_integral_v<T> || is_same_v<T, __int128_t> || is_same_v<T, __uint128_t>)
@@ -188,9 +204,14 @@ const unsigned int mod = (119 << 23) + 1; // 998244353
 // const unsigned long long mod = (unsigned long long)1e18 + 9;
 using modular = modular_fixed_base<decay_t<decltype(mod)>, mod>;
 modular operator""_m(const char *x){ return stoll(x); }
-]]></content>
-	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
-	<tabTrigger>modular_fixed</tabTrigger> -->
-	<!-- Optional: Set a scope to limit where the snippet will trigger -->
-	<scope>source.c++</scope> -->
-</snippet>
+
+int main(){
+	cin.tie(0)->sync_with_stdio(0);
+	cin.exceptions(ios::badbit | ios::failbit);
+	
+	return 0;
+}
+
+/*
+
+*/

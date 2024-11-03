@@ -4,7 +4,7 @@ template<int id, class data_t, class wider_data_t>
 struct modular_unfixed_base{
 #define IS_INTEGRAL(T) (is_integral_v<T> || is_same_v<T, __int128_t> || is_same_v<T, __uint128_t>)
 #define IS_UNSIGNED(T) (is_unsigned_v<T> || is_same_v<T, __uint128_t>)
-	static_assert(IS_UNSIGNED(data_t) && IS_UNSIGNED(wider_data_t));
+	static_assert(IS_UNSIGNED(data_t) && IS_UNSIGNED(wider_data_t) && sizeof(data_t) * 2 == sizeof(wider_data_t));
 	static constexpr bool VARIATE_MOD_FLAG = true;
 	static data_t _mod;
 	static wider_data_t _inverse_mod;
@@ -18,7 +18,7 @@ struct modular_unfixed_base{
 		_primitive_root.data = 0;
 		if(!mod) cin >> mod;
 		_mod = mod;
-		assert(_mod >= 1);
+		assert(1 <= _mod && _mod < data_t(1) << 8 * sizeof(data_t) - 1);
 		precalc_barrett();
 	}
 	template<class T>
