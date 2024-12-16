@@ -47,14 +47,9 @@ struct palindrome_automaton{
 	}
 	// count: # of occurences of the palindrome
 	vector<int> count;
-	vector<vector<int>> inv_link;
 	void init_count(){
-		count = occurence, inv_link.assign(size(), {});
-		for(auto u = 2; u < (int)size(); ++ u) inv_link[link[u]].push_back(u);
-		auto dfs = [&](auto self, int u)->void{
-			for(auto v: inv_link[u]) self(self, v), count[u] += count[v];
-		};
-		dfs(dfs, 0);
+		count = occurence;
+		for(auto i=size()-1; i>=2; i--) count[link[i]] += count[i];
 	}
 };
 ]]></content>
