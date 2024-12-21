@@ -155,6 +155,19 @@ bool is_sorted_by_angle(const point<T> &origin, const point<T> &p, const point<T
 	if(x < 0 && y < 0) return false;
 	return (p - origin ^ r - origin) < 0;
 }
+template<class T>
+struct compare_by_angle{
+	point<T> origin;
+	compare_by_angle(const point<T> &origin = point<T>()): origin(origin){ }
+	int side(const point<T> &p) const{
+		return p < origin ? -1 : p == origin ? 0 : 1;
+	}
+	bool operator()(const point<T> &p, const point<T> &q) const{
+		int sp = side(p), sq = side(q);
+		if(sp != sq) return sp < sq;
+		return doubled_signed_area(origin, p, q) > 0;
+	}
+};
 // Check if a is sorted by angle with respect to the origin
 template<class T>
 bool is_sorted_by_angle(const point<T> &origin, const vector<point<T>> &a){
