@@ -49,7 +49,7 @@ struct palindrome_automaton{
 	vector<int> count;
 	void init_count(){
 		count = occurence;
-		for(auto i=size()-1; i>=2; i--) count[link[i]] += count[i];
+		for(auto u = (int)size() - 1; u >= 2; -- u) count[link[u]] += count[u];
 	}
 };
 ]]></content>
