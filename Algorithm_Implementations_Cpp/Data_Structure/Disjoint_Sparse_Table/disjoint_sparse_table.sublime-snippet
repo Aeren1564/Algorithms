@@ -2,12 +2,26 @@
 	<content><![CDATA[
 template<class T, class F>
 struct disjoint_sparse_table{
+#ifdef LOCAL
+	#define ASSERT(x) assert(x)
+#else
+	#define ASSERT(x) 42
+#endif
 	int n, size, log;
 	vector<vector<T>> data;
 	F TT; // monoid operation (always adjacent)
 	T T_id; // monoid identity
+	disjoint_sparse_table(F TT, T T_id): TT(TT), T_id(T_id){ }
+	disjoint_sparse_table &operator=(const disjoint_sparse_table &st){
+		n = st.n;
+		size = st.size;
+		log = st.log;
+		data = st.data;
+		return *this;
+	}
 	// O(n * log(n)) time and space
-	disjoint_sparse_table(const vector<T> &a, F TT, T T_id): n((int)a.size()), TT(TT), T_id(T_id){
+	void build(const vector<T> &a){
+		n = (int)a.size();
 		log = __lg(max(n - 1, 1)) + 1, size = 1 << log;
 		data.assign(log + 1, vector<T>(size, T_id));
 		copy(a.begin(), a.end(), data[0].begin());
@@ -25,7 +39,20 @@ struct disjoint_sparse_table{
 		int h = __lg(ql ^ qr - 1) + 1;
 		return TT(data[h][ql], data[h][qr - 1]);
 	}
+#undef ASSERT
 };
+template<class T, class F>
+auto make_disjoint_sparse_table(F TT, T T_id){
+	return disjoint_sparse_table(TT, T_id);
+}
+template<class T>
+auto make_rminq(T inf = numeric_limits<T>::max()){
+	return disjoint_sparse_table([&](const T &x, const T &y){ return min(x, y); }, inf);
+}
+template<class T>
+auto make_rmaxq(T minf = numeric_limits<T>::min()){
+	return disjoint_sparse_table([&](const T &x, const T &y){ return max(x, y); }, minf);
+}
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
 	<tabTrigger>disjoint_sparse_table</tabTrigger> -->

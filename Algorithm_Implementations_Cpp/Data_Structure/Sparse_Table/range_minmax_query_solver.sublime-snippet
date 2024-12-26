@@ -1,0 +1,89 @@
+<snippet>
+	<content><![CDATA[
+template<class T, class Compare>
+struct range_minmax_query_solver{
+#ifdef LOCAL
+	#define ASSERT(x) assert(x)
+#else
+	#define ASSERT(x) 42
+#endif
+	int n;
+	vector<vector<tuple<T, int, int, int>>> data;
+	Compare cmp;
+	T inf;
+	range_minmax_query_solver(Compare cmp, T inf): cmp(cmp), inf(inf){ }
+	range_minmax_query_solver &operator=(const range_minmax_query_solver &st){
+		n = st.n;
+		data = st.data;
+		return *this;
+	}
+	auto TT(const auto &x, const auto &y) const{
+		return cmp(get<0>(x), get<0>(y)) ? x : cmp(get<0>(y), get<0>(x)) ? y : tuple{get<0>(x), get<1>(x), get<2>(y), get<3>(x) + get<3>(y)};
+	}
+	friend void swap(range_minmax_query_solver &stl, range_minmax_query_solver &str){
+		swap(stl.n, str.n);
+		swap(stl.data, str.data);
+	}
+	// O(n * log(n))
+	void build(const vector<T> &a){
+		n = (int)a.size();
+		data.emplace_back(n);
+		for(auto i = 0; i < n; ++ i) data[0][i] = {a[i], i, i, 1};
+		for(auto p = 1, i = 1; p << 1 <= n; p <<= 1, ++ i){
+			data.emplace_back(n - (p << 1) + 1);
+			for(auto j = 0; j < (int)data[i].size(); ++ j) data[i][j] = TT(data[i - 1][j], data[i - 1][j + p]);
+		}
+	}
+	// Returns a tuple of (opt, leftmost opt index, rightmost opt index, opt count)
+	// O(1)
+	tuple<T, int, int, int> query(int l, int r) const{
+		ASSERT(0 <= l && l <= r && r <= n);
+		if(l == r) return {inf, r, l - 1, 0};
+		int d = __lg(r - l);
+		return TT(data[d][l], data[d][r - (1 << d)]);
+	}
+	// O(1)
+	T optimal(int l, int r) const{
+		return get<0>(query(l, r));
+	}
+	// O(1)
+	pair<T, int> leftmost(int l, int r) const{
+		auto [opt, index_l, index_r, count] = query(l, r);
+		return {opt, index_l};
+	}
+	// O(1)
+	pair<T, int> rightmost(int l, int r) const{
+		auto [opt, index_l, index_r, count] = query(l, r);
+		return {opt, index_r};
+	}
+	// O(1)
+	pair<T, int> count(int l, int r) const{
+		auto [opt, index_l, index_r, count] = query(l, r);
+		return {opt, count};
+	}
+	// Returns a pair of (opt, list of opt indices in increasing order)
+	// O(# of indices)
+	pair<T, vector<int>> find_all(int l, int r) const{
+		ASSERT(0 <= l && l <= r && r <= n);
+		if(l == r) return {inf, {}};
+		auto [opt, index_l, index_r, cnt] = query(l, r);
+		vector<int> indices{index_l};
+		while(indices.back() != index_r) indices.push_back(get<1>(query(indices.back() + 1, r)));
+		return {opt, indices};
+	}
+#undef ASSERT
+};
+template<class T>
+auto make_rminq(T inf = numeric_limits<T>::max()){
+	return range_minmax_query_solver(less<>(), inf);
+}
+template<class T>
+auto make_rmaxq(T minf = numeric_limits<T>::min()){
+	return range_minmax_query_solver(greater<>(), minf);
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>range_minmax_query_solver</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
