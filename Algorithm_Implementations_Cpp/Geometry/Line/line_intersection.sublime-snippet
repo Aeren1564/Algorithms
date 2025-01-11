@@ -1,58 +1,38 @@
 <snippet>
 	<content><![CDATA[
 // endpoint type: 0(ray), 1(closed end), 2(open end)
-// type_mask % 3 for the left endpoint type of L
-// type_mask / 3 % 3 for the right endpoint type of L
-// type_mask / 9 % 3 for the left endpoint type of R
-// type_mask / 27 for the right endpoint type of R
 // Requires point and line
 #define CHECK(type, x, y) (type == 0 || x < y || x == y && type == 1)
 // Assumes parallel lines do not intersect
-template<class T>
-optional<pointd> intersect_no_parallel_overlap(int type_mask, const line<T> &L, const line<T> &M){
-	assert(0 <= type_mask && type_mask < 81);
+template<class U, class T>
+optional<point<U>> intersect_no_parallel_overlap(int L_left, int L_right, int R_left, int R_right, const line<T> &L, const line<T> &M){
+	assert(0 <= min({L_left, L_right, R_left, R_right}) && max({L_left, L_right, R_left, R_right}) < 3);
 	T s = L.d ^ M.d;
 	if(s == 0) return {};
 	T ls = M.p - L.p ^ M.d, rs = M.p - L.p ^ L.d;
 	if(s < 0) s = -s, ls = -ls, rs = -rs;
-	if(CHECK(type_mask % 3, 0, ls) && CHECK(type_mask / 3 % 3, ls, s) && CHECK(type_mask / 9 % 3, 0, rs) && CHECK(type_mask / 27, rs, s)) return pointd(L.p) + 1.0 * ls / s * pointd(L.d);
-	else return {};
-}
-// Assumes parallel lines do not intersect
-template<class T>
-optional<pointld> intersect_no_parallel_overlapl(int type_mask, const line<T> &L, const line<T> &M){
-	assert(0 <= type_mask && type_mask < 81);
-	T s = L.d ^ M.d;
-	if(s == 0) return {};
-	T ls = M.p - L.p ^ M.d, rs = M.p - L.p ^ L.d;
-	if(s < 0) s = -s, ls = -ls, rs = -rs;
-	if(CHECK(type_mask % 3, 0, ls) && CHECK(type_mask / 3 % 3, ls, s) && CHECK(type_mask / 9 % 3, 0, rs) && CHECK(type_mask / 27, rs, s)) return pointld(L.p) + 1.0L * ls / s * pointld(L.d);
+	if(CHECK(L_left, 0, ls) && CHECK(L_right, ls, s) && CHECK(R_left, 0, rs) && CHECK(R_right, rs, s)) return point<U>(L.p) + point<U>(L.d) * ls / s;
 	else return {};
 }
 #undef CHECK
 // Assumes parallel lines do not intersect
-template<class T>
-optional<pointd> intersect_closed_segments_no_parallel_overlap(const line<T> &L, const line<T> &M){
-	return intersect_no_parallel_overlap<T>(1 + 3 * 1 + 9 * 1 + 27 * 1, L, M);
+template<class U, class T>
+optional<point<U>> intersect_closed_segments_no_parallel_overlap(const line<T> &L, const line<T> &M){
+	return intersect_no_parallel_overlap<U, T>(1, 1, 1, 1, L, M);
 }
 // Assumes parallel lines do not intersect
-template<class T>
-optional<pointld> intersect_closed_segments_no_parallel_overlapl(const line<T> &L, const line<T> &M){
-	return intersect_no_parallel_overlapl<T>(1 + 3 * 1 + 9 * 1 + 27 * 1, L, M);
+template<class U, class T>
+optional<point<U>> intersect_open_segments_no_parallel_overlap(const line<T> &L, const line<T> &M){
+	return intersect_no_parallel_overlap<U, T>(2, 2, 2, 2, L, M);
 }
 // Assumes parallel lines do not intersect
-template<class T>
-optional<pointd> intersect_open_segments_no_parallel_overlap(const line<T> &L, const line<T> &M){
-	return intersect_no_parallel_overlap<T>(2 + 3 * 2 + 9 * 2 + 27 * 2, L, M);
-}
-// Assumes parallel lines do not intersect
-template<class T>
-optional<pointld> intersect_open_segments_no_parallel_overlapl(const line<T> &L, const line<T> &M){
-	return intersect_no_parallel_overlapl<T>(2 + 3 * 2 + 9 * 2 + 27 * 2, L, M);
+template<class U, class T>
+optional<point<U>> intersect_closed_rays_no_parallel_overlap(const line<T> &L, const line<T> &M){
+	return intersect_no_parallel_overlap<U, T>(1, 0, 1, 0, L, M);
 }
 // Assumes nothing
-template<class T>
-optional<pair<pointd, pointd>> intersect_closed_segments(const line<T> &L, const line<T> &M){
+template<class U, class T>
+optional<pair<point<U>, point<U>>> intersect_closed_segments(const line<T> &L, const line<T> &M){
 	auto s = L.d ^ M.d, ls = M.p - L.p ^ M.d;
 	if(!s){
 		if(ls) return {};
@@ -60,20 +40,20 @@ optional<pair<pointd, pointd>> intersect_closed_segments(const line<T> &L, const
 		if(Lp > Lq) swap(Lp, Lq);
 		if(Mp > Mq) swap(Mp, Mq);
 		point<T> p = max(Lp, Mp), q = min(Lq, Mq);
-		if(p <= q) return pair<pointd, pointd>{p, q};
+		if(p <= q) return pair<point<U>, point<U>>{p, q};
 		return {};
 	}
 	auto rs = M.p - L.p ^ L.d;
 	if(s < 0) s = -s, ls = -ls, rs = -rs;
 	if(0 <= ls && ls <= s && 0 <= rs && rs <= s){
-		auto p = pointd(L.p) + 1.0 * ls / s * pointd(L.d);
-		return pair<pointd, pointd>{p, p};
+		auto p = point<U>(L.p) + point<U>(L.d) * ls / s;
+		return pair<point<U>, point<U>>{p, p};
 	}
 	else return {};
 }
 // Assumes nothing
-template<class T>
-optional<pair<pointld, pointld>> intersect_closed_segmentsl(const line<T> &L, const line<T> &M){
+template<class U, class T>
+optional<pair<point<U>, point<U>>> intersect_open_segments(const line<T> &L, const line<T> &M){
 	auto s = L.d ^ M.d, ls = M.p - L.p ^ M.d;
 	if(!s){
 		if(ls) return {};
@@ -81,56 +61,14 @@ optional<pair<pointld, pointld>> intersect_closed_segmentsl(const line<T> &L, co
 		if(Lp > Lq) swap(Lp, Lq);
 		if(Mp > Mq) swap(Mp, Mq);
 		point<T> p = max(Lp, Mp), q = min(Lq, Mq);
-		if(p <= q) return pair<pointld, pointld>{p, q};
-		return {};
-	}
-	auto rs = M.p - L.p ^ L.d;
-	if(s < 0) s = -s, ls = -ls, rs = -rs;
-	if(0 <= ls && ls <= s && 0 <= rs && rs <= s){
-		auto p = pointld(L.p) + 1.0L * ls / s * pointld(L.d);
-		return pair<pointld, pointld>{p, p};
-	}
-	else return {};
-}
-// Assumes nothing
-template<class T>
-optional<pair<pointd, pointd>> intersect_open_segments(const line<T> &L, const line<T> &M){
-	auto s = L.d ^ M.d, ls = M.p - L.p ^ M.d;
-	if(!s){
-		if(ls) return {};
-		auto Lp = L.p, Lq = L.q(), Mp = M.p, Mq = M.q();
-		if(Lp > Lq) swap(Lp, Lq);
-		if(Mp > Mq) swap(Mp, Mq);
-		point<T> p = max(Lp, Mp), q = min(Lq, Mq);
-		if(p < q) return pair<pointd, pointd>{p, q};
+		if(p < q) return pair<point<U>, point<U>>{p, q};
 		return {};
 	}
 	auto rs = (M.p - L.p) ^ L.d;
 	if(s < 0) s = -s, ls = -ls, rs = -rs;
 	if(0 < ls && ls < s && 0 < rs && rs < s){
-		auto p = pointd(L.p) + 1.0 * ls / s * pointd(L.d);
-		return pair<pointd, pointd>{p, p};
-	}
-	else return {};
-}
-// Assumes nothing
-template<class T>
-optional<pair<pointld, pointld>> intersect_open_segmentsl(const line<T> &L, const line<T> &M){
-	auto s = L.d ^ M.d, ls = M.p - L.p ^ M.d;
-	if(!s){
-		if(ls) return {};
-		auto Lp = L.p, Lq = L.q(), Mp = M.p, Mq = M.q();
-		if(Lp > Lq) swap(Lp, Lq);
-		if(Mp > Mq) swap(Mp, Mq);
-		point<T> p = max(Lp, Mp), q = min(Lq, Mq);
-		if(p < q) return pair<pointld, pointld>{p, q};
-		return {};
-	}
-	auto rs = (M.p - L.p) ^ L.d;
-	if(s < 0) s = -s, ls = -ls, rs = -rs;
-	if(0 < ls && ls < s && 0 < rs && rs < s){
-		auto p = pointld(L.p) + 1.0L * ls / s * pointld(L.d);
-		return pair<pointld, pointld>{p, p};
+		auto p = point<U>(L.p) + point<U>(L.d) * ls / s;
+		return pair<point<U>, point<U>>{p, p};
 	}
 	else return {};
 }

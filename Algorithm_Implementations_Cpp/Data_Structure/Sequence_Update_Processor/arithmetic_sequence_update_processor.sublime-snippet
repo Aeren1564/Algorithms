@@ -21,10 +21,21 @@ struct arithmetic_sequence_update_processor{
 	// Add start, start + step, start + step * 2, ... on [l, r)
 	// l must be equal or greater than the largest index which query() has been called over if reverse = false
 	// Otherwise, r must be equal or less than the smallest index which query() has been called over plus one
+	// If ALLOW_OUT_OF_RANGE, every update outside of [ptr, n) range will be ignored.
 	// O(1)
+	template<bool ALLOW_OUT_OF_RANGE = false>
 	void update(int l, int r, T start, T step = T{}){
 		if(reversed) tie(l, r, start, step) = tuple{n - r, n - l, start + (r - l - 1) * step, -step};
-		ASSERT(ptr <= l && l <= r && r <= n);
+		ASSERT(l <= r);
+		if constexpr(ALLOW_OUT_OF_RANGE){
+			if(n <= l || r <= ptr) return;
+			if(l < ptr){
+				start += (ptr - l) * step;
+				l = ptr;
+			}
+			r = min(n, r);
+		}
+		ASSERT(ptr <= l && r <= n);
 		if(l == r) return;
 		data[l] += start;
 		data[l + 1] -= start - step;
@@ -34,9 +45,11 @@ struct arithmetic_sequence_update_processor{
 	// Add rev_start + (r - l - 1) * rev_step, rev_start + (r - l - 2) * rev_step, ... on [l, r)
 	// l must be equal or greater than the largest index which query() has been called over if reverse = false
 	// Otherwise, r must be equal or less than the smallest index which query() has been called over plus one
+	// If ALLOW_OUT_OF_RANGE, every update outside of [ptr, n) range will be ignored.
 	// O(1)
+	template<bool ALLOW_OUT_OF_RANGE = false>
 	void update_reverse(int l, int r, T rev_start, T rev_step = T{}){
-		update(l, r, rev_start + (r - l - 1) * rev_step, -rev_step);
+		update<ALLOW_OUT_OF_RANGE>(l, r, rev_start + (r - l - 1) * rev_step, -rev_step);
 	}
 	// Add x to position p
 	// p must be equal or greater than the largest index which query() has been called over
