@@ -175,10 +175,9 @@ friend bool operator op(const T &x, const modular_unfixed_base &y){ return modul
 		number.data = modular_unfixed_base::_normalize(x);
 		return in;
 	}
-//#define _SHOW_FRACTION
 	friend ostream &operator<<(ostream &out, const modular_unfixed_base &number){
 		out << number.data;
-	#if defined(LOCAL) && defined(_SHOW_FRACTION)
+#ifdef LOCAL
 		cerr << "(";
 		for(auto d = 1; ; ++ d){
 			if((number * d).data <= 1000000){
@@ -193,11 +192,10 @@ friend bool operator op(const T &x, const modular_unfixed_base &y){ return modul
 			}
 		}
 		cerr << ")";
-	#endif
+#endif
 		return out;
 	}
 	data_t data = 0;
-#undef _SHOW_FRACTION
 #undef IS_INTEGRAL
 #undef IS_UNSIGNED
 };
