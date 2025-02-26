@@ -1,0 +1,183 @@
+<snippet>
+	<content><![CDATA[
+// TODO: fix bug and optimize
+// f is a multiplicative function satisfying
+// 0. f(1) = 1
+// 1. f(p) = coef[0] + coef[1] * p + ... + coef[deg - 1] * p^(deg - 1) and
+// 2. f(p^e) = eval(p, e)
+// for prime p and integer e >= 1
+template<class T>
+struct min25_sieve{
+	int deg;
+	min25_sieve(int deg): deg(deg), prime_power(deg), prime_power_prefix(deg, vector<T>{T{0}}){
+		assert(deg >= 0);
+		for(auto p: {2, 3}){
+			prime.push_back(p);
+			if(deg > 0){
+				prime_power[0].push_back(T{1});
+				prime_power_prefix[0].push_back(prime_power_prefix[0].back() + T{1});
+			}
+			for(auto d = 1; d < deg; ++ d){
+				prime_power[d].push_back(prime_power[d - 1].back() * T{p});
+				prime_power_prefix[d].push_back(prime_power_prefix[d].back() + prime_power[d].back());
+			}
+		}
+	}
+	vector<int> prime;
+	vector<vector<T>> prime_power;
+	vector<vector<T>> prime_power_prefix;
+	vector<bool> _is_prime{false, false, true, true};
+	int _p_iter = 5, _delta_iter = 2;
+	void _sieve(int th){
+		_is_prime.resize(max((int)_is_prime.size(), th + 1), true);
+		for(; _p_iter <= th; _p_iter += _delta_iter, _delta_iter = 6 - _delta_iter) if(_is_prime[_p_iter]){
+			prime.push_back(_p_iter);
+			if(deg > 0){
+				prime_power[0].push_back(T{1});
+				prime_power_prefix[0].push_back(prime_power_prefix[0].back() + T{1});
+			}
+			for(auto d = 1; d < deg; ++ d){
+				prime_power[d].push_back(prime_power[d - 1].back() * prime.back());
+				prime_power_prefix[d].push_back(prime_power_prefix[d].back() + prime_power[d].back());
+			}
+			for(auto q = 3 * _p_iter; q <= th; q += 2 * _p_iter) _is_prime[q] = false;
+		}
+	}
+	// Returns 0^d + ... + (base-1)^d
+	// O(d * log(d) + inverse_in_T())
+	T _power_sum(long long base, int d){
+		assert(d >= 0);
+		vector<T> value(d + 2), fact(d + 2, 1), pref(d + 3, 1), suff(d + 3, 1);
+		for(auto x = 0; x <= d; ++ x){
+			T temp = x;
+			value[x + 1] = 1;
+			for(auto e = d; e; e >>= 1, temp *= temp) if(e & 1) value[x + 1] *= temp;
+			value[x + 1] += value[x];
+			pref[x + 1] = pref[x] * (base - x) / (x + 1);
+		}
+		for(auto x = d + 1; x >= 1; -- x) suff[x] = suff[x + 1] * (base - x) / (d + 2 - x);
+		T res = 0;
+		for(auto x = 0; x <= d + 1; ++ x) res += value[x] * pref[x] * suff[x + 1] * (d + 1 - x & 1 ? -1 : 1);
+		return res;
+	}
+	vector<T> _fenwick;
+	void _fenwick_build(){
+		for(auto x = 1; x < (int)_fenwick.size(); ++ x) if(x + (x & -x) < (int)_fenwick.size()) _fenwick[x + (x & -x)] += _fenwick[x];
+	}
+	void _fenwick_update(int p, T delta){
+		for(; p < (int)_fenwick.size(); p += p & -p) _fenwick[p] += delta;
+	}
+	T _fenwick_prefix_sum(int r){
+		T res{};
+		for(-- r; r > 0; r -= r & -r) res += _fenwick[r];
+		return res;
+	}
+	vector<T> _fenwick_to_array(){ // for debugging
+		vector<T> arr((int)_fenwick.size());
+		for(auto x = 1; x < (int)_fenwick.size(); ++ x) arr[x] = _fenwick_prefix_sum(x + 1) - _fenwick_prefix_sum(x);
+		return arr;
+	}
+	int get_threshold(long long n) const{
+		assert(1 <= n);
+		long long th = max(2 * sqrtl(n), 1.01L * powl(n, 2.0L / 3));
+		assert(th <= 1e9);
+		return th;
+	}
+	// List of floor(n/k) at all distinct value of floor(n/k) in increasing order of k
+	vector<long long> block;
+	// Source: https://gbroxey.github.io/blog/2023/04/09/lucy-fenwick.html
+	// Find the sum of f(p) over all prime 2 <= p <= x for all block x
+	// O(d * n^2/3 * log(n)^{1/3})
+	vector<T> query_prime_prefix(const vector<T> &coef, long long n){
+		assert((int)coef.size() == deg);
+		_sieve(max(5.0L, 2 * sqrtl(n)));
+		assert(1LL * prime.back() * prime.back() >= n);
+		const int th = get_threshold(n); // split to [1, th] and [th + 1, n]
+		block.clear();
+		for(auto low = 1LL, high = 0LL; low <= n; low = high + 1){
+			long long q = n / low;
+			high = n / q;
+			block.push_back(q);
+		}
+		const int nb = (int)block.size();
+		const int cut = ranges::upper_bound(block, th, greater<>()) - block.begin();
+		vector<T> s(cut), res(nb), power(th + 1, 1);
+		vector<bool> is_prime(th + 1);
+		_fenwick.assign(th + 1, T{0});
+		for(auto d = 0; d < deg; ++ d){
+			if(coef[d]){
+				for(auto i = 0; i < cut; ++ i) s[i] = _power_sum(block[i] + 1, d) - _power_sum(2, d);
+				for(auto x = 2; x <= th; ++ x) _fenwick[x] = power[x];
+				_fenwick_build();
+				fill(is_prime.begin(), is_prime.end(), true);
+				for(auto ns = nb, j = 0; 1LL * prime[j] * prime[j] <= n; ++ j){
+					while(ns > 0 && 1LL * prime[j] * prime[j] > block[ns - 1]) -- ns;
+					for(auto i = 0; i < min(ns, cut); ++ i){
+						long long x = block[i] / prime[j];
+						s[i] -= prime_power[d][j] * ((x <= th ? _fenwick_prefix_sum(x + 1) : s[n / x - 1]) - prime_power_prefix[d][j]);
+					}
+					for(auto x = 2 * prime[j]; x <= th; x += prime[j]) if(is_prime[x]) is_prime[x] = false, _fenwick_update(x, -power[x]);
+				}
+				for(auto i = 0; i < cut; ++ i) res[i] += coef[d] * s[i];
+				for(auto i = cut; i < nb; ++ i) res[i] += coef[d] * _fenwick_prefix_sum(block[i] + 1);
+			}
+			for(auto x = 2; x <= th; ++ x) power[x] *= x;
+		}
+		return res;
+	}
+	// Source: https://min-25.hatenablog.com/entry/2018/11/11/172216
+	// Find the sum of f(i) over all integer 1 <= i <= x for all block x
+	// O(d * n^2/3 * log(n)^{1/3})
+	vector<T> query_prefix(const vector<T> &coef, auto eval, long long n){
+		assert((int)coef.size() == deg);
+		auto res_prime = query_prime_prefix(coef, n);
+		const int th = get_threshold(n); // split to [1, th] and [th + 1, n]
+		const int nb = (int)block.size();
+		const int cut = ranges::upper_bound(block, th, greater<>()) - block.begin();
+		const int qj = partition_point(prime.begin(), prime.end(), [&](int p){ return p <= n / p / p; }) - prime.begin();
+		const int qk = partition_point(prime.begin(), prime.begin() + qj, [&](int p){ return p <= n / p / p / p / p / p; }) - prime.begin();
+		assert(qj < (int)prime.size());
+		vector<T> res(nb, 1);
+		for(auto i = 0; i < nb && block[i] >= prime[qj]; ++ i){
+			res[i] += res_prime[i] - res_prime[nb - (prime[qj] - 1)];
+			for(auto j = qj; 1LL * prime[j] * prime[j] <= block[i]; ++ j){
+				long long x = block[i] / prime[j], y = n / x;
+				res[i] += eval(prime[j], 2) + eval(prime[j], 1) * (res_prime[x < y ? nb - x : y - 1] - res_prime[nb - prime[j]]);
+			}
+		}
+		vector<array<int, 3>> lpf(th + 1);
+		for(auto x = 2; x <= th; ++ x){
+			if(!lpf[x][0]) lpf[x] = {x, 1, 1};
+			for(auto j = 0; j < (int)prime.size() && prime[j] <= lpf[x][0] && prime[j] * x <= th; ++ j){
+				lpf[prime[j] * x] = lpf[x][0] == prime[j] ? array{prime[j], lpf[x][1] + 1, lpf[x][2]} : array{prime[j], 1, x};
+			}
+		}
+		vector<T> value(th + 1);
+		value[1] = 1;
+		for(auto x = 2; x <= th; ++ x) value[x] = eval(lpf[x][0], lpf[x][1]) * value[lpf[x][2]];
+		fill(_fenwick.begin(), _fenwick.end(), T{0});
+		_fenwick[1] = T{1};
+		for(auto x = prime[qj]; x <= th; ++ x) if(lpf[x][0] >= prime[qj]) _fenwick[x] = value[x];
+		_fenwick_build();
+		for(auto ns = nb, j = qj - 1; j >= 0; -- j){
+			while(ns > 0 && 1LL * prime[j] * prime[j] > block[ns - 1]) -- ns;
+			for(auto i = 0; i < min(ns, cut); ++ i){
+				long long prime_power = 1;
+				for(auto e = 1; prime_power <= block[i] / prime[j]; ++ e){
+					prime_power *= prime[j];
+					long long x = block[i] / prime_power;
+					res[i] += eval(prime[j], e) * (x <= th ? _fenwick_prefix_sum(x + 1) : res[n / x - 1]);
+				}
+			}
+			for(auto x = prime[j]; x <= th; x += prime[j]) if(lpf[x][0] == prime[j]) _fenwick_update(x, value[x]);
+		}
+		for(auto i = cut; i < nb; ++ i) res[i] = _fenwick_prefix_sum(block[i] + 1);
+		return res;
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<!-- <tabTrigger>hello</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<!-- <scope>source.python</scope> -->
+</snippet>

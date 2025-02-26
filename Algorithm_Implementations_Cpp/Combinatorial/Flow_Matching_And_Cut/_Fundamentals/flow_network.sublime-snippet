@@ -35,6 +35,18 @@ struct flow_network{
 		edge.push_back({to, from, 0, 0});
 		return ind;
 	}
+	void adjust_undirected_edge_capacity(int id, T cap){
+		assert(0 <= id && id < (int)edge.size() && id % 2 == 0 && cap >= 0);
+		assert(edge[id].flow <= cap);
+		assert(edge[id ^ 1].flow <= cap);
+		edge[id].capacity = cap;
+		edge[id ^ 1].capacity = cap;
+	}
+	void adjust_directed_edge_capacity(int id, T cap){
+		assert(0 <= id && id < (int)edge.size() && id % 2 == 0 && cap >= 0);
+		assert(edge[id].flow <= cap);
+		edge[id].capacity = cap;
+	}
 	void add_flow(int i, T f){
 		edge[i].flow += f;
 		edge[i ^ 1].flow -= f;

@@ -63,7 +63,7 @@ vector<point<T>> generate_simple_polygon(auto &&rng, int n, T low, T high){
 			}
 			line<T> L(order[u], order[v]);
 			for(auto v = u + 2; v < n - !u; ++ v){
-				if(intersect_closed_segments(L, line<T>(order[v], order[(v + 1) % n]))){
+				if(intersect_closed_segments<T>(L, line<T>(order[v], order[(v + 1) % n]))){
 					changed = true;
 					reverse(order.begin() + u + 1, order.begin() + v + 1);
 				}
@@ -75,7 +75,7 @@ vector<point<T>> generate_simple_polygon(auto &&rng, int n, T low, T high){
 }
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
-	<tabTrigger>generate_polygon</tabTrigger> -->
+	<tabTrigger>generate_simple_polygon</tabTrigger> -->
 	<!-- Optional: Set a scope to limit where the snippet will trigger -->
 	<scope>source.c++</scope> -->
 </snippet>

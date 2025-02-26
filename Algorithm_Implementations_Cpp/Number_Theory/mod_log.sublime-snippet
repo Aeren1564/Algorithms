@@ -5,14 +5,15 @@
 // T must be of modular type
 // Requires modular
 template<class T>
-optional<int> mod_log(T a, T b){
-	int m = T::mod(), n = sqrt(m) + 1, j = 1;
+auto mod_log(const T &a, const T &b){
+	using U = decay_t<decltype(T::mod())>;
+	U m = T::mod(), n = sqrtl(m) + 1, j = 1;
 	T e = 1, f = 1;
-	unordered_map<int, T> A;
-	while(j <= n && (f = e *= a) != b) A[e * b] = j ++;
-	if(e == b) return j;
-	if(gcd(m, e.data) == gcd(m, b.data)) for(auto i = 2; i < n + 2; ++ i) if(A.count(e *= f)) return T(n) * i - A[e];
-	return {};
+	unordered_map<U, U> A;
+	while(j <= n && (f = e *= a) != b) A[(e * b).data] = j ++;
+	if(e == b) return optional<U>{j};
+	if(gcd(T::mod(), e.data) == gcd(T::mod(), b.data)) for(auto i = 2; i < n + 2; ++ i) if(A.count((e *= f).data)) return optional<U>{n * i - A[e.data]};
+	return optional<U>{};
 }
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->

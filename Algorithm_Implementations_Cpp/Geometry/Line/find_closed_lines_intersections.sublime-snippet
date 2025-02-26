@@ -89,11 +89,11 @@ void find_closed_lines_intersections(vector<line<T>> L, auto act_while){
 		if(i == -1){
 			i = j;
 			auto it = where[i] = sweepline.insert(sweepline.lower_bound(L[i]), {L[i], i});
-			if(it != sweepline.begin() && check(prev(it)->id, i)) if(auto ptr = intersect_closed_segments(L[prev(it)->id], L[i])){
+			if(it != sweepline.begin() && check(prev(it)->id, i)) if(auto ptr = intersect_closed_segments<long double>(L[prev(it)->id], L[i])){
 				insert(prev(it)->id, i);
 				event.push({ptr->first, {prev(it)->id, i}});
 			}
-			if(next(it) != sweepline.end() && check(i, next(it)->id)) if(auto ptr = intersect_closed_segments(L[i], L[next(it)->id])){
+			if(next(it) != sweepline.end() && check(i, next(it)->id)) if(auto ptr = intersect_closed_segments<long double>(L[i], L[next(it)->id])){
 				insert(i, next(it)->id);
 				event.push({ptr->first, {i, next(it)->id}});
 			}
@@ -101,7 +101,7 @@ void find_closed_lines_intersections(vector<line<T>> L, auto act_while){
 		else if(i == n){
 			i = j;
 			auto it = where[i];
-			if(it != sweepline.begin() && next(it) != sweepline.end() && check(prev(it)->id, next(it)->id)) if(auto ptr = intersect_closed_segments(L[prev(it)->id], L[next(it)->id])){
+			if(it != sweepline.begin() && next(it) != sweepline.end() && check(prev(it)->id, next(it)->id)) if(auto ptr = intersect_closed_segments<long double>(L[prev(it)->id], L[next(it)->id])){
 				insert(prev(it)->id, next(it)->id);
 				event.push({ptr->first, {prev(it)->id, next(it)->id}});
 			}
@@ -112,11 +112,11 @@ void find_closed_lines_intersections(vector<line<T>> L, auto act_while){
 			auto iti = where[i];
 			sweepline.erase(where[j]);
 			auto itj = where[j] = sweepline.insert(iti, {L[j], j});
-			if(itj != sweepline.begin() && check(prev(itj)->id, j)) if(auto ptr = intersect_closed_segments(L[prev(itj)->id], L[j])){
+			if(itj != sweepline.begin() && check(prev(itj)->id, j)) if(auto ptr = intersect_closed_segments<long double>(L[prev(itj)->id], L[j])){
 				insert(prev(itj)->id, j);
 				event.push({ptr->first, {prev(itj)->id, j}});
 			}
-			if(next(iti) != sweepline.end() && check(i, next(iti)->id)) if(auto ptr = intersect_closed_segments(L[i], L[next(iti)->id])){
+			if(next(iti) != sweepline.end() && check(i, next(iti)->id)) if(auto ptr = intersect_closed_segments<long double>(L[i], L[next(iti)->id])){
 				insert(i, next(iti)->id);
 				event.push({ptr->first, {i, next(iti)->id}});
 			}

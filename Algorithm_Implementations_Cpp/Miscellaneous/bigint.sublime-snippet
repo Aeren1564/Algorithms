@@ -113,12 +113,13 @@ struct bigint{
 	// MSB at s.front()
 	bigint(const string &s, unsigned int base){
 		assert(base >= 2);
+		int pos = 0;
+		while(pos < (int)s.size() && (s[pos] == '-' || s[pos] == '+')){
+			if(s[pos] == '-') sign = !sign;
+			++ pos;
+		}
+		assert(pos < (int)s.size());
 		if(base == 2){
-			int pos = 0;
-			while(pos < (int)s.size() && (s[pos] == '-' || s[pos] == '+')){
-				if(s[pos] == '-') sign = !sign;
-				++ pos;
-			}
 			for(auto i = (int)s.size() - 1; i >= pos; i -= width){
 				T x = 0;
 				for(auto j = max(pos, i - width + 1); j <= i; ++ j){
@@ -130,39 +131,127 @@ struct bigint{
 			while(!data.empty() && !data.back()) data.pop_back();
 		}
 		else if(base <= 10){
-			int pos = 0;
-			while(pos < (int)s.size() && (s[pos] == '-' || s[pos] == '+')){
-				if(s[pos] == '-') sign = !sign;
-				++ pos;
-			}
 			bigint x{};
-			for(auto d: s){
-				assert(isdigit(d));
-				x = base * x + (d - '0');
+			for(auto i = pos; i < (int)s.size(); ++ i){
+				assert(isdigit(s[i]));
+				x = base * x + (s[i] - '0');
 			}
+			if(sign) x = -x;
 			*this = x;
 		}
 		else if(base == 16){
 			// 0, ..., 9, A, B, C, D, E, F
-			int pos = 0;
-			while(pos < (int)s.size() && (s[pos] == '-' || s[pos] == '+')){
-				if(s[pos] == '-') sign = !sign;
-				++ pos;
-			}
 			bigint x{};
-			for(auto d: s){
-				assert(isdigit(d) || isupper(d) && d <= 'F');
-				x = base * x + (isdigit(d) ? d - '0' : d - 'A' + 10);
+			for(auto i = pos; i < (int)s.size(); ++ i){
+				assert(isdigit(s[i]) || isupper(s[i]) && s[i] <= 'F');
+				x = base * x + (isdigit(s[i]) ? s[i] - '0' : s[i] - 'A' + 10);
 			}
+			if(sign) x = -x;
 			*this = x;
 		}
 		else assert(false);
-		if(sign){
-			if(data.empty()) sign = 0;
-			else _negate(data);
-		}
 		_trim();
 		assert(_is_valid());
+	}
+	bool has_single_bit() const{
+		assert(sign == 0);
+		int cnt = 0;
+		for(auto x: data){
+			cnt += __builtin_popcountll(x);
+			if(cnt == 2) return false;
+		}
+		return cnt == 1;
+	}
+	int bit_width() const{
+		assert(sign == 0);
+		if(data.empty()) return 0;
+		return __lg(data.back()) + 64 * ((int)data.size() - 1) + 1;
+	}
+	bigint bit_ceil() const{
+		if(*this <= 1) return bigint{1};
+		return bigint{1} << (*this - 1).bit_width();
+	}
+	bigint bit_floor() const{
+		if(*this == 0) return 0;
+		return bigint{1} << this->bit_width() - 1;
+	}
+	int popcount() const{
+		assert(sign == 0);
+		int cnt = 0;
+		for(auto x: data) cnt += __builtin_popcountll(x);
+		return cnt;
+	}
+	int countr_zero() const{
+		assert(sign == 0);
+		int res = 0;
+		for(auto i = 0; i < (int)data.size(); ++ i){
+			if(data[i]){
+				res += __builtin_ctzll(data[i]);
+				break;
+			}
+			res += 64;
+		}
+		return res;
+	}
+	int countr_one() const{
+		assert(sign == 0);
+		int res = 0;
+		for(auto i = 0; i < (int)data.size(); ++ i){
+			if(data[i] != ~T{0}){
+				res += __builtin_ctzll(~data[i]);
+				break;
+			}
+			res += 64;
+		}
+		return res;
+	}
+	int find_first() const{
+		assert(sign == 0);
+		if(!*this) return numeric_limits<int>::max();
+		int i = 0;
+		while(!data[i]) ++ i;
+		return 64 * i + __builtin_ctzll(data[i]);
+	}
+	int find_next(int pos) const{
+		assert(sign == 0);
+		assert(0 <= pos);
+		int b = (pos + 1) / 64;
+		if(b >= (int)data.size()) return numeric_limits<int>::max();
+		if(data[b] >> (pos + 1) % 64) return __builtin_ctzll(data[b] >> (pos + 1) % 64) + pos + 1;
+		++ b;
+		while(!data[b]) ++ b;
+		return 64 * b + __builtin_ctzll(data[b]);
+	}
+	int find_last() const{
+		assert(sign == 0);
+		if(!*this) return -1;
+		return 64 * ((int)data.size() - 1) + __builtin_ctzll(data.back());
+	}
+	int find_prev(int pos) const{
+		assert(sign == 0);
+		assert(0 <= pos);
+		if(!*this) return -1;
+		int b = pos / 64;
+		if(b >= (int)data.size()) return 64 * ((int)data.size() - 1) + __builtin_ctzll(data.back());
+		if(data[b] << 64 - pos) return __lg(data[b] << 64 - pos >> 64 - pos) + 64 * b;
+		-- b;
+		while(b >= 0 && !data[b]) -- b;
+		return b >= 0 ? __builtin_ctzll(data[b]) : -1;
+	}
+	bool operator[](int pos) const{
+		assert(sign == 0);
+		assert(0 <= pos);
+		if(pos / 64 < (int)data.size()) return data[pos / 64] >> pos % 64 & 1;
+		return false;
+	}
+	void set(int pos, bool x){
+		assert(sign == 0);
+		assert(0 <= pos);
+		if(pos / 64 < (int)data.size()) if((data[pos / 64] >> pos % 64 & 1) != x) data[pos / 64] ^= T{1} << pos % 64;
+		else if(x){
+			data.resize(pos / 64 + 1, pad[sign]);
+			data[pos / 64] ^= T{1} << pos % 64;
+		}
 	}
 	// MSB at back()
 	template<class U, typename enable_if<is_integral_v<U>>::type* = nullptr>
@@ -247,6 +336,39 @@ friend bool operator OP(U x, const bigint &y){\
 // TODO: Make this more efficient
 COMPARE_OP(==) COMPARE_OP(!=) COMPARE_OP(<) COMPARE_OP(<=) COMPARE_OP(>=) COMPARE_OP(>)
 #undef COMPARE_OP
+	bigint &operator>>=(const bigint &_x){
+		assert(0 <= _x && _x <= numeric_limits<int>::max());
+		int x = int(_x);
+		if(x == 0) return *this;
+		if((int)data.size() <= x / 64){
+			data.clear();
+			return *this;
+		}
+		data.erase(data.begin(), data.begin() + x / 64);
+		data.push_back(pad[sign]);
+		x %= 64;
+		for(auto i = 0; i < (int)data.size() - 1; ++ i) data[i] = data[i + 1] << 64 - x | data[i] >> x;
+		_trim();
+		return *this;
+	}
+	bigint operator>>(const bigint &x) const{
+		return bigint(*this) >>= x;
+	}
+	bigint &operator<<=(const bigint &_x){
+		assert(0 <= _x && _x <= numeric_limits<int>::max());
+		int x = int(_x);
+		if(x == 0) return *this;
+		data.insert(data.begin(), x / 64, T{0});
+		data.push_back(pad[sign]);
+		const int upto = x / 64;
+		x %= 64;
+		for(auto i = (int)data.size() - 1; i >= upto; -- i) data[i] = data[i] << x | (i > 0 ? data[i - 1] >> 64 - x : T{0});
+		_trim();
+		return *this;
+	}
+	bigint operator<<(const bigint &x) const{
+		return bigint(*this) <<= x;
+	}
 	bigint &operator&=(const bigint &x){
 		if(data.size() < x.data.size()) data.resize(x.data.size(), pad[sign]);
 		for(auto i = 0; i < (int)x.data.size(); ++ i) data[i] &= x.data[i];
@@ -480,8 +602,9 @@ friend bigint operator OP(U x, const bigint &y){\
 	return bigint(y) APPLY_OP bigint(x);\
 }
 // TODO: Make this more efficient
-BINARY_OP(&=, &) BINARY_OP(|=, |) BINARY_OP(^=, ^) BINARY_OP(+=, +) BINARY_OP(-=, -) BINARY_OP(*=, *) BINARY_OP(/=, /) BINARY_OP(%=, %)
+BINARY_OP(>>=, >>) BINARY_OP(<<=, <<) BINARY_OP(&=, &) BINARY_OP(|=, |) BINARY_OP(^=, ^) BINARY_OP(+=, +) BINARY_OP(-=, -) BINARY_OP(*=, *) BINARY_OP(/=, /) BINARY_OP(%=, %)
 #undef BINARY_OP
+	// TODO: Implement half-gcd
 	friend bigint gcd(const bigint &x, const bigint &y){
 		if(x.sign || y.sign) return gcd(abs(x), abs(y));
 		return y ? gcd(y, x % y) : x;

@@ -1,0 +1,88 @@
+<snippet>
+	<content><![CDATA[
+// f is a multiplicative function satisfying
+// 0. f(1) = 1
+// 1. f(p) = coef[0] + coef[1] * p + ... + coef[deg - 1] * p^(deg - 1) and
+// 2. f(p^e) = eval(p, e)
+// for prime p and integer e >= 1
+template<class T, class F1>
+struct min25_sieve{
+	vector<T> coef;
+	F1 eval;
+	int th;
+	vector<int> prime;
+	min25_sieve(const vector<T> &coef, F1 eval, int th): th(th), coef(coef), eval(eval){
+		th = max(th, 3);
+		prime = {2, 3};
+		vector<bool> is_prime(th + 1, true);
+		for(auto p = 5, delta = 2; p <= th; p += delta, delta = 6 - delta) if(is_prime[p]){
+			prime.push_back(p);
+			for(auto q = 3 * p; q <= th; q += 2 * p) is_prime[q] = false;
+		}
+	}
+	// Returns 0^d + ... + (base-1)^d
+	// O(d * log(d) + inverse_in_T())
+	T _power_sum(long long base, int d){
+		assert(d >= 0);
+		vector<T> value(d + 2), fact(d + 2, 1), pref(d + 3, 1), suff(d + 3, 1);
+		for(auto x = 0; x <= d; ++ x){
+			T temp = x;
+			value[x + 1] = 1;
+			for(auto e = d; e; e >>= 1, temp *= temp) if(e & 1) value[x + 1] *= temp;
+			value[x + 1] += value[x];
+			pref[x + 1] = pref[x] * (base - x) / (x + 1);
+		}
+		for(auto x = d + 1; x >= 1; -- x) suff[x] = suff[x + 1] * (base - x) / (d + 2 - x);
+		T res = 0;
+		for(auto x = 0; x <= d + 1; ++ x) res += value[x] * pref[x] * suff[x + 1] * (d + 1 - x & 1 ? -1 : 1);
+		return res;
+	}
+	// list of floor(n/k) at all distinct value of floor(n/k) in increasing order of k
+	vector<long long> block;
+	// O(n^3/4)
+	vector<T> query(long long n){
+		assert(1LL * prime.back() * prime.back() > n);
+		block.clear();
+		for(auto low = 1LL, high = 0LL; low <= n; low = high + 1){
+			long long q = n / low;
+			high = n / q;
+			block.push_back(q);
+		}
+		const int nb = (int)block.size();
+		const int cut = sqrtl(n);
+		vector<T> prime_power((int)prime.size(), 1), prime_power_prefix((int)prime.size() + 1);
+		vector<T> s(nb), res(nb);
+		for(auto d = 0; d < (int)coef.size(); ++ d){
+			for(auto i = 0; i < nb; ++ i) s[i] = _power_sum(block[i] + 1, d) - _power_sum(2, d);
+			for(auto i = 0; i < (int)prime.size(); ++ i) prime_power_prefix[i + 1] = prime_power_prefix[i] + prime_power[i];
+			for(auto ns = nb, j = 0; 1LL * prime[j] * prime[j] <= n; ++ j){
+				while(ns > 0 && 1LL * prime[j] * prime[j] > block[ns - 1]) -- ns;
+				for(auto i = 0; i < ns; ++ i){
+					long long x = block[i] / prime[j];
+					s[i] -= prime_power[j] * ((x <= cut ? s[nb - x] : s[n / x - 1]) - prime_power_prefix[j]);
+				}
+			}
+			for(auto i = 0; i < nb; ++ i) res[i] += coef[d] * s[i];
+			for(auto i = 0; i < (int)prime.size(); ++ i) prime_power[i] *= prime[i];
+		}
+		s = res;
+		for(auto ns = 0, j = int(partition_point(prime.begin(), prime.end(), [&](int p){ return 1LL * p * p <= n; }) - prime.begin()) - 1; j >= 0; -- j){
+			while(ns < nb && 1LL * prime[j] * prime[j] <= block[ns]) ++ ns;
+			for(auto i = 0; i < ns; ++ i){
+				long long p_power = prime[j];
+				for(auto c = 1; p_power <= block[i] / prime[j]; ++ c, p_power *= prime[j]){
+					long long x = block[i] / p_power;
+					res[i] += eval(prime[j], c) * ((x <= cut ? res[nb - x] : res[n / x - 1]) - s[nb - prime[j]]) + eval(prime[j], c + 1);
+				}
+			}
+		}
+		for(auto &x: res) ++ x;
+		return res;
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>min25_sieve</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

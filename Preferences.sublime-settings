@@ -12,6 +12,7 @@
 	],
 	"index_files": true,
 	"shift_tab_unindent": true,
+	"show_encoding": true,
 	"tab_completion": false,
 	"tab_size": 2,
 	"theme": "Default.sublime-theme",

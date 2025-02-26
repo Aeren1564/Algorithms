@@ -6,8 +6,9 @@
 //  list of trapzoids in increasing order of x-coordinates,
 //  list of adjacency info
 // }
-// where a trapzoid given by the tuple (xl, xr, {i0, j0}, {i1, j1}) is defined by the lines X=xl, X=xr, segment(i0, j0), and segment(i1, j1) where segment(i, j) is the next edge of the j-th vertex of the i-th polygon (i=0 denotes the outer one), and
-// an adjacency info given by the tuple (i, j) is that the i-th trapzoid and the j-th trapzoids are adjacent with i-th one on the left.
+// Trapzoid given by the tuple (xl, xr, {i0, j0}, {i1, j1}) is defined by the lines X=xl, X=xr, low_segment(i0, j0), and high_segment(i1, j1) where segment(i, j) is the next edge of the j-th vertex of the i-th polygon (i=0 denotes the outer one)
+// Adjacency info given by the tuple (i, j) is that the i-th trapzoid and the j-th trapzoids are adjacent with i-th one on the left.
+// T must be able to hold the cube of max coordinate
 // O(n * log(n)) where n is the total number of vertices
 // Requires point
 template<class T>
@@ -98,7 +99,50 @@ trapzoidal_decomposition(const vector<vector<point<T>>> &a){
 			}
 		}
 	}
-	return {trapzoid, edge};
+	// Remove empty trapzoids
+	vector<int> reduced_index((int)trapzoid.size(), -1);
+	map<int, list<int>> event;
+	auto get_low_and_high = [&](int u)->array<array<T, 2>, 2>{
+		auto [i, j] = get<2>(trapzoid[u]);
+		auto [k, l] = get<3>(trapzoid[u]);
+		auto p = a[i][j], q = a[i][(j + 1) % (int)a[i].size()];
+		auto r = a[k][l], s = a[k][(l + 1) % (int)a[k].size()];
+		auto low = array{p.y * (q.x - sweep) + q.y * (sweep - p.x), q.x - p.x};
+		auto high = array{r.y * (s.x - sweep) + s.y * (sweep - r.x), s.x - r.x};
+		if(low[1] < 0) low = {-low[0], -low[1]};
+		if(high[1] < 0) high = {-high[0], -high[1]};
+		return {low, high};
+	};
+	vector<array<int, 2>> reduced_edge;
+	sweep = a[0][0].x - 1;
+	for(auto b: a) for(auto p: b) sweep = min(sweep, p.x);
+	for(auto u = 0, cnt = 0; u < (int)trapzoid.size(); ++ u){
+		if(get<0>(trapzoid[u]) == get<1>(trapzoid[u])) continue;
+		reduced_index[u] = cnt ++;
+		if(sweep < get<0>(trapzoid[u])){
+			sweep = get<0>(trapzoid[u]);
+			event[sweep].sort([&](int u, int v){
+				auto low_u = get_low_and_high(u)[0], low_v = get_low_and_high(v)[0];
+				return low_u[0] * low_v[1] < low_v[0] * low_u[1];
+			});
+		}
+		auto [low_u, high_u] = get_low_and_high(u);
+		auto &cur = event[sweep];
+		for(; !cur.empty(); cur.pop_front()){
+			int v = cur.front();
+			auto [low_v, high_v] = get_low_and_high(v);
+			if(high_v[0] * low_u[1] > low_u[0] * high_v[1]) break;
+		}
+		for(; !cur.empty(); cur.pop_front()){
+			int v = cur.front();
+			auto [low_v, high_v] = get_low_and_high(v);
+			if(low_v[0] * high_u[1] < high_u[0] * low_v[1]) reduced_edge.push_back({reduced_index[v], reduced_index[u]});
+			if(high_v[0] * high_u[1] >= high_u[0] * high_v[1]) break;
+		}
+		event[get<1>(trapzoid[u])].push_back(u);
+	}
+	trapzoid.erase(remove_if(trapzoid.begin(), trapzoid.end(), [&](const auto &x){ return get<0>(x) == get<1>(x); }), trapzoid.end());
+	return {trapzoid, reduced_edge};
 }
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
