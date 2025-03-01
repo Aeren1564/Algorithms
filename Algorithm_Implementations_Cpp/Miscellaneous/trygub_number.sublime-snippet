@@ -1,0 +1,61 @@
+<snippet>
+	<content><![CDATA[
+// Source: https://codeforces.com/blog/entry/115626
+template<class T>
+struct trygub_number
+{
+	T base;
+	trygub_number(T base): base(base){ }
+	map<int, T> lazy_digit;
+	vector<typename decltype(lazy_digit)::const_iterator> lazy_delete;
+	// x <- 0
+	void clear(){
+		lazy_digit.clear();
+	}
+	// x += delta * base^pos
+	// Amortized O(log(n))
+	void update(int pos, T delta){
+		assert(pos >= 0);
+		if(delta == T{0}) return;
+		auto it = lazy_digit.insert({pos, 0}).first;
+		it->second += delta;
+		while(true){
+			T delta = it->second / base;
+			if(delta == T{0}) break;
+			it->second -= delta * base;
+			if(it->second == T{0}) lazy_delete.push_back(it);
+			if(next(it) == lazy_digit.end() || next(it)->first != pos + 1) lazy_digit.insert(next(it), {pos + 1, 0});
+			++ it;
+			it->second += delta;
+			++ pos;
+		}
+		if(it->second == T{0}) lazy_delete.push_back(it);
+		while(!lazy_delete.empty()){
+			auto it = lazy_delete.back();
+			lazy_delete.pop_back();
+			lazy_digit.erase(it);
+		}
+	}
+	// Returns floor(x / base^pos) mod pos
+	// O(log(n))
+	T get_digit(int pos){
+		assert(pos >= 0);
+		auto it = lazy_digit.lower_bound(pos);
+		T res = 0;
+		if(it != lazy_digit.end() && it->first == pos) res = it->second;
+		if(it != lazy_digit.begin() && prev(it)->second < 0) -- res;
+		if(res < 0) res += base;
+		return res;
+	}
+	// Returns 1 if x > 0, 0 if x = 0, otherwise -1
+	int compare_with_zero() const{
+		if(lazy_digit.empty()) return 0;
+		return lazy_digit.rbegin()->second > 0 ? 1 : -1;
+	}
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>trygub_number</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
