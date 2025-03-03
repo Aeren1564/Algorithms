@@ -273,6 +273,7 @@ auto make_static_top_tree(F1 compress_path, F2 point_to_path, F3 rake, F4 path_t
 // Consider a dynamic programming over a tree with state_cnt number of states dp[u][0], ..., dp[u][state_cnt - 1]
 // where the recurrence is given by dp[u][i] = base_value(u)[i] * \prod_{v is child of u} dot(matrix[i], dp[v]), and the underlying ring is commutative.
 // Construct a static top tree to compute dp[root] dynamically
+// dp[root][i] is the sum of i-th row in the query result
 template<class T, size_t state_cnt, class F1, class F2, class F3>
 auto make_static_top_tree_from_matrix_dp(
 	F1 get_base_value,
