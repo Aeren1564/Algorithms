@@ -1,87 +1,97 @@
 <snippet>
 	<content><![CDATA[
 // Requires graph
-template<class T>
+template<class T, int level>
 struct dfs_forest{
+	static_assert(0 <= level && level <= 2);
 	int n;
-	vector<T> dist;
 	vector<int> pv;
 	vector<int> pe;
 	vector<int> order;
 	vector<int> pos;
 	vector<int> end;
 	vector<int> size;
+	vector<int> depth;
 	vector<int> root_of;
 	vector<int> root;
-	vector<int> depth;
+	vector<T> dist;
 	vector<int> min_depth;
 	vector<int> min_depth_origin;
 	vector<int> min_depth_spanning_edge;
 	// extra_edge[u]: adjacent edges of u which is not part of the spanning forest found during the last dfs-like run.
 	vector<vector<int>> extra_edge;
 	vector<int> was;
-	dfs_forest(){ }
-	dfs_forest(int n){ init(n); }
-	template<class U>
-	dfs_forest(const graph<U> &g){ init(g.n); dfs_all(g); }
-	template<class U>
-	dfs_forest(const graph<U> &g, const vector<int> &src){ init(g.n); dfs(g, src); }
 	void init(int n){
 		this->n = n;
-		pv.assign(n, -1);
-		pe.assign(n, -1);
+		pv.resize(n, -1);
+		pe.resize(n, -1);
+		if constexpr(level >= 2) for(auto u: order){
+			extra_edge[u].clear();
+			extra_edge[u].shrink_to_fit();
+		}
 		order.clear();
-		pos.assign(n, -1);
-		end.assign(n, -1);
-		size.assign(n, 0);
-		root_of.assign(n, -1);
-		root.clear();
-		depth.assign(n, -1);
-		min_depth.assign(n, -1);
-		min_depth_origin.assign(n, -1);
-		min_depth_spanning_edge.assign(n, -1);
-		dist.resize(n);
-		extra_edge.assign(n, {});
-		was.assign(n, -2);
-		attempt = -1;
+		pos.resize(n, -1);
+		end.resize(n, -1);
+		size.resize(n, 0);
+		depth.resize(n, -1);
+		if constexpr(level >= 1){
+			root_of.resize(n, -1);
+			root.clear();
+			dist.resize(n);
+		}
+		if constexpr(level >= 2){
+			min_depth.resize(n, -1);
+			min_depth_origin.resize(n, -1);
+			min_depth_spanning_edge.resize(n, -1);
+			extra_edge.resize(n, {});
+		}
+		was.resize(n, -2);
 	}
-	int attempt;
+	int attempt = -1;
 	// O(# of nodes reachable from u)
 	template<class U, class F>
 	void _dfs(const graph<U> &g, int u, F UT, T base_dist){
 		depth[u] = 0;
-		dist[u] = base_dist;
-		root_of[u] = u;
-		root.push_back(u);
 		pv[u] = pe[u] = -1;
+		if constexpr(level >= 1){
+			dist[u] = base_dist;
+			root_of[u] = u;
+			root.push_back(u);
+		}
 		auto recurse = [&](auto self, int u)->void{
 			was[u] = attempt;
 			pos[u] = (int)order.size();
 			order.push_back(u);
 			size[u] = 1;
-			min_depth[u] = depth[u];
-			min_depth_origin[u] = u;
-			min_depth_spanning_edge[u] = -1;
-			extra_edge[u].clear();
+			if constexpr(level >= 2){
+				min_depth[u] = depth[u];
+				min_depth_origin[u] = u;
+				min_depth_spanning_edge[u] = -1;
+				extra_edge[u].clear();
+			}
 			for(auto id: g.adj[u]){
 				if(id == pe[u] || g.ignore && g.ignore(id)) continue;
 				int v = g(u, id);
 				if(was[v] == attempt){
-					if(min_depth[u] > depth[v]){
-						min_depth[u] = depth[v];
-						min_depth_spanning_edge[u] = id;
+					if constexpr(level >= 2){
+						if(min_depth[u] > depth[v]){
+							min_depth[u] = depth[v];
+							min_depth_spanning_edge[u] = id;
+						}
+						if(pe[v] != id) extra_edge[u].push_back(id);
 					}
-					if(pe[v] != id) extra_edge[u].push_back(id);
 					continue;
 				}
 				depth[v] = depth[u] + 1;
-				dist[v] = UT(g.edge[id].cost, dist[u]);
 				pv[v] = u;
 				pe[v] = id;
-				root_of[v] = root_of[u];
+				if constexpr(level >= 1){
+					dist[v] = UT(g.edge[id].cost, dist[u]);
+					root_of[v] = root_of[u];
+				}
 				self(self, v);
 				size[u] += size[v];
-				if(min_depth[u] > min_depth[v]){
+				if constexpr(level >= 2) if(min_depth[u] > min_depth[v]){
 					min_depth[u] = min_depth[v];
 					min_depth_origin[u] = min_depth_origin[v];
 					min_depth_spanning_edge[u] = min_depth_spanning_edge[v];
@@ -94,21 +104,23 @@ struct dfs_forest{
 	// O(# of nodes reachable from src)
 	template<class U, class F = plus<>>
 	void dfs(const graph<U> &g, const vector<int> &src, F UT = plus<>(), T base_dist = T{}){
-		assert(g.n <= n);
-		root.clear(), order.clear();
+		init(g.n);
+		if constexpr(level >= 1) root.clear();
+		order.clear();
 		++ attempt;
 		for(auto u: src){
-			assert(0 <= u && u < g.n);
+			assert(0 <= u && u < n);
 			if(was[u] != attempt) _dfs(g, u, UT, base_dist);
 		}
 	}
 	// O(n + m)
 	template<class U, class F = plus<>>
 	void dfs_all(const graph<U> &g, F UT = plus<>(), T base_dist = T{}){
-		assert(g.n <= n);
-		root.clear(), order.clear();
+		init(g.n);
+		if constexpr(level >= 1) root.clear();
+		order.clear();
 		++ attempt;
-		for(auto u = 0; u < g.n; ++ u) if(was[u] != attempt) _dfs(g, u, UT, base_dist);
+		for(auto u = 0; u < n; ++ u) if(was[u] != attempt) _dfs(g, u, UT, base_dist);
 	}
 	// Check if u is visited during the last dfs-like call.
 	bool visited(int u) const{
@@ -121,9 +133,9 @@ struct dfs_forest{
 		return pos[u] <= pos[v] && end[v] <= end[u];
 	}
 	vector<int> get_path(int u, int v) const{
-		assert(visited(u) && visited(v) && root_of[u] == root_of[v]);
+		assert(visited(u) && visited(v));
 		vector<int> left, right;
-		while(u != v){
+		while(u != v && ~pv[u] && ~pv[v]){
 			if(depth[u] >= depth[v]){
 				left.push_back(u);
 				u = pv[u];
@@ -133,6 +145,7 @@ struct dfs_forest{
 				v = pv[v];
 			}
 		}
+		assert(u == v);
 		left.push_back(u);
 		left.insert(left.end(), right.rbegin(), right.rend());
 		return left;
@@ -141,6 +154,7 @@ struct dfs_forest{
 	// If must_contain_root = true, the sought cycle is forced to contain one of the root of the trees.
 	template<class U>
 	optional<pair<int, vector<int>>> find_any_cycle(const graph<U> &g, bool must_contain_root = false) const{
+		static_assert(level >= 2);
 		for(auto u: order) for(auto id: extra_edge[u]){
 			int v = g(u, id);
 			if(!ancestor_of(v, u) || must_contain_root && root_of[v] != v) continue;
@@ -153,6 +167,22 @@ struct dfs_forest{
 		return {};
 	}
 };
+
+// pv, pe, order, pos, end, size, depth
+template<class T>
+auto make_basic_dfs_forest(){
+	return dfs_forest<T, 0>();
+}
+// (basic_set), root_of, root, dist
+template<class T>
+auto make_augmented_dfs_forest(){
+	return dfs_forest<T, 1>();
+}
+// (augmented_set), min_depth, min_depth_origin, min_depth_spanning_edge, extra_edge
+template<class T>
+auto make_full_dfs_forest(){
+	return dfs_forest<T, 2>();
+}
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
 	<tabTrigger>dfs_forest</tabTrigger> -->
