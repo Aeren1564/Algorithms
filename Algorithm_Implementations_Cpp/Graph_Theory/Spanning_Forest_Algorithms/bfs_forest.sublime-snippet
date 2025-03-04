@@ -15,11 +15,6 @@ struct bfs_forest{
 	vector<int> root;
 	vector<T> dist;
 	vector<int> was;
-	bfs_forest(){ }
-	template<class U>
-	bfs_forest(const graph<U> &g){ bfs_all(g); }
-	template<class U>
-	bfs_forest(const graph<U> &g, const vector<int> &src){ bfs(g, src); }
 	void init(int n){
 		this->n = n;
 		pv.resize(n, -1);
@@ -28,9 +23,11 @@ struct bfs_forest{
 		pos.resize(n, -1);
 		size.resize(n, -1);
 		depth.resize(n, -1);
-		root_of.resize(n, -1);
-		root.clear();
-		dist.resize(n);
+		if constexpr(level >= 1){
+			root_of.resize(n, -1);
+			root.clear();
+			dist.resize(n);
+		}
 		was.resize(n, -2);
 	}
 	int attempt = -1;
@@ -82,8 +79,6 @@ struct bfs_forest{
 	template<class U, class F = plus<>>
 	void bfs(const graph<U> &g, const vector<int> &src, F UT = plus<>(), T base_dist = T{}){
 		init(g.n);
-		if constexpr(level >= 1) root.clear();
-		order.clear();
 		for(auto u: src) assert(0 <= u && u < n);
 		++ attempt;
 		_bfs(g, src, UT, base_dist);
@@ -92,8 +87,6 @@ struct bfs_forest{
 	template<class U, class F = plus<>>
 	void bfs_all(const graph<U> &g, F UT = plus<>(), T base_dist = T{}){
 		init(g.n);
-		if constexpr(level >= 1) root.clear();
-		order.clear();
 		++ attempt;
 		for(auto u = 0; u < n; ++ u) if(was[u] != attempt) _bfs(g, {u}, UT, base_dist);
 	}
