@@ -31,33 +31,31 @@ struct forest_query_solver_base{
 		assert(n >= 1);
 		this->n = n;
 		ifLCA{
-			label.assign(n, -1);
-			ascendant.assign(n, -1);
-			head.assign(n + 1, -1);
+			label.resize(n, -1);
+			ascendant.resize(n, -1);
+			head.resize(n + 1, -1);
 		}
 		ifLA{
-			stack.assign(2 * n, {});
-			valley.assign(2 * n, -1);
-			valley_cnt.assign(2 * n - 1, -1);
-			right.assign(n + 1, -1);
-			jump.assign(2 * n - 1, -1);
-			ladder.assign(2 * n - 1, {});
+			stack.resize(2 * n, {});
+			valley.resize(2 * n, -1);
+			valley_cnt.resize(2 * n - 1, -1);
+			right.resize(n + 1, -1);
+			jump.resize(2 * n - 1, -1);
+			ladder.resize(2 * n - 1, {});
 		}
 		order.clear();
-		pos.assign(n, -1);
-		end.assign(n, -1);
-		root_of.assign(n, -1);
-		depth.assign(n, -1);
-		was.assign(n, -2);
-		attempt = -1;
+		pos.resize(n, -1);
+		end.resize(n, -1);
+		root_of.resize(n, -1);
+		depth.resize(n, -1);
+		was.resize(n, -2);
 	}
-	int attempt;
+	int attempt = -1;
 	// O(n)
 	template<class T>
 	void build(const graph<T> &g, const vector<int> &src){
-		assert(g.n <= n);
+		init(g.n);
 		++ attempt;
-		order.clear();
 		int timer = 1;
 		auto dfs = [&](auto self, int u, int pe)->void{
 			assert(was[u] != attempt);
@@ -77,6 +75,7 @@ struct forest_query_solver_base{
 			end[u] = (int)order.size();
 		};
 		for(auto r: src){
+			assert(0 <= r && r < n);
 			if(was[r] == attempt) continue;
 			depth[r] = 0;
 			root_of[r] = r;
