@@ -1,0 +1,78 @@
+<snippet>
+	<content><![CDATA[
+// TODO: optimize constant factor
+// Source: https://maspypy.com/fps-composition-and-compositional-inverse-part-1-compositional-inverse-and-power-projection
+// Requires modular, number_theoric_transform, and power_series
+// Returns the list of \sum_{j=0}^{n-1} w_j * [X^j]f(X)^i for i = 0, ..., m-1
+// O(n * log(n)^2 + m * log(m))
+template<class T, class FFT = ntt>
+vector<T> power_series_power_projection(const vector<T> &w, const power_series_base<T, FFT> &f, int m){
+	assert(m >= 0);
+	if(m == 0) return {};
+	if(w == vector<T>((int)w.size(), T{0})) return vector<T>(m, T{0});
+	if(f == power_series_base<T, FFT>((int)f.size(), T{0})){
+		vector<T> res(m);
+		res[0] = w[0];
+		return res;
+	}
+	if(f[0] != T{0}){
+		vector<T> fact(m, 1), invfact(m, 1);
+		for(auto i = 2; i < m; ++ i) fact[i] = fact[i - 1] * i;
+		invfact[m - 1] = T{1} / fact[m - 1];
+		for(auto i = m - 2; i >= 2; -- i) invfact[i] = invfact[i + 1] * (i + 1);
+		vector<T> a = power_series_power_projection<T, FFT>(w, f.clear_range(0, 1), m);
+		for(auto i = 0; i < m; ++ i) a[i] *= invfact[i];
+		vector<T> b(m, 1);
+		for(auto i = 1; i < m; ++ i) b[i] = b[i - 1] * f[0];
+		for(auto i = 0; i < m; ++ i) b[i] *= invfact[i];
+		a = FFT::convolute(a, b);
+		a.resize(m);
+		for(auto i = 0; i < m; ++ i) a[i] *= fact[i];
+		return a;
+	}
+	int nr = 1 << __lg((int)w.size()) + (__builtin_popcount((int)w.size()) != 1), nc = 1;
+	vector<T> p(nr, T{0}), q(-f), neg_q;
+	copy(w.begin(), w.end(), p.rbegin());
+	q.resize(nr, T{0});
+	for(; nr > 1; nr >>= 1, nc <<= 1){
+		neg_q.assign(nr * (nc + 1), T{0});
+		neg_q[nc] = T{1};
+		for(auto i = 0; i < nr; ++ i) for(auto j = 0; j < nc; ++ j) neg_q[(nc + 1) * i + j] = (i & 1 ? -1 : 1) * q[nc * i + j];
+		FFT::convolute_2d(nr, nc, p.data(), nr, nc + 1, neg_q.data());
+		for(auto i = 1; i < nr; i += 2) for(auto j = 0; j < nc << 1; ++ j) p[(nc << 1) * (i >> 1) + j] = FFT::res[(nc << 1) * i + j];
+		FFT::convolute_2d(nr, nc, q.data(), nr, nc + 1, neg_q.data());
+		for(auto i = 0; i < nr; i += 2) for(auto j = 0; j < nc << 1; ++ j) q[(nc << 1) * (i >> 1) + j] = FFT::res[(nc << 1) * i + j];
+		for(auto i = 0; i < nr; i += 2) for(auto j = 0; j < nc; ++ j) q[(nc << 1) * (i >> 1) + nc + j] += neg_q[(nc + 1) * i + j];
+	}
+	assert(q == vector<T>(nc, T{0}));
+	reverse(p.begin(), p.end());
+	p.resize(m, T{0});
+	return p;
+}
+// Returns the first n terms of the power series g with f(g(X)) = g(f(X)) = X
+// O(n * log(n)^2)
+template<class T, class FFT = ntt>
+power_series_base<T, FFT> power_series_compositional_inverse(const power_series_base<T, FFT> &f, int n){
+	assert(n >= 0 && (int)f.size() >= 2 && f[0] == T{0} && f[1] != T{0});
+	if(n == 0) return {};
+	if(n == 1) return power_series_base<T, FFT>{0};
+	const T multiplier = T{1} / f[1];
+	vector<T> w(n);
+	w[n - 1] = 1;
+	auto value = power_series_power_projection<T, FFT>(w, f * multiplier, n);
+	// n[X^{n-1}]f(X)^i = [X^{n-1-i}]i*(g(X)/X)^{-{n-1}} by the lagrange inversion formula for FPS
+	for(auto i = 1; i < n; ++ i) value[i] = value[i] / i * (n - 1);
+	assert(value[n - 1] == T{1});
+	power_series_base<T, FFT> g(vector<T>(value.rbegin(), value.rend() - 1));
+	g = (g.log(n - 1) / -(n - 1)).exp(n - 1);
+	g.insert(g.begin(), T{0});
+	T power = 1;
+	for(auto i = 1; i < (int)g.size(); ++ i) g[i] *= power *= multiplier;
+	return g;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>power_series_compositional_inverse</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
