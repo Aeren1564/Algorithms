@@ -14,7 +14,7 @@ using namespace numbers;
 	#define debug_endl() 42
 	#define debug(...) 42
 	#define debug2(...) 42
-	#define debugbin(...) 42
+	#define debug_bin(...) 42
 #endif
 
 
