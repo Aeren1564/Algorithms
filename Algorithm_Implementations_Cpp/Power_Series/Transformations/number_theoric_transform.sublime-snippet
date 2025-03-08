@@ -5,8 +5,8 @@
 // Requires modular
 template<class T>
 struct number_theoric_transform_wrapper{
-	// i \in [2^k, 2^{k+1}) holds w_{2^k+1}^{i-2^k}
-	static vector<T> root, buffer1, buffer2;
+	// For i \in [2^k, 2^{k+1}), root[i] = w_{2^k+1}^{i-2^k}
+	static vector<T> root, buffer0, buffer1, buffer2, buffer3, buffer4;
 	static void adjust_root(int n){
 		if(root.empty()) root = {1, 1};
 		for(auto k = (int)root.size(); k < n; k <<= 1){
@@ -45,14 +45,14 @@ struct number_theoric_transform_wrapper{
 	template<class T_ptr>
 	static void double_up(int n, T_ptr p){
 		assert(n && __builtin_popcount(n) == 1 && (T().mod() - 1) % (n << 1) == 0);
-		buffer1.resize(n << 1);
-		for(auto i = 0; i < n; ++ i) buffer1[i << 1] = p[i];
+		buffer0.resize(n << 1);
+		for(auto i = 0; i < n; ++ i) buffer0[i << 1] = p[i];
 		transform(n, p, true);
 		adjust_root(n << 1);
 		for(auto i = 0; i < n; ++ i) p[i] *= root[n | i];
 		transform(n, p);
-		for(auto i = 0; i < n; ++ i) buffer1[i << 1 | 1] = p[i];
-		copy(buffer1.begin(), buffer1.begin() + 2 * n, p);
+		for(auto i = 0; i < n; ++ i) buffer0[i << 1 | 1] = p[i];
+		copy(buffer0.begin(), buffer0.begin() + 2 * n, p);
 	}
 	static vector<T> res;
 	// O(n * m)
@@ -69,16 +69,64 @@ struct number_theoric_transform_wrapper{
 			return;
 		}
 		int len = n + m - 1, clen = 1 << __lg(len) + (__builtin_popcount(len) != 1);
-		buffer1.assign(clen, 0);
-		copy(p, p + n, buffer1.begin());
+		buffer0.assign(clen, T{0});
+		copy(p, p + n, buffer0.begin());
+		transform(buffer0);
+		buffer1.assign(clen, T{0});
+		copy(q, q + m, buffer1.begin());
 		transform(buffer1);
-		buffer2.assign(clen, 0);
-		copy(q, q + m, buffer2.begin());
-		transform(buffer2);
-		for(auto i = 0; i < clen; ++ i) buffer1[i] *= buffer2[i];
-		transform(buffer1, true);
+		for(auto i = 0; i < clen; ++ i) buffer0[i] *= buffer1[i];
+		transform(buffer0, true);
 		res.resize(len);
-		copy(buffer1.begin(), buffer1.begin() + len, res.begin());
+		copy(buffer0.begin(), buffer0.begin() + len, res.begin());
+	}
+	template<class T_ptr_l, class T_ptr_r>
+	static void _convolute_2d_naive(int n0, int n1, const T_ptr_l p, int m0, int m1, const T_ptr_r q){
+		res.assign(max(0, n0 + m0 - 1) * max(0, n1 + m1 - 1), T{0});
+		for(auto i0 = 0; i0 < n0; ++ i0) for(auto i1 = 0; i1 < n1; ++ i1) for(auto j0 = 0; j0 < m0; ++ j0) for(auto j1 = 0; j1 < m1; ++ j1) res[max(0, n1 + m1 - 1) * (i0 + j0) + (i1 + j1)] += p[n1 * i0 + i1] * q[m1 * j0 + j1];
+	}
+	template<class T_ptr_l, class T_ptr_r>
+	static void convolute_2d(int n0, int n1, const T_ptr_l p, int m0, int m1, const T_ptr_r q){
+		if(min(n0 + n1, m0 + m1) < 55){
+			_convolute_2d_naive(n0, n1, p, m0, m1, q);
+			return;
+		}
+		int len0 = n0 + m0 - 1, clen0 = 1 << __lg(len0) + (__builtin_popcount(len0) != 1);
+		int len1 = n1 + m1 - 1, clen1 = 1 << __lg(len1) + (__builtin_popcount(len1) != 1);
+		buffer0.assign(clen0 * clen1, T{0});
+		buffer1.assign(clen0 * clen1, T{0});
+		for(auto i = 0; i < n0; ++ i){
+			copy(p + n1 * i, p + n1 * (i + 1), buffer0.begin() + clen1 * i);
+			transform(clen1, buffer0.begin() + clen1 * i);
+		}
+		for(auto j = 0; j < clen1; ++ j){
+			buffer2.assign(clen0, T{0});
+			for(auto i = 0; i < n0; ++ i) buffer2[i] = buffer0[clen1 * i + j];
+			transform(clen0, buffer2.begin());
+			for(auto i = 0; i < clen0; ++ i) buffer0[clen1 * i + j] = buffer2[i];
+		}
+		for(auto i = 0; i < m0; ++ i){
+			copy(q + m1 * i, q + m1 * (i + 1), buffer1.begin() + clen1 * i);
+			transform(clen1, buffer1.begin() + clen1 * i);
+		}
+		for(auto j = 0; j < clen1; ++ j){
+			buffer2.assign(clen0, T{0});
+			for(auto i = 0; i < m0; ++ i) buffer2[i] = buffer1[clen1 * i + j];
+			transform(clen0, buffer2.begin());
+			for(auto i = 0; i < clen0; ++ i) buffer1[clen1 * i + j] = buffer2[i];
+		}
+		for(auto i = 0; i < clen0; ++ i) for(auto j = 0; j < clen1; ++ j) buffer0[clen1 * i + j] *= buffer1[clen1 * i + j];
+		for(auto j = 0; j < clen1; ++ j){
+			buffer2.assign(clen0, T{0});
+			for(auto i = 0; i < clen0; ++ i) buffer2[i] = buffer0[clen1 * i + j];
+			transform(clen0, buffer2.begin(), true);
+			for(auto i = 0; i < len0; ++ i) buffer0[clen1 * i + j] = buffer2[i];
+		}
+		res.resize(len0 * len1);
+		for(auto i = 0; i < len0; ++ i){
+			transform(clen1, buffer0.begin() + clen1 * i, true);
+			for(auto j = 0; j < len1; ++ j) res[len1 * i + j] = buffer0[clen1 * i + j];
+		}
 	}
 	// O(n * m)
 	template<class T_ptr_l, class T_ptr_r>
@@ -96,17 +144,17 @@ struct number_theoric_transform_wrapper{
 			return;
 		}
 		int len = n, clen = 1 << __lg(len) + (__builtin_popcount(len) != 1);
-		buffer1.assign(clen, 0);
-		copy(p, p + n, buffer1.begin());
+		buffer0.assign(clen, T{0});
+		copy(p, p + n, buffer0.begin());
+		transform(buffer0);
+		buffer1.assign(clen, T{0});
+		copy(q, q + m, buffer1.begin());
+		reverse(buffer1.begin(), buffer1.begin() + m);
 		transform(buffer1);
-		buffer2.assign(clen, 0);
-		copy(q, q + m, buffer2.begin());
-		reverse(buffer2.begin(), buffer2.begin() + m);
-		transform(buffer2);
-		for(auto i = 0; i < clen; ++ i) buffer1[i] *= buffer2[i];
-		transform(buffer1, true);
+		for(auto i = 0; i < clen; ++ i) buffer0[i] *= buffer1[i];
+		transform(buffer0, true);
 		res.resize(n - m + 1);
-		copy(buffer1.begin() + m - 1, buffer1.begin() + n, res.begin());
+		copy(buffer0.begin() + m - 1, buffer0.begin() + n, res.begin());
 	}
 	// O((n + m) * log(n + m))
 	template<class T_ptr>
@@ -116,13 +164,13 @@ struct number_theoric_transform_wrapper{
 			return;
 		}
 		int len = 2 * n - 1, clen = 1 << __lg(len) + 1;
-		buffer1.assign(clen, 0);
-		copy(p, p + n, buffer1.begin());
-		transform(buffer1);
-		for(auto i = 0; i < clen; ++ i) buffer1[i] *= buffer1[i];
-		transform(buffer1, true);
+		buffer0.assign(clen, T{0});
+		copy(p, p + n, buffer0.begin());
+		transform(buffer0);
+		for(auto i = 0; i < clen; ++ i) buffer0[i] *= buffer0[i];
+		transform(buffer0, true);
 		res.resize(len);
-		copy(buffer1.begin(), buffer1.begin() + len, res.begin());
+		copy(buffer0.begin(), buffer0.begin() + len, res.begin());
 	}
 	static void transform(vector<T> &p, bool invert = false){
 		transform((int)p.size(), p.data(), invert);
@@ -136,6 +184,17 @@ struct number_theoric_transform_wrapper{
 	static vector<T> convolute(const vector<T> &p, const vector<T> &q){
 		convolute((int)p.size(), p.data(), (int)q.size(), q.data());
 		return res;
+	}
+	static vector<vector<T>> convolute_2d(const vector<vector<T>> &p, const vector<vector<T>> &q){
+		if(p.empty() || q.empty()) return {};
+		buffer3.resize((int)p.size() * (int)p[0].size());
+		for(auto i = 0; i < (int)p.size(); ++ i) for(auto j = 0; j < (int)p[0].size(); ++ j) buffer3[(int)p[0].size() * i + j] = p[i][j];
+		buffer4.resize((int)q.size() * (int)q[0].size());
+		for(auto i = 0; i < (int)q.size(); ++ i) for(auto j = 0; j < (int)q[0].size(); ++ j) buffer4[(int)q[0].size() * i + j] = q[i][j];
+		convolute_2d((int)p.size(), (int)p[0].size(), buffer3.data(), (int)q.size(), (int)q[0].size(), buffer4.data());
+		vector<vector<T>> res_2d(max(0, (int)p.size() + (int)q.size() - 1), vector<T>(max(0, (int)p[0].size() + (int)q[0].size() - 1)));
+		for(auto i = 0; i < (int)res_2d.size(); ++ i) for(auto j = 0; j < (int)res_2d[0].size(); ++ j) res_2d[i][j] = res[(int)res_2d[0].size() * i + j];
+		return res_2d;
 	}
 	// O(m * log(m))
 	static vector<T> cross_correlation(const vector<T> &p, const vector<T> &q){
@@ -187,8 +246,11 @@ struct number_theoric_transform_wrapper{
 	}
 };
 template<class T> vector<T> number_theoric_transform_wrapper<T>::root;
+template<class T> vector<T> number_theoric_transform_wrapper<T>::buffer0;
 template<class T> vector<T> number_theoric_transform_wrapper<T>::buffer1;
 template<class T> vector<T> number_theoric_transform_wrapper<T>::buffer2;
+template<class T> vector<T> number_theoric_transform_wrapper<T>::buffer3;
+template<class T> vector<T> number_theoric_transform_wrapper<T>::buffer4;
 template<class T> vector<T> number_theoric_transform_wrapper<T>::res;
 
 using ntt = number_theoric_transform_wrapper<modular>;
