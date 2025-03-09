@@ -1,0 +1,69 @@
+<snippet>
+	<content><![CDATA[
+// Given a non-negative integer n which is not of form 4^a(8b+7),
+// returns three non-negative integers a, b, c with n=a^2+b^2+c^2
+// T must be able to hold the square of n
+// Runs in expected polynomial time assuming the extended Riemann hypothesis
+// Requires solve_fermat_two_square
+template<class T>
+array<T, 3> solve_legendre_three_square(T n){
+	assert(n >= 0);
+	array<T, 3> res{};
+	if(n <= 10'000){
+		for(auto x = T{0}; ; ++ x) for(auto y = T{0}; x * x + y * y <= n; ++ y){
+			T z = sqrtl(n - x * x - y * y);
+			if(x * x + y * y + z * z == n){
+				res = {x, y, z};
+				goto _LEGENDRE_THREE_SQUARE_SMALL_BRUTEFORCE_FINISHED;
+			}
+		}
+		_LEGENDRE_THREE_SQUARE_SMALL_BRUTEFORCE_FINISHED:;
+	}
+	else if(n % 4 == 0){
+		res = solve_legendre_three_square(n / 4);
+		for(auto &x: res) x *= 2;
+	}
+	else if(n % 8 == 7) assert(false);
+	else if(T sqn = sqrtl(n); sqn * sqn == n) res = {sqn, 0, 0};
+	else{
+		mt19937 rng(0);
+		using ull = unsigned long long;
+		auto mod_mul = [&](ull a, ull b, ull M)->ull{
+			long long res = a * b - M * ull(1.L / M * a * b);
+			return res + M * (res < 0) - M * (res >= (long long)M);
+		};
+		auto mod_pow = [&](ull b, ull e, ull mod)->ull{
+			ull res = 1;
+			for(; e; b = mod_mul(b, b, mod), e >>= 1) if(e & 1) res = mod_mul(res, b, mod);
+			return res;
+		};
+		auto is_prime = [&](ull n){
+			if(n < 2 || n % 6 % 4 != 1) return (n | 1) == 3;
+			ull s = __builtin_ctzll(n - 1), d = n >> s;
+			for(ull a: {2, 325, 9375, 28178, 450775, 9780504, 1795265022}){
+				ull p = mod_pow(a, d, n), i = s;
+				while(p != 1 && p != n - 1 && a % n && i --) p = mod_mul(p, p, n);
+				if(p != n - 1 && i != s) return false;
+			}
+			return true;
+		};
+		while((sqn + 1) * (sqn + 1) <= n) ++ sqn;
+		T x;
+		while(true){
+			x = rng() % (sqn + 1);
+			if(n % 8 == 3 && x % 2 == 1 && is_prime((n - x * x) / 2) || n % 8 != 3 && is_prime(n - x * x)) break;
+		}
+		auto [a, b] = solve_fermat_two_square((n - x * x) / (n % 8 == 3 ? 2 : 1));
+		if(a < b) swap(a, b);
+		res = n % 8 == 3 ? array{x, a + b, a - b} : array{x, a, b};
+	}
+	assert(*min_element(res.begin(), res.end()) >= 0);
+	assert(res[0] * res[0] + res[1] * res[1] + res[2] * res[2] == n);
+	return res;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>solve_legendre_three_square</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
