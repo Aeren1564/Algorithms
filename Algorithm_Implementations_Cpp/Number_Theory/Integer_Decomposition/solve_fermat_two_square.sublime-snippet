@@ -1,12 +1,13 @@
 <snippet>
 	<content><![CDATA[
-// p must be a prime congruent to 1 mod 4
+// either p = 2 or p must be a prime congruent to 1 mod 4
 // T must be able to hold the square of p
 // Return two positive integers a, b with p=a^2+b^2
 // O(log(p))
 template<class T>
 array<T, 2> solve_fermat_two_square(T p){
-	assert(p >= 5 && p % 4 == 1);
+	assert(p == 2 || p >= 5 && p % 4 == 1);
+	if(p == 2) return {1, 1};
 	using ull = unsigned long long;
 	auto mod_mul = [&](ull a, ull b, ull M)->ull{
 		long long res = a * b - M * ull(1.L / M * a * b);
@@ -41,11 +42,6 @@ array<T, 2> solve_fermat_two_square(T p){
 	assert(im * im % p == p - 1);
 	T a = im, b = 1, c = p, d = 0, e, f, norm;
 	while(c != 0 || d != 0){
-		/*
-		(a+bi)/(c+di)
-		= (a+bi)(c-di)/(c^2+d^2)
-		= ((ac+bd)+(bc-ad)i) / (c^2+d^2)
-		*/
 		norm = c * c + d * d;
 		e = (a * c + b * d + norm / 2) / norm - (2 * ((a * c + b * d) - norm * e) <= -norm);
 		f = (b * c - a * d + norm / 2) / norm - (2 * ((b * c - a * d) - norm * f) <= -norm);
