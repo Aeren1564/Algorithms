@@ -39,8 +39,7 @@ array<T, 4> solve_lagrange_four_square(T n){
 		mt19937 rng(0);
 		while(true){
 			T x = rng() % (th + 1), y = rng() % (th + 1);
-			if(n - x * x - y * y == 2) return {1, 1, x, y};
-			if(x % 2 != y % 2 && is_prime(n - x * x - y * y)){
+			if(n - x * x - y * y == 2 || x % 2 != y % 2 && is_prime(n - x * x - y * y)){
 				auto [a, b] = solve_fermat_two_square(n - x * x - y * y);
 				res = {a, b, x, y};
 				break;
@@ -68,6 +67,7 @@ array<T, 4> solve_lagrange_four_square(T n){
 			res = {(res[1] - res[0]) / 2, (res[1] + res[0]) / 2, (res[3] - res[2]) / 2, (res[3] + res[2]) / 2};
 		}
 	}
+	assert(*min_element(res.begin(), res.end()) >= 0);
 	assert(res[0] * res[0] + res[1] * res[1] + res[2] * res[2] + res[3] * res[3] == n);
 	return res;
 }
