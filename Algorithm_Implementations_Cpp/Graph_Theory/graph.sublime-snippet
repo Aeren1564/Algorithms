@@ -72,8 +72,8 @@ struct graph{
 		}
 		return res;
 	}
-	vector<array<int, 2>> weighted_neighbor(int u, int exclude = -1) const{
-		vector<array<int, 2>> res;
+	vector<pair<int, T>> weighted_neighbor(int u, int exclude = -1) const{
+		vector<pair<int, T>> res;
 		for(auto id: adj[u]){
 			if(id == exclude || ignore && ignore(id)) continue;
 			res.push_back({operator()(u, id), edge[id].cost});
