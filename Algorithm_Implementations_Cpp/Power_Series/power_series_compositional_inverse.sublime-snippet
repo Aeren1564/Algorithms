@@ -25,7 +25,7 @@ vector<T> power_series_power_projection(const vector<T> &w, const power_series_b
 		vector<T> b(m, 1);
 		for(auto i = 1; i < m; ++ i) b[i] = b[i - 1] * f[0];
 		for(auto i = 0; i < m; ++ i) b[i] *= invfact[i];
-		a = FFT::convolute(a, b);
+		a = FFT::convolve(a, b);
 		a.resize(m);
 		for(auto i = 0; i < m; ++ i) a[i] *= fact[i];
 		return a;
@@ -38,9 +38,9 @@ vector<T> power_series_power_projection(const vector<T> &w, const power_series_b
 		neg_q.assign(nr * (nc + 1), T{0});
 		neg_q[nc] = T{1};
 		for(auto i = 0; i < nr; ++ i) for(auto j = 0; j < nc; ++ j) neg_q[(nc + 1) * i + j] = (i & 1 ? -1 : 1) * q[nc * i + j];
-		FFT::convolute_2d(nr, nc, p.data(), nr, nc + 1, neg_q.data());
+		FFT::convolve_2d(nr, nc, p.data(), nr, nc + 1, neg_q.data());
 		for(auto i = 1; i < nr; i += 2) for(auto j = 0; j < nc << 1; ++ j) p[(nc << 1) * (i >> 1) + j] = FFT::res[(nc << 1) * i + j];
-		FFT::convolute_2d(nr, nc, q.data(), nr, nc + 1, neg_q.data());
+		FFT::convolve_2d(nr, nc, q.data(), nr, nc + 1, neg_q.data());
 		for(auto i = 0; i < nr; i += 2) for(auto j = 0; j < nc << 1; ++ j) q[(nc << 1) * (i >> 1) + j] = FFT::res[(nc << 1) * i + j];
 		for(auto i = 0; i < nr; i += 2) for(auto j = 0; j < nc; ++ j) q[(nc << 1) * (i >> 1) + nc + j] += neg_q[(nc + 1) * i + j];
 	}

@@ -2,7 +2,7 @@
 	<content><![CDATA[
 // Implementation of https://codeforces.com/blog/entry/92183
 // O(n * log(n)^2)
-// Requires convolute_subset
+// Requires convolve_subset
 template<class T, int SZ = 20>
 vector<T> logarithm_set_power_series(const vector<T> &p){
 	int n = (int)p.size();
@@ -13,7 +13,7 @@ vector<T> logarithm_set_power_series(const vector<T> &p){
 	for(auto bit = 1; bit <= w; ++ bit) res[bit][0] = fact, fact *= -bit;
 	for(auto bit = 0; bit < w; ++ bit){
 		for(auto i = 0; i < w - bit; ++ i){
-			auto shift = convolute_subset<T, SZ>(res[i + 1], vector<T>(p.begin() + (1 << bit), p.begin() + (1 << bit + 1)));
+			auto shift = convolve_subset<T, SZ>(res[i + 1], vector<T>(p.begin() + (1 << bit), p.begin() + (1 << bit + 1)));
 			res[i].insert(res[i].end(), shift.begin(), shift.end());
 		}
 		res.pop_back();

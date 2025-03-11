@@ -10,7 +10,7 @@ struct linear_recurrence_solver_bostan_mori{
 	linear_recurrence_solver_bostan_mori(const vector<T> &init, const vector<T> &coef): n((int)coef.size()), init(init), coef(coef), p(n), q(n + 1, 1){
 		assert(coef.size() == init.size());
 		for(auto i = 0; i < n; ++ i) q[n - i] = -coef[i];
-		p = ntt::convolute(init, q);
+		p = ntt::convolve(init, q);
 		p.resize(n);
 	}
 	// Berlekamp Massey Algorithm

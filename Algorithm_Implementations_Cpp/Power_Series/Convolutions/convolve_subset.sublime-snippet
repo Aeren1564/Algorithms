@@ -3,7 +3,7 @@
 // (f*g)[mask] = sum{x and y = 0, x or y = mask}(f(x)g(y))
 // O(n * log(n)^2)
 template<class T, int SZ = 20>
-vector<T> convolute_subset(const vector<T> &p, const vector<T> &q){
+vector<T> convolve_subset(const vector<T> &p, const vector<T> &q){
 	int n = (int)p.size();
 	assert((int)q.size() == n && __builtin_popcount(n) == 1);
 	int w = __lg(n);
@@ -25,7 +25,7 @@ vector<T> convolute_subset(const vector<T> &p, const vector<T> &q){
 }
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
-	<tabTrigger>convolute_subset</tabTrigger> -->
+	<tabTrigger>convolve_subset</tabTrigger> -->
 	<!-- Optional: Set a scope to limit where the snippet will trigger -->
 	<scope>source.c++</scope> -->
 </snippet>

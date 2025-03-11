@@ -29,7 +29,7 @@ struct fast_fourier_transform_multidimensional_wrapper_base{
 		transform((int)p.size(), p.data(), invert);
 	}
 	// O(n * log(n))
-	static vector<T> convolute(const vector<T> &p, const vector<T> &q){
+	static vector<T> convolve(const vector<T> &p, const vector<T> &q){
 		int n = (int)p.size();
 		assert((int)q.size() == n);
 		buffer1.resize(n, 0);
@@ -45,7 +45,7 @@ struct fast_fourier_transform_multidimensional_wrapper_base{
 	// Destroy p and q
 	// Store the result on p
 	// O(n * log(n))
-	static void inplace_convolute(int n, T *p, T *q){
+	static void inplace_convolve(int n, T *p, T *q){
 		transform(n, p), transform(n, q);
 		for(auto i = 0; i < n; ++ i) p[i] *= q[i];
 		transform(n, p, true);

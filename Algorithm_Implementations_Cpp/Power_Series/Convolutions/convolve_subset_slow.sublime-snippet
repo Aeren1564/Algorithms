@@ -4,7 +4,7 @@
 // O(n * log(n)^2)
 // Requires fast_walsh_hadamard_transform
 template<class T>
-vector<T> convolute_subset_slow(const vector<T> &p, const vector<T> &q){
+vector<T> convolve_subset_slow(const vector<T> &p, const vector<T> &q){
 	int n = (int)p.size();
 	assert(q.size() == n && __builtin_popcount(n) == 1);
 	int w = __lg(n) + 1;
@@ -27,7 +27,7 @@ vector<T> convolute_subset_slow(const vector<T> &p, const vector<T> &q){
 }
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
-	<tabTrigger>convolute_subset_slow</tabTrigger> -->
+	<tabTrigger>convolve_subset_slow</tabTrigger> -->
 	<!-- Optional: Set a scope to limit where the snippet will trigger -->
 	<scope>source.c++</scope> -->
 </snippet>

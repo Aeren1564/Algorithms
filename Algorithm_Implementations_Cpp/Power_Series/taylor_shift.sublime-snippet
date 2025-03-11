@@ -19,7 +19,7 @@ vector<T> taylor_shift(const vector<T> &p, T d){
 		pow *= -d;
 	}
 	reverse(g.begin(), g.end());
-	f = FFT::convolute(f, g);
+	f = FFT::convolve(f, g);
 	f.erase(f.begin(), f.begin() + n - 1);
 	for(auto i = 0; i < n; ++ i) f[i] *= invfact[i];
 	return f;

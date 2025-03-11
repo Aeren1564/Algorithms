@@ -536,7 +536,7 @@ struct _with_fft{
 	static vector<T> multiply(const vector<T> &a, const vector<T> &b){
 		if(a.empty() || b.empty()) return {};
 		if(min(a.size(), b.size()) <= 60) return multiply_naively(a, b);
-		return FFT::arbitrarily_convolute(a, b);
+		return FFT::arbitrarily_convolve(a, b);
 	}
 };
 

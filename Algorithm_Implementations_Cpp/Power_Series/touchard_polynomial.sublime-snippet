@@ -12,7 +12,7 @@ vector<T> touchard_polynomial(int n){
 		p[i] = invfact[i] * (i & 1 ? -1 : 1);
 		q[i] = invfact[i] * T(i).power(n);
 	}
-	(p = FFT::convolute(p, q)).resize(n + 1);
+	(p = FFT::convolve(p, q)).resize(n + 1);
 	return p;
 }
 ]]></content>

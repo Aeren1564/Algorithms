@@ -15,7 +15,7 @@ vector<T> polynomial_shift_sampling(const vector<T> &p, T delta, int m){
 	vector<T> q(n), r(n + m);
 	for(auto i = 0; i < n; ++ i) q[i] = p[i] * invfact[i] * invfact[n - 1 - i] * (n - i & 1 ? 1 : -1);
 	for(auto i = 0; i < n + m; ++ i) r[i] = delta + i - (n - 1) ? T(1) / (delta + i - (n - 1)) : T(0);
-	vector<T> res = FFT::convolute(q, r);
+	vector<T> res = FFT::convolve(q, r);
 	res = vector<T>(res.begin() + n - 1, res.begin() + n - 1 + m);
 	vector<T> seg(n + m << 1);
 	for(auto i = 0; i < n + m; ++ i) seg[n + m + i] = delta - (n - 1) + i;

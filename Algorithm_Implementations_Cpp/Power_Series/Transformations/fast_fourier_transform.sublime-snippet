@@ -42,7 +42,7 @@ struct fast_fourier_transform_wrapper{
 	static vector<CD> buffer1, buffer2;
 	// O(n * m)
 	template<class T>
-	static vector<T> convolute_naive(const vector<T> &p, const vector<T> &q){
+	static vector<T> convolve_naive(const vector<T> &p, const vector<T> &q){
 		vector<T> res(max((int)p.size() + (int)q.size() - 1, 0));
 		for(auto i = 0; i < (int)p.size(); ++ i) for(auto j = 0; j < (int)q.size(); ++ j) res[i + j] += p[i] * q[j];
 		return res;
@@ -50,8 +50,8 @@ struct fast_fourier_transform_wrapper{
 	// Safe for sum(p[i]^2 + q[i]^2) lg2(n) < 9e14
 	// O(n * log(n))
 	template<class T>
-	static vector<T> convolute(const vector<T> &p, const vector<T> &q){
-		if(min(p.size(), q.size()) < 60) return convolute_naive(p, q);
+	static vector<T> convolve(const vector<T> &p, const vector<T> &q){
+		if(min(p.size(), q.size()) < 60) return convolve_naive(p, q);
 		int n = 1 << __lg((int)p.size() + (int)q.size() - 1) + 1;
 		buffer1.assign(n, 0);
 		for(auto i = 0; i < (int)p.size(); ++ i) buffer1[i].real(p[i]);
@@ -66,8 +66,8 @@ struct fast_fourier_transform_wrapper{
 		return res;
 	}
 	// O(n * log(n))
-	static vector<CD> convolute_complex(const vector<CD> &p, const vector<CD> &q){
-		if(min(p.size(), q.size()) < 60) return convolute_naive(p, q);
+	static vector<CD> convolve_complex(const vector<CD> &p, const vector<CD> &q){
+		if(min(p.size(), q.size()) < 60) return convolve_naive(p, q);
 		int n = 1 << __lg((int)p.size() + (int)q.size() - 1) + 1;
 		buffer1 = p, buffer2 = q;
 		buffer1.resize(n), buffer2.resize(n);
@@ -79,8 +79,8 @@ struct fast_fourier_transform_wrapper{
 	// Safe for 64-bit integer range
 	// O(n * log(n))
 	template<class T>
-	static vector<T> convolute_splitting(const vector<T> &p, const vector<T> &q){
-		if(min(p.size(), q.size()) < 80) return convolute_naive(p, q);
+	static vector<T> convolve_splitting(const vector<T> &p, const vector<T> &q){
+		if(min(p.size(), q.size()) < 80) return convolve_naive(p, q);
 		int n = 1 << __lg((int)p.size() + (int)q.size() - 1) + 1;
 		const int cut = 32768;
 		buffer1.assign(n, 0);

@@ -57,15 +57,15 @@ struct number_theoric_transform_wrapper{
 	static vector<T> res;
 	// O(n * m)
 	template<class T_ptr_l, class T_ptr_r>
-	static void _convolute_naive(int n, const T_ptr_l p, int m, const T_ptr_r q){
+	static void _convolve_naive(int n, const T_ptr_l p, int m, const T_ptr_r q){
 		res.assign(max(0, n + m - 1), T{0});
 		for(auto i = 0; i < n; ++ i) for(auto j = 0; j < m; ++ j) res[i + j] += p[i] * q[j];
 	}
 	// O((n + m) * log(n + m))
 	template<class T_ptr_l, class T_ptr_r>
-	static void convolute(int n, const T_ptr_l p, int m, const T_ptr_r q){
+	static void convolve(int n, const T_ptr_l p, int m, const T_ptr_r q){
 		if(min(n, m) < 55){
-			_convolute_naive(n, p, m, q);
+			_convolve_naive(n, p, m, q);
 			return;
 		}
 		int len = n + m - 1, clen = 1 << __lg(len) + (__builtin_popcount(len) != 1);
@@ -81,14 +81,14 @@ struct number_theoric_transform_wrapper{
 		copy(buffer0.begin(), buffer0.begin() + len, res.begin());
 	}
 	template<class T_ptr_l, class T_ptr_r>
-	static void _convolute_2d_naive(int n0, int n1, const T_ptr_l p, int m0, int m1, const T_ptr_r q){
+	static void _convolve_2d_naive(int n0, int n1, const T_ptr_l p, int m0, int m1, const T_ptr_r q){
 		res.assign(max(0, n0 + m0 - 1) * max(0, n1 + m1 - 1), T{0});
 		for(auto i0 = 0; i0 < n0; ++ i0) for(auto i1 = 0; i1 < n1; ++ i1) for(auto j0 = 0; j0 < m0; ++ j0) for(auto j1 = 0; j1 < m1; ++ j1) res[max(0, n1 + m1 - 1) * (i0 + j0) + (i1 + j1)] += p[n1 * i0 + i1] * q[m1 * j0 + j1];
 	}
 	template<class T_ptr_l, class T_ptr_r>
-	static void convolute_2d(int n0, int n1, const T_ptr_l p, int m0, int m1, const T_ptr_r q){
+	static void convolve_2d(int n0, int n1, const T_ptr_l p, int m0, int m1, const T_ptr_r q){
 		if(min(n0 + n1, m0 + m1) < 55){
-			_convolute_2d_naive(n0, n1, p, m0, m1, q);
+			_convolve_2d_naive(n0, n1, p, m0, m1, q);
 			return;
 		}
 		int len0 = n0 + m0 - 1, clen0 = 1 << __lg(len0) + (__builtin_popcount(len0) != 1);
@@ -160,7 +160,7 @@ struct number_theoric_transform_wrapper{
 	template<class T_ptr>
 	static void square(int n, const T_ptr p){
 		if(n < 40){
-			convolute_naive(n, p, n, p);
+			convolve_naive(n, p, n, p);
 			return;
 		}
 		int len = 2 * n - 1, clen = 1 << __lg(len) + 1;
@@ -181,17 +181,17 @@ struct number_theoric_transform_wrapper{
 		double_up(n, p.data());
 	}
 	// O((n + m) * log(n + m))
-	static vector<T> convolute(const vector<T> &p, const vector<T> &q){
-		convolute((int)p.size(), p.data(), (int)q.size(), q.data());
+	static vector<T> convolve(const vector<T> &p, const vector<T> &q){
+		convolve((int)p.size(), p.data(), (int)q.size(), q.data());
 		return res;
 	}
-	static vector<vector<T>> convolute_2d(const vector<vector<T>> &p, const vector<vector<T>> &q){
+	static vector<vector<T>> convolve_2d(const vector<vector<T>> &p, const vector<vector<T>> &q){
 		if(p.empty() || q.empty()) return {};
 		buffer3.resize((int)p.size() * (int)p[0].size());
 		for(auto i = 0; i < (int)p.size(); ++ i) for(auto j = 0; j < (int)p[0].size(); ++ j) buffer3[(int)p[0].size() * i + j] = p[i][j];
 		buffer4.resize((int)q.size() * (int)q[0].size());
 		for(auto i = 0; i < (int)q.size(); ++ i) for(auto j = 0; j < (int)q[0].size(); ++ j) buffer4[(int)q[0].size() * i + j] = q[i][j];
-		convolute_2d((int)p.size(), (int)p[0].size(), buffer3.data(), (int)q.size(), (int)q[0].size(), buffer4.data());
+		convolve_2d((int)p.size(), (int)p[0].size(), buffer3.data(), (int)q.size(), (int)q[0].size(), buffer4.data());
 		vector<vector<T>> res_2d(max(0, (int)p.size() + (int)q.size() - 1), vector<T>(max(0, (int)p[0].size() + (int)q[0].size() - 1)));
 		for(auto i = 0; i < (int)res_2d.size(); ++ i) for(auto j = 0; j < (int)res_2d[0].size(); ++ j) res_2d[i][j] = res[(int)res_2d[0].size() * i + j];
 		return res_2d;
@@ -208,7 +208,7 @@ struct number_theoric_transform_wrapper{
 		return res;
 	}
 	// O((n + m) * log(n + m))
-	static vector<T> arbitrarily_convolute(const vector<T> &p, const vector<T> &q){
+	static vector<T> arbitrarily_convolve(const vector<T> &p, const vector<T> &q){
 		using modular0 = modular_fixed_base<unsigned int, 880803841>;
 		using modular1 = modular_fixed_base<unsigned int, 897581057>;
 		using modular2 = modular_fixed_base<unsigned int, 998244353>;
@@ -218,15 +218,15 @@ struct number_theoric_transform_wrapper{
 		vector<modular0> p0((int)p.size()), q0((int)q.size());
 		for(auto i = 0; i < (int)p.size(); ++ i) p0[i] = p[i].data;
 		for(auto i = 0; i < (int)q.size(); ++ i) q0[i] = q[i].data;
-		auto xy0 = ntt0::convolute(p0, q0);
+		auto xy0 = ntt0::convolve(p0, q0);
 		vector<modular1> p1((int)p.size()), q1((int)q.size());
 		for(auto i = 0; i < (int)p.size(); ++ i) p1[i] = p[i].data;
 		for(auto i = 0; i < (int)q.size(); ++ i) q1[i] = q[i].data;
-		auto xy1 = ntt1::convolute(p1, q1);
+		auto xy1 = ntt1::convolve(p1, q1);
 		vector<modular2> p2((int)p.size()), q2((int)q.size());
 		for(auto i = 0; i < (int)p.size(); ++ i) p2[i] = p[i].data;
 		for(auto i = 0; i < (int)q.size(); ++ i) q2[i] = q[i].data;
-		auto xy2 = ntt2::convolute(p2, q2);
+		auto xy2 = ntt2::convolve(p2, q2);
 		static const modular1 r01 = 1 / modular1(modular0::mod());
 		static const modular2 r02 = 1 / modular2(modular0::mod());
 		static const modular2 r12 = 1 / modular2(modular1::mod());

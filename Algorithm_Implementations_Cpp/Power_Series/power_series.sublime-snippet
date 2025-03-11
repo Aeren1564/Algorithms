@@ -131,7 +131,7 @@ struct power_series_base: vector<T>{
 	power_series_base &operator*=(const power_series_base &p){
 		int n = (int)self.size();
 		self.resize(max(0, n + (int)p.size() - 1));
-		FFT::convolute(n, self.data(), (int)p.size(), p.data());
+		FFT::convolve(n, self.data(), (int)p.size(), p.data());
 		return *this = FFT::res;
 	}
 	power_series_base operator*(const power_series_base &p) const{
@@ -329,7 +329,7 @@ struct power_series_base: vector<T>{
 		b.assign(n, {});
 		copy(p.rbegin(), p.rbegin() + min(p.size(), b.size()), b.begin());
 		std::reverse(self.begin(), self.end());
-		self = FFT::convolute(self, b.inverse(n));
+		self = FFT::convolve(self, b.inverse(n));
 		self.erase(self.begin() + n, self.end());
 		std::reverse(self.begin(), self.end());
 		return *this;
