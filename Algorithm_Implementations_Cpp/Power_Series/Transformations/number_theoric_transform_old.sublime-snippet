@@ -1,144 +1,42 @@
 <snippet>
 	<content><![CDATA[
-// Source: https://github.com/atcoder/ac-library/blob/master/atcoder/convolution.hpp
+// NOTE: no longer maintained
 // T must be of modular type
 // mod must be a prime
 // Requires modular
 template<class T>
 struct number_theoric_transform_wrapper{
-	static vector<T> root; // root[i]^(2^i) = 1
-	static vector<T> invroot;
-	static vector<T> rate2;
-	static vector<T> invrate2;
-	static vector<T> rate3;
-	static vector<T> invrate3;
-	static void init(){
-		if(!root.empty()) return;
-		const int rank = __builtin_ctzll(T::mod() - 1);
-		root.resize(rank + 1);
-		invroot.resize(rank + 1);
-		rate2.resize(rank + 1);
-		invrate2.resize(rank + 1);
-		rate3.resize(rank + 1);
-		invrate3.resize(rank + 1);
-		root[rank] = T::primitive_root().power(T::mod() - 1 >> rank);
-		invroot[rank] = T{1} / root[rank];
-		for(auto i = rank - 1; i >= 0; -- i){
-			root[i] = root[i + 1] * root[i + 1];
-			invroot[i] = invroot[i + 1] * invroot[i + 1];
-		}
-		T prod = T{1}, invprod = T{1};
-		for(auto i = 0; i < rank - 1; ++ i){
-			rate2[i] = root[i + 2] * prod;
-			invrate2[i] = invroot[i + 2] * invprod;
-			prod *= invroot[i + 2];
-			invprod *= root[i + 2];
-		}
-		prod = T{1}, invprod = T{1};
-		for(auto i = 0; i < rank - 2; ++ i){
-			rate3[i] = root[i + 3] * prod;
-			invrate3[i] = invroot[i + 3] * invprod;
-			prod *= invroot[i + 3];
-			invprod *= root[i + 3];
+	// For i \in [2^k, 2^{k+1}), root[i] = w_{2^k+1}^{i-2^k}
+	static vector<T> root, buffer0, buffer1, buffer2, buffer3, buffer4;
+	static void adjust_root(int n){
+		if(root.empty()) root = {1, 1};
+		for(auto k = (int)root.size(); k < n; k <<= 1){
+			root.resize(n, 1);
+			T w = T::primitive_root().power((T::mod() - 1) / (k << 1));
+			for(auto i = k; i < k << 1; ++ i) root[i] = i & 1 ? root[i >> 1] * w : root[i >> 1];
 		}
 	}
-	static vector<T> buffer0, buffer1, buffer2, buffer3, buffer4;
 	// n must be a power of two
 	// p must have next n memories allocated
-	// transform(p)[i] = \sum_{j=0}^{n-1} (w_n)^{bitrev(i)*j}*p[j]
-	// inverse_transform(p)[i] = 1/n * \sum_{j=0}^{n-1} (w_n)^{-i*bitrev(j)}*p[j]
 	// O(n * log(n))
 	template<class T_ptr>
 	static void transform(int n, T_ptr p, bool invert = false){
 		assert(n && __builtin_popcount(n) == 1 && (T::mod() - 1) % n == 0);
-		init();
-		int h = __lg(n);
-		if(invert == false){
-			for(auto len = 0; len < h; ){ // p[i, i+(n>>len), i+2*(n>>len), ..] is transformed
-				if(h - len == 1){
-					int power = 1 << h - len - 1;
-					modular rot = 1;
-					for(auto s = 0; s < 1 << len; ++ s){
-						int offset = s << h - len;
-						for(auto i = 0; i < power; ++ i){
-							auto l = p[i + offset];
-							auto r = p[i + offset + power] * rot;
-							p[i + offset] = l + r;
-							p[i + offset + power] = l - r;
-						}
-						if(s + 1 != 1 << len) rot *= rate2[__builtin_ctz(s + 1)];
-					}
-					++ len;
-				}
-				else{
-					// 4-base
-					int power = 1 << h - len - 2;
-					modular rot = 1, imag = root[2];
-					for(auto s = 0; s < 1 << len; ++ s){
-						modular rot2 = rot * rot;
-						modular rot3 = rot2 * rot;
-						int offset = s << (h - len);
-						for(auto i = 0; i < power; ++ i){
-							auto mod2 = 1ull * modular::mod() * modular::mod();
-							auto a0 = 1ull * p[i + offset].data;
-							auto a1 = 1ull * p[i + offset + power].data * rot.data;
-							auto a2 = 1ull * p[i + offset + 2 * power].data * rot2.data;
-							auto a3 = 1ull * p[i + offset + 3 * power].data * rot3.data;
-							auto a1na3imag = 1ull * modular(a1 + mod2 - a3).data * imag.data;
-							auto na2 = mod2 - a2;
-							p[i + offset] = a0 + a2 + a1 + a3;
-							p[i + offset + 1 * power] = a0 + a2 + (2 * mod2 - (a1 + a3));
-							p[i + offset + 2 * power] = a0 + na2 + a1na3imag;
-							p[i + offset + 3 * power] = a0 + na2 + (mod2 - a1na3imag);
-						}
-						if(s + 1 != 1 << len) rot *= rate3[__builtin_ctz(s + 1)];
-					}
-					len += 2;
-				}
-			}
+		for(auto i = 1, j = 0; i < n; ++ i){
+			int bit = n >> 1;
+			for(; j & bit; bit >>= 1) j ^= bit;
+			j ^= bit;
+			if(i < j) swap(p[i], p[j]);
 		}
-		else{
-			for(auto len = h; len; ){ // p[i, i+(n>>len), i+2*(n>>len), ..] is transformed
-				if(len == 1){
-					int power = 1 << h - len;
-					modular invrot = 1;
-					for(auto s = 0; s < 1 << len - 1; ++ s){
-						int offset = s << h - len + 1;
-						for(auto i = 0; i < power; ++ i){
-							auto l = p[i + offset];
-							auto r = p[i + offset + power];
-							p[i + offset] = l + r;
-							p[i + offset + power] = (unsigned long long)(modular::mod() + l.data - r.data) * invrot.data;
-						}
-						if(s + 1 != 1 << len - 1) invrot *= invrate2[__builtin_ctz(s + 1)];
-					}
-					-- len;
-				}else{
-					// 4-base
-					int power = 1 << h - len;
-					modular invrot = 1, iimag = invroot[2];
-					for(auto s = 0; s < 1 << len - 2; ++ s){
-						modular invrot2 = invrot * invrot;
-						modular invrot3 = invrot2 * invrot;
-						int offset = s << h - len + 2;
-						for(auto i = 0; i < power; ++ i){
-							auto a0 = 1ull * p[i + offset + 0 * power].data;
-							auto a1 = 1ull * p[i + offset + 1 * power].data;
-							auto a2 = 1ull * p[i + offset + 2 * power].data;
-							auto a3 = 1ull * p[i + offset + 3 * power].data;
-							auto a2na3iimag = 1ull * modular((modular::mod() + a2 - a3) * iimag.data).data;
-							p[i + offset] = a0 + a1 + a2 + a3;
-							p[i + offset + 1 * power] = (a0 + (modular::mod() - a1) + a2na3iimag) * invrot.data;
-							p[i + offset + 2 * power] = (a0 + a1 + (modular::mod() - a2) + (modular::mod() - a3)) * invrot2.data;
-							p[i + offset + 3 * power] = (a0 + (modular::mod() - a1) + (modular::mod() - a2na3iimag)) * invrot3.data;
-						}
-						if(s + 1 != 1 << len - 2) invrot *= invrate3[__builtin_ctz(s + 1)];
-					}
-					len -= 2;
-				}
-			}
-			T inv = T{1} / n;
-			for(auto i = 0; i < n; ++ i) p[i] *= inv;
+		adjust_root(n);
+		for(auto len = 1; len < n; len <<= 1) for(auto i = 0; i < n; i += len << 1) for(auto j = 0; j < len; ++ j){
+			T x = p[i + j], y = p[len + i + j] * root[len + j];
+			p[i + j] = x + y, p[len + i + j] = x - y;
+		}
+		if(invert){
+			reverse(p + 1, p + n);
+			T inv_n = T(1) / n;
+			for(auto i = 0; i < n; ++ i) p[i] *= inv_n;
 		}
 	}
 	// Double the length of the ntt array
@@ -149,12 +47,12 @@ struct number_theoric_transform_wrapper{
 	static void double_up(int n, T_ptr p){
 		assert(n && __builtin_popcount(n) == 1 && (T().mod() - 1) % (n << 1) == 0);
 		buffer0.resize(n << 1);
-		for(auto i = 0; i < n; ++ i) buffer0[i] = p[i];
+		for(auto i = 0; i < n; ++ i) buffer0[i << 1] = p[i];
 		transform(n, p, true);
-		T power = 1, r = root[__builtin_ctz(n) + 1];
-		for(auto i = 0; i < n; ++ i, power *= r) p[i] *= power;
+		adjust_root(n << 1);
+		for(auto i = 0; i < n; ++ i) p[i] *= root[n | i];
 		transform(n, p);
-		for(auto i = 0; i < n; ++ i) buffer0[n + i] = p[i];
+		for(auto i = 0; i < n; ++ i) buffer0[i << 1 | 1] = p[i];
 		copy(buffer0.begin(), buffer0.begin() + 2 * n, p);
 	}
 	static vector<T> res;
@@ -349,11 +247,6 @@ struct number_theoric_transform_wrapper{
 	}
 };
 template<class T> vector<T> number_theoric_transform_wrapper<T>::root;
-template<class T> vector<T> number_theoric_transform_wrapper<T>::invroot;
-template<class T> vector<T> number_theoric_transform_wrapper<T>::rate2;
-template<class T> vector<T> number_theoric_transform_wrapper<T>::invrate2;
-template<class T> vector<T> number_theoric_transform_wrapper<T>::rate3;
-template<class T> vector<T> number_theoric_transform_wrapper<T>::invrate3;
 template<class T> vector<T> number_theoric_transform_wrapper<T>::buffer0;
 template<class T> vector<T> number_theoric_transform_wrapper<T>::buffer1;
 template<class T> vector<T> number_theoric_transform_wrapper<T>::buffer2;
@@ -364,7 +257,7 @@ template<class T> vector<T> number_theoric_transform_wrapper<T>::res;
 using ntt = number_theoric_transform_wrapper<modular>;
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
-	<tabTrigger>number_theoric_transform</tabTrigger> -->
+	<!-- <tabTrigger>number_theoric_transform</tabTrigger> -->
 	<!-- Optional: Set a scope to limit where the snippet will trigger -->
-	<scope>source.c++</scope> -->
+	<!-- <scope>source.c++</scope> -->
 </snippet>
