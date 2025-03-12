@@ -1,5 +1,6 @@
 <snippet>
 	<content><![CDATA[
+// TODO: update to bit-rev fft
 // Store the linear recurrence relation of form \sum_{t<=i<t+n} coef[i-t] * init[i] = init[t+n]
 // T must be of modular type
 // Requires modular, number_theoric_transform, and polynomial
