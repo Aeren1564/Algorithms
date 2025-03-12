@@ -1,46 +1,46 @@
 <snippet>
 	<content><![CDATA[
-// O(polymul(n) * log(n))
-// Requires mod_sqrt and power_series
+// O(n * log(n)^2)
+// Requires mod_sqrt, modular, number_theoric_transform, and power_series
 template<class T, class FFT = ntt>
-optional<power_series_base<T, FFT>> power_series_sqrt(power_series_base<T, FFT> a, int length){
-	a.resize(length);
+optional<power_series_base<T, FFT>> power_series_sqrt(power_series_base<T, FFT> a, int n){
+	a.resize(n);
 	int zero_prefix = find_if(a.begin(), a.end(), [&](auto x){ return x != 0; }) - a.begin();
-	if(zero_prefix == length) return power_series_base<T, FFT>(a.begin(), a.begin() + length);
+	if(zero_prefix == n) return power_series_base<T, FFT>(a.begin(), a.begin() + n);
 	if(zero_prefix & 1) return {};
 	a.erase(a.begin(), a.begin() + zero_prefix);
-	length -= zero_prefix >>= 1;
+	n -= zero_prefix >>= 1;
 	T c;
 	if(auto p = mod_sqrt(a[0])) c = *p, a /= a[0];
 	else return {};
-	T inv2 = T(1) / 2;
+	T inv2 = T{1} / 2;
 	power_series_base<T, FFT> f{1}, g{1}, z{1};
-	for(auto s = 1; s < length; s <<= 1){
+	for(auto s = 1; s < n; s <<= 1){
 		z.inplace_dot_product(z);
-		z.transform(true);
+		z._inplace_transform(true);
 		power_series_base<T, FFT> delta(s << 1), g2(s << 1), eps;
-		for(auto i = 0; i < s; ++ i) delta[s + i] = z[i] - a[i] - (s + i < length ? a[s + i] : T());
-		delta.transform();
+		for(auto i = 0; i < s; ++ i) delta[s + i] = z[i] - a[i] - (s + i < n ? a[s + i] : T());
+		delta._inplace_transform();
 		copy(g.begin(), g.end(), g2.begin());
-		g2.transform();
+		g2._inplace_transform();
 		delta.inplace_dot_product(g2);
-		delta.transform(true);
+		delta._inplace_transform(true);
 		f.resize(s << 1);
 		for(auto i = s; i < s << 1; ++ i) f[i] = -inv2 * delta[i];
-		if(s << 1 >= length) break;
+		if(s << 1 >= n) break;
 		z = f;
-		z.transform();
+		z._inplace_transform();
 		eps = g2;
 		eps.inplace_dot_product(z);
-		eps.transform(true);
-		eps.clear_range(0, s);
-		eps.transform();
+		eps._inplace_transform(true);
+		eps.inplace_clear_range(0, s);
+		eps._inplace_transform();
 		eps.inplace_dot_product(g2);
-		eps.transform(true);
+		eps._inplace_transform(true);
 		g.resize(s << 1);
 		for(auto i = s; i < s << 1; ++ i) g[i] = -eps[i];
 	}
-	f.resize(length);
+	f.resize(n);
 	for(auto &x: f) x *= c;
 	f.insert(f.begin(), zero_prefix, 0);
 	return f;
