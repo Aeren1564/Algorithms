@@ -1,0 +1,56 @@
+<snippet>
+	<content><![CDATA[
+// Return the coefficients of the chromatic polynomial of the functional graph, ignoring all self-loops
+// O(n * log(n)^2)
+// Requires modular and number_theoric_transform
+template<class T, class FFT = ntt>
+vector<T> chromatic_polynomial_functional_graph(const vector<int> &next){
+	assert(!next.empty());
+	int n = (int)next.size();
+	for(auto u: next) assert(0 <= u && u < n);
+	vector<T> fact(n + 1, 1), invfact(n + 1, 1);
+	for(auto i = 2; i <= n; ++ i) fact[i] = fact[i - 1] * i;
+	invfact[n] = T{1} / fact[n];
+	for(auto i = n - 1; i >= 2; -- i) invfact[i] = invfact[i + 1] * (i + 1);
+	vector<int> was(n, -1), dist(n);
+	vector<vector<T>> polys;
+	int rem = n;
+	for(auto u = 0; u < n; ++ u){
+		if(~was[u]) continue;
+		for(auto v = u; ; ){
+			was[v] = u;
+			if(~was[next[v]]){
+				if(was[next[v]] == u){
+					int size = dist[v] + 1 - dist[next[v]];
+					rem -= size;
+					if(size == 1) polys.push_back({0, 1});
+					else{
+						polys.push_back(vector<T>(size + 1));
+						for(auto i = 0; i <= size; ++ i) polys.back()[i] = (size - i & 1 ? -1 : 1) * fact[size] * invfact[i] * invfact[size - i];
+						polys.back()[0] += size & 1 ? T{1} : T{-1};
+						polys.back()[1] += size & 1 ? T{-1} : T{1};
+					}
+				}
+				break;
+			}
+			dist[next[v]] = dist[v] + 1;
+			v = next[v];
+		}
+	}
+	if(rem){
+		polys.push_back(vector<T>(rem + 1));
+		for(auto i = 0; i <= rem; ++ i) polys.back()[i] = (rem - i & 1 ? -1 : 1) * fact[rem] * invfact[i] * invfact[rem - i];
+	}
+	auto recurse = [&](auto self, int l, int r)->vector<T>{
+		if(r - l == 1) return polys[l];
+		int m = l + r >> 1;
+		return FFT::convolve(self(self, l, m), self(self, m, r));
+	};
+	return recurse(recurse, 0, (int)polys.size());
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>chromatic_polynomial_functional_graph</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
