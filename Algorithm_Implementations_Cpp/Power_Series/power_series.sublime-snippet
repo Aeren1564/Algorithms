@@ -441,7 +441,7 @@ struct power_series_base: vector<T>{
 			power_series_base dt = take(s).inplace_derivative_shift();
 			power_series_base w = dt;
 			w._inplace_transform();
-			for(auto i = 0; i < s; ++ i) w[i] *= f2[i << 1];
+			for(auto i = 0; i < s; ++ i) w[i] *= f2[i];
 			w._inplace_transform(true);
 			w -= f.derivative_shift();
 			w.resize(s << 1, T{0});
