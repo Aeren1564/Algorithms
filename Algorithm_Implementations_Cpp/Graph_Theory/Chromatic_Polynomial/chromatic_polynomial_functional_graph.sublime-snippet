@@ -41,12 +41,29 @@ vector<T> chromatic_polynomial_functional_graph(const vector<int> &next){
 		polys.push_back(vector<T>(rem + 1));
 		for(auto i = 0; i <= rem; ++ i) polys.back()[i] = (rem - i & 1 ? -1 : 1) * fact[rem] * invfact[i] * invfact[rem - i];
 	}
-	auto recurse = [&](auto self, int l, int r)->vector<T>{
-		if(r - l == 1) return polys[l];
+	auto recurse = [&](auto self, int l, int r)->pair<int, vector<T>>{
+		if(r - l == 1){
+			int size = (int)polys[l].size();
+			auto f = polys[l];
+			f.resize(1 << __lg(size) + (__builtin_popcount(size) != 1));
+			FFT::transform(f);
+			return {size, move(f)};
+		}
 		int m = l + r >> 1;
-		return FFT::convolve(self(self, l, m), self(self, m, r));
+		auto [size_l, f_l] = self(self, l, m);
+		auto [size_r, f_r] = self(self, m, r);
+		int size = size_l + size_r - 1;
+		while((int)f_l.size() < size) FFT::double_up(f_l);
+		while((int)f_r.size() < max((int)f_l.size(), size)) FFT::double_up(f_r);
+		while((int)f_l.size() < (int)f_r.size()) FFT::double_up(f_l);
+		assert((int)f_l.size() == (int)f_r.size());
+		for(auto i = 0; i < (int)f_l.size(); ++ i) f_l[i] *= f_r[i];
+		return {size, move(f_l)};
 	};
-	return recurse(recurse, 0, (int)polys.size());
+	auto [size, f] = recurse(recurse, 0, (int)polys.size());
+	FFT::transform(f, true);
+	f.resize(size);
+	return f;
 }
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
