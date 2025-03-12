@@ -1,6 +1,5 @@
 <snippet>
 	<content><![CDATA[
-// TODO: update to bitrev-fft
 // Requires modular, number_theoric_transform, and power_series
 template<class T, class FFT = ntt>
 struct subproduct_tree{
