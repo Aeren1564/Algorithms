@@ -1,0 +1,26 @@
+<snippet>
+	<content><![CDATA[
+// Get the autocorrelation of the string s
+// O(n)
+template<size_t SZ, class T>
+bitset<SZ> string_to_autocorrelation(const vector<T> &s){
+	int n = (int)s.size();
+	assert(0 <= n && n <= SZ);
+	if(s.empty()) return {};
+	vector<int> pi(n);
+	for(auto i = 1; i < n; ++ i){
+		int len = pi[i - 1];
+		while(len && s[i] != s[len]) len = pi[len - 1];
+		if(s[i] == s[len]) pi[i] = len + 1;
+	}
+	bitset<SZ> ac{};
+	ac.set(0);
+	for(auto i = n - 1; i > 0; i = pi[i] - 1) if(pi[i]) ac.set(n - pi[i]);
+	return ac;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>string_to_autocorrelation</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

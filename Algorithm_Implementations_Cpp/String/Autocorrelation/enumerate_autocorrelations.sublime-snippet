@@ -1,0 +1,50 @@
+<snippet>
+	<content><![CDATA[
+// Autocorrelation of a string S of length n is the binary string of length n where p[i] denotes whether i is a period for all 0 <= i < n
+// It can be proved that for each length n, the set of all possible strings is independent of alphabet size as long as it's >= 2
+// Enumerate autocorrelations of all non-empty strings of length <= n, in decreasing order of set bits
+template<size_t SZ>
+vector<vector<bitset<SZ>>> enumerate_autocorrelations(int n){
+	assert(0 <= n && n <= SZ);
+	using B = bitset<SZ>;
+	vector<vector<B>> ac(n + 1);
+	vector<vector<vector<B>>> ac_by_bp(n + 1, vector<vector<B>>(n + 1));
+	ac[0].push_back(B{});
+	for(auto len = 1; len <= n; ++ len){
+		B b{};
+		if(len >= 2){
+			b.set(0);
+			ac_by_bp[len][len].push_back(b);
+			ac[len].push_back(b);
+		}
+		for(auto i = 0; i < len; ++ i) b.set(i);
+		ac_by_bp[len][1].push_back(b);
+		ac[len].push_back(b);
+	}
+	for(auto len = 3; len <= n; ++ len) for(auto p = 2; p < len; ++ p){
+		if(2 * p <= len){
+			const int rr = len % p;
+			const int r = rr + p;
+			B prefix{};
+			for(auto i = 0; i < len / p - 1; ++ i) prefix.set(i * p);
+			for(auto pp = 1; pp <= r; ++ pp) if(pp >= p || pp > rr + gcd(p, pp)) for(auto x: ac_by_bp[r][pp]) if(rr == 0 || x[p] == 1){
+				x = x << ((len / p) - 1) * p | prefix;
+				ac_by_bp[len][p].push_back(x);
+			}
+		}
+		else for(auto x: ac[len - p]){
+			x <<= p;
+			x.set(0);
+			ac_by_bp[len][p].push_back(x);
+		}
+		ac[len].insert(ac[len].end(), ac_by_bp[len][p].begin(), ac_by_bp[len][p].end());
+	}
+	for(auto len = 1; len <= n; ++ len) sort(ac[len].begin(), ac[len].end(), [&](const auto &v, const auto &w){ return v.count() > w.count(); });
+	return ac;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>enumerate_autocorrelations</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

@@ -1,0 +1,32 @@
+<snippet>
+	<content><![CDATA[
+// Check if ac is an autocorrelation of some binary string
+// O(n)
+template<size_t SZ>
+bool autocorrelation_membership_test(int n, const bitset<SZ> &ac){
+	assert(0 <= n && n <= SZ);
+	if(n == 0) return true;
+	for(auto l = 0; l < n; ){
+		if(!ac[l]) return false;
+		int len = n - l, p = min<int>(n, ac._Find_next(l)) - l;
+		if(p <= len / 2){
+			int r = len % p, q = p + r;
+			for(auto j = 1; j <= len - q; ++ j) if(ac[l + j] != (j % p == 0)) return false;
+			if(r > 0 && ac[l + len - q + p] != 1) return false;
+			if(int pw = min<int>(n, ac._Find_next(l + len - q)) - (l + len - q); pw < p) if(pw + p <= q + gcd(pw, p)) return false;
+			l += len - q;
+		}
+		else{
+			for(auto j = 1; j < p; ++ j) if(ac[l + j]) return false;
+			if(p == len) return true;
+			l += p;
+		}
+	}
+	assert(false);
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>autocorrelation_membership_test</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

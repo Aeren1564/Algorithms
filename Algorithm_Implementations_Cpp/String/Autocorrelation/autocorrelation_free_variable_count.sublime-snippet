@@ -1,0 +1,30 @@
+<snippet>
+	<content><![CDATA[
+// Count the number of free variables in the autocorrelation
+// O(n)
+template<size_t SZ>
+int autocorrelation_free_variable_count(int n, const bitset<SZ> &ac){
+	assert(0 <= n && n <= SZ);
+	if(n == 0) return 0;
+	int res = 0;
+	for(auto l = 0; ; ){
+		int i = min<int>(n, ac._Find_next(l));
+		if(i == n){
+			res += n - l;
+			break;
+		}
+		if(i == l + 1){
+			++ res;
+			break;
+		}
+		if(i - l <= n - l >> 1) l = n - (i - l) - (n - l) % (i - l);
+		else res += 2 * (i - l) - (n - l), l = i;
+	}
+	return res;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>autocorrelation_free_variable_count</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>

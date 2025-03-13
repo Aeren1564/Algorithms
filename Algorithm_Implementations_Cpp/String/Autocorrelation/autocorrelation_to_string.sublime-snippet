@@ -1,0 +1,63 @@
+<snippet>
+	<content><![CDATA[
+// Assumes ac is an autocorrelation of some binary string
+// Returns a binary string with autocorrelation ac
+// O(n)
+template<size_t SZ>
+vector<int> autocorrelation_to_string(int n, const bitset<SZ> &ac){
+	assert(0 <= n && n <= SZ);
+	auto advanced = [&](auto it, int dist){
+		advance(it, dist);
+		return it;
+	};
+	auto recurse = [&](auto self, int l)->list<int>{
+		if(l == n) return {};
+		assert(0 <= l && l < n && ac[l]);
+		int len = n - l, p = min<int>(n, ac._Find_next(l)) - l;
+		list<int> w;
+		if(len >= 2 * p){
+			int r = len % p + p;
+			w = self(self, l + (len - r));
+			for(auto it = advanced(w.begin(), p - 1); (int)w.size() < len; -- it) w.push_front(*it);
+		}
+		else{
+			int r = len - p, x = len - 2 * r, t = min<int>(n, ac._Find_next(l + p)) - (l + p);
+			w = self(self, l + p);
+			if(w.empty()){ // any string with period len
+				w = list<int>(len - 1, 0);
+				w.push_back(1);
+			}
+			else if(x >= t) w.insert(w.begin(), x, !w.front());
+			else{
+				auto [m, y] = div(r, t);
+				if(m > 1){
+					if((r + x) % t != 0) w.insert(w.begin(), x, 0); // any
+					else if(auto q = (r + x) / 2; 2 * q == r + x && l + p + q < n && ac[l + p + q] && q % t != 0){
+						assert(x >= 2);
+						w.insert(w.begin(), {!*advanced(w.begin(), q - 2), !*advanced(w.begin(), t - 1)});
+						w.insert(w.begin(), x - 2, 0); // any
+						w.insert(w.begin(), advanced(w.begin(), x), w.end());
+					}
+					else{
+						w.push_front(!*advanced(w.begin(), t - 1));
+						w.insert(w.begin(), x - 1, 0); // any
+					}
+				}
+				else{
+					if(auto u = (r + x) / 2; 2 * u == r + x && l + p + u < n && ac[l + p + u]) w.push_front(!*advanced(w.begin(), u - 1));
+					w.insert(w.begin(), x + r - (int)w.size(), 0); // any
+				}
+			}
+			w.insert(w.begin(), advanced(w.end(), -r), w.end());
+		}
+		return move(w);
+	};
+	auto res = recurse(recurse, 0);
+	return vector<int>(res.begin(), res.end());
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>autocorrelation_to_string</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
