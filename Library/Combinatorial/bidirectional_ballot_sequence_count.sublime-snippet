@@ -1,0 +1,68 @@
+<snippet>
+	<content><![CDATA[
+// TODO: Optimize to O(n * log(n)) with https://codeforces.com/blog/entry/126124
+// Returns c[i] for i = 0, ..., n where c[i] is the number of binary string of length i where every prefix satisfies #1 - #0 + s >= 0 and every suffix satisfies #1 - #0 + e >= 0
+// O(n * log(n)^2)
+// Requires modular and number_theoric_transform
+template<class T, class FFT = ntt>
+vector<T> bidirectional_ballot_sequence_count(int n, int s = 0, int e = 0){
+	assert(0 <= min({n, s, e}));
+	vector<T> fact(n + 1, T{1}), invfact(n + 1, T{1}), coef(2 * n + 1);
+	for(auto i = 2; i <= n; ++ i) fact[i] = fact[i - 1] * T{i};
+	invfact[n] = T{1} / fact[n];
+	for(auto i = n - 1; i >= 2; -- i) invfact[i] = invfact[i + 1] * T{i + 1};
+	for(auto k = 0; k <= n; ++ k){
+		if(n - 2 * k + s < 0 || n - 2 * k + e < 0) continue;
+		++ coef[n + abs(n - 2 * k)];
+		for(auto l = -s - 1, m = n - 2 * k, r = n - 2 * k + e + 1, sign = -1; ; sign *= -1){
+			m = 2 * l - m;
+			if(n + m < 0) break;
+			coef[n + abs(m)] += sign;
+			tie(l, r) = pair<int, int>{2 * l - r, l};
+		}
+		for(auto l = -s - 1, m = n - 2 * k, r = n - 2 * k + e + 1, sign = -1; ; sign *= -1){
+			m = 2 * r - m;
+			if(n - m < 0) break;
+			coef[n + abs(m)] += sign;
+			tie(l, r) = pair<int, int>{r, 2 * r - l};
+		}
+	}
+	for(auto k = 0; k <= n + 1; ++ k){
+		if(n + 1 - 2 * k + s < 0 || n + 1 - 2 * k + e < 0) continue;
+		if(abs(n + 1 - 2 * k) <= n) ++ coef[n + abs(n + 1 - 2 * k)];
+		for(auto l = -s - 1, m = n + 1 - 2 * k, r = n + 1 - 2 * k + e + 1, sign = -1; ; sign *= -1){
+			m = 2 * l - m;
+			if(n + 1 + m < 0) break;
+			if(abs(m) <= n) coef[n + abs(m)] += sign;
+			tie(l, r) = pair<int, int>{2 * l - r, l};
+		}
+		for(auto l = -s - 1, m = n + 1 - 2 * k, r = n + 1 - 2 * k + e + 1, sign = -1; ; sign *= -1){
+			m = 2 * r - m;
+			if(n + 1 - m < 0) break;
+			if(abs(m) <= n) coef[n + abs(m)] += sign;
+			tie(l, r) = pair<int, int>{r, 2 * r - l};
+		}
+	}
+	vector<T> res(n + 1);
+	auto recurse = [&](auto self, int l, int r, const vector<T> &a)->void{
+		assert((int)a.size() == 2 * (r - l) - 1);
+		if(r - l == 1){
+			res[l] = a[0];
+			return;
+		}
+		int m = l + r >> 1;
+		self(self, l, m, vector<T>(a.begin() + ((r - l) - (m - l)), a.begin() + ((r - l - 1) + (m - l))));
+		vector<T> b(2 * (m - l) + 1);
+		for(auto i = -(m - l); i <= m - l; i += 2) b[m - l + i] = fact[m - l] * invfact[(m - l) - i >> 1] * invfact[(m - l) + i >> 1];
+		b = FFT::convolve(a, b);
+		self(self, m, r, vector(b.begin() + ((r - l - 1 + m - l + 1) - (r - m)), b.begin() + ((r - l - 1 + m - l) + (r - m))));
+	};
+	recurse(recurse, 0, n + 1, coef);
+	return res;
+}
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>bidirectional_ballot_sequence_count</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
