@@ -118,6 +118,14 @@ struct combinatorics{
 		}
 		return res;
 	}
+	// Number of ways to place n of either '(' or ')' starting with s copies of '(' such that in each prefix, number of '(' is equal or greater than ')'
+	// Up to s+1 C() calls
+	T ballot_sequence_count(int n, int s = 0) const{
+		ASSERT(0 <= min(n, s));
+		T res = 0;
+		for(auto k = max(0, min(n - s, (n + s + 1) / 2 - s)); k < min(n + 1, (n + s + 1) / 2 + 1); ++ k) res += C(n, k);
+		return res;
+	}
 	// Number of ways to place n of either '(' or ')' starting with s copies of '(' and ending with e copies of '(' such that in each prefix and suffix, number of '(' is equal or greater than ')'
 	// O(n * log(n))
 	T bidirectional_ballot_sequence_count(int n, int s = 0, int e = 0) const{
