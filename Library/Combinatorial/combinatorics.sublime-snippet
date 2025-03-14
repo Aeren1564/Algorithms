@@ -9,23 +9,23 @@ struct combinatorics{
 #endif
 	// O(n)
 	static vector<T> precalc_fact(int n){
-		vector<T> f(n + 1, 1);
+		vector<T> f(n + 1, T{1});
 		for(auto i = 1; i <= n; ++ i) f[i] = f[i - 1] * i;
 		return f;
 	}
 	// O(n * m)
 	static vector<vector<T>> precalc_C(int n, int m){
 		vector<vector<T>> c(n + 1, vector<T>(m + 1));
-		for(auto i = 0; i <= n; ++ i) for(auto j = 0; j <= min(i, m); ++ j) c[i][j] = i && j ? c[i - 1][j - 1] + c[i - 1][j] : T(1);
+		for(auto i = 0; i <= n; ++ i) for(auto j = 0; j <= min(i, m); ++ j) c[i][j] = i && j ? c[i - 1][j - 1] + c[i - 1][j] : T{1};
 		return c;
 	}
 	int SZ = 0;
 	vector<T> inv, fact, invfact;
 	combinatorics(){ }
 	// O(SZ)
-	combinatorics(int SZ): SZ(SZ), inv(SZ + 1, 1), fact(SZ + 1, 1), invfact(SZ + 1, 1){
+	combinatorics(int SZ): SZ(SZ), inv(SZ + 1, T{1}), fact(SZ + 1, T{1}), invfact(SZ + 1, T{1}){
 		for(auto i = 1; i <= SZ; ++ i) fact[i] = fact[i - 1] * i;
-		invfact[SZ] = 1 / fact[SZ];
+		invfact[SZ] = T{1} / fact[SZ];
 		for(auto i = SZ - 1; i >= 0; -- i){
 			invfact[i] = invfact[i + 1] * (i + 1);
 			inv[i + 1] = invfact[i + 1] * fact[i];
@@ -44,7 +44,7 @@ struct combinatorics{
 	// O(1)
 	T H(int n, int k) const{
 		ASSERT(0 <= min(n, k));
-		if(n == 0) return 0;
+		if(n == 0) return T{0};
 		return C(n + k - 1, k);
 	}
 	// Multinomial Coefficient
@@ -65,7 +65,7 @@ struct combinatorics{
 	T naive_C(long long n, long long k) const{
 		ASSERT(0 <= min(n, k));
 		if(n < k) return 0;
-		T res = 1;
+		T res = T{1};
 		k = min(k, n - k);
 		ASSERT(k <= SZ);
 		for(auto i = n; i > n - k; -- i) res *= i;
@@ -75,7 +75,7 @@ struct combinatorics{
 	T naive_P(long long n, int k) const{
 		ASSERT(0 <= min<long long>(n, k));
 		if(n < k) return 0;
-		T res = 1;
+		T res = T{1};
 		for(auto i = n; i > n - k; -- i) res *= i;
 		return res;
 	}
@@ -89,13 +89,42 @@ struct combinatorics{
 		ASSERT(0 <= min(n, k));
 		return n >= k ? (n & k) == k : false;
 	}
-	// Number of ways to place n '('s and k ')'s starting with m copies of '(' such that in each prefix, number of '(' is equal or greater than ')'
+	// Number of ways to place n '('s and k ')'s starting with s copies of '(' such that in each prefix, number of '(' is equal or greater than ')'
 	// Catalan(n, n, 0): n-th catalan number
-	// Catalan(s, s+k-1, k-1): sum of products of k catalan numbers where the index of product sums up to s.
+	// Catalan(s, s+k-1, k-1): sum of products of k catalan numbers where the index of product sums up to s
 	// O(1)
-	T Catalan(int n, int k, int m = 0) const{
-		ASSERT(0 <= min({n, k, m}));
-		return k <= m ? C(n + k, k) : k <= n + m ? C(n + k, k) - C(n + k, k - m - 1) : T();
+	T Catalan(int n, int k, int s = 0) const{
+		ASSERT(0 <= min({n, k, s}));
+		return k <= s ? C(n + k, k) : k <= n + s ? C(n + k, k) - C(n + k, k - s - 1) : T{0};
+	}
+	// Number of ways to place n '('s and k ')'s starting with s copies of '(' and ending with e copies of '(' such that in each prefix and suffix, number of '(' is equal or greater than ')'
+	// O((n + k) / (n - k + s + e + 2))
+	T bidirectional_Catalan(int n, int k, int s = 0, int e = 0) const{
+		ASSERT(0 <= min({n, k, s, e}));
+		if(n - k + s < 0 || n - k + e < 0) return T{0};
+		if(n - k + s + e == 0) return T{n == 0 && k == 0};
+		T res = C(n + k, n);
+		for(auto l = -s - 1, m = n - k, r = n - k + e + 1, sign = -1; ; sign *= -1){
+			m = 2 * l - m;
+			if(n + k + m < 0) break;
+			res += sign * C(n + k, n + k + m >> 1);
+			tie(l, r) = pair<int, int>{2 * l - r, l};
+		}
+		for(auto l = -s - 1, m = n - k, r = n - k + e + 1, sign = -1; ; sign *= -1){
+			m = 2 * r - m;
+			if(n + k - m < 0) break;
+			res += sign * C(n + k, n + k - m >> 1);
+			tie(l, r) = pair<int, int>{r, 2 * r - l};
+		}
+		return res;
+	}
+	// Number of ways to place n of either '(' or ')' starting with s copies of '(' and ending with e copies of '(' such that in each prefix and suffix, number of '(' is equal or greater than ')'
+	// O(n * log(n))
+	T bidirectional_ballot_sequence_count(int n, int s = 0, int e = 0) const{
+		ASSERT(0 <= min({n, s, e}));
+		T res = 0;
+		for(auto k = 0; k <= n; ++ k) res += bidirectional_Catalan(k, n - k, s, e);
+		return res;
 	}
 #undef ASSERT
 };
