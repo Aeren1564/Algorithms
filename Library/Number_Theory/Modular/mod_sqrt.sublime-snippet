@@ -1,5 +1,6 @@
 <snippet>
 	<content><![CDATA[
+// p must be a prime
 // Returns sol to x^2=a mod p
 // O(log(p)^2) worst case, O(log(p)) for most p
 // Requires modular
