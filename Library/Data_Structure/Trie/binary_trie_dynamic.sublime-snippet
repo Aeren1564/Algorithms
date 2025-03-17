@@ -1,0 +1,333 @@
+<snippet>
+	<content><![CDATA[
+// Solves https://codeforces.com/contest/1515/problem/H
+template<class T, int lim>
+struct binary_trie_dynamic{
+#ifdef LOCAL
+	#define ASSERT(x) assert(x)
+#else
+	#define ASSERT(x) 42
+#endif
+	static constexpr T full_mask = (T{1} << lim) - 1;
+	struct node{
+		array<int, 2> next = {-1, -1};
+		int distinct_count = 0;
+		int subtr_count = 0;
+		int leaf_count = 0;
+		T lazy_xor = 0;
+		T sum_and = full_mask;
+		T sum_or = 0;
+	};
+	T _reversed(T x){
+		T res = 0;
+		for(auto bit = 0; bit < lim; ++ bit) res = res << 1 | x & 1, x >>= 1;
+		return res;
+	}
+	bool _cmp(T x, T y) const{
+		if(x == y) false;
+		T z = (x ^ y) & -(x ^ y);
+		return (x & z) < (y & z);
+	}
+	vector<int> dead_node;
+	vector<node> data;
+	int _new_node(){
+		int u;
+		if(dead_node.empty()){
+			u = (int)data.size();
+			data.emplace_back();
+		}
+		else{
+			u = dead_node.back();
+			dead_node.pop_back();
+			data[u] = {};
+		}
+		return u;
+	}
+	void _apply(int u, T lazy_xor){
+		if(!lazy_xor) return;
+		T dif = (data[u].sum_and ^ data[u].sum_or) & lazy_xor ^ lazy_xor;
+		data[u].sum_and ^= dif, data[u].sum_or ^= dif;
+	}
+	void _push(int u){
+		if(!data[u].lazy_xor) return;
+		for(auto i = 0; i < 2; ++ i) if(~data[u].next[i]) data[data[u].next[i]].lazy_xor ^= data[u].lazy_xor >> 1, _apply(data[u].next[i], data[u].lazy_xor >> 1);
+		if(data[u].lazy_xor & 1) swap(data[u].next[0], data[u].next[1]);
+		data[u].lazy_xor = 0;
+	}
+	void _refresh(int u){
+		data[u].distinct_count = 0;
+		data[u].subtr_count = 0;
+		data[u].sum_and = full_mask;
+		data[u].sum_or = 0;
+		for(auto i = 0; i < 2; ++ i) if(~data[u].next[i]){
+			data[u].distinct_count += data[data[u].next[i]].distinct_count;
+			data[u].subtr_count += data[data[u].next[i]].subtr_count;
+			data[u].sum_and &= data[data[u].next[i]].sum_and << 1 | 1;
+			data[u].sum_or |= data[data[u].next[i]].sum_or << 1;
+		}
+		if(~data[u].next[0]) data[u].sum_and ^= 1;
+		if(~data[u].next[1]) data[u].sum_or ^= 1;
+		data[u].sum_or &= full_mask;
+		if(!~data[u].next[0] && !~data[u].next[1]){
+			data[u].distinct_count = 1;
+			data[u].subtr_count = data[u].leaf_count;
+		}
+		_apply(u, data[u].lazy_xor);
+	}
+	int build(const vector<T> &a){
+		if(a.empty()) return -1;
+		for(auto x: a) ASSERT(x >= 0);
+		int root = _new_node();
+		for(auto x: a){
+			x = _reversed(x);
+			int u = root;
+			for(auto bit = 0; bit < lim; ++ bit){
+				if(!~data[u].next[x >> bit & 1]) data[u].next[x >> bit & 1] = _new_node();
+				u = data[u].next[x >> bit & 1];
+			}
+			data[u].distinct_count = 1;
+			++ data[u].leaf_count;
+		}
+		auto dfs = [&](auto self, int u)->void{
+			for(auto i = 0; i < 2; ++ i) if(~data[u].next[i]) self(self, data[u].next[i]);
+			_refresh(u);
+		};
+		dfs(dfs, root);
+		return root;
+	}
+	int insert(int u, T x){
+		ASSERT(u >= -1 && x >= 0);
+		int root = ~u ? u : _new_node();
+		u = root;
+		x = _reversed(x);
+		for(auto bit = 0; bit < lim; ++ bit){
+			_push(u);
+			if(!~data[u].next[x >> bit & 1]) data[u].next[x >> bit & 1] = _new_node();
+			u = data[u].next[x >> bit & 1];
+		}
+		data[u].distinct_count = 1;
+		++ data[u].leaf_count;
+		auto dfs = [&](auto self, int u, int bit)->void{
+			if(bit == lim) return;
+			self(self, data[u].next[x >> bit & 1], bit + 1);
+			_refresh(u);
+		};
+		dfs(dfs, root, 0);
+		return root;
+	}
+	// O(lim), assumes the subtree of u is not empty
+	T min_element(int u){
+		ASSERT(u >= 0 && data[u].distinct_count);
+		_push(u);
+		if(~data[u].next[0]) return min_element(data[u].next[0]) << 1;
+		else if(~data[u].next[1]) return min_element(data[u].next[1]) << 1 | 1;
+		else return 0;
+	}
+	// O(lim), assumes the subtree of u is not empty
+	T max_element(int u){
+		ASSERT(u >= 0 && data[u].distinct_count);
+		_push(u);
+		if(~data[u].next[1]) return max_element(data[u].next[1]) << 1 | 1;
+		else if(~data[u].next[0]) return max_element(data[u].next[0]) << 1;
+		else return 0;
+	}
+	// If x is present, return it. Otherwise, return the closest number sharing the longest prefix with x
+	// O(lim)
+	T approximate(int u, T x){
+		ASSERT(u >= 0 && data[u].distinct_count && 0 <= x && x <= full_mask);
+		if(!~data[u].next[0] && !~data[u].next[1]) return 0;
+		_push(u);
+		if(~data[u].next[x & 1]) return approximate(data[u].next[x & 1], x >> 1) << 1 | x & 1;
+		else if(x & 1) return max_element(data[u].next[0]) << 1;
+		else return min_element(data[u].next[1]) << 1 | 1;
+	}
+	// Assumes x and its next is present, return the length of the largest prefix with next element
+	// O(lim)
+	int splitting_depth_with_next(int u, T x){
+		ASSERT(u >= 0 && 0 <= x && x <= full_mask);
+		if(!~data[u].next[0] && !~data[u].next[1]) return numeric_limits<int>::min();
+		_push(u);
+		if(x & 1) return splitting_depth_with_next(data[u].next[1], x >> 1) + 1;
+		else{
+			int res = splitting_depth_with_next(data[u].next[0], x >> 1) + 1;
+			if(~data[u].next[1]) res = max(res, 0);
+			return res;
+		}
+	}
+	// Assumes x and its previous is present, return the length of the largest prefix with previous element
+	int splitting_depth_with_prev(int u, T x){
+		ASSERT(u >= 0 && 0 <= x && x <= full_mask);
+		if(!~data[u].next[0] && !~data[u].next[1]) return numeric_limits<int>::min();
+		_push(u);
+		if(~x & 1) return splitting_depth_with_prev(data[u].next[0], x >> 1) + 1;
+		else{
+			int res = splitting_depth_with_prev(data[u].next[1], x >> 1) + 1;
+			if(~data[u].next[0]) res = max(res, 0);
+			return res;
+		}
+	}
+	// O(lim) time and O(lim) space
+	template<bool REVERSE = true>
+	pair<int, int> split(int u, T x){
+		ASSERT(u >= -1 && 0 <= x && x <= full_mask + 1);
+		if(!~u || x == full_mask + 1) return {u, -1};
+		if(x == 0) return {-1, u};
+		if(REVERSE) x = _reversed(x);
+		if(!data[u].distinct_count || _cmp(max_element(u), x)) return {u, -1};
+		else if(!_cmp(min_element(u), x)) return {-1, u};
+		T y = approximate(u, x);
+		int obj = _cmp(y, x) ? splitting_depth_with_next(u, y) : splitting_depth_with_prev(u, y);
+		auto recurse = [&](auto self, int u, T x, int depth)->array<int, 2>{
+			if(depth == obj){
+				int v = _new_node();
+				swap(data[u].next[1], data[v].next[1]);
+				_refresh(u), _refresh(v);
+				return {u, v};
+			}
+			auto t = self(self, data[u].next[x & 1], x >> 1, depth + 1);
+			data[u].next[x & 1] = t[~x & 1], _refresh(u);
+			int v = _new_node();
+			data[v].next[x & 1] = t[x & 1], _refresh(v);
+			return x & 1 ? array{u, v} : array{v, u};
+		};
+		auto res = recurse(recurse, u, y, 0);
+		return {res[0], res[1]};
+	}
+	tuple<int, int, int> split_to_three(int u, T l, T r){
+		ASSERT(u >= -1 && 0 <= l && l <= r && r <= full_mask + 1);
+		if(!~u) return {-1, -1, -1};
+		int v, w;
+		tie(u, v) = split(u, l);
+		tie(v, w) = split(v, r);
+		return {u, v, w};
+	}
+	int merge(int u, int v){
+		ASSERT(u >= -1 && v >= -1);
+		if(!~u || !~v) return !~v ? u : v;
+		_push(u), _push(v);
+		if(data[u].leaf_count || data[v].leaf_count) data[u].leaf_count += data[v].leaf_count;
+		data[u].next = {merge(data[u].next[0], data[v].next[0]), merge(data[u].next[1], data[v].next[1])};
+		dead_node.push_back(v);
+		_refresh(u);
+		return u;
+	}
+	int merge(int u, int v, int w){
+		ASSERT(u >= -1 && v >= -1 && w >= -1);
+		return merge(merge(u, v), w);
+	}
+	int merge(initializer_list<int> lst){
+		int u = -1;
+		for(auto v: lst){
+			ASSERT(v >= -1);
+			u = merge(u, v);
+		}
+		return u;
+	}
+	// O(1)
+	template<bool REVERSE = true>
+	int update_bitwise_xor(int u, T x){
+		ASSERT(u >= -1 && 0 <= x && x <= full_mask);
+		if(!~u) return -1;
+		if(REVERSE) x = _reversed(x);
+		data[u].lazy_xor ^= x, _apply(u, x);
+		return u;
+	}
+	// O(lim) time and O(lim) space
+	int update_bitwise_xor(int u, T l, T r, T x){
+		ASSERT(u >= -1 && 0 <= l && l <= r && r <= full_mask + 1 && 0 <= x && x <= full_mask);
+		auto [a, b, c] = split_to_three(u, l, r);
+		b = update_bitwise_xor(b, x);
+		return merge(a, b, c);
+	}
+	// Amortized O(lim^2)
+	template<bool REVERSE = true>
+	int update_bitwise_or(int u, T x){
+		ASSERT(u >= -1 && 0 <= x && x <= full_mask);
+		if(!~u) return -1;
+		if(REVERSE) x = _reversed(x);
+		auto recurse = [&](auto self, int u, T x)->int{
+			if(!~u || x == (x & data[u].sum_and)) return u;
+			_push(u);
+			if(x & 1) data[u].next = {-1, self(self, merge(data[u].next[0], data[u].next[1]), x >> 1)};
+			else data[u].next = {self(self, data[u].next[0], x >> 1), self(self, data[u].next[1], x >> 1)};
+			_refresh(u);
+			return u;
+		};
+		return recurse(recurse, update_bitwise_xor<false>(u, data[u].sum_or & x ^ x), x);
+	}
+	// Amortized O(lim^2) time and O(lim) space
+	int update_bitwise_or(int u, T l, T r, T x){
+		ASSERT(u >= -1 && 0 <= l && l <= r && r <= full_mask + 1 && 0 <= x && x <= full_mask);
+		auto [a, b, c] = split_to_three(u, l, r);
+		b = update_bitwise_or(b, x);
+		return merge(a, b, c);
+	}
+	// Amortized O(lim^2)
+	template<bool REVERSE = true>
+	int update_bitwise_and(int u, T x){
+		ASSERT(u >= -1 && 0 <= x && x <= full_mask);
+		if(!~u) return -1;
+		if(REVERSE) x = _reversed(x);
+		return update_bitwise_xor<false>(update_bitwise_or<false>(update_bitwise_xor<false>(u, full_mask), full_mask ^ x), full_mask);
+	}
+	// Amortized O(lim^2) time and O(lim) space
+	int update_bitwise_and(int u, T l, T r, T x){
+		ASSERT(u >= -1 && 0 <= l && l <= r && r <= full_mask + 1 && 0 <= x && x <= full_mask);
+		auto [a, b, c] = split_to_three(u, l, r);
+		b = update_bitwise_and(b, x);
+		return merge(a, b, c);
+	}
+	int distinct_count(int u){
+		ASSERT(u >= -1);
+		return ~u ? data[u].distinct_count : 0;
+	}
+	int size(int u){
+		ASSERT(u >= -1);
+		return ~u ? data[u].subtr_count : 0;
+	}
+	int find_by_distinct_order(int u, int k){
+		ASSERT(u >= 0 && 0 <= k && k < data[u].distinct_count);
+		T res = 0;
+		while(true){
+			_push(u);
+			if(data[u].leaf_count) return res;
+			if(k < distinct_count(data[u].next[0])) u = data[u].next[0], res = res << 1;
+			else k -= distinct_count(data[u].next[0]), u = data[u].next[1], res = res << 1 | 1;
+		}
+	}
+	T find_by_order(int u, int k){
+		ASSERT(u >= 0 && 0 <= k && k < data[u].subtr_count);
+		T res = 0;
+		while(true){
+			_push(u);
+			if(data[u].leaf_count) return res;
+			if(k < size(data[u].next[0])) u = data[u].next[0], res = res << 1;
+			else k -= size(data[u].next[0]), u = data[u].next[1], res = res << 1 | 1;
+		}
+	}
+	void print(int u){
+		ASSERT(u >= -1);
+		#ifdef LOCAL
+		string s;
+		auto dfs = [&](auto self, int u)->void{
+			if(!~u) return;
+			_push(u);
+			cerr << "Node: " << s << "\ndistinct_count: " << data[u].distinct_count << ", and_sum: " << bitset<lim>(data[u].sum_and) << ", or_sum: " << bitset<lim>(data[u].sum_or) << endl;
+			for(auto i = 0; i < 2; ++ i){
+				s.push_back('0' + i);
+				self(self, data[u].next[i]);
+				s.pop_back();
+			}
+		};
+		dfs(dfs, u);
+		cerr << endl;
+		#endif
+	}
+#undef ASSERT
+};
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>binary_trie_dynamic</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<scope>source.c++</scope> -->
+</snippet>
