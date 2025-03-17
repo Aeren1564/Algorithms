@@ -120,16 +120,30 @@ struct modular_fixed_base{
 	modular_fixed_base geometric_sum(T e, modular_fixed_base c = 1) const{
 		return modular_fixed_base(*this).inplace_geometric_sum(e, c);
 	}
-	modular_fixed_base &operator/=(const modular_fixed_base &otr){
-		make_signed_t<data_t> a = otr._data, m = _mod, u = 0, v = 1;
-		if(a < _INV.size()) return *this *= _INV[a];
+	// Returns the minimum integer e>0 with b^e=*this, if it exists
+	// O(sqrt(mod)) applications of hashmap
+	optional<data_t> log(const modular_fixed_base &b) const{
+		data_t m = mod(), n = sqrtl(m) + 1, j = 1;
+		modular_fixed_base e = 1, f = 1;
+		unordered_map<data_t, data_t> A;
+		while(j <= n && (f = e *= b) != *this) A[(e * *this).data()] = j ++;
+		if(e == *this) return j;
+		if(gcd(mod(), e.data()) == gcd(mod(), data())) for(auto i = 2; i < n + 2; ++ i) if(A.count((e *= f).data())) return n * i - A[e.data()];
+		return {};
+	}
+	optional<modular_fixed_base> inverse() const{
+		make_signed_t<data_t> a = data(), m = _mod, u = 0, v = 1;
+		if(data() < _INV.size()) return _INV[data()];
 		while(a){
 			make_signed_t<data_t> t = m / a;
 			m -= t * a; swap(a, m);
 			u -= t * v; swap(u, v);
 		}
-		assert(m == 1);
-		return *this *= u;
+		if(m != 1) return {};
+		return modular_fixed_base{u};
+	}
+	modular_fixed_base &operator/=(const modular_fixed_base &otr){
+		return *this = *this * *otr.inverse();
 	}
 #define ARITHMETIC_OP(op, apply_op)\
 modular_fixed_base operator op(const modular_fixed_base &x) const{ return modular_fixed_base(*this) apply_op x; }\
@@ -174,9 +188,8 @@ friend bool operator op(const T &x, const modular_fixed_base &y){ return modular
 		return out;
 	}
 	data_t _data = 0;
-	data_t &data(){
-		return _data;
-	}
+	data_t &data(){ return _data; }
+	const data_t &data() const{ return _data; }
 #undef IS_INTEGRAL
 #undef IS_UNSIGNED
 };
