@@ -57,26 +57,26 @@ struct modular_fixed_base{
 		}
 	}
 	constexpr modular_fixed_base(){ }
-	modular_fixed_base(const double &x){ _data = _normalize(llround(x)); }
-	modular_fixed_base(const long double &x){ _data = _normalize(llround(x)); }
-	template<class T, typename enable_if<IS_INTEGRAL(T)>::type* = nullptr> modular_fixed_base(const T &x){ _data = _normalize(x); }
+	constexpr modular_fixed_base(const double &x){ _data = _normalize(llround(x)); }
+	constexpr modular_fixed_base(const long double &x){ _data = _normalize(llround(x)); }
+	template<class T, typename enable_if<IS_INTEGRAL(T)>::type* = nullptr> constexpr modular_fixed_base(const T &x){ _data = _normalize(x); }
 	template<class T, typename enable_if<IS_INTEGRAL(T)>::type* = nullptr> static data_t _normalize(const T &x){
 		int sign = x >= 0 ? 1 : -1;
 		data_t v =  _mod <= sign * x ? sign * x % _mod : sign * x;
 		if(sign == -1 && v) v = _mod - v;
 		return v;
 	}
-	template<class T, typename enable_if<IS_INTEGRAL(T)>::type* = nullptr> operator T() const{ return _data; }
-	modular_fixed_base &operator+=(const modular_fixed_base &otr){ if((_data += otr._data) >= _mod) _data -= _mod; return *this; }
-	modular_fixed_base &operator-=(const modular_fixed_base &otr){ if((_data += _mod - otr._data) >= _mod) _data -= _mod; return *this; }
-	template<class T, typename enable_if<IS_INTEGRAL(T)>::type* = nullptr> modular_fixed_base &operator+=(const T &otr){ return *this += modular_fixed_base(otr); }
-	template<class T, typename enable_if<IS_INTEGRAL(T)>::type* = nullptr> modular_fixed_base &operator-=(const T &otr){ return *this -= modular_fixed_base(otr); }
-	modular_fixed_base &operator++(){ return *this += 1; }
-	modular_fixed_base &operator--(){ return *this += _mod - 1; }
-	modular_fixed_base operator++(int){ modular_fixed_base result(*this); *this += 1; return result; }
-	modular_fixed_base operator--(int){ modular_fixed_base result(*this); *this += _mod - 1; return result; }
-	modular_fixed_base operator-() const{ return modular_fixed_base(_mod - _data); }
-	modular_fixed_base &operator*=(const modular_fixed_base &rhs){
+	template<class T, typename enable_if<IS_INTEGRAL(T)>::type* = nullptr> constexpr operator T() const{ return data(); }
+	constexpr modular_fixed_base &operator+=(const modular_fixed_base &otr){ if((_data += otr._data) >= _mod) _data -= _mod; return *this; }
+	constexpr modular_fixed_base &operator-=(const modular_fixed_base &otr){ if((_data += _mod - otr._data) >= _mod) _data -= _mod; return *this; }
+	template<class T, typename enable_if<IS_INTEGRAL(T)>::type* = nullptr> constexpr modular_fixed_base &operator+=(const T &otr){ return *this += modular_fixed_base(otr); }
+	template<class T, typename enable_if<IS_INTEGRAL(T)>::type* = nullptr> constexpr modular_fixed_base &operator-=(const T &otr){ return *this -= modular_fixed_base(otr); }
+	constexpr modular_fixed_base &operator++(){ return *this += 1; }
+	constexpr modular_fixed_base &operator--(){ return *this += _mod - 1; }
+	constexpr modular_fixed_base operator++(int){ modular_fixed_base result(*this); *this += 1; return result; }
+	constexpr modular_fixed_base operator--(int){ modular_fixed_base result(*this); *this += _mod - 1; return result; }
+	constexpr modular_fixed_base operator-() const{ return modular_fixed_base(_mod - _data); }
+	constexpr modular_fixed_base &operator*=(const modular_fixed_base &rhs){
 		if constexpr(is_same_v<data_t, unsigned int>) _data = (unsigned long long)_data * rhs._data % _mod;
 		else if constexpr(is_same_v<data_t, unsigned long long>){
 			long long res = _data * rhs._data - _mod * (unsigned long long)(1.L / _mod * _data * rhs._data);
@@ -86,7 +86,7 @@ struct modular_fixed_base{
 		return *this;
 	}
 	template<class T, typename enable_if<IS_INTEGRAL(T)>::type* = nullptr>
-	modular_fixed_base &inplace_power(T e){
+	constexpr modular_fixed_base &inplace_power(T e){
 		if(e == 0) return *this = 1;
 		if(_data == 0) return *this = {};
 		if(_data == 1 || e == 1) return *this;
@@ -98,12 +98,12 @@ struct modular_fixed_base{
 		return *this = res;
 	}
 	template<class T, typename enable_if<IS_INTEGRAL(T)>::type* = nullptr>
-	modular_fixed_base power(T e) const{
+	constexpr modular_fixed_base power(T e) const{
 		return modular_fixed_base(*this).inplace_power(e);
 	}
 	// c + c * x + ... + c * x^{e-1}
 	template<class T, typename enable_if<IS_INTEGRAL(T)>::type* = nullptr>
-	modular_fixed_base &inplace_geometric_sum(T e, modular_fixed_base c = 1){
+	constexpr modular_fixed_base &inplace_geometric_sum(T e, modular_fixed_base c = 1){
 		if(e == 0) return *this = {};
 		if(_data == 0) return *this = {};
 		if(_data == 1) return *this = c * e;
@@ -117,12 +117,12 @@ struct modular_fixed_base{
 	}
 	// c + c * x + ... + c * x^{e-1}
 	template<class T, typename enable_if<IS_INTEGRAL(T)>::type* = nullptr>
-	modular_fixed_base geometric_sum(T e, modular_fixed_base c = 1) const{
+	constexpr modular_fixed_base geometric_sum(T e, modular_fixed_base c = 1) const{
 		return modular_fixed_base(*this).inplace_geometric_sum(e, c);
 	}
 	// Returns the minimum integer e>0 with b^e=*this, if it exists
 	// O(sqrt(mod)) applications of hashmap
-	optional<data_t> log(const modular_fixed_base &b) const{
+	constexpr optional<data_t> log(const modular_fixed_base &b) const{
 		data_t m = mod(), n = sqrtl(m) + 1, j = 1;
 		modular_fixed_base e = 1, f = 1;
 		unordered_map<data_t, data_t> A;
@@ -131,7 +131,7 @@ struct modular_fixed_base{
 		if(gcd(mod(), e.data()) == gcd(mod(), data())) for(auto i = 2; i < n + 2; ++ i) if(A.count((e *= f).data())) return n * i - A[e.data()];
 		return {};
 	}
-	optional<modular_fixed_base> inverse() const{
+	constexpr optional<modular_fixed_base> inverse() const{
 		make_signed_t<data_t> a = data(), m = _mod, u = 0, v = 1;
 		if(data() < _INV.size()) return _INV[data()];
 		while(a){
@@ -146,19 +146,19 @@ struct modular_fixed_base{
 		return *this = *this * *otr.inverse();
 	}
 #define ARITHMETIC_OP(op, apply_op)\
-modular_fixed_base operator op(const modular_fixed_base &x) const{ return modular_fixed_base(*this) apply_op x; }\
+constexpr modular_fixed_base operator op(const modular_fixed_base &x) const{ return modular_fixed_base(*this) apply_op x; }\
 template<class T, typename enable_if<IS_INTEGRAL(T)>::type* = nullptr>\
-modular_fixed_base operator op(const T &x) const{ return modular_fixed_base(*this) apply_op modular_fixed_base(x); }\
+constexpr modular_fixed_base operator op(const T &x) const{ return modular_fixed_base(*this) apply_op modular_fixed_base(x); }\
 template<class T, typename enable_if<IS_INTEGRAL(T)>::type* = nullptr>\
-friend modular_fixed_base operator op(const T &x, const modular_fixed_base &y){ return modular_fixed_base(x) apply_op y; }
+constexpr friend modular_fixed_base operator op(const T &x, const modular_fixed_base &y){ return modular_fixed_base(x) apply_op y; }
 	ARITHMETIC_OP(+, +=) ARITHMETIC_OP(-, -=) ARITHMETIC_OP(*, *=) ARITHMETIC_OP(/, /=)
 #undef ARITHMETIC_OP
 #define COMPARE_OP(op)\
-bool operator op(const modular_fixed_base &x) const{ return _data op x._data; }\
+constexpr bool operator op(const modular_fixed_base &x) const{ return _data op x._data; }\
 template<class T, typename enable_if<IS_INTEGRAL(T)>::type* = nullptr>\
-bool operator op(const T &x) const{ return _data op modular_fixed_base(x)._data; }\
+constexpr bool operator op(const T &x) const{ return _data op modular_fixed_base(x)._data; }\
 template<class T, typename enable_if<IS_INTEGRAL(T)>::type* = nullptr>\
-friend bool operator op(const T &x, const modular_fixed_base &y){ return modular_fixed_base(x)._data op y._data; }
+constexpr friend bool operator op(const T &x, const modular_fixed_base &y){ return modular_fixed_base(x)._data op y._data; }
 	COMPARE_OP(==) COMPARE_OP(!=) COMPARE_OP(<) COMPARE_OP(<=) COMPARE_OP(>) COMPARE_OP(>=)
 #undef COMPARE_OP
 	friend istream &operator>>(istream &in, modular_fixed_base &number){
@@ -188,8 +188,7 @@ friend bool operator op(const T &x, const modular_fixed_base &y){ return modular
 		return out;
 	}
 	data_t _data = 0;
-	data_t &data(){ return _data; }
-	const data_t &data() const{ return _data; }
+	constexpr data_t data() const{ return _data; }
 #undef IS_INTEGRAL
 #undef IS_UNSIGNED
 };
@@ -201,7 +200,7 @@ constexpr unsigned int mod = (119 << 23) + 1; // 998244353
 // constexpr unsigned int mod = 1e9 + 9; // 1000000009
 // constexpr unsigned long long mod = (unsigned long long)1e18 + 9;
 using modular = modular_fixed_base<decay_t<decltype(mod)>, mod>;
-modular operator""_m(const char *x){ return stoll(x); }
+constexpr modular operator""_m(const char *x){ return stoll(x); }
 ]]></content>
 	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
 	<tabTrigger>modular_fixed</tabTrigger> -->
