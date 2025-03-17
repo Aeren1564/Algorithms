@@ -80,11 +80,11 @@ struct number_theoric_transform_wrapper{
 						int offset = s << (h - len);
 						for(auto i = 0; i < power; ++ i){
 							auto mod2 = 1ull * modular::mod() * modular::mod();
-							auto a0 = 1ull * p[i + offset].data;
-							auto a1 = 1ull * p[i + offset + power].data * rot.data;
-							auto a2 = 1ull * p[i + offset + 2 * power].data * rot2.data;
-							auto a3 = 1ull * p[i + offset + 3 * power].data * rot3.data;
-							auto a1na3imag = 1ull * modular(a1 + mod2 - a3).data * imag.data;
+							auto a0 = 1ull * p[i + offset].data();
+							auto a1 = 1ull * p[i + offset + power].data() * rot.data();
+							auto a2 = 1ull * p[i + offset + 2 * power].data() * rot2.data();
+							auto a3 = 1ull * p[i + offset + 3 * power].data() * rot3.data();
+							auto a1na3imag = 1ull * modular(a1 + mod2 - a3).data() * imag.data();
 							auto na2 = mod2 - a2;
 							p[i + offset] = a0 + a2 + a1 + a3;
 							p[i + offset + 1 * power] = a0 + a2 + (2 * mod2 - (a1 + a3));
@@ -108,7 +108,7 @@ struct number_theoric_transform_wrapper{
 							auto l = p[i + offset];
 							auto r = p[i + offset + power];
 							p[i + offset] = l + r;
-							p[i + offset + power] = (unsigned long long)(modular::mod() + l.data - r.data) * invrot.data;
+							p[i + offset + power] = (unsigned long long)(modular::mod() + l.data() - r.data()) * invrot.data();
 						}
 						if(s + 1 != 1 << len - 1) invrot *= invrate2[__builtin_ctz(s + 1)];
 					}
@@ -122,15 +122,15 @@ struct number_theoric_transform_wrapper{
 						modular invrot3 = invrot2 * invrot;
 						int offset = s << h - len + 2;
 						for(auto i = 0; i < power; ++ i){
-							auto a0 = 1ull * p[i + offset + 0 * power].data;
-							auto a1 = 1ull * p[i + offset + 1 * power].data;
-							auto a2 = 1ull * p[i + offset + 2 * power].data;
-							auto a3 = 1ull * p[i + offset + 3 * power].data;
-							auto a2na3iimag = 1ull * modular((modular::mod() + a2 - a3) * iimag.data).data;
+							auto a0 = 1ull * p[i + offset + 0 * power].data();
+							auto a1 = 1ull * p[i + offset + 1 * power].data();
+							auto a2 = 1ull * p[i + offset + 2 * power].data();
+							auto a3 = 1ull * p[i + offset + 3 * power].data();
+							auto a2na3iimag = 1ull * modular((modular::mod() + a2 - a3) * iimag.data()).data();
 							p[i + offset] = a0 + a1 + a2 + a3;
-							p[i + offset + 1 * power] = (a0 + (modular::mod() - a1) + a2na3iimag) * invrot.data;
-							p[i + offset + 2 * power] = (a0 + a1 + (modular::mod() - a2) + (modular::mod() - a3)) * invrot2.data;
-							p[i + offset + 3 * power] = (a0 + (modular::mod() - a1) + (modular::mod() - a2na3iimag)) * invrot3.data;
+							p[i + offset + 1 * power] = (a0 + (modular::mod() - a1) + a2na3iimag) * invrot.data();
+							p[i + offset + 2 * power] = (a0 + a1 + (modular::mod() - a2) + (modular::mod() - a3)) * invrot2.data();
+							p[i + offset + 3 * power] = (a0 + (modular::mod() - a1) + (modular::mod() - a2na3iimag)) * invrot3.data();
 						}
 						if(s + 1 != 1 << len - 2) invrot *= invrate3[__builtin_ctz(s + 1)];
 					}
@@ -319,16 +319,16 @@ struct number_theoric_transform_wrapper{
 		using ntt1 = number_theoric_transform_wrapper<modular1>;
 		using ntt2 = number_theoric_transform_wrapper<modular2>;
 		vector<modular0> p0((int)p.size()), q0((int)q.size());
-		for(auto i = 0; i < (int)p.size(); ++ i) p0[i] = p[i].data;
-		for(auto i = 0; i < (int)q.size(); ++ i) q0[i] = q[i].data;
+		for(auto i = 0; i < (int)p.size(); ++ i) p0[i] = p[i].data();
+		for(auto i = 0; i < (int)q.size(); ++ i) q0[i] = q[i].data();
 		auto xy0 = ntt0::convolve(p0, q0);
 		vector<modular1> p1((int)p.size()), q1((int)q.size());
-		for(auto i = 0; i < (int)p.size(); ++ i) p1[i] = p[i].data;
-		for(auto i = 0; i < (int)q.size(); ++ i) q1[i] = q[i].data;
+		for(auto i = 0; i < (int)p.size(); ++ i) p1[i] = p[i].data();
+		for(auto i = 0; i < (int)q.size(); ++ i) q1[i] = q[i].data();
 		auto xy1 = ntt1::convolve(p1, q1);
 		vector<modular2> p2((int)p.size()), q2((int)q.size());
-		for(auto i = 0; i < (int)p.size(); ++ i) p2[i] = p[i].data;
-		for(auto i = 0; i < (int)q.size(); ++ i) q2[i] = q[i].data;
+		for(auto i = 0; i < (int)p.size(); ++ i) p2[i] = p[i].data();
+		for(auto i = 0; i < (int)q.size(); ++ i) q2[i] = q[i].data();
 		auto xy2 = ntt2::convolve(p2, q2);
 		static const modular1 r01 = 1 / modular1(modular0::mod());
 		static const modular2 r02 = 1 / modular2(modular0::mod());
@@ -340,10 +340,10 @@ struct number_theoric_transform_wrapper{
 		vector<T> res(n);
 		for(auto i = 0; i < n; ++ i){
 			using ull = unsigned long long;
-			ull a = xy0[i].data;
-			ull b = (xy1[i].data + modular1::mod() - a) * r01.data % modular1::mod();
-			ull c = ((xy2[i].data + modular2::mod() - a) * r02r12.data + (modular2::mod() - b) * r12.data) % modular2::mod();
-			res[i] = xy0[i].data + w1 * b + w2 * c;
+			ull a = xy0[i].data();
+			ull b = (xy1[i].data() + modular1::mod() - a) * r01.data() % modular1::mod();
+			ull c = ((xy2[i].data() + modular2::mod() - a) * r02r12.data() + (modular2::mod() - b) * r12.data()) % modular2::mod();
+			res[i] = xy0[i].data() + w1 * b + w2 * c;
 		}
 		return res;
 	}
