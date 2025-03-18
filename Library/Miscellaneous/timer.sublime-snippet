@@ -1,7 +1,7 @@
 <snippet>
 	<content><![CDATA[
+template<class T = long double>
 struct timer{
-	using T = long double;
 	enum class unit{
 		s, ms, us, ns
 	};
@@ -30,11 +30,12 @@ struct timer{
 	// Measures time from last measure() call(construction if no such call)
 	T measure(){
 		T x = chrono::duration<T>(chrono::high_resolution_clock::now() - current).count() * multiplier;
+		refresh();
 		return x;
 	}
 	// Measures time from the construction
 	T measure_from_start(){
-		return chrono::duration<T>(chrono::high_resolution_clock::now() - init).count() * multiplier;;
+		return chrono::duration<T>(chrono::high_resolution_clock::now() - init).count() * multiplier;
 	}
 };
 ]]></content>
