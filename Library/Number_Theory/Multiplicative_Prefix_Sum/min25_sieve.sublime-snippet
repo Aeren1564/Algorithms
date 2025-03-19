@@ -7,24 +7,28 @@
 // for prime p and integer e >= 1
 template<class T, class F1>
 struct min25_sieve{
+	long long n_th;
 	vector<T> coef;
 	F1 eval;
-	int th;
 	vector<int> prime;
-	min25_sieve(const vector<T> &coef, F1 eval, int th): th(th), coef(coef), eval(eval){
-		th = max(th, 3);
+	min25_sieve(long long n_th, const vector<T> &coef, F1 eval): n_th(n_th), coef(coef), eval(eval){
+		assert(0 <= n_th && n_th <= 1e15);
+		int sq = sqrtl(n_th);
 		prime = {2, 3};
-		vector<bool> is_prime(th + 1, true);
-		for(auto p = 5, delta = 2; p <= th; p += delta, delta = 6 - delta) if(is_prime[p]){
+		vector<bool> is_prime(sq + 1, true);
+		for(auto p = 5, delta = 2; p <= sq; p += delta, delta = 6 - delta) if(is_prime[p]){
 			prime.push_back(p);
-			for(auto q = 3 * p; q <= th; q += 2 * p) is_prime[q] = false;
+			for(auto q = 3 * p; q <= sq; q += 2 * p) is_prime[q] = false;
 		}
 	}
+	template<class U, class V>
+	long long _div(U x, V y){ return double(x) / y; }
 	// Returns 0^d + ... + (base-1)^d
 	// O(d * log(d) + inverse_in_T())
 	T _power_sum(long long base, int d){
 		assert(d >= 0);
-		vector<T> value(d + 2), fact(d + 2, 1), pref(d + 3, 1), suff(d + 3, 1);
+		static vector<T> value, pref, suff;
+		value.resize(d + 2), pref.resize(d + 3, 1), suff.resize(d + 3, 1);
 		for(auto x = 0; x <= d; ++ x){
 			T temp = x;
 			value[x + 1] = 1;
@@ -39,45 +43,108 @@ struct min25_sieve{
 	}
 	// list of floor(n/k) at all distinct value of floor(n/k) in increasing order of k
 	vector<long long> block;
-	// O(n^3/4)
-	vector<T> query(long long n){
-		assert(1LL * prime.back() * prime.back() > n);
+	int cut, prime_th, nb;
+	void _prepare(long long n){
+		prime_th = partition_point(prime.begin(), prime.end(), [&](int p){ return 1LL * p * p <= n; }) - prime.begin();
+		cut = sqrtl(n);
 		block.clear();
+		block.reserve(2 * cut + 2);
 		for(auto low = 1LL, high = 0LL; low <= n; low = high + 1){
 			long long q = n / low;
 			high = n / q;
 			block.push_back(q);
 		}
-		const int nb = (int)block.size();
-		const int cut = sqrtl(n);
-		vector<T> prime_power((int)prime.size(), 1), prime_power_prefix((int)prime.size() + 1);
-		vector<T> s(nb), res(nb);
-		for(auto d = 0; d < (int)coef.size(); ++ d){
-			for(auto i = 0; i < nb; ++ i) s[i] = _power_sum(block[i] + 1, d) - _power_sum(2, d);
-			for(auto i = 0; i < (int)prime.size(); ++ i) prime_power_prefix[i + 1] = prime_power_prefix[i] + prime_power[i];
-			for(auto ns = nb, j = 0; 1LL * prime[j] * prime[j] <= n; ++ j){
-				while(ns > 0 && 1LL * prime[j] * prime[j] > block[ns - 1]) -- ns;
-				for(auto i = 0; i < ns; ++ i){
-					long long x = block[i] / prime[j];
-					s[i] -= prime_power[j] * ((x <= cut ? s[nb - x] : s[n / x - 1]) - prime_power_prefix[j]);
-				}
+		nb = (int)block.size();
+	}
+	vector<T> s, res;
+	// Returns the sum of f(p) for prime p <= block[i] for each block index i
+	// O(n^3/4 / log(n))
+	const vector<T> &query_block_prime_prefix_sum(long long n){
+		assert(1 <= n && n <= n_th);
+		_prepare(n);
+		res.assign(nb, T{0});
+		if(coef.empty()) return res;
+		s.resize(nb);
+		if(coef[0]){
+			for(auto i = 0; i < nb; ++ i) s[i] = block[i] - 1;
+			T prime_power_prefix = 0;
+			for(auto j = 0; j < prime_th; ++ j){
+				int p = prime[j];
+				long long sqp = 1LL * p * p;
+				int imax = min<long long>(cut, _div(n, sqp));
+				long long ip = p;
+				for(auto i = 0; i < imax; ++ i, ip += p) s[i] -= (ip <= cut ? s[ip - 1] : s[nb - _div(n, ip)]) - prime_power_prefix;
+				for(auto i = imax; i < nb && block[i] >= sqp; ++ i) s[i] -= s[nb - _div(block[i], p)] - prime_power_prefix;
+				++ prime_power_prefix;
 			}
-			for(auto i = 0; i < nb; ++ i) res[i] += coef[d] * s[i];
-			for(auto i = 0; i < (int)prime.size(); ++ i) prime_power[i] *= prime[i];
+			for(auto i = 0; i < nb; ++ i) res[i] += coef[0] * s[i];
 		}
-		s = res;
-		for(auto ns = 0, j = int(partition_point(prime.begin(), prime.end(), [&](int p){ return 1LL * p * p <= n; }) - prime.begin()) - 1; j >= 0; -- j){
-			while(ns < nb && 1LL * prime[j] * prime[j] <= block[ns]) ++ ns;
-			for(auto i = 0; i < ns; ++ i){
-				long long p_power = prime[j];
-				for(auto c = 1; p_power <= block[i] / prime[j]; ++ c, p_power *= prime[j]){
-					long long x = block[i] / p_power;
-					res[i] += eval(prime[j], c) * ((x <= cut ? res[nb - x] : res[n / x - 1]) - s[nb - prime[j]]) + eval(prime[j], c + 1);
+		vector<T> prime_power(prime.begin(), prime.begin() + prime_th);
+		for(auto d = 1; d < (int)coef.size(); ++ d){
+			if(coef[d]){
+				if(d == 1){
+					T inv = T{1} / 2;
+					for(auto i = 0; i < cut; ++ i){
+						T x = block[i];
+						s[i] = x * (x + 1) * inv - 1;
+					}
+					for(auto i = nb - 2; i >= cut; -- i) s[i] = s[i + 1] + (nb - i);
 				}
+				else for(auto i = 0; i < nb; ++ i) s[i] = _power_sum(block[i] + 1, d) - (d == 0 ? T{2} : T{1});
+				T prime_power_prefix = 0;
+				for(auto j = 0; j < prime_th; ++ j){
+					int p = prime[j];
+					long long sqp = 1LL * p * p;
+					int imax = min<long long>(cut, _div(n, sqp));
+					long long ip = p;
+					for(auto i = 0; i < imax; ++ i, ip += p) s[i] -= prime_power[j] * (s[ip <= cut ? ip - 1 : nb - _div(n, ip)] - prime_power_prefix);
+					for(auto i = imax; i < nb && block[i] >= sqp; ++ i) s[i] -= prime_power[j] * (s[nb - _div(block[i], p)] - prime_power_prefix);
+					prime_power_prefix += prime_power[j];
+				}
+				for(auto i = 0; i < nb; ++ i) res[i] += coef[d] * s[i];
+			}
+			if(d + 1 < (int)coef.size()) for(auto i = 0; i < (int)prime_power.size(); ++ i) prime_power[i] *= prime[i];
+		}
+		return res;
+	}
+	// Returns the sum of f(x) for 1 <= x <= block[i] for each block index i
+	// Unsure about complexity
+	const vector<T> &query_block_prefix_sum(long long n){
+		assert(1 <= n && n <= n_th);
+		query_block_prime_prefix_sum(n);
+		s = res;
+		for(auto j = prime_th - 1; j >= 0; -- j){
+			int p = prime[j];
+			long long sqp = 1LL * p * p;
+			for(auto i = 0; i < nb && block[i] >= sqp; ++ i){
+				long long x = block[i];
+				for(auto c = 2; p <= (x = _div(x, p)); ++ c) res[i] += eval(p, c - 1) * (res[x <= cut ? nb - x : _div(n, x) - 1] - s[nb - p]) + eval(p, c);
 			}
 		}
 		for(auto &x: res) ++ x;
 		return res;
+	}
+	long long _n;
+	T _dfs(int i, int c, long long prod, T cur){
+		T ans = cur * eval(prime[i], c + 1);
+		long long th = _div(_n, prod);
+		if(th >= 1LL * prime[i] * prime[i]) ans += _dfs(i, c + 1, prod * prime[i], cur);
+		ans += (cur *= eval(prime[i], c)) * (res[th <= cut ? nb - th : prod - 1] - res[prime[i] <= cut ? nb - prime[i] : _div(_n, prime[i]) - 1]);
+		for(++ i; i < prime_th && prime[i] < 1 << 21 && 1LL * prime[i] * prime[i] * prime[i] <= th; ++ i) ans += _dfs(i, 1, prod * prime[i], cur);
+		for(; i < prime_th && 1LL * prime[i] * prime[i] <= th; ++ i){
+			long long x = _div(th, prime[i]);
+			ans += cur * (eval(prime[i], 2) + eval(prime[i], 1) * (res[x <= cut ? nb - x : prod * prime[i] - 1] - res[nb - prime[i]]));
+		}
+		return ans;
+	}
+	// Returns the sum of f(x) for 1 <= x <= n
+	T query_prefix_sum(long long n){
+		assert(1 <= n && n <= n_th);
+		query_block_prime_prefix_sum(n);
+		T ans = res[0] + 1;
+		_n = n;
+		for(auto i = 0; i < prime_th; ++ i) ans += _dfs(i, 1, prime[i], T{1});
+		return ans;
 	}
 };
 ]]></content>
