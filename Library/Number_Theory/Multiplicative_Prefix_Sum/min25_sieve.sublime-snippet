@@ -125,6 +125,13 @@ struct min25_sieve{
 		return res;
 	}
 	long long _n;
+	// _dfs returns the sum of integer x > prod, such that
+	// 1. v_prime[j](x) = v_prime[j](prod) for all 0 <= j < i and
+	// 2. v_prime[i](x) >= c
+	// largest prime factor of prod is always prime[i]
+	// v_prime[i](prod) is always c
+	// cur is always f(prod / prime[i]^c)
+	// \omega(n^(1-eps)) for all eps>0, and o(n)
 	T _dfs(int i, int c, long long prod, T cur){
 		T ans = cur * eval(prime[i], c + 1);
 		long long th = _div(_n, prod);
@@ -138,6 +145,7 @@ struct min25_sieve{
 		return ans;
 	}
 	// Returns the sum of f(x) for 1 <= x <= n
+	// \omega(n^(1-eps)) for all eps>0, and o(n)
 	T query_prefix_sum(long long n){
 		assert(1 <= n && n <= n_th);
 		query_block_prime_prefix_sum(n);
