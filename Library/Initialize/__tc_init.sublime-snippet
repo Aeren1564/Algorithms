@@ -23,14 +23,14 @@ using namespace numbers;
 int main(){
 	cin.tie(0)->sync_with_stdio(0);
 	cin.exceptions(ios::badbit | ios::failbit);
-	auto __solve_tc = [&](auto __tc_num)->int{
+	auto solve_testcase = [&](auto testcase_id)->int{
 		$0
 		return 0;
 	};
-	int __tc_cnt;
-	cin >> __tc_cnt;
-	for(auto __tc_num = 0; __tc_num < __tc_cnt; ++ __tc_num){
-		__solve_tc(__tc_num);
+	int testcase_count;
+	cin >> testcase_count;
+	for(auto testcase_id = 0; testcase_id < testcase_count; ++ testcase_id){
+		solve_testcase(testcase_id);
 	}
 	return 0;
 }

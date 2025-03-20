@@ -83,10 +83,9 @@ struct min25_sieve{
 		for(auto d = 1; d < (int)coef.size(); ++ d){
 			if(coef[d]){
 				if(d == 1){
-					T inv = T{1} / 2;
 					for(auto i = 0; i < cut; ++ i){
-						T x = block[i];
-						s[i] = x * (x + 1) * inv - 1;
+						if(block[i] & 1) s[i] = T((block[i] + 1) / 2) * T(block[i]) - 1;
+						else s[i] = (T)(block[i] / 2) * T(block[i] + 1) - 1;
 					}
 					for(auto i = nb - 2; i >= cut; -- i) s[i] = s[i + 1] + (nb - i);
 				}
@@ -136,7 +135,7 @@ struct min25_sieve{
 		T ans = cur * eval(prime[i], c + 1);
 		long long th = _div(_n, prod);
 		if(th >= 1LL * prime[i] * prime[i]) ans += _dfs(i, c + 1, prod * prime[i], cur);
-		ans += (cur *= eval(prime[i], c)) * (res[th <= cut ? nb - th : prod - 1] - res[prime[i] <= cut ? nb - prime[i] : _div(_n, prime[i]) - 1]);
+		ans += (cur *= eval(prime[i], c)) * (res[th <= cut ? nb - th : prod - 1] - res[nb - prime[i]]);
 		for(++ i; i < prime_th && prime[i] < 1 << 21 && 1LL * prime[i] * prime[i] * prime[i] <= th; ++ i) ans += _dfs(i, 1, prod * prime[i], cur);
 		for(; i < prime_th && 1LL * prime[i] * prime[i] <= th; ++ i){
 			long long x = _div(th, prime[i]);

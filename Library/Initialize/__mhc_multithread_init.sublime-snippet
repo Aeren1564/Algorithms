@@ -18,19 +18,19 @@ using namespace numbers;
 
 
 
-struct __testcase_t{
+struct testcase_t{
 	
 	// Set precomputed variables
-	__testcase_t(){ }
+	testcase_t(){ }
 	$0
-	void __input(){
+	void input(){
 
 	}
-	int __solve(){
+	int solve(){
 
 		return 0;
 	}
-	void __output(){
+	void output(){
 
 	}
 };
@@ -38,17 +38,17 @@ struct __testcase_t{
 int main(){
 	cin.tie(0)->sync_with_stdio(0);
 	cin.exceptions(ios::badbit | ios::failbit);
-	int __tc_cnt;
-	cin >> __tc_cnt;
-	vector __test(__tc_cnt, __testcase_t{});
-	for(auto __tc_num = 0; __tc_num < __tc_cnt; ++ __tc_num){
-		__test[__tc_num].__input();
+	int testcase_count;
+	cin >> testcase_count;
+	vector testcase(testcase_count, testcase_t{});
+	for(auto testcase_id = 0; testcase_id < testcase_count; ++ testcase_id){
+		testcase[testcase_id].input();
 	}
 	const int PARALLEL = 16;
-	auto __run_test = [&](auto self, int l, int r)->void{
+	auto run_testcases = [&](auto self, int l, int r)->void{
 		if(r - l == 1){
-			for(auto i = l; i < __tc_cnt; i += PARALLEL){
-				__test[i].__solve();
+			for(auto i = l; i < testcase_count; i += PARALLEL){
+				testcase[i].solve();
 			}
 			return;
 		}
@@ -57,10 +57,10 @@ int main(){
 		self(self, m, r);
 		handle.wait();
 	};
-	__run_test(__run_test, 0, PARALLEL);
-	for(auto __tc_num = 0; __tc_num < __tc_cnt; ++ __tc_num){
-		cout << "Case #" << __tc_num + 1 << ": ";
-		__test[__tc_num].__output();
+	run_testcases(run_testcases, 0, PARALLEL);
+	for(auto testcase_id = 0; testcase_id < testcase_count; ++ testcase_id){
+		cout << "Case #" << testcase_id + 1 << ": ";
+		testcase[testcase_id].output();
 	}
 	return 0;
 }
